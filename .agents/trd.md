@@ -1,9 +1,10 @@
 # Technical Requirements Document (TRD) — EduPredict
 
 ## 1. Technology Stack (MERN Rejected — Pure Django Only)
-- **Backend Framework:** Python 3.11+ & Django 5.x (Standard MVT Architecture)
+- **Backend Framework:** Python 3.11+ & Django (Latest Stable, Standard MVT Architecture)
 - **Database:** MongoDB Atlas (`pymongo` + clean helper layer in `core/db.py` alongside Django Auth, or `mongoengine`)
 - **Data Science & ML:** `pandas`, `numpy`, `scikit-learn`, `openpyxl`
+- **Package Version Policy (Always Install Latest Packages Rule):** Whenever any Python package, library, or dependency is installed or updated, the **latest stable version** MUST be installed (`pip install --upgrade <package>`) and frozen into `requirements.txt`.
 - **Frontend Templating:** Pure Django HTML5 Templates (`{% extends %}`, `{% include %}`)
 - **Styling:** Tailwind CSS (Global config in `base.html` + `static/css/global.css`)
 - **Icons:** FontAwesome (`@fortawesome/fontawesome-free`)

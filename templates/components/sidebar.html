@@ -37,7 +37,7 @@
     </div>
     {% endif %}
 
-    {% if active_role == 'TEACHER' or not active_role %}
+    {% if active_role == 'TEACHER' or active_role == 'ADMIN' or not active_role %}
     <div class="space-y-1">
       <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Faculty</p>
       <a href="{% url 'panels:teacher_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:teacher_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
@@ -55,7 +55,7 @@
     </div>
     {% endif %}
 
-    {% if active_role == 'STUDENT' or not active_role %}
+    {% if active_role == 'STUDENT' or active_role == 'ADMIN' or not active_role %}
     <div class="space-y-1">
       <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Student</p>
       <a href="{% url 'panels:student_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
@@ -69,7 +69,7 @@
     </div>
     {% endif %}
 
-    {% if active_role == 'ANALYST' or not active_role %}
+    {% if active_role == 'ANALYST' or active_role == 'ADMIN' or not active_role %}
     <div class="space-y-1">
       <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Data &amp; ML</p>
       <a href="{% url 'panels:analyst_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:analyst_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">

@@ -3,10 +3,11 @@
 > **CRITICAL DIRECTIVE FOR ALL AI AGENTS (Antigravity, Claude, Claude Code, Cursor):**
 > You MUST read `.agents/PRD.md`, `.agents/SRD.md`, `.agents/TRD.md`, `.agents/design.md`, `.agents/project-rules.md`, and `.agents/git-sync.md` BEFORE writing or editing a single line of code.
 
-## Rule 1: Technology Stack Lock (MERN Strictly Prohibited)
+## Rule 1: Technology Stack Lock & Latest Packages Rule (MERN Strictly Prohibited)
 - This project is built **100% on Python Django + MongoDB Atlas + Tailwind CSS + Vanilla JS**.
 - **REJECT ALL MERN ARTIFACTS:** Never create `package.json` for React/Vite, `.jsx`, `.tsx`, TypeScript files, or Node/Express servers.
 - Use standard Django templates (`templates/`), modular Django views, and global static assets (`static/css/global.css`, `static/js/app.js`).
+- **Always Install Latest Packages Rule:** Whenever any Python package, library, or dependency is installed or updated, the **latest stable version** MUST be installed (`pip install --upgrade <package>`) and frozen into `requirements.txt`.
 
 ## Rule 2: Active Superpower & Native Tool Usage
 - Regardless of how short or simple the user's prompt is (e.g., "add student page"), you MUST use all your native agent superpowers: codebase search, file inspection, terminal test execution (`python manage.py check`), and systematic verification before finishing.
@@ -43,3 +44,11 @@
 - **2 Actionable Suggestions After Every Task:** At the end of every completed task, provide **2 concise improvements** for existing code:
   - *Problem 1:* [Short description of an existing bottleneck/issue] -> *Hal:* [1-line actionable fix]
   - *Problem 2:* [Short description of an existing UI/code issue] -> *Hal:* [1-line actionable fix]
+
+## Rule 10: `.env` & Full Project Auto-Sync Rule (MANDATORY)
+- `.env` and ALL project files (code, `templates/`, `static/`, `requirements.txt`, `.env.example`, `.gitignore`, `.agents/*`) MUST always be tracked, committed, and auto-synced/pushed to GitHub whenever any change occurs.
+- ONLY installed library/virtual-environment folders and local caches (`.venv/`, `__pycache__/`, `*.pyc`, `*.pyo`, `*.pyd`, `db.sqlite3`) remain ignored in `.gitignore`.
+
+## Rule 11: Full-Width Responsive Panel Layout — No Centered Box
+- NEVER wrap dashboard content inside a centered fixed-width box (`max-w-7xl mx-auto`).
+- Use the full-width fluid layout (`w-full px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6 xl:px-8 space-y-6` inside `<main class="flex-1 w-full min-w-0">`) with responsive grid splits (`grid-cols-1 sm:grid-cols-2 xl:grid-cols-4`, `grid-cols-1 xl:grid-cols-12`) so large desktop screens span full width beside the sidebar and mobile screens (`320px+`) stack cleanly with `min-w-0` and `overflow-x-auto`.

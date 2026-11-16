@@ -67,9 +67,10 @@ Breadcrumb / Current Page Title on the left.
 
 Quick Search input, Notification Bell dropdown, and Light/Dark Theme Toggle on the right.
 
-Main Content Area (lg:pl-64 min-h-screen):
+Main Content Area (`lg:pl-64 min-h-screen flex flex-col`):
 
-Container (max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6).
+- **Full-Width Fluid Container (No Centered Box):** Do NOT wrap panels in centered `max-w-* mx-auto` containers. Use `<main class="flex-1 w-full min-w-0"><div class="w-full px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6 xl:px-8 space-y-6">` so large desktop screens span the full available width beside the sidebar.
+- **Responsive Grid Splits (`320px+` Mobile to Large Desktop):** Use responsive splits (`grid-cols-1 sm:grid-cols-2 xl:grid-cols-4` for KPI cards and `grid-cols-1 xl:grid-cols-12` for split workbenches), apply `min-w-0` on grid/flex columns, and wrap tables in `overflow-x-auto` so mobile screens (`320px+`) stack cleanly with zero horizontal overflow.
 
 4. Strict Z-Index & Overlay Hierarchy (Zero Broken Overlays)
 To guarantee overlays, dropdowns, and modals never clash or clip across panels:
