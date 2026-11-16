@@ -1,33 +1,27 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
-  <div class="min-w-0 space-y-2">
-    <div class="flex flex-wrap items-center gap-2">
-      <a href="{% url 'panels:teacher_dashboard' %}" title="Class overview and students needing help" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-chalkboard-user"></i>
-        <span>Class Home</span>
-      </a>
-      <a href="{% url 'panels:teacher_students' %}" title="View full student list and marks" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-primary)]">
-        <i class="fa-solid fa-user-graduate"></i>
-        <span>Student List</span>
-      </a>
-      <a href="{% url 'panels:teacher_ingest' %}" title="Upload attendance or marks sheet" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-file-arrow-up"></i>
-        <span>Upload Marks</span>
-      </a>
-      <button type="button" data-coming-soon="true" data-coming-panel="Teacher" data-coming-title="Class Risk Alerts" data-coming-desc="Review every warning message sent to students and track follow-up actions." data-coming-features="Full alert history per course|Quick follow-up reminders|Filter by alert level" title="View sent alerts (Coming Soon)" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-bell"></i>
-        <span>Risk Alerts</span>
-        <span class="rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent-primary)]">Soon</span>
-      </button>
+<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
+  <div class="min-w-0 space-y-1">
+    <div class="flex items-center gap-2">
+      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">
+        <i class="fa-solid fa-user-graduate text-xs"></i>
+        <span>Class Roster</span>
+      </span>
     </div>
-    <p class="text-xs text-[var(--text-secondary)]">Search students by batch, course, or status, edit marks in one click, or send a quick help message.</p>
+    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Student List &amp; Marks</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Search students, update internal test scores, dispatch alerts, and export roster.</p>
   </div>
-  <a href="{% url 'panels:teacher_ingest' %}" title="Add or upload student marks" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-    <i class="fa-solid fa-file-arrow-up"></i>
-    <span>Upload Marks</span>
-  </a>
+  <div class="flex flex-wrap items-center gap-2">
+    <a href="{% url 'panels:teacher_students' %}?export=csv" title="Save student list as CSV" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <i class="fa-solid fa-file-csv text-[var(--status-success)]"></i>
+      <span>Export CSV</span>
+    </a>
+    <a href="{% url 'panels:teacher_ingest' %}" title="Add or upload student marks" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+      <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+      <span>Upload Marks</span>
+    </a>
+  </div>
 </section>
 
 {% if db_error %}

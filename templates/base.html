@@ -44,7 +44,7 @@
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=5">
+  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=6">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased">
@@ -147,9 +147,9 @@
   {% include 'components/form_modal.html' %}
   {% include 'components/toast.html' %}
 
-  <script src="{% static 'js/app.js' %}?v=5"></script>
-  <script src="{% static 'js/charts.js' %}?v=5"></script>
-  <script src="{% static 'js/nav.js' %}?v=5"></script>
+  <script src="{% static 'js/app.js' %}?v=6"></script>
+  <script src="{% static 'js/charts.js' %}?v=6"></script>
+  <script src="{% static 'js/nav.js' %}?v=6"></script>
   <div id="page-extra-js">{% block extra_js %}{% endblock %}</div>
 </body>
 </html>

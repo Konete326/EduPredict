@@ -17,7 +17,7 @@
   </div>
 
   <nav class="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-    {% if active_role == 'ADMIN' or not active_role %}
+    {% if active_role == 'ADMIN' or not active_role and not current_user %}
     <div class="space-y-1" data-nav-group="admin">
       <button type="button" data-nav-group-toggle="admin" aria-expanded="true" title="Show or hide Admin links" class="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
         <span>Admin</span>
@@ -54,7 +54,7 @@
     </div>
     {% endif %}
 
-    {% if active_role == 'TEACHER' or active_role == 'ADMIN' or not active_role %}
+    {% if active_role == 'TEACHER' or not active_role and not current_user %}
     <div class="space-y-1" data-nav-group="teacher">
       <button type="button" data-nav-group-toggle="teacher" aria-expanded="true" title="Show or hide Teacher links" class="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
         <span>Teacher</span>
@@ -82,7 +82,7 @@
     </div>
     {% endif %}
 
-    {% if active_role == 'STUDENT' or active_role == 'ADMIN' or not active_role %}
+    {% if active_role == 'STUDENT' or not active_role and not current_user %}
     <div class="space-y-1" data-nav-group="student">
       <button type="button" data-nav-group-toggle="student" aria-expanded="true" title="Show or hide Student links" class="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
         <span>Student</span>
@@ -108,7 +108,7 @@
     </div>
     {% endif %}
 
-    {% if active_role == 'ANALYST' or active_role == 'ADMIN' or not active_role %}
+    {% if active_role == 'ANALYST' or not active_role and not current_user %}
     <div class="space-y-1" data-nav-group="analyst">
       <button type="button" data-nav-group-toggle="analyst" aria-expanded="true" title="Show or hide Data Analyst links" class="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
         <span>Data Analyst</span>

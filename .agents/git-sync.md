@@ -62,34 +62,34 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
 last_updated_by_agent: "Coordinator & Senior Full-Stack Architect (@coordinator)"
-active_branch_merged_to_main: "feature/auth-rbac -> main"
-project_phase: "Live Prediction Count Badge & Caps-Lock Warning Implemented & Verified on Split Login (auth.html)"
+active_branch_merged_to_main: "feature/admin-panel -> main"
+project_phase: "Strict Role Navigation Isolation Verified & Enforced Across All Panels (sidebar.html)"
 
 completed_modules:
   - "Phase 1: Django Project Init, Core MongoDB Layer & App-Shell-3 Layout (core/, templates/components/, static/)"
   - "Phase 2: Authentication, Default Admin Sync & Role-Based Routing (accounts/services.py, accounts/views.py, templates/accounts/auth.html)"
   - "Phase 3: Analyst Panel, ML Engine, chunked CSV ingestion, anomaly detection & full-width dashboard"
   - "Phase 4 & 5: Admin Panel (CRUD, 5-row pagination, mobile cards, backups), Teacher Panel, Zero-Lag Caching & SPA Navigation"
-  - "Rule 20: Strict Role Navigation Isolation & Ultra-Simple Marks Ingestion verified and merged"
-  - "Astryx Integration & Split-Login Template (templates/accounts/auth.html):"
-      - "Executed npx @astryxdesign/cli init --features agents generating AGENTS.md and GEMINI.md reference files."
-      - "Evaluated Astryx tokens, themes (Neutral, Butter, Chocolate, Gothic, Matcha, Stone, Y2K), and component patterns."
-      - "Redesigned auth.html using Astryx's login-split template: left column features brand showcase, ML highlights, and live MongoDB status; right column hosts clean sign-in and account registration forms with password eye toggles and 1-click default admin button."
-  - "Actionable Improvements (auth.html & accounts/views.py):"
-      - "Problem 1 Fixed: In accounts/views.py, added _get_live_stats() with short-TTL caching (get_cached) to read live predictions document count from MongoDB predictions_col(). Displayed dynamic '{{ live_predictions_count }}+ Active Predictions' badge in the split login showcase pane."
-      - "Problem 2 Fixed: Attached lightweight keyup/keydown Caps-Lock listener (initCapsLockListeners) to both login and registration password fields. Warns user with a subtle amber 'Caps' pill icon whenever Caps Lock is active, preventing accidental authentication failures."
+  - "Rule 20 Enforced & Verified (templates/components/sidebar.html):"
+      - "Completely removed cross-role 'or active_role == ADMIN' conditions from Teacher, Student, and Analyst navigation groups in sidebar.html."
+      - "Admin Panel exclusively displays the Admin navigation group (Dashboard, Users, Courses, Help Tickets, System Logs, Backups, Settings)."
+      - "Teacher Panel exclusively displays the Teacher navigation group (Class Home, Student List, Upload Marks, Risk Alerts Soon)."
+      - "Student Panel exclusively displays the Student navigation group (My Overview, Predictions & Risk, Courses, Support Soon)."
+      - "Data Analyst Panel exclusively displays the Analyst navigation group (Workbench, Datasets, Training, Anomaly Detection)."
+      - "Executed comprehensive automated Django template test across all 4 roles verifying 16/16 strict isolation assertions (no cross-panel link leakage)."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "Auth view check: GET /auth/ renders live predictions badge and caps lock warning targets with HTTP 200."
-  - "File limits & zero comments: auth.html is 310 lines (< 350 cap) and accounts/views.py is 176 lines with 0 comments."
+  - "Sidebar role isolation test: 16/16 assertions PASSED (Admin sees only Admin, Teacher sees only Teacher, Student sees only Student, Analyst sees only Analyst)."
+  - "File limits & zero comments: sidebar.html is 163 lines (< 350 cap) and has 0 comments."
 
 active_routes_and_files:
-  - "/auth/ -> accounts:auth_view (Astryx login-split layout with live prediction count & Caps-Lock warning)"
-  - "/admin-panel/* -> panels:views_admin.py (Admin only sees Admin sidebar)"
-  - "/teacher-panel/* -> panels:views_teacher.py (Teacher only sees Teacher sidebar)"
-  - "/student-panel/* -> panels:views_student.py (Student only sees Student sidebar)"
-  - "/analyst-panel/* -> panels:views_analyst.py (Analyst only sees Analyst sidebar)"
+  - "templates/components/sidebar.html (Strict role navigation isolation per Rule 20)"
+  - "/auth/ -> accounts:auth_view (Astryx login-split layout with dynamic stats)"
+  - "/admin-panel/* -> panels:views_admin.py (Admin only sees Admin navigation)"
+  - "/teacher-panel/* -> panels:views_teacher.py (Teacher only sees Teacher navigation)"
+  - "/student-panel/* -> panels:views_student.py (Student only sees Student navigation)"
+  - "/analyst-panel/* -> panels:views_analyst.py (Analyst only sees Analyst navigation)"
 
 pending_modules_in_order:
   - "Phase 6: Student Panel Full Implementation (Personal Dashboard, AI Risk Card, Report Download, Study Recommendations)"

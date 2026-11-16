@@ -1,36 +1,36 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
   <div class="min-w-0 space-y-1">
     <div class="flex items-center gap-2">
-      <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[var(--accent-primary)]">
-        <i class="fa-solid fa-microchip text-[11px]"></i>
-        <span>Prediction Tool</span>
+      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">
+        <i class="fa-solid fa-microchip text-xs"></i>
+        <span>Machine Learning Engine</span>
       </span>
     </div>
-    <h2 class="text-lg font-semibold tracking-tight text-[var(--text-primary)]">Data &amp; Predictions</h2>
-    <p class="text-xs text-[var(--text-secondary)]">Upload a student file, fix blank cells, and predict grades and dropout risk.</p>
+    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Data &amp; Predictions Hub</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Ingest datasets, fill missing values with Scikit-Learn, and forecast student dropout risks.</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
     <form method="post" action="{% url 'analytics:upload_dataset' %}">
       {% csrf_token %}
       <input type="hidden" name="mode" value="sample">
-      <button type="submit" title="Add 60 sample students and run predictions" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-        <i class="fa-solid fa-wand-magic-sparkles"></i>
-        <span>Load Sample Data</span>
+      <button type="submit" title="Add 60 sample students and run predictions" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+        <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+        <span>1-Click Load &amp; Predict</span>
       </button>
     </form>
     <form method="post" action="{% url 'analytics:run_predictions' %}">
       {% csrf_token %}
-      <button type="submit" title="Run predictions again on current MongoDB records" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
-        <i class="fa-solid fa-rotate text-[var(--accent-primary)]"></i>
-        <span>Run Predictions</span>
+      <button type="submit" title="Run predictions again on current MongoDB records" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+        <i class="fa-solid fa-rotate text-xs text-[var(--accent-primary)]"></i>
+        <span>Retrain &amp; Run ML</span>
       </button>
     </form>
-    <a href="{% url 'panels:analyst_dashboard' %}?batch={{ selected_filters.batch|urlencode }}&course_code={{ selected_filters.course_code|urlencode }}&risk_level={{ selected_filters.risk_level|urlencode }}&export=csv" title="Save filtered predictions as a CSV file" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
-      <i class="fa-solid fa-file-csv text-[var(--status-success)]"></i>
-      <span>Download CSV</span>
+    <a href="{% url 'panels:analyst_dashboard' %}?batch={{ selected_filters.batch|urlencode }}&course_code={{ selected_filters.course_code|urlencode }}&risk_level={{ selected_filters.risk_level|urlencode }}&export=csv" title="Save filtered predictions as a CSV file" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <i class="fa-solid fa-file-csv text-xs text-[var(--status-success)]"></i>
+      <span>Export CSV</span>
     </a>
   </div>
 </section>

@@ -1,35 +1,23 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
-  <div class="min-w-0 space-y-2">
-    <div class="flex flex-wrap items-center gap-2">
-      <a href="{% url 'panels:teacher_dashboard' %}" title="Class overview and students needing help" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-chalkboard-user"></i>
-        <span>Class Home</span>
-      </a>
-      <a href="{% url 'panels:teacher_students' %}" title="View full student list and marks" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-user-graduate"></i>
-        <span>Student List</span>
-      </a>
-      <a href="{% url 'panels:teacher_ingest' %}" title="Upload attendance or marks sheet" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-primary)]">
-        <i class="fa-solid fa-file-arrow-up"></i>
-        <span>Upload Marks</span>
-      </a>
-      <button type="button" data-coming-soon="true" data-coming-panel="Teacher" data-coming-title="Class Risk Alerts" data-coming-desc="Review every warning message sent to students and track follow-up actions." data-coming-features="Full alert history per course|Quick follow-up reminders|Filter by alert level" title="View sent alerts (Coming Soon)" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-bell"></i>
-        <span>Risk Alerts</span>
-        <span class="rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent-primary)]">Soon</span>
-      </button>
+<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
+  <div class="min-w-0 space-y-1">
+    <div class="flex items-center gap-2">
+      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">
+        <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+        <span>Automated Ingestion</span>
+      </span>
     </div>
-    <p class="text-xs text-[var(--text-secondary)]">Upload a class CSV/Excel sheet or enter marks for one student. Predictions refresh automatically.</p>
+    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Upload Marks &amp; Attendance</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Upload spreadsheet sheets or add marks. System automatically calculates GPA and updates risk warnings.</p>
   </div>
   <form method="post" action="{% url 'panels:teacher_ingest' %}">
     {% csrf_token %}
     <input type="hidden" name="mode" value="sample">
-    <button type="submit" title="Fill sample student marks and update predictions" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-      <i class="fa-solid fa-wand-magic-sparkles"></i>
-      <span>Load Sample Class Data</span>
+    <button type="submit" title="Fill sample class data and run ML predictions in one click" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+      <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+      <span>1-Click Load Sample &amp; Predict</span>
     </button>
   </form>
 </section>
@@ -42,51 +30,49 @@
 
 <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
   <div class="xl:col-span-5 space-y-4 min-w-0">
-    <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
-      <div>
-        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Upload Marks Sheet</h3>
-        <p class="mt-0.5 text-xs text-[var(--text-muted)]">Upload a .csv or .xlsx file. Only 3 columns needed: Student ID, Marks, and Attendance.</p>
+    <div class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 space-y-3.5 shadow-sm">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h3 class="text-sm sm:text-base font-bold text-[var(--text-primary)]">Upload Spreadsheet</h3>
+          <p class="text-xs text-[var(--text-muted)]">Upload .csv or .xlsx with Student ID, Marks, and Attendance.</p>
+        </div>
+        <a href="{% url 'panels:teacher_ingest' %}?template=csv" title="Download sample spreadsheet template" class="inline-flex items-center gap-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors">
+          <i class="fa-solid fa-download text-[11px]"></i>
+          <span>Template</span>
+        </a>
       </div>
+
       <form method="post" action="{% url 'panels:teacher_ingest' %}" enctype="multipart/form-data" class="space-y-3">
         {% csrf_token %}
         <input type="hidden" name="mode" value="upload">
-        <div class="space-y-1">
-          <label for="teacher-dataset-file" class="block text-xs font-medium text-[var(--text-secondary)]">Spreadsheet File (.csv or .xlsx)</label>
-          <input id="teacher-dataset-file" name="dataset_file" type="file" accept=".csv,.xlsx" required class="block w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--accent-soft)] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[var(--accent-primary)]">
+        <div class="rounded-xl border-2 border-dashed border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-4 text-center hover:border-[var(--accent-primary)] transition-colors">
+          <i class="fa-solid fa-file-excel mx-auto text-2xl text-[var(--accent-primary)]"></i>
+          <label for="teacher-dataset-file" class="mt-2 block cursor-pointer text-xs font-medium text-[var(--text-primary)]">
+            <span>Choose a spreadsheet file</span>
+            <input id="teacher-dataset-file" name="dataset_file" type="file" accept=".csv,.xlsx" required class="sr-only">
+          </label>
+          <p id="teacher-file-name" class="mt-1 text-[11px] text-[var(--text-muted)]">.csv or .xlsx up to 25 MB</p>
         </div>
-        <div class="flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
-          <span class="inline-flex items-center gap-1 text-[var(--status-success)] font-medium">
-            <i class="fa-solid fa-circle-check text-[11px]"></i>
-            <span>3 Simple Columns:</span>
-          </span>
-          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">Student ID</span>
-          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">Marks</span>
-          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">Attendance</span>
-        </div>
-        <div class="flex flex-wrap items-center gap-2 pt-1">
-          <button type="submit" title="Upload spreadsheet and save student marks" class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-            <i class="fa-solid fa-cloud-arrow-up"></i>
-            <span>Upload &amp; Save Sheet</span>
-          </button>
-          <a href="{% url 'panels:teacher_ingest' %}?template=csv" title="Download simple sample Excel/CSV template" class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
-            <i class="fa-solid fa-download"></i>
-            <span>Sample Template</span>
-          </a>
-        </div>
+        <button type="submit" title="Upload spreadsheet and auto-update predictions" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+          <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+          <span>Upload &amp; Auto-Process</span>
+        </button>
       </form>
     </div>
 
-    <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
-      <div>
-        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Quick Marks Entry</h3>
-        <p class="mt-0.5 text-xs text-[var(--text-muted)]">Type or select a student to enter their latest marks.</p>
+    <div class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 space-y-3.5 shadow-sm">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h3 class="text-sm sm:text-base font-bold text-[var(--text-primary)]">Quick Student Entry</h3>
+          <p class="text-xs text-[var(--text-muted)]">Quickly add or update single student marks.</p>
+        </div>
       </div>
       <form method="post" action="{% url 'panels:teacher_ingest' %}" class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {% csrf_token %}
         <input type="hidden" name="action" value="manual_entry">
         <div class="space-y-1">
           <label for="entry-student-id" class="block text-xs font-medium text-[var(--text-secondary)]">Student ID</label>
-          <input id="entry-student-id" name="student_id" type="text" required placeholder="STD-2026-001" list="teacher-students-datalist" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+          <input id="entry-student-id" name="student_id" type="text" required placeholder="STD-2026-001" list="teacher-students-datalist" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs sm:text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
           <datalist id="teacher-students-datalist">
             {% for sp in students_picker %}
             <option value="{{ sp.student_id }}">{{ sp.student_id }} · {{ sp.full_name }} ({{ sp.course_code }})</option>
@@ -95,46 +81,27 @@
         </div>
         <div class="space-y-1">
           <label for="entry-full-name" class="block text-xs font-medium text-[var(--text-secondary)]">Student Name</label>
-          <input id="entry-full-name" name="full_name" type="text" placeholder="e.g. Ayesha Khan (optional)" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+          <input id="entry-full-name" name="full_name" type="text" placeholder="e.g. Ayesha Khan" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs sm:text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
         </div>
         <div class="space-y-1 sm:col-span-2">
-          <label for="entry-course" class="block text-xs font-medium text-[var(--text-secondary)]">Course</label>
-          <input id="entry-course" name="course_code" type="text" required value="{{ courses_list.0|default:'CS-101' }}" list="teacher-course-datalist" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+          <label for="entry-course" class="block text-xs font-medium text-[var(--text-secondary)]">Course Code</label>
+          <input id="entry-course" name="course_code" type="text" required value="{{ courses_list.0|default:'CS-101' }}" list="teacher-course-datalist" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs sm:text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
           <datalist id="teacher-course-datalist">
             {% for c in courses_list %}<option value="{{ c }}"></option>{% endfor %}
           </datalist>
         </div>
         <div class="space-y-1">
           <label for="entry-marks" class="block text-xs font-medium text-[var(--text-secondary)]">Marks (0-100)</label>
-          <input id="entry-marks" name="internal_marks" type="number" step="0.1" min="0" max="100" required value="75" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+          <input id="entry-marks" name="internal_marks" type="number" step="0.1" min="0" max="100" required value="75" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs sm:text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
         </div>
         <div class="space-y-1">
           <label for="entry-att" class="block text-xs font-medium text-[var(--text-secondary)]">Attendance %</label>
-          <input id="entry-att" name="attendance_pct" type="number" step="0.1" min="0" max="100" required value="85" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+          <input id="entry-att" name="attendance_pct" type="number" step="0.1" min="0" max="100" required value="85" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs sm:text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
         </div>
-        <details class="sm:col-span-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5">
-          <summary class="cursor-pointer text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-            More Details (Optional: Batch, Hours, GPA)
-          </summary>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 mt-2 border-t border-[var(--border-subtle)]">
-            <div class="space-y-1">
-              <label for="entry-batch" class="block text-[11px] font-medium text-[var(--text-secondary)]">Batch</label>
-              <input id="entry-batch" name="batch" type="text" value="2026-A" class="w-full rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs text-[var(--text-primary)]">
-            </div>
-            <div class="space-y-1">
-              <label for="entry-lms" class="block text-[11px] font-medium text-[var(--text-secondary)]">Weekly Study Hours</label>
-              <input id="entry-lms" name="lms_hours_weekly" type="number" step="0.5" min="0" max="168" value="8" class="w-full rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs text-[var(--text-primary)]">
-            </div>
-            <div class="space-y-1">
-              <label for="entry-gpa" class="block text-[11px] font-medium text-[var(--text-secondary)]">Previous GPA</label>
-              <input id="entry-gpa" name="previous_gpa" type="number" step="0.01" min="0" max="4" value="3.0" class="w-full rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs text-[var(--text-primary)]">
-            </div>
-          </div>
-        </details>
         <div class="sm:col-span-2 pt-1">
-          <button type="submit" title="Save student marks and update prediction" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
-            <i class="fa-solid fa-floppy-disk"></i>
-            <span>Save Marks</span>
+          <button type="submit" title="Save student marks and update prediction" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+            <i class="fa-solid fa-floppy-disk text-xs"></i>
+            <span>Save Student Marks</span>
           </button>
         </div>
       </form>
@@ -142,12 +109,12 @@
   </div>
 
   <div class="xl:col-span-7 space-y-4 min-w-0">
-    <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
-      {% include 'components/data_table.html' with table_id="teacher-roster-table" table_title="Quick Marks Editor" headers=roster_headers rows=roster_rows page_size=5 empty_message="No student records saved yet. Upload a sheet or add one student on the left." %}
+    <div class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
+      {% include 'components/data_table.html' with table_id="teacher-roster-table" table_title="Class Roster Quick Editor" headers=roster_headers rows=roster_rows page_size=5 empty_message="No student records saved yet. Upload a sheet or load sample class." %}
     </div>
 
-    <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
-      {% include 'components/data_table.html' with table_id="teacher-logs-table" table_title="Recent Upload History" headers=log_headers rows=log_rows page_size=5 empty_message="No uploaded spreadsheets logged yet." %}
+    <div class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
+      {% include 'components/data_table.html' with table_id="teacher-logs-table" table_title="Upload History" headers=log_headers rows=log_rows page_size=5 empty_message="No uploaded spreadsheets logged yet." %}
     </div>
   </div>
 </section>
@@ -156,6 +123,17 @@
 {% block extra_js %}
 <script>
   const TEACHER_INGEST_URL = "{% url 'panels:teacher_ingest' %}";
+
+  const fileInput = document.getElementById('teacher-dataset-file');
+  const fileNameDisplay = document.getElementById('teacher-file-name');
+  if (fileInput && fileNameDisplay) {
+    fileInput.addEventListener('change', function () {
+      if (this.files && this.files[0]) {
+        fileNameDisplay.textContent = 'Selected: ' + this.files[0].name;
+        fileNameDisplay.classList.add('text-[var(--accent-primary)]', 'font-semibold');
+      }
+    });
+  }
 
   function openUpdateMarksModal(btn) {
     const d = btn ? btn.dataset : {};
