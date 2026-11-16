@@ -74,7 +74,7 @@ def teacher_dashboard(request):
 
     context = {
         "page_title": "Class Home",
-        "active_role": _active_role(request),
+        "active_role": "TEACHER",
         "kpis": {"total_students": 0, "avg_attendance": 0.0, "avg_marks": 0.0, "at_risk_count": 0, "courses_count": 0},
         "chart_data": {"course_summary": {"labels": [], "attendance": [], "marks": []}, "badge_breakdown": {"labels": ["Excellent", "Stable", "Needs Help", "High Risk"], "counts": [0, 0, 0, 0]}},
         "at_risk_headers": ["Student ID", "Name", "Course", "Attendance", "Marks", "Status", "Actions"],
@@ -122,7 +122,7 @@ def teacher_students(request):
 
     return render(request, "panels/teacher_students.html", {
         "page_title": "Student List",
-        "active_role": _active_role(request),
+        "active_role": "TEACHER",
         "filter_options": data["filter_options"],
         "selected_filters": {"batch": batch_f, "course_code": course_f, "course": course_f, "status": status_f},
         "student_headers": data["student_headers"],
@@ -133,6 +133,15 @@ def teacher_students(request):
 
 @role_required(["TEACHER", "ADMIN"])
 def teacher_ingest(request):
+    if request.GET.get("template") == "csv":
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="edupredict_marks_template.csv"'
+        writer = csv.writer(response)
+        writer.writerow(["student_id", "full_name", "course_code", "marks", "attendance"])
+        writer.writerow(["STD-2026-001", "Ayesha Khan", "CS-101", "85", "90"])
+        writer.writerow(["STD-2026-002", "Bilal Ahmed", "CS-101", "72", "80"])
+        return response
+
     if request.method == "POST":
         try:
             if not _handle_common_post(request):
@@ -165,7 +174,7 @@ def teacher_ingest(request):
 
     return render(request, "panels/teacher_ingest.html", {
         "page_title": "Upload Marks",
-        "active_role": _active_role(request),
+        "active_role": "TEACHER",
         **data,
         "db_error": db_error,
     })

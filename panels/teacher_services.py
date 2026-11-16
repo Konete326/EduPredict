@@ -247,12 +247,14 @@ def _load_teacher_ingest_context():
 
     course_codes = {str(c.get("course_code") or "").strip().upper() for c in courses_col().find({}, {"_id": 0, "course_code": 1}) if c.get("course_code")}
     course_codes.update(s["course_code"] for s in students if s["course_code"])
+    students_picker = [{"student_id": s["student_id"], "full_name": s["full_name"], "course_code": s["course_code"]} for s in students]
     return {
         "roster_headers": roster_headers,
         "roster_rows": roster_rows,
         "log_headers": log_headers,
         "log_rows": log_rows,
         "courses_list": sorted(course_codes) or ["CS-101"],
+        "students_picker": students_picker,
         "required_columns": REQUIRED_COLUMNS,
     }
 
@@ -265,24 +267,21 @@ def update_student_record_inline(post_data):
     sid = str(post_data.get("student_id") or "").strip().upper()
     if len(sid) < 2:
         return None, "Student ID is required."
-    full_name = str(post_data.get("full_name") or post_data.get("name") or f"Student {sid}").strip() or f"Student {sid}"
-    batch = str(post_data.get("batch") or "2026-A").strip() or "2026-A"
-    course_code = str(post_data.get("course_code") or "CS-101").strip().upper() or "CS-101"
+    existing = student_records_col().find_one({"student_id": sid}, {"_id": 0}) or {}
+    full_name = str(post_data.get("full_name") or post_data.get("name") or existing.get("full_name") or f"Student {sid}").strip()
+    batch = str(post_data.get("batch") or existing.get("batch") or "2026-A").strip()
+    course_code = str(post_data.get("course_code") or existing.get("course_code") or "CS-101").strip().upper()
 
     try:
-        raw_att = post_data.get("attendance_pct") if post_data.get("attendance_pct") not in (None, "") else post_data.get("attendance_rate")
-        raw_marks = post_data.get("internal_marks") if post_data.get("internal_marks") not in (None, "") else post_data.get("marks")
-        if raw_att is None or raw_marks is None:
-            raw_marks = post_data.get("final_score") or post_data.get("midterm_score")
-        if raw_att is None or raw_marks is None:
-            return None, "Please enter valid numeric values for marks, attendance, and GPA."
+        raw_att = post_data.get("attendance_pct") if post_data.get("attendance_pct") not in (None, "") else (post_data.get("attendance") or post_data.get("att") or post_data.get("attendance_rate") or existing.get("attendance_pct") or 80.0)
+        raw_marks = post_data.get("internal_marks") if post_data.get("internal_marks") not in (None, "") else (post_data.get("marks") or post_data.get("score") or post_data.get("final_score") or existing.get("internal_marks") or 70.0)
         att = max(0.0, min(100.0, float(raw_att)))
         marks = max(0.0, min(100.0, float(raw_marks)))
-        assign = max(0.0, min(100.0, float(post_data.get("assignment_score") or marks)))
-        lms = max(0.0, min(168.0, float(post_data.get("lms_hours_weekly") or 8.0)))
-        gpa = max(0.0, min(4.0, float(post_data.get("previous_gpa") or post_data.get("gpa") or 3.0)))
+        assign = max(0.0, min(100.0, float(post_data.get("assignment_score") or existing.get("assignment_score") or marks)))
+        lms = max(0.0, min(168.0, float(post_data.get("lms_hours_weekly") or existing.get("lms_hours_weekly") or 8.0)))
+        gpa = max(0.0, min(4.0, float(post_data.get("previous_gpa") or post_data.get("gpa") or existing.get("previous_gpa") or 3.0)))
     except (TypeError, ValueError):
-        return None, "Please enter valid numeric values for marks, attendance, and GPA."
+        return None, "Please enter valid numeric values for marks and attendance."
 
     doc = {
         "student_id": sid, "full_name": full_name, "batch": batch, "course_code": course_code,

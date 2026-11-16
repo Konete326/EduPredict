@@ -4,10 +4,7 @@ import pandas as pd
 from pymongo import UpdateOne
 from core.db import datasets_log_col, ensure_indexes, student_records_col
 
-REQUIRED_COLUMNS = (
-    "student_id", "attendance_pct", "internal_marks",
-    "lms_hours_weekly", "previous_gpa", "course_code",
-)
+REQUIRED_COLUMNS = ("student_id",)
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 NUMERIC_COLUMNS = (
     "attendance_pct", "internal_marks", "assignment_score",
@@ -21,6 +18,42 @@ NUMERIC_DEFAULTS = {
 CATEGORICAL_DEFAULTS = {
     "batch": "2026-A", "course_code": "CS-101", "full_name": "Unknown Student",
 }
+COLUMN_ALIASES = {
+    "marks": "internal_marks",
+    "mark": "internal_marks",
+    "score": "internal_marks",
+    "internal_mark": "internal_marks",
+    "total_marks": "internal_marks",
+    "obtained_marks": "internal_marks",
+    "class_marks": "internal_marks",
+    "exam_marks": "internal_marks",
+    "attendance": "attendance_pct",
+    "att": "attendance_pct",
+    "attendance_rate": "attendance_pct",
+    "attendance_percentage": "attendance_pct",
+    "roll_no": "student_id",
+    "roll_number": "student_id",
+    "id": "student_id",
+    "std_id": "student_id",
+    "student": "student_id",
+    "student_id_number": "student_id",
+    "name": "full_name",
+    "student_name": "full_name",
+    "course": "course_code",
+    "course_id": "course_code",
+    "subject": "course_code",
+    "class": "course_code",
+    "batch_name": "batch",
+    "section": "batch",
+    "assignment": "assignment_score",
+    "assignments": "assignment_score",
+    "lms_hours": "lms_hours_weekly",
+    "study_hours": "lms_hours_weekly",
+    "hours": "lms_hours_weekly",
+    "gpa": "previous_gpa",
+    "prev_gpa": "previous_gpa",
+    "cgpa": "previous_gpa",
+}
 FIRST_NAMES = (
     "Ayesha", "Bilal", "Zainab", "Hamza", "Fatima", "Usman", "Hira", "Saad",
     "Mariam", "Omar", "Sana", "Tariq", "Noor", "Imran", "Amina", "Danish",
@@ -33,8 +66,8 @@ LAST_NAMES = (
 
 
 def _normalize_column_name(col):
-    name = str(col).strip().lower().replace(" ", "_")
-    return "lms_hours_weekly" if name == "lms_hours" else name
+    name = str(col).strip().lower().replace(" ", "_").replace("-", "_").replace(".", "_")
+    return COLUMN_ALIASES.get(name, name)
 
 
 def validate_dataset_columns(columns):
@@ -167,12 +200,30 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload"):
     if df.empty:
         return _failed_result(filename, uploaded_by, "No valid rows found after checking student_id.")
 
+    existing_info = {}
+    try:
+        sids = [str(x).strip() for x in df["student_id"].tolist() if str(x).strip()]
+        for rec in student_records_col().find({"student_id": {"$in": sids}}, {"_id": 0, "student_id": 1, "full_name": 1, "course_code": 1, "batch": 1}):
+            existing_info[rec["student_id"]] = rec
+    except Exception:
+        pass
+
     if "full_name" not in df.columns:
-        df["full_name"] = "Student " + df["student_id"].astype(str)
+        df["full_name"] = df["student_id"].apply(lambda s: existing_info.get(s, {}).get("full_name") or f"Student {s}")
     if "batch" not in df.columns:
-        df["batch"] = CATEGORICAL_DEFAULTS["batch"]
+        df["batch"] = df["student_id"].apply(lambda s: existing_info.get(s, {}).get("batch") or CATEGORICAL_DEFAULTS["batch"])
+    if "course_code" not in df.columns:
+        df["course_code"] = df["student_id"].apply(lambda s: existing_info.get(s, {}).get("course_code") or CATEGORICAL_DEFAULTS["course_code"])
+    if "attendance_pct" not in df.columns:
+        df["attendance_pct"] = NUMERIC_DEFAULTS["attendance_pct"]
+    if "internal_marks" not in df.columns:
+        df["internal_marks"] = NUMERIC_DEFAULTS["internal_marks"]
     if "assignment_score" not in df.columns:
-        df["assignment_score"] = NUMERIC_DEFAULTS["assignment_score"]
+        df["assignment_score"] = df["internal_marks"]
+    if "lms_hours_weekly" not in df.columns:
+        df["lms_hours_weekly"] = NUMERIC_DEFAULTS["lms_hours_weekly"]
+    if "previous_gpa" not in df.columns:
+        df["previous_gpa"] = NUMERIC_DEFAULTS["previous_gpa"]
 
     for col in CATEGORICAL_COLUMNS:
         df[col] = _clean_categorical_series(df[col])
