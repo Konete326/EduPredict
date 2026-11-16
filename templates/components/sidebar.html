@@ -1,0 +1,123 @@
+<div id="mobile-sidebar-backdrop" class="fixed inset-0 z-40 hidden bg-[var(--bg-overlay)] backdrop-blur-sm lg:hidden" aria-hidden="true"></div>
+
+<aside id="mobile-sidebar-drawer" class="fixed inset-y-0 left-0 z-40 lg:z-30 flex w-64 -translate-x-full lg:translate-x-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-transform duration-200 ease-out" aria-label="Primary Sidebar">
+  <div class="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4">
+    <a href="/" class="flex items-center gap-2.5 min-w-0">
+      <i class="fa-solid fa-graduation-cap text-lg text-[var(--accent-primary)] shrink-0"></i>
+      <span class="truncate text-base font-semibold tracking-tight text-[var(--text-primary)]">EduPredict</span>
+      <span class="shrink-0 rounded border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-primary)]">
+        {{ active_role|default:"Preview" }}
+      </span>
+    </a>
+    <button id="mobile-sidebar-close" type="button" class="lg:hidden rounded-md p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]" aria-label="Close navigation menu">
+      <i class="fa-solid fa-xmark text-base"></i>
+    </button>
+  </div>
+
+  <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+    {% if active_role == 'ADMIN' or not active_role %}
+    <div class="space-y-1">
+      <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Administration</p>
+      <a href="{% url 'panels:admin_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <i class="fa-solid fa-gauge-high w-4 text-center shrink-0"></i>
+        <span class="truncate">Admin Overview</span>
+      </a>
+      <a href="{% url 'panels:admin_users' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_users' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <i class="fa-solid fa-users w-4 text-center shrink-0"></i>
+        <span class="truncate">User Management</span>
+      </a>
+      <a href="{% url 'panels:admin_courses' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_courses' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <i class="fa-solid fa-book-open w-4 text-center shrink-0"></i>
+        <span class="truncate">Courses &amp; Batches</span>
+      </a>
+      <a href="{% url 'panels:admin_tickets' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_tickets' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <i class="fa-solid fa-life-ring w-4 text-center shrink-0"></i>
+        <span class="truncate">Support Tickets</span>
+      </a>
+    </div>
+    {% endif %}
+
+    {% if active_role == 'TEACHER' or not active_role %}
+    <div class="space-y-1">
+      <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Faculty</p>
+      <a href="{% url 'panels:teacher_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:teacher_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <i class="fa-solid fa-chalkboard-user w-4 text-center shrink-0"></i>
+        <span class="truncate">Class Overview</span>
+      </a>
+      <a href="{% url 'panels:teacher_students' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:teacher_students' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <i class="fa-solid fa-user-graduate w-4 text-center shrink-0"></i>
+        <span class="truncate">Student Tracker</span>
+      </a>
+      <a href="{% url 'panels:teacher_ingest' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:teacher_ingest' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <i class="fa-solid fa-file-arrow-up w-4 text-center shrink-0"></i>
+        <span class="truncate">Data Ingestion</span>
+      </a>
+    </div>
+    {% endif %}
+
+    {% if active_role == 'STUDENT' or not active_role %}
+    <div class="space-y-1">
+      <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Student</p>
+      <a href="{% url 'panels:student_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <i class="fa-solid fa-graduation-cap w-4 text-center shrink-0"></i>
+        <span class="truncate">Learning Dashboard</span>
+      </a>
+      <a href="{% url 'panels:student_report' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_report' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <i class="fa-solid fa-file-lines w-4 text-center shrink-0"></i>
+        <span class="truncate">Report Card</span>
+      </a>
+    </div>
+    {% endif %}
+
+    {% if active_role == 'ANALYST' or not active_role %}
+    <div class="space-y-1">
+      <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Data &amp; ML</p>
+      <a href="{% url 'panels:analyst_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:analyst_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <i class="fa-solid fa-chart-line w-4 text-center shrink-0"></i>
+        <span class="truncate">Analytics Hub</span>
+      </a>
+      <a href="{% url 'analytics:upload_dataset' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'analytics:upload_dataset' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <i class="fa-solid fa-database w-4 text-center shrink-0"></i>
+        <span class="truncate">Upload Dataset</span>
+      </a>
+      <a href="{% url 'analytics:run_predictions' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'analytics:run_predictions' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <i class="fa-solid fa-microchip w-4 text-center shrink-0"></i>
+        <span class="truncate">Run Predictions</span>
+      </a>
+    </div>
+    {% endif %}
+
+    {% if not active_role %}
+    <div class="space-y-1">
+      <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Account</p>
+      <a href="{% url 'accounts:auth_view' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'accounts:auth_view' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <i class="fa-solid fa-right-to-bracket w-4 text-center shrink-0"></i>
+        <span class="truncate">Sign In / Register</span>
+      </a>
+    </div>
+    {% endif %}
+  </nav>
+
+  <div class="shrink-0 border-t border-[var(--border-subtle)] p-3 space-y-2.5">
+    <div class="flex items-center gap-2.5 px-1">
+      <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-xs font-semibold text-[var(--text-primary)]">
+        {{ current_user.full_name|default:"EP"|slice:":2"|upper }}
+      </div>
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-xs font-medium text-[var(--text-primary)]">{{ current_user.full_name|default:"EduPredict Preview" }}</p>
+        <p class="truncate text-[11px] text-[var(--text-muted)]">{{ current_user.email|default:"portal@edupredict.edu" }}</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2">
+      <button type="button" onclick="openFormModal({ title: 'Support & Feedback', actionUrl: '#', previewMessage: 'Support ticket submitted (Phase 1 preview).', fields: [{ name: 'subject', label: 'Subject', type: 'text', placeholder: 'Brief summary', required: true }, { name: 'message', label: 'Details', type: 'textarea', placeholder: 'Describe your question or bug...', required: true }] })" class="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+        <i class="fa-solid fa-headset text-[11px]"></i>
+        <span>Support</span>
+      </button>
+      <button type="button" onclick="openConfirmModal({ title: 'Confirm Logout', message: 'Are you sure you want to sign out?', onConfirmUrl: '{% url 'accounts:logout_view' %}' })" class="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-xs font-medium text-[var(--status-danger)] hover:bg-[var(--bg-elevated)] transition-colors">
+        <i class="fa-solid fa-arrow-right-from-bracket text-[11px]"></i>
+        <span>Logout</span>
+      </button>
+    </div>
+  </div>
+</aside>

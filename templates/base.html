@@ -1,0 +1,148 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ page_title|default:"EduPredict" }} | EduPredict{% endblock %}</title>
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('edupredict_theme') === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace']
+          },
+          zIndex: {
+            60: '60'
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="{% static 'css/global.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased">
+  {% include 'components/sidebar.html' %}
+
+  <div class="lg:pl-64 min-h-screen flex flex-col">
+    {% include 'components/topbar.html' %}
+
+    <main class="flex-1">
+      <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        {% block content %}
+        <section class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[var(--accent-primary)]">
+                <i class="fa-solid fa-layer-group text-[11px]"></i>
+                <span>Phase 1 Shell</span>
+              </span>
+              <span class="text-xs font-mono text-[var(--text-muted)]">{{ active_role|default:"ALL ROLES PREVIEW" }}</span>
+            </div>
+            <h2 class="text-lg font-semibold tracking-tight text-[var(--text-primary)]">{{ page_title|default:"EduPredict Workspace" }}</h2>
+            <p class="text-sm text-[var(--text-secondary)]">Unified App-Shell-3 layout with Light/Dark tokens, responsive navigation, global modals, and theme-aware Chart.js integration.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="openFormModal({ title: 'Quick Student Record Preview', actionUrl: '#', previewMessage: 'Sample record validated in Phase 1 preview.', fields: [{ name: 'student_id', label: 'Student ID', type: 'text', placeholder: 'STD-2026-01', required: true }, { name: 'attendance_pct', label: 'Attendance %', type: 'number', placeholder: '91', required: true }] })" class="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+              <i class="fa-solid fa-plus text-xs"></i>
+              <span>Form Modal</span>
+            </button>
+            <button type="button" onclick="openConfirmModal({ title: 'Confirm Action Preview', message: 'This tests the global confirmation dialog without using browser popups.', onConfirmUrl: '{% url 'accounts:logout_view' %}' })" class="inline-flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+              <i class="fa-solid fa-shield-halved text-xs text-[var(--status-danger)]"></i>
+              <span>Confirm Modal</span>
+            </button>
+            <button type="button" onclick="showToast('Theme-aware global toast notification active.', 'success')" class="inline-flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+              <i class="fa-solid fa-bell text-xs text-[var(--status-success)]"></i>
+              <span>Test Toast</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {% include 'components/metric_card.html' with title="Attendance Rate" value="91.4%" badge="+3.2% this month" status="success" icon="fa-solid fa-calendar-check" %}
+          {% include 'components/metric_card.html' with title="Active Learners" value="1,284" badge="4 academic batches" status="info" icon="fa-solid fa-user-graduate" %}
+          {% include 'components/metric_card.html' with title="Medium Risk Alerts" value="38" badge="Needs follow-up" status="warning" icon="fa-solid fa-triangle-exclamation" %}
+          {% include 'components/metric_card.html' with title="High Dropout Risk" value="14" badge="ML anomaly flagged" status="danger" icon="fa-solid fa-circle-exclamation" %}
+        </section>
+
+        <section class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 lg:col-span-2">
+            <div class="mb-4 flex items-center justify-between gap-2">
+              <div>
+                <h3 class="text-sm font-semibold text-[var(--text-primary)]">Attendance &amp; Predicted Readiness Trend</h3>
+                <p class="text-xs text-[var(--text-muted)]">Adapts automatically when switching between Light and Dark themes</p>
+              </div>
+              <span class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-xs font-mono text-[var(--text-secondary)]">Chart.js v4</span>
+            </div>
+            <div class="relative h-64 w-full">
+              <canvas id="shell-preview-chart"></canvas>
+            </div>
+          </div>
+
+          <div class="flex flex-col justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 space-y-4">
+            <div class="space-y-3">
+              <h3 class="text-sm font-semibold text-[var(--text-primary)]">Component Verification</h3>
+              <p class="text-xs leading-relaxed text-[var(--text-secondary)]">Verify theme tokens, toast severities, and responsive z-index layers before starting Phase 2.</p>
+              <div class="space-y-2 pt-1">
+                <button type="button" onclick="showToast('Info: Dataset schema validation ready.', 'info')" class="flex w-full items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">
+                  <span>Trigger Info Toast</span>
+                  <i class="fa-solid fa-circle-info text-[var(--accent-primary)]"></i>
+                </button>
+                <button type="button" onclick="showToast('Warning: Attendance dropped below 75% threshold.', 'warning')" class="flex w-full items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">
+                  <span>Trigger Warning Toast</span>
+                  <i class="fa-solid fa-triangle-exclamation text-[var(--status-warning)]"></i>
+                </button>
+                <button type="button" onclick="showToast('Danger: High dropout anomaly detected.', 'danger')" class="flex w-full items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">
+                  <span>Trigger Danger Toast</span>
+                  <i class="fa-solid fa-circle-exclamation text-[var(--status-danger)]"></i>
+                </button>
+              </div>
+            </div>
+            <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 text-xs text-[var(--text-secondary)]">
+              <span class="font-semibold text-[var(--text-primary)]">Storage Status:</span>
+              {% if db_connected %}
+              <span class="text-[var(--status-success)] font-medium">MongoDB Atlas connected</span>
+              {% else %}
+              <span class="text-[var(--status-warning)] font-medium">Offline / placeholder URI mode</span>
+              {% endif %}
+            </div>
+          </div>
+        </section>
+
+        <section>
+          {% include 'components/data_table.html' with table_id="shell-preview-table" table_title="Student Risk & Prediction Feed" headers=sample_headers rows=sample_rows empty_message="No MongoDB records loaded in Phase 1 shell preview. Live student records will populate in Phases 2-6." %}
+        </section>
+        {% endblock %}
+      </div>
+    </main>
+  </div>
+
+  {% include 'components/confirm_modal.html' %}
+  {% include 'components/form_modal.html' %}
+  {% include 'components/toast.html' %}
+
+  <script src="{% static 'js/app.js' %}"></script>
+  <script src="{% static 'js/charts.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

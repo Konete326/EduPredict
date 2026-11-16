@@ -1,0 +1,25 @@
+<div id="toast-container" class="fixed bottom-4 right-4 left-4 sm:left-auto z-60 flex sm:w-full sm:max-w-sm flex-col gap-2.5 pointer-events-none" aria-live="polite" aria-atomic="true">
+  {% if messages %}
+    {% for message in messages %}
+    <div data-toast role="alert" class="toast-enter pointer-events-auto flex items-start gap-3 rounded-lg border border-[var(--border-subtle)] border-l-4 bg-[var(--bg-surface)] px-4 py-3 shadow-lg {% if 'success' in message.tags %}border-l-[var(--status-success)]{% elif 'warning' in message.tags %}border-l-[var(--status-warning)]{% elif 'error' in message.tags or 'danger' in message.tags %}border-l-[var(--status-danger)]{% else %}border-l-[var(--accent-primary)]{% endif %}">
+      <span class="mt-0.5 shrink-0 {% if 'success' in message.tags %}text-[var(--status-success)]{% elif 'warning' in message.tags %}text-[var(--status-warning)]{% elif 'error' in message.tags or 'danger' in message.tags %}text-[var(--status-danger)]{% else %}text-[var(--accent-primary)]{% endif %}" aria-hidden="true">
+        {% if 'success' in message.tags %}
+        <i class="fa-solid fa-circle-check text-base"></i>
+        {% elif 'warning' in message.tags %}
+        <i class="fa-solid fa-triangle-exclamation text-base"></i>
+        {% elif 'error' in message.tags or 'danger' in message.tags %}
+        <i class="fa-solid fa-circle-exclamation text-base"></i>
+        {% else %}
+        <i class="fa-solid fa-circle-info text-base"></i>
+        {% endif %}
+      </span>
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-medium leading-snug text-[var(--text-primary)]">{{ message }}</p>
+      </div>
+      <button type="button" onclick="this.closest('[data-toast]').remove()" aria-label="Dismiss notification" class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <i class="fa-solid fa-xmark text-xs"></i>
+      </button>
+    </div>
+    {% endfor %}
+  {% endif %}
+</div>

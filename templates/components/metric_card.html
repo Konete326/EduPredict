@@ -1,0 +1,24 @@
+<div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 transition-colors">
+  <div class="flex items-center justify-between gap-3">
+    <p class="truncate text-sm font-medium text-[var(--text-muted)]">{{ title }}</p>
+    {% if icon %}
+    <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-xs {% if status == 'success' %}text-[var(--status-success)]{% elif status == 'warning' %}text-[var(--status-warning)]{% elif status == 'danger' or status == 'error' %}text-[var(--status-danger)]{% else %}text-[var(--accent-primary)]{% endif %}" aria-hidden="true">
+      <i class="{{ icon }}"></i>
+    </span>
+    {% endif %}
+  </div>
+  <div class="mt-3 flex items-baseline justify-between gap-2">
+    <p class="tabular-nums text-2xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-3xl">{{ value }}</p>
+  </div>
+  {% if badge %}
+  <div class="mt-3 flex items-center gap-2">
+    <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
+      <span class="h-1.5 w-1.5 rounded-full {% if status == 'success' %}bg-[var(--status-success)]{% elif status == 'warning' %}bg-[var(--status-warning)]{% elif status == 'danger' or status == 'error' %}bg-[var(--status-danger)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span>
+      <span>{{ badge }}</span>
+    </span>
+  </div>
+  {% endif %}
+  {% if subtitle %}
+  <p class="mt-2 text-xs text-[var(--text-muted)]">{{ subtitle }}</p>
+  {% endif %}
+</div>
