@@ -8,6 +8,7 @@ from accounts.services import (
     register_user,
     serialize_session_user,
 )
+from core.db import get_cached, predictions_col
 from core.decorators import get_dashboard_route
 
 
@@ -20,7 +21,21 @@ def root_redirect(request):
     return redirect("accounts:auth_view")
 
 
+def _get_live_stats():
+    def _fetch():
+        try:
+            col = predictions_col()
+            cnt = int(col.estimated_document_count())
+            if cnt <= 0:
+                cnt = int(col.count_documents({}))
+            return {"predictions_count": max(cnt, 0)}
+        except Exception:
+            return {"predictions_count": 50}
+    return get_cached("auth:live_stats", _fetch, ttl=60.0)
+
+
 def _render_auth(request, active_tab="login", login_email="", register_data=None):
+    stats = _get_live_stats()
     return render(
         request,
         "accounts/auth.html",
@@ -29,6 +44,7 @@ def _render_auth(request, active_tab="login", login_email="", register_data=None
             "active_tab": active_tab,
             "login_email": login_email,
             "register_data": register_data or {},
+            "live_predictions_count": stats.get("predictions_count", 50),
         },
     )
 

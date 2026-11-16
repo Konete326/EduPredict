@@ -1,30 +1,19 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
-  <div class="min-w-0 space-y-2">
-    <div class="flex flex-wrap items-center gap-2">
-      <a href="{% url 'panels:admin_dashboard' %}" title="Admin Dashboard" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-gauge-high"></i>
-        <span>Dashboard</span>
-      </a>
-      <a href="{% url 'panels:admin_users' %}" title="Manage users and roles" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-users"></i>
-        <span>Users</span>
-      </a>
-      <a href="{% url 'panels:admin_courses' %}" title="Manage courses and batches" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-primary)]">
-        <i class="fa-solid fa-book-open"></i>
-        <span>Courses</span>
-      </a>
-      <a href="{% url 'panels:admin_tickets' %}" title="View and close help tickets" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-life-ring"></i>
-        <span>Help Tickets</span>
-      </a>
+<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
+  <div class="min-w-0 space-y-1">
+    <div class="flex items-center gap-2">
+      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">
+        <i class="fa-solid fa-book-open text-xs"></i>
+        <span>Academic Catalog</span>
+      </span>
     </div>
-    <p class="text-xs text-[var(--text-secondary)]">Add, edit, or delete courses, teachers, and class seat limits.</p>
+    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Course Directory</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Create courses, assign teachers, set batches, and monitor seat capacities.</p>
   </div>
-  <button type="button" onclick="openCreateCourseModal()" title="Add a new course" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-    <i class="fa-solid fa-plus"></i>
+  <button type="button" onclick="openCreateCourseModal()" title="Add a new course" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+    <i class="fa-solid fa-plus text-xs"></i>
     <span>Add Course</span>
   </button>
 </section>

@@ -19,8 +19,8 @@
   }
   function applyGroupState(key, expanded) {
     const btn = document.querySelector('[data-nav-group-toggle="' + key + '"]');
-    const items = document.querySelector('[data-nav-group-items="' + key + '"]');
-    const chevron = btn ? btn.querySelector('[data-nav-chevron]') : null;
+    const items = document.querySelector('[data-nav-group-body="' + key + '"], [data-nav-group-items="' + key + '"]');
+    const chevron = btn ? btn.querySelector('.nav-group-chevron, [data-nav-chevron]') : null;
     if (btn) btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
     if (items) items.classList.toggle('hidden', !expanded);
     if (chevron) chevron.classList.toggle('-rotate-90', !expanded);

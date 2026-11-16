@@ -63,7 +63,7 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 ```yaml
 last_updated_by_agent: "Coordinator & Senior Full-Stack Architect (@coordinator)"
 active_branch_merged_to_main: "feature/auth-rbac -> main"
-project_phase: "Astryx Design System Evaluation & Split Login (login-split) Template Implemented in Django MVT"
+project_phase: "Live Prediction Count Badge & Caps-Lock Warning Implemented & Verified on Split Login (auth.html)"
 
 completed_modules:
   - "Phase 1: Django Project Init, Core MongoDB Layer & App-Shell-3 Layout (core/, templates/components/, static/)"
@@ -74,17 +74,18 @@ completed_modules:
   - "Astryx Integration & Split-Login Template (templates/accounts/auth.html):"
       - "Executed npx @astryxdesign/cli init --features agents generating AGENTS.md and GEMINI.md reference files."
       - "Evaluated Astryx tokens, themes (Neutral, Butter, Chocolate, Gothic, Matcha, Stone, Y2K), and component patterns."
-      - "Clarified MCP vs CLI architecture: Astryx CLI is a terminal tool and does NOT require an MCP connection."
-      - "Clarified Technology Stack Lock: Astryx React components (@astryxdesign/core) are built for React 19/Next.js/StyleX, while EduPredict is 100% Python Django MVT. Rather than breaking Django with React dependencies, Astryx's design tokens and login-split template layout were faithfully mapped into Django + Tailwind CSS + CSS custom properties."
       - "Redesigned auth.html using Astryx's login-split template: left column features brand showcase, ML highlights, and live MongoDB status; right column hosts clean sign-in and account registration forms with password eye toggles and 1-click default admin button."
+  - "Actionable Improvements (auth.html & accounts/views.py):"
+      - "Problem 1 Fixed: In accounts/views.py, added _get_live_stats() with short-TTL caching (get_cached) to read live predictions document count from MongoDB predictions_col(). Displayed dynamic '{{ live_predictions_count }}+ Active Predictions' badge in the split login showcase pane."
+      - "Problem 2 Fixed: Attached lightweight keyup/keydown Caps-Lock listener (initCapsLockListeners) to both login and registration password fields. Warns user with a subtle amber 'Caps' pill icon whenever Caps Lock is active, preventing accidental authentication failures."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "Auth view check: GET /auth/ renders Astryx login-split layout with HTTP 200."
-  - "File limits & zero comments: auth.html is 272 lines (< 350 cap) with 0 comments."
+  - "Auth view check: GET /auth/ renders live predictions badge and caps lock warning targets with HTTP 200."
+  - "File limits & zero comments: auth.html is 310 lines (< 350 cap) and accounts/views.py is 176 lines with 0 comments."
 
 active_routes_and_files:
-  - "/auth/ -> accounts:auth_view (Astryx login-split layout)"
+  - "/auth/ -> accounts:auth_view (Astryx login-split layout with live prediction count & Caps-Lock warning)"
   - "/admin-panel/* -> panels:views_admin.py (Admin only sees Admin sidebar)"
   - "/teacher-panel/* -> panels:views_teacher.py (Teacher only sees Teacher sidebar)"
   - "/student-panel/* -> panels:views_student.py (Student only sees Student sidebar)"

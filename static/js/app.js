@@ -35,7 +35,7 @@
   function setModalOpen(modal, open) {
     if (!modal) return;
     modal.classList.toggle('hidden', !open);
-    if (modal.classList.contains('items-center') || modal.classList.contains('justify-center')) modal.classList.toggle('flex', open);
+    modal.classList.toggle('flex', open);
     modal.setAttribute('aria-hidden', open ? 'false' : 'true');
     syncBodyScrollLock();
   }
@@ -183,11 +183,14 @@
     if (byId('theme-toggle-label')) byId('theme-toggle-label').textContent = isDark ? 'Light' : 'Dark';
   }
   function toggleTheme() {
-    const nextTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
-    document.documentElement.classList.toggle('dark', nextTheme === 'dark');
+    const doc = document.documentElement;
+    doc.classList.add('theme-transitioning');
+    const nextTheme = doc.classList.contains('dark') ? 'light' : 'dark';
+    doc.classList.toggle('dark', nextTheme === 'dark');
     try { localStorage.setItem(THEME_KEY, nextTheme); } catch (e) {}
     syncThemeButton();
     window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: nextTheme } }));
+    setTimeout(() => doc.classList.remove('theme-transitioning'), 260);
   }
   function closeNotificationDropdown() {
     if (byId('notification-dropdown')) byId('notification-dropdown').classList.add('hidden');
