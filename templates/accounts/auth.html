@@ -35,133 +35,192 @@
     };
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=5">
+  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=6">
 </head>
-<body class="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased">
-  <header class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 sm:px-6 lg:px-8">
-    <a href="{% url 'accounts:auth_view' %}" class="flex items-center gap-2.5 min-w-0">
-      <i class="fa-solid fa-graduation-cap text-xl text-[var(--accent-primary)] shrink-0" aria-hidden="true"></i>
-      <span class="text-base font-semibold tracking-tight text-[var(--text-primary)]">EduPredict</span>
-      <span class="hidden sm:inline rounded border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-primary)]">Analytics Portal</span>
-    </a>
-    <div class="flex items-center gap-2.5">
-      <div class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)]">
-        <span class="h-2 w-2 rounded-full {% if db_connected %}bg-[var(--status-success)]{% else %}bg-[var(--status-warning)]{% endif %}"></span>
-        <span class="hidden sm:inline">{% if db_connected %}Atlas Connected{% else %}DB Offline{% endif %}</span>
-      </div>
-      <button id="theme-toggle-btn" type="button" aria-pressed="false" aria-label="Toggle Light and Dark Theme" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
-        <i id="theme-icon-moon" class="fa-solid fa-moon text-sm"></i>
-        <i id="theme-icon-sun" class="fa-solid fa-sun hidden text-sm text-[var(--status-warning)]"></i>
-        <span id="theme-toggle-label" class="hidden sm:inline">Dark</span>
-      </button>
-    </div>
-  </header>
+<body class="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased">
+  <div class="min-h-screen grid grid-cols-1 lg:grid-cols-12">
+    <aside class="hidden lg:flex lg:col-span-5 xl:col-span-5 flex-col justify-between border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] p-8 xl:p-12">
+      <div class="space-y-8">
+        <a href="{% url 'accounts:auth_view' %}" class="flex items-center gap-2.5 min-w-0">
+          <i class="fa-solid fa-graduation-cap text-2xl text-[var(--accent-primary)] shrink-0" aria-hidden="true"></i>
+          <span class="text-lg font-bold tracking-tight text-[var(--text-primary)]">EduPredict</span>
+          <span class="rounded border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-primary)]">Intelligence</span>
+        </a>
 
-  <main class="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
-    {% with current_tab=active_tab|default:"login" %}
-    <div class="w-full max-w-md space-y-5">
-      <div class="text-center space-y-1.5">
-        <h1 class="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">Welcome to EduPredict</h1>
-        <p class="text-sm text-[var(--text-secondary)]">Predictive academic analytics and role-based learning portal</p>
-      </div>
-
-      <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 shadow-sm space-y-5">
-        <div role="tablist" class="grid grid-cols-2 gap-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-1">
-          <button id="tab-login-btn" type="button" role="tab" aria-selected="{% if current_tab != 'register' %}true{% else %}false{% endif %}" onclick="switchAuthTab('login')" class="rounded-md px-3 py-2 text-sm font-medium transition-colors {% if current_tab != 'register' %}bg-[var(--bg-surface)] text-[var(--accent-primary)] shadow-sm border border-[var(--border-subtle)]{% else %}text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent{% endif %}">
-            Sign In
-          </button>
-          <button id="tab-register-btn" type="button" role="tab" aria-selected="{% if current_tab == 'register' %}true{% else %}false{% endif %}" onclick="switchAuthTab('register')" class="rounded-md px-3 py-2 text-sm font-medium transition-colors {% if current_tab == 'register' %}bg-[var(--bg-surface)] text-[var(--accent-primary)] shadow-sm border border-[var(--border-subtle)]{% else %}text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent{% endif %}">
-            Create Account
-          </button>
+        <div class="space-y-3">
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
+            <span class="h-2 w-2 rounded-full bg-[var(--status-success)]"></span>
+            <span>Astryx Split Layout · Clean Minimal</span>
+          </span>
+          <h2 class="text-3xl font-bold tracking-tight text-[var(--text-primary)]">Predictive Academic Insights</h2>
+          <p class="text-sm leading-relaxed text-[var(--text-secondary)]">Empowering educators and administrators with real-time risk scores, attendance monitoring, and machine-learning intervention triggers.</p>
         </div>
 
-        <form id="panel-login" method="post" action="{% url 'accounts:auth_view' %}" class="space-y-4 {% if current_tab == 'register' %}hidden{% endif %}">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="login">
-          <div class="space-y-1.5">
-            <label for="login-email" class="block text-sm font-medium text-[var(--text-secondary)]">Email Address</label>
-            <input id="login-email" name="email" type="email" autocomplete="email" required value="{{ login_email|default:'' }}" placeholder="you@edupredict.edu" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-          </div>
-          <div class="space-y-1.5">
-            <label for="login-password" class="block text-sm font-medium text-[var(--text-secondary)]">Password</label>
-            <div class="relative">
-              <input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="Enter your password" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] py-2 pl-3 pr-10 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-              <button type="button" onclick="togglePasswordVisibility('login-password', this)" aria-label="Toggle password visibility" class="absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-                <i class="fa-regular fa-eye text-sm"></i>
-              </button>
+        <div class="space-y-3 pt-2">
+          <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 space-y-1">
+            <div class="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
+              <i class="fa-solid fa-brain text-[var(--accent-primary)]"></i>
+              <span>ML Grade Prediction</span>
             </div>
+            <p class="text-xs text-[var(--text-muted)]">Automatic Random Forest regressors forecast student term GPA from attendance and study hours.</p>
           </div>
-          <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-            <i class="fa-solid fa-right-to-bracket text-xs"></i>
-            <span>Sign In</span>
+
+          <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 space-y-1">
+            <div class="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
+              <i class="fa-solid fa-users-gear text-[var(--accent-primary)]"></i>
+              <span>Dedicated Role Portals</span>
+            </div>
+            <p class="text-xs text-[var(--text-muted)]">Isolated navigation workflows tailored specifically for Admins, Teachers, Students, and Data Analysts.</p>
+          </div>
+
+          <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 space-y-1">
+            <div class="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
+              <i class="fa-solid fa-file-arrow-up text-[var(--accent-primary)]"></i>
+              <span>Frictionless Marks Ingestion</span>
+            </div>
+            <p class="text-xs text-[var(--text-muted)]">Simple 3-column CSV upload with instant validation and sample template generation.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-6 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-muted)]">
+        <div class="flex items-center gap-2">
+          <span class="h-2 w-2 rounded-full {% if db_connected %}bg-[var(--status-success)]{% else %}bg-[var(--status-warning)]{% endif %}"></span>
+          <span>{% if db_connected %}Atlas MongoDB Online{% else %}Offline Mode{% endif %}</span>
+        </div>
+        <span>EduPredict v2.0</span>
+      </div>
+    </aside>
+
+    <main class="col-span-12 lg:col-span-7 xl:col-span-7 flex flex-col justify-between p-4 sm:p-8 xl:p-12">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex lg:hidden items-center gap-2">
+          <i class="fa-solid fa-graduation-cap text-xl text-[var(--accent-primary)]"></i>
+          <span class="text-base font-semibold text-[var(--text-primary)]">EduPredict</span>
+        </div>
+        <div class="hidden lg:block"></div>
+        <div class="flex items-center gap-2">
+          <div class="inline-flex lg:hidden items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs text-[var(--text-secondary)]">
+            <span class="h-2 w-2 rounded-full {% if db_connected %}bg-[var(--status-success)]{% else %}bg-[var(--status-warning)]{% endif %}"></span>
+            <span>{% if db_connected %}Connected{% else %}Offline{% endif %}</span>
+          </div>
+          <button id="theme-toggle-btn" type="button" aria-pressed="false" aria-label="Toggle Light and Dark Theme" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+            <i id="theme-icon-moon" class="fa-solid fa-moon text-sm"></i>
+            <i id="theme-icon-sun" class="fa-solid fa-sun hidden text-sm text-[var(--status-warning)]"></i>
+            <span id="theme-toggle-label" class="hidden sm:inline">Dark</span>
           </button>
-          <div class="border-t border-[var(--border-subtle)] pt-3">
-            <button type="button" onclick="fillDefaultAdmin()" class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]">
-              <i class="fa-solid fa-user-shield text-[var(--accent-primary)]"></i>
-              <span>Use Default Admin (admin@gmail.com)</span>
+        </div>
+      </div>
+
+      <div class="w-full max-w-md mx-auto py-8 sm:py-12 space-y-6">
+        {% with current_tab=active_tab|default:"login" %}
+        <div class="space-y-1.5">
+          <h1 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">Welcome back</h1>
+          <p class="text-xs text-[var(--text-secondary)]">Sign in to your account or create a new student or faculty profile.</p>
+        </div>
+
+        <div class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 shadow-sm space-y-5">
+          <div role="tablist" class="grid grid-cols-2 gap-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-1">
+            <button id="tab-login-btn" type="button" role="tab" aria-selected="{% if current_tab != 'register' %}true{% else %}false{% endif %}" onclick="switchAuthTab('login')" class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors {% if current_tab != 'register' %}bg-[var(--bg-surface)] text-[var(--accent-primary)] shadow-sm border border-[var(--border-subtle)]{% else %}text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent{% endif %}">
+              Sign In
+            </button>
+            <button id="tab-register-btn" type="button" role="tab" aria-selected="{% if current_tab == 'register' %}true{% else %}false{% endif %}" onclick="switchAuthTab('register')" class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors {% if current_tab == 'register' %}bg-[var(--bg-surface)] text-[var(--accent-primary)] shadow-sm border border-[var(--border-subtle)]{% else %}text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent{% endif %}">
+              Create Account
             </button>
           </div>
-        </form>
 
-        <form id="panel-register" method="post" action="{% url 'accounts:auth_view' %}" class="space-y-3.5 {% if current_tab != 'register' %}hidden{% endif %}">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="register">
-          <div class="space-y-1">
-            <label for="reg-full-name" class="block text-sm font-medium text-[var(--text-secondary)]">Full Name</label>
-            <input id="reg-full-name" name="full_name" type="text" required value="{{ register_data.full_name|default:'' }}" placeholder="Ayesha Khan" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-          </div>
-          <div class="space-y-1">
-            <label for="reg-email" class="block text-sm font-medium text-[var(--text-secondary)]">Email Address</label>
-            <input id="reg-email" name="email" type="email" required value="{{ register_data.email|default:'' }}" placeholder="ayesha@edupredict.edu" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-          </div>
-          <div class="space-y-1">
-            <label for="reg-role" class="block text-sm font-medium text-[var(--text-secondary)]">Role</label>
-            {% with selected_role=register_data.role|default:"STUDENT"|upper %}
-            <select id="reg-role" name="role" required class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
-              <option value="STUDENT" {% if selected_role == 'STUDENT' %}selected{% endif %}>Student</option>
-              <option value="TEACHER" {% if selected_role == 'TEACHER' %}selected{% endif %}>Teacher</option>
-              <option value="ANALYST" {% if selected_role == 'ANALYST' %}selected{% endif %}>Data Analyst</option>
-              <option value="ADMIN" {% if selected_role == 'ADMIN' %}selected{% endif %}>Administrator</option>
-            </select>
-            {% endwith %}
-          </div>
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <form id="panel-login" method="post" action="{% url 'accounts:auth_view' %}" class="space-y-4 {% if current_tab == 'register' %}hidden{% endif %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="login">
             <div class="space-y-1">
-              <label for="reg-department" class="block text-sm font-medium text-[var(--text-secondary)]">Department</label>
-              <input id="reg-department" name="department" type="text" required value="{{ register_data.department|default:'' }}" placeholder="Computer Science" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+              <label for="login-email" class="block text-xs font-medium text-[var(--text-secondary)]">Email Address</label>
+              <input id="login-email" name="email" type="email" autocomplete="email" required value="{{ login_email|default:'' }}" placeholder="you@edupredict.edu" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
             </div>
             <div class="space-y-1">
-              <label for="reg-batch" class="block text-sm font-medium text-[var(--text-secondary)]">Batch / Term</label>
-              <input id="reg-batch" name="batch" type="text" required value="{{ register_data.batch|default:'' }}" placeholder="2026-A" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-            </div>
-          </div>
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div class="space-y-1">
-              <label for="reg-password" class="block text-sm font-medium text-[var(--text-secondary)]">Password</label>
+              <label for="login-password" class="block text-xs font-medium text-[var(--text-secondary)]">Password</label>
               <div class="relative">
-                <input id="reg-password" name="password" type="password" minlength="6" required placeholder="Min 6 chars" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] py-2 pl-3 pr-9 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-                <button type="button" onclick="togglePasswordVisibility('reg-password', this)" aria-label="Toggle password visibility" class="absolute inset-y-0 right-0 flex items-center px-2.5 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                <input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="Enter password" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] py-2 pl-3 pr-10 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+                <button type="button" onclick="togglePasswordVisibility('login-password', this)" aria-label="Toggle password visibility" class="absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
                   <i class="fa-regular fa-eye text-xs"></i>
                 </button>
               </div>
             </div>
-            <div class="space-y-1">
-              <label for="reg-confirm-password" class="block text-sm font-medium text-[var(--text-secondary)]">Confirm Password</label>
-              <input id="reg-confirm-password" name="confirm_password" type="password" minlength="6" required placeholder="Repeat password" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
+              <i class="fa-solid fa-right-to-bracket text-xs"></i>
+              <span>Sign In</span>
+            </button>
+            <div class="border-t border-[var(--border-subtle)] pt-3">
+              <button type="button" onclick="fillDefaultAdmin()" class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]">
+                <i class="fa-solid fa-user-shield text-[var(--accent-primary)]"></i>
+                <span>Use Default Admin (admin@gmail.com)</span>
+              </button>
             </div>
-          </div>
-          <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-            <i class="fa-solid fa-user-plus text-xs"></i>
-            <span>Create Account</span>
-          </button>
-        </form>
+          </form>
+
+          <form id="panel-register" method="post" action="{% url 'accounts:auth_view' %}" class="space-y-3.5 {% if current_tab != 'register' %}hidden{% endif %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="register">
+            <div class="space-y-1">
+              <label for="reg-full-name" class="block text-xs font-medium text-[var(--text-secondary)]">Full Name</label>
+              <input id="reg-full-name" name="full_name" type="text" required value="{{ register_data.full_name|default:'' }}" placeholder="Ayesha Khan" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+            </div>
+            <div class="space-y-1">
+              <label for="reg-email" class="block text-xs font-medium text-[var(--text-secondary)]">Email Address</label>
+              <input id="reg-email" name="email" type="email" required value="{{ register_data.email|default:'' }}" placeholder="ayesha@edupredict.edu" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+            </div>
+            <div class="space-y-1">
+              <label for="reg-role" class="block text-xs font-medium text-[var(--text-secondary)]">Role</label>
+              {% with selected_role=register_data.role|default:"STUDENT"|upper %}
+              <select id="reg-role" name="role" required class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+                <option value="STUDENT" {% if selected_role == 'STUDENT' %}selected{% endif %}>Student</option>
+                <option value="TEACHER" {% if selected_role == 'TEACHER' %}selected{% endif %}>Teacher</option>
+                <option value="ANALYST" {% if selected_role == 'ANALYST' %}selected{% endif %}>Data Analyst</option>
+                <option value="ADMIN" {% if selected_role == 'ADMIN' %}selected{% endif %}>Administrator</option>
+              </select>
+              {% endwith %}
+            </div>
+            <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <div class="space-y-1">
+                <label for="reg-department" class="block text-xs font-medium text-[var(--text-secondary)]">Department</label>
+                <input id="reg-department" name="department" type="text" required value="{{ register_data.department|default:'' }}" placeholder="Computer Science" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+              </div>
+              <div class="space-y-1">
+                <label for="reg-batch" class="block text-xs font-medium text-[var(--text-secondary)]">Batch / Term</label>
+                <input id="reg-batch" name="batch" type="text" required value="{{ register_data.batch|default:'' }}" placeholder="2026-A" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+              </div>
+            </div>
+            <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <div class="space-y-1">
+                <label for="reg-password" class="block text-xs font-medium text-[var(--text-secondary)]">Password</label>
+                <div class="relative">
+                  <input id="reg-password" name="password" type="password" minlength="6" required placeholder="Min 6 chars" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] py-1.5 pl-3 pr-8 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+                  <button type="button" onclick="togglePasswordVisibility('reg-password', this)" aria-label="Toggle password visibility" class="absolute inset-y-0 right-0 flex items-center px-2 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                    <i class="fa-regular fa-eye text-xs"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="space-y-1">
+                <label for="reg-confirm-password" class="block text-xs font-medium text-[var(--text-secondary)]">Confirm</label>
+                <input id="reg-confirm-password" name="confirm_password" type="password" minlength="6" required placeholder="Repeat password" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+              </div>
+            </div>
+            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
+              <i class="fa-solid fa-user-plus text-xs"></i>
+              <span>Create Account</span>
+            </button>
+          </form>
+        </div>
+        {% endwith %}
       </div>
-    </div>
-    {% endwith %}
-  </main>
+
+      <div class="text-center text-xs text-[var(--text-muted)]">
+        <span>EduPredict Portal &copy; 2026. All rights reserved.</span>
+      </div>
+    </main>
+  </div>
 
   {% include 'components/toast.html' %}
-  <script src="{% static 'js/app.js' %}?v=5"></script>
+  <script src="{% static 'js/app.js' %}?v=6"></script>
   <script>
     function switchAuthTab(tab) {
       const isRegister = tab === 'register';

@@ -62,34 +62,31 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
 last_updated_by_agent: "Coordinator & Senior Full-Stack Architect (@coordinator)"
-active_branch_merged_to_main: "feature/admin-panel -> main"
-project_phase: "Strict Role Navigation Isolation & Ultra-Simple Marks Ingestion 100% Implemented & Verified (Rule 20)"
+active_branch_merged_to_main: "feature/auth-rbac -> main"
+project_phase: "Astryx Design System Evaluation & Split Login (login-split) Template Implemented in Django MVT"
 
 completed_modules:
   - "Phase 1: Django Project Init, Core MongoDB Layer & App-Shell-3 Layout (core/, templates/components/, static/)"
   - "Phase 2: Authentication, Default Admin Sync & Role-Based Routing (accounts/services.py, accounts/views.py, templates/accounts/auth.html)"
   - "Phase 3: Analyst Panel, ML Engine, chunked CSV ingestion, anomaly detection & full-width dashboard"
   - "Phase 4 & 5: Admin Panel (CRUD, 5-row pagination, mobile cards, backups), Teacher Panel, Zero-Lag Caching & SPA Navigation"
-  - "Rule 20 Execution (Strict Role Navigation Isolation & Ultra-Simple Marks Ingestion):"
-      - "Strict Role Sidebar Isolation: In templates/components/sidebar.html, removed cross-role visibility (e.g. active_role == 'ADMIN' rendering inside Teacher/Student/Analyst sections). Now when active_role is ADMIN, only the Admin group renders. When TEACHER, only Teacher renders. When STUDENT, only Student renders. When ANALYST, only Analyst renders. Zero cross-panel clutter."
-      - "Ultra-Simple Marks & Attendance Ingestion: Simplified teacher_ingest.html and analytics/data_pipeline.py. Teachers now have a simple 4-field quick entry widget (Student ID with datalist picker, Name, Course, Marks 0-100, Attendance % 0-100) and an optional collapsed 'More Details' section for secondary attributes. Spreadsheet upload now requires only 3 columns (Student ID, Marks, Attendance) with automatic column synonym normalization (e.g. roll_no, score, att) and sample CSV template download (?template=csv). Existing student names, batch, and courses are preserved when only marks are uploaded."
-      - "Rule Documentation: Persisted Rule 20 across .agents/rules/edupredict-rules.md, .agents/project-rules.md, .agents/design.md, and .agents/skills/edupredict-workflow/SKILL.md."
+  - "Rule 20: Strict Role Navigation Isolation & Ultra-Simple Marks Ingestion verified and merged"
+  - "Astryx Integration & Split-Login Template (templates/accounts/auth.html):"
+      - "Executed npx @astryxdesign/cli init --features agents generating AGENTS.md and GEMINI.md reference files."
+      - "Evaluated Astryx tokens, themes (Neutral, Butter, Chocolate, Gothic, Matcha, Stone, Y2K), and component patterns."
+      - "Clarified MCP vs CLI architecture: Astryx CLI is a terminal tool and does NOT require an MCP connection."
+      - "Clarified Technology Stack Lock: Astryx React components (@astryxdesign/core) are built for React 19/Next.js/StyleX, while EduPredict is 100% Python Django MVT. Rather than breaking Django with React dependencies, Astryx's design tokens and login-split template layout were faithfully mapped into Django + Tailwind CSS + CSS custom properties."
+      - "Redesigned auth.html using Astryx's login-split template: left column features brand showcase, ML highlights, and live MongoDB status; right column hosts clean sign-in and account registration forms with password eye toggles and 1-click default admin button."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "Role isolation verification (verify_role_isolation.py):"
-      - "PASS: Admin panel sidebar strictly isolated (contains data-nav-group='admin', excludes teacher/student/analyst)."
-      - "PASS: Teacher panel sidebar strictly isolated (contains data-nav-group='teacher', excludes admin/student/analyst)."
-      - "PASS: Student panel sidebar strictly isolated (contains data-nav-group='student', excludes admin/teacher/analyst)."
-      - "PASS: Analyst panel sidebar strictly isolated (contains data-nav-group='analyst', excludes admin/teacher/student)."
-      - "PASS: Teacher sample CSV template download verified (text/csv with student_id, marks, attendance)."
-      - "PASS: Simple 3-column CSV upload verified (saved student record with 92.0 marks and 88.0% attendance)."
-  - "File limits & zero comments: All touched files <= 350 lines with 0 comments."
+  - "Auth view check: GET /auth/ renders Astryx login-split layout with HTTP 200."
+  - "File limits & zero comments: auth.html is 272 lines (< 350 cap) with 0 comments."
 
 active_routes_and_files:
+  - "/auth/ -> accounts:auth_view (Astryx login-split layout)"
   - "/admin-panel/* -> panels:views_admin.py (Admin only sees Admin sidebar)"
   - "/teacher-panel/* -> panels:views_teacher.py (Teacher only sees Teacher sidebar)"
-  - "/teacher-panel/ingest/?template=csv -> panels:teacher_ingest (Sample template download)"
   - "/student-panel/* -> panels:views_student.py (Student only sees Student sidebar)"
   - "/analyst-panel/* -> panels:views_analyst.py (Analyst only sees Analyst sidebar)"
 
