@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 sm:p-8">
+  <div class="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
+    <div class="space-y-3 min-w-0">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--accent-primary)]">
+          <i class="fa-solid fa-compass text-[11px]" aria-hidden="true"></i>
+          <span>Error 404</span>
+        </span>
+        <span class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-1 font-mono text-xs text-[var(--text-muted)]">
+          {{ request.path|truncatechars:48 }}
+        </span>
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--text-primary)]">We could not find that page</h2>
+      <p class="max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)]">
+        The link you opened may have moved, or there might be a small typing mistake in the web address. Do not worry — your account and data are completely safe.
+      </p>
+      <div class="flex flex-wrap items-center gap-3 pt-2">
+        <a href="{% url 'root' %}" title="Go straight back to your main EduPredict home page" class="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+          <i class="fa-solid fa-house text-xs" aria-hidden="true"></i>
+          <span>{% if active_role %}Back to My Dashboard{% else %}Go to Sign In{% endif %}</span>
+        </a>
+        <button type="button" onclick="window.history.length > 1 ? window.history.back() : window.location.assign('{% url 'root' %}')" title="Return to the previous page you visited" class="inline-flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+          <i class="fa-solid fa-arrow-left text-xs text-[var(--text-muted)]" aria-hidden="true"></i>
+          <span>Go Back</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="w-full lg:w-80 shrink-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-5 space-y-3">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Quick Help</span>
+        <span class="tabular-nums font-mono text-lg font-semibold text-[var(--accent-primary)]">404</span>
+      </div>
+      <ul class="space-y-2 text-xs text-[var(--text-secondary)]">
+        <li class="flex items-start gap-2">
+          <i class="fa-solid fa-circle-check mt-0.5 text-[var(--status-success)] shrink-0" aria-hidden="true"></i>
+          <span>Use the left sidebar menu to jump directly to an active panel.</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <i class="fa-solid fa-circle-check mt-0.5 text-[var(--status-success)] shrink-0" aria-hidden="true"></i>
+          <span>Click Support in the bottom-left corner if a menu link looks broken.</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+{% endblock %}

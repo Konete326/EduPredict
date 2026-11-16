@@ -14,25 +14,35 @@
     </button>
   </div>
 
-  <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+  <nav class="flex-1 overflow-y-auto px-3 py-3 space-y-4">
     {% if active_role == 'ADMIN' or not active_role %}
     <div class="space-y-1">
       <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Administration</p>
-      <a href="{% url 'panels:admin_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <a href="{% url 'panels:admin_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
         <i class="fa-solid fa-gauge-high w-4 text-center shrink-0"></i>
         <span class="truncate">Admin Overview</span>
       </a>
-      <a href="{% url 'panels:admin_users' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_users' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <a href="{% url 'panels:admin_users' %}" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_users' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
         <i class="fa-solid fa-users w-4 text-center shrink-0"></i>
         <span class="truncate">User Management</span>
       </a>
-      <a href="{% url 'panels:admin_courses' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_courses' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <a href="{% url 'panels:admin_courses' %}" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_courses' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
         <i class="fa-solid fa-book-open w-4 text-center shrink-0"></i>
         <span class="truncate">Courses &amp; Batches</span>
       </a>
-      <a href="{% url 'panels:admin_tickets' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_tickets' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <a href="{% url 'panels:admin_tickets' %}" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_tickets' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
         <i class="fa-solid fa-life-ring w-4 text-center shrink-0"></i>
         <span class="truncate">Support Tickets</span>
+      </a>
+      <a href="#" data-coming-soon="true" data-coming-title="Audit & System Logs" data-coming-panel="Administration" data-coming-desc="Immutable security trail tracking authentication events, RBAC changes, and MongoDB administrative edits." data-coming-features="Real-time login & RBAC audit log|Admin CRUD change history & timestamps|Filterable export for compliance review" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <i class="fa-solid fa-clock-rotate-left w-4 text-center shrink-0"></i>
+        <span class="truncate">Audit &amp; System Logs</span>
+        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
+      </a>
+      <a href="#" data-coming-soon="true" data-coming-title="Institution Settings" data-coming-panel="Administration" data-coming-desc="Centralized academic term configuration, GPA thresholds, and automated risk alert routing rules." data-coming-features="Academic term & grading scale policies|Dropout risk warning thresholds|Alert & email delivery preferences" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <i class="fa-solid fa-sliders w-4 text-center shrink-0"></i>
+        <span class="truncate">Institution Settings</span>
+        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
       </a>
     </div>
     {% endif %}
@@ -40,17 +50,25 @@
     {% if active_role == 'TEACHER' or active_role == 'ADMIN' or not active_role %}
     <div class="space-y-1">
       <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Faculty</p>
-      <a href="{% url 'panels:teacher_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:teacher_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <a href="{% url 'panels:teacher_dashboard' %}" data-coming-soon="true" data-coming-title="Class Overview" data-coming-panel="Faculty" data-coming-desc="Batch-level attendance health, assignment completion velocity, and ML-flagged student summaries for instructors." data-coming-features="Section attendance & GPA pulse|Early-warning student risk roster|Quick batch feedback announcements" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:teacher_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
         <i class="fa-solid fa-chalkboard-user w-4 text-center shrink-0"></i>
         <span class="truncate">Class Overview</span>
+        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
       </a>
-      <a href="{% url 'panels:teacher_students' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:teacher_students' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <a href="{% url 'panels:teacher_students' %}" data-coming-soon="true" data-coming-title="Student Tracker" data-coming-panel="Faculty" data-coming-desc="Individual learner drilldowns combining LMS engagement, midterm trajectories, and dropout risk scores." data-coming-features="Per-student risk & GPA timeline|Filter by batch, course, or risk tier|One-click counseling note logging" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:teacher_students' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
         <i class="fa-solid fa-user-graduate w-4 text-center shrink-0"></i>
         <span class="truncate">Student Tracker</span>
+        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
       </a>
-      <a href="{% url 'panels:teacher_ingest' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:teacher_ingest' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <a href="{% url 'panels:teacher_ingest' %}" data-coming-soon="true" data-coming-title="Data Ingestion" data-coming-panel="Faculty" data-coming-desc="Streamlined CSV attendance and internal marks uploader synced directly to MongoDB and ML scoring." data-coming-features="Course roster CSV/Excel upload|Automated validation & missing-value check|Instant ML risk score refresh" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:teacher_ingest' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
         <i class="fa-solid fa-file-arrow-up w-4 text-center shrink-0"></i>
         <span class="truncate">Data Ingestion</span>
+        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
+      </a>
+      <a href="#" data-coming-soon="true" data-coming-title="Intervention Alerts" data-coming-panel="Faculty" data-coming-desc="Automated threshold triggers when student attendance or quiz velocity drops sharply mid-semester." data-coming-features="High-risk & anomaly alert queue|Recommended mentor outreach actions|Follow-up resolution tracking" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <i class="fa-solid fa-bell w-4 text-center shrink-0"></i>
+        <span class="truncate">Intervention Alerts</span>
+        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
       </a>
     </div>
     {% endif %}
@@ -58,13 +76,20 @@
     {% if active_role == 'STUDENT' or active_role == 'ADMIN' or not active_role %}
     <div class="space-y-1">
       <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Student</p>
-      <a href="{% url 'panels:student_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <a href="{% url 'panels:student_dashboard' %}" data-coming-soon="true" data-coming-title="Learning Dashboard" data-coming-panel="Student" data-coming-desc="Personal academic readiness snapshot displaying attendance health, LMS activity, and projected semester GPA." data-coming-features="Live attendance & assignment progress|Predicted GPA trend gauge|Upcoming milestone reminders" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
         <i class="fa-solid fa-graduation-cap w-4 text-center shrink-0"></i>
         <span class="truncate">Learning Dashboard</span>
+        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
       </a>
-      <a href="{% url 'panels:student_report' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_report' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <a href="{% url 'panels:student_report' %}" data-coming-soon="true" data-coming-title="Report Card" data-coming-panel="Student" data-coming-desc="Course-wise breakdown of internal assessments, attendance percentages, and advisor feedback notes." data-coming-features="Subject-level assessment ledger|GPA projection vs target score|Downloadable semester summary" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_report' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
         <i class="fa-solid fa-file-lines w-4 text-center shrink-0"></i>
         <span class="truncate">Report Card</span>
+        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
+      </a>
+      <a href="#" data-coming-soon="true" data-coming-title="AI Study Advisor" data-coming-panel="Student" data-coming-desc="Personalized weekly study-hour targets and targeted improvement tips derived from predictive analytics." data-coming-features="Smart weekly study plan generator|Risk-factor improvement simulator|Focus reminders for weak topics" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <i class="fa-solid fa-robot w-4 text-center shrink-0"></i>
+        <span class="truncate">AI Study Advisor</span>
+        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
       </a>
     </div>
     {% endif %}
@@ -72,17 +97,18 @@
     {% if active_role == 'ANALYST' or active_role == 'ADMIN' or not active_role %}
     <div class="space-y-1">
       <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Data &amp; ML</p>
-      <a href="{% url 'panels:analyst_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:analyst_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <a href="{% url 'panels:analyst_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:analyst_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
         <i class="fa-solid fa-chart-line w-4 text-center shrink-0"></i>
         <span class="truncate">Analytics Hub</span>
       </a>
-      <a href="{% url 'analytics:upload_dataset' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'analytics:upload_dataset' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <a href="{% url 'panels:analyst_dashboard' %}#ingestion-hub" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <i class="fa-solid fa-database w-4 text-center shrink-0"></i>
         <span class="truncate">Upload Dataset</span>
       </a>
-      <a href="{% url 'analytics:run_predictions' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'analytics:run_predictions' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <a href="#" data-coming-soon="true" data-coming-title="Model Benchmarks" data-coming-panel="Data & ML" data-coming-desc="Model evaluation workbench tracking Random Forest accuracy, Ridge Regression RMSE, and feature drift." data-coming-features="Precision/recall & ROC-AUC scorecards|Feature importance drift monitor|Cross-validation training history" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <i class="fa-solid fa-microchip w-4 text-center shrink-0"></i>
-        <span class="truncate">Run Predictions</span>
+        <span class="truncate">Model Benchmarks</span>
+        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
       </a>
     </div>
     {% endif %}
@@ -90,7 +116,7 @@
     {% if not active_role %}
     <div class="space-y-1">
       <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Account</p>
-      <a href="{% url 'accounts:auth_view' %}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'accounts:auth_view' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <a href="{% url 'accounts:auth_view' %}" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'accounts:auth_view' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
         <i class="fa-solid fa-right-to-bracket w-4 text-center shrink-0"></i>
         <span class="truncate">Sign In / Register</span>
       </a>
@@ -110,7 +136,7 @@
     </div>
 
     <div class="grid grid-cols-2 gap-2">
-      <button type="button" onclick="openFormModal({ title: 'Support & Feedback', actionUrl: '#', previewMessage: 'Support ticket submitted (Phase 1 preview).', fields: [{ name: 'subject', label: 'Subject', type: 'text', placeholder: 'Brief summary', required: true }, { name: 'message', label: 'Details', type: 'textarea', placeholder: 'Describe your question or bug...', required: true }] })" class="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+      <button type="button" onclick="openFormModal({ title: 'Support & Feedback', actionUrl: '{% url 'panels:submit_support_ticket' %}', fields: [{ name: 'subject', label: 'Subject', type: 'text', placeholder: 'Brief summary', required: true }, { name: 'message', label: 'Details', type: 'textarea', placeholder: 'Describe your question or bug...', required: true }] })" class="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
         <i class="fa-solid fa-headset text-[11px]"></i>
         <span>Support</span>
       </button>

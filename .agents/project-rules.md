@@ -1,7 +1,7 @@
 # Mandatory Agent Rules & Execution Protocol (`project-rules.md`)
 
 > **CRITICAL DIRECTIVE FOR ALL AI AGENTS (Antigravity, Claude, Claude Code, Cursor):**
-> You MUST read `.agents/PRD.md`, `.agents/SRD.md`, `.agents/TRD.md`, `.agents/design.md`, `.agents/project-rules.md`, and `.agents/git-sync.md` BEFORE writing or editing a single line of code.
+> You MUST read `.agents/prd.md`, `.agents/srd.md`, `.agents/trd.md`, `.agents/design.md`, `.agents/project-rules.md`, and `.agents/git-sync.md` BEFORE writing or editing a single line of code.
 
 ## Rule 1: Technology Stack Lock & Latest Packages Rule (MERN Strictly Prohibited)
 - This project is built **100% on Python Django + MongoDB Atlas + Tailwind CSS + Vanilla JS**.
@@ -33,8 +33,8 @@
 
 ## Rule 7: Icons, Charts & Modals Standard
 - **Icons:** Use FontAwesome classes (`fa-solid fa-...`) loaded globally. Never use AI-generated SVGs or Gemini/sparkle logos.
-- **Charts:** Use Chart.js via CDN with dynamic colors that adapt when the theme toggle is clicked.
-- **Modals:** Never use browser `alert()` or `confirm()`. Always trigger the global `confirm_modal.html` or `toast.html`.
+- **Charts:** Use Chart.js via CDN (`window.createThemedChart`) with compact heights (`h-44` to `h-48`) and dynamic colors that adapt when the theme toggle is clicked.
+- **Modals:** Never use browser `alert()`, `confirm()`, or `prompt()`. Always trigger the global `confirm_modal.html` (`openConfirmModal`, `openComingSoonModal`), `form_modal.html` (`openFormModal`), or `toast.html`.
 
 ## Rule 8: Dynamic MongoDB Atlas Data (No Dummy Placeholders)
 - Every table, KPI counter, and chart must query real data from MongoDB Atlas (`core/db.py`). Provide a clean management command or 1-click seed/upload dataset utility so the database has realistic educational records to process.
@@ -51,4 +51,24 @@
 
 ## Rule 11: Full-Width Responsive Panel Layout — No Centered Box
 - NEVER wrap dashboard content inside a centered fixed-width box (`max-w-7xl mx-auto`).
-- Use the full-width fluid layout (`w-full px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6 xl:px-8 space-y-6` inside `<main class="flex-1 w-full min-w-0">`) with responsive grid splits (`grid-cols-1 sm:grid-cols-2 xl:grid-cols-4`, `grid-cols-1 xl:grid-cols-12`) so large desktop screens span full width beside the sidebar and mobile screens (`320px+`) stack cleanly with `min-w-0` and `overflow-x-auto`.
+- Use the full-width fluid layout (`w-full px-3 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-4 xl:px-8 space-y-4` inside `<main class="flex-1 w-full min-w-0">`) with responsive grid splits (`grid-cols-1 sm:grid-cols-2 xl:grid-cols-4`, `grid-cols-1 xl:grid-cols-12`) so large desktop screens span full width beside the sidebar and mobile screens (`320px+`) stack cleanly with `min-w-0` and zero horizontal overflow.
+
+## Rule 12: Desktop Viewport-Fit & Mandatory 5-Row Pagination
+- Design desktop dashboards and tables with compact vertical spacing (`p-4`, `gap-4`, `space-y-4`, compact hero/filter bars), compact chart heights (`h-44` to `h-48`, ~180px–200px), and **mandatory 5-row pagination** (`[data-paginated-container data-page-size="5"]` + `[data-pagination-bar]`) on all tables.
+- Desktop viewports must fit cleanly without needing unnecessary vertical page scrollbars unless data/content strictly requires scrolling.
+
+## Rule 13: Mobile Card-List Standard (`< md` / `< 768px`)
+- On mobile screens (`< 768px`), NEVER force cramped multi-column tables.
+- Every list/table MUST render as clean stacked mobile cards (`md:hidden`, `[data-mobile-card][data-page-item]`) while desktop (`>= md`) renders the tabular view (`hidden md:block`, `tbody tr[data-page-item]`), both synchronized inside `[data-paginated-container data-page-size="5"]` with pagination and quick search (`input[data-table-search]`).
+
+## Rule 14: Collapsible Sidebar on Both Desktop & Mobile
+- The topbar sidebar toggle (`#mobile-sidebar-toggle`) MUST be accessible on BOTH desktop and mobile (never hide it with `lg:hidden`).
+- On desktop (`>= 1024px`), it collapses/expands the `w-64` sidebar (`body.sidebar-collapsed`, toggling `#mobile-sidebar-drawer` and `#app-shell-main` left padding with `localStorage` persistence under `edupredict_sidebar_collapsed` and dispatching a `resize` event for Chart.js). On mobile (`< 1024px`), it opens/closes the off-canvas drawer and backdrop.
+
+## Rule 15: Coming Soon Modal & Sidebar `"Soon"` Badge Standard
+- All planned/unbuilt panel pages across Admin, Teacher, Student, and Analyst panels MUST appear in `templates/components/sidebar.html` with a `"Soon"` badge and open the global theme-aware Coming Soon modal (`openComingSoonModal` / `[data-coming-soon]`) when clicked, instead of broken links or raw placeholders.
+- Direct route views for unbuilt modules must render `templates/panels/coming_soon_panel.html` with roadmap details, live MongoDB counts, and a trigger for `openComingSoonModal`.
+
+## Rule 16: Child-Friendly, Ultra-Simple Automated UX & Modern Web Guidance Standard
+- **Effortless, Child-Simple UI:** Keep every panel intuitive with plain action labels, crisp icons, descriptive `title` tooltips on buttons/links, 1-click automated workflows, and progressive disclosure via global modals so pages never feel crowded.
+- **Modern Web Guidance States:** Enforce `cursor: pointer`, clear `:hover`, `:focus-visible`, and `:active` press states, `text-wrap: balance` on headings, clickable table column sorting, mandatory 5-row pagination, and a custom theme-aware `404.html` error page active in both `DEBUG=True` and `DEBUG=False`.

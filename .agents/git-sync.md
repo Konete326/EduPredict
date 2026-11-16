@@ -61,31 +61,34 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 3 Verification Agent (@verifier)"
-active_branch_merged_to_main: "feature/analyst-ml -> main"
-project_phase: "Phase 3 Complete - Analyst Panel, Big Data Ingestion & Scikit-Learn ML Pipeline Verified"
+last_updated_by_agent: "Phase 4 Verification Agent (@verifier)"
+active_branch_merged_to_main: "feature/admin-panel -> main"
+project_phase: "Phase 4 Complete - Admin Panel, Global Components, Collapsible Shell & 404 Verified"
 
 completed_modules:
   - "Phase 1: Django Project Init, Core MongoDB Layer & App-Shell-3 Layout (core/, templates/components/, static/)"
   - "Phase 2: Authentication, Default Admin Sync & Role-Based Routing (accounts/services.py, accounts/views.py, templates/accounts/auth.html)"
-  - "Phase 3: Big Data Ingestion & ML Pipeline (analytics/data_pipeline.py, analytics/ml_engine.py, analytics/views.py)"
-  - "Phase 3 UI & Layout: Full-width fluid container in templates/base.html (no centered max-w-7xl box), multi-panel sidebar access for ADMIN in templates/components/sidebar.html, Analyst Hub in panels/views_analyst.py + templates/panels/analyst_dashboard.html"
-  - "Phase 3 Docs Rules: Updated .agents/{git-sync,project-rules,design,trd}.md with .env auto-sync rule, latest package rule, and full-width responsive split layout rule"
+  - "Phase 3 & Polish: Analyst Panel, ML Engine, chunked CSV + 25MB limit in analytics/data_pipeline.py, compact viewport-fit in analyst_dashboard.html"
+  - "Phase 4 Admin Backend: panels/admin_seed.py (seeding, overview metrics, JSON/CSV backup), panels/admin_services.py (Users/Courses/Tickets CRUD, mark_notifications_read, table formatters), panels/views_admin.py, core/db.py (courses_col + unique index)"
+  - "Phase 4 Global UI & UX: Collapsible desktop/mobile sidebar (Rule 14), 5-row pagination + mobile card sync (Rules 12-13), Coming Soon modal/panel (Rule 15), sortable tables, custom 404 (templates/404.html + accounts.views.error_404), Modern Web Guidance polish (static/css/global.css, static/js/app.js)"
+  - "Phase 4 Admin Templates: templates/panels/admin_{dashboard,users,courses,tickets}.html & coming_soon_panel.html"
 
 active_routes_and_files:
-  - "/, /auth/, /auth/logout/ -> accounts/views.py"
-  - "/analyst-panel/ -> panels/views_analyst.py (@role_required(['ANALYST', 'ADMIN']), filters + ?export=csv + Chart.js data)"
-  - "/analyst-panel/upload/ -> analytics/views.py:upload_dataset (@role_required(['ANALYST', 'ADMIN']), mode='sample' or .csv/.xlsx upload + ML trigger)"
-  - "/analyst-panel/run-ml/ -> analytics/views.py:run_predictions (@role_required(['ANALYST', 'ADMIN']), RandomForest + Ridge + IsolationForest + TEACHER alerts)"
-  - "/admin-panel/*, /teacher-panel/*, /student-panel/* -> Role-guarded placeholder shells ready for Phases 4-6"
+  - "/, /auth/, /auth/logout/, catch-all 404 -> accounts/views.py & config/urls.py"
+  - "/admin-panel/ -> panels:admin_dashboard (KPIs, Dept Enrollment vs Capacity bar chart, Risk doughnut, Recent Tickets)"
+  - "/admin-panel/users/, /admin-panel/courses/, /admin-panel/tickets/ -> Full MongoDB Atlas CRUD + filters + 5-row pagination"
+  - "/admin-panel/backup/?format=json|csv -> panels:admin_backup_export"
+  - "/support/submit/ -> panels:submit_support_ticket (global sidebar Support modal endpoint)"
+  - "/notifications/mark-read/ -> panels:mark_notifications_read (CSRF POST JSON endpoint)"
+  - "/analyst-panel/* -> panels/views_analyst.py & analytics/views.py"
+  - "/teacher-panel/*, /student-panel/* -> Coming Soon roadmap views (panels/views_teacher.py, panels/views_student.py)"
 
 pending_modules_in_order:
-  - "Phase 4: Admin Panel (User/Course CRUD, Metrics, Support Tickets)"
   - "Phase 5: Teacher Panel (Class Overview, Attendance/Marks Ingestion, Alerts)"
   - "Phase 6: Student Panel (Personal Dashboard, AI Risk Card, Report Download)"
 
 important_notes_for_next_agent:
-  - "Next Phase: Phase 4 — Admin Panel (User/Course CRUD, Metrics, Support Tickets) in panels/views_admin.py and templates/panels/admin_*.html ONLY."
-  - "Use full-width responsive layout (no centered max-w-7xl mx-auto) and existing global components (metric_card.html, data_table.html, confirm_modal.html, form_modal.html, toast.html)."
-  - "Keep .env and .agents/* tracked and pushed to GitHub; maintain zero comments across all .py/.html/.css/.js files and file length <= 350 lines."
+  - "Next Phase: Phase 5 — Teacher Panel (Class Overview, Attendance/Marks Ingestion, Alerts) in panels/views_teacher.py and templates/panels/teacher_*.html ONLY."
+  - "Preserve all global contracts: templates/base.html, templates/components/* (5-row pagination, mobile cards, Coming Soon & confirm/form modals), static/css/global.css, static/js/app.js, core/db.py."
+  - "Keep .env and .agents/* (including .agents/rules/* and .agents/skills/*) tracked and pushed; maintain zero comments across all .py/.html/.css/.js files, panels/views_*.py <= 250 lines, and other files <= 350 lines."
 ```

@@ -44,11 +44,11 @@
 <body class="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased">
   {% include 'components/sidebar.html' %}
 
-  <div class="lg:pl-64 min-h-screen w-full min-w-0 flex flex-col">
+  <div id="app-shell-main" class="lg:pl-64 min-h-screen w-full min-w-0 flex flex-col transition-all duration-200 ease-out">
     {% include 'components/topbar.html' %}
 
     <main class="flex-1 w-full min-w-0">
-      <div class="w-full px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6 xl:px-8 space-y-6">
+      <div class="w-full px-3 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-4 xl:px-8 space-y-4">
         {% block content %}
         <section class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5">
           <div class="space-y-1">
@@ -85,21 +85,21 @@
           {% include 'components/metric_card.html' with title="High Dropout Risk" value="14" badge="ML anomaly flagged" status="danger" icon="fa-solid fa-circle-exclamation" %}
         </section>
 
-        <section class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 lg:col-span-2">
-            <div class="mb-4 flex items-center justify-between gap-2">
+        <section class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 lg:col-span-2">
+            <div class="mb-3 flex items-center justify-between gap-2">
               <div>
                 <h3 class="text-sm font-semibold text-[var(--text-primary)]">Attendance &amp; Predicted Readiness Trend</h3>
                 <p class="text-xs text-[var(--text-muted)]">Adapts automatically when switching between Light and Dark themes</p>
               </div>
               <span class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-xs font-mono text-[var(--text-secondary)]">Chart.js v4</span>
             </div>
-            <div class="relative h-64 w-full">
+            <div class="relative h-48 w-full">
               <canvas id="shell-preview-chart"></canvas>
             </div>
           </div>
 
-          <div class="flex flex-col justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 space-y-4">
+          <div class="flex flex-col justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
             <div class="space-y-3">
               <h3 class="text-sm font-semibold text-[var(--text-primary)]">Component Verification</h3>
               <p class="text-xs leading-relaxed text-[var(--text-secondary)]">Verify theme tokens, toast severities, and responsive z-index layers before starting Phase 2.</p>
@@ -130,7 +130,7 @@
         </section>
 
         <section>
-          {% include 'components/data_table.html' with table_id="shell-preview-table" table_title="Student Risk & Prediction Feed" headers=sample_headers rows=sample_rows empty_message="No MongoDB records loaded in Phase 1 shell preview. Live student records will populate in Phases 2-6." %}
+          {% include 'components/data_table.html' with table_id="shell-preview-table" table_title="Student Risk & Prediction Feed" headers=sample_headers rows=sample_rows page_size=5 empty_message="No MongoDB records loaded in Phase 1 shell preview. Live student records will populate in Phases 2-6." %}
         </section>
         {% endblock %}
       </div>

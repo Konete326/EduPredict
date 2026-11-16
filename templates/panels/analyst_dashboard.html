@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5">
+<section class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
   <div class="min-w-0 space-y-1">
     <div class="flex items-center gap-2">
       <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[var(--accent-primary)]">
@@ -10,33 +10,33 @@
       </span>
     </div>
     <h2 class="text-lg font-semibold tracking-tight text-[var(--text-primary)]">Predictive Analytics &amp; Big Data Hub</h2>
-    <p class="text-sm text-[var(--text-secondary)]">Automated CSV/Excel ingestion, median/mode imputation, dropout risk classification, GPA forecasting, and anomaly detection.</p>
+    <p class="text-xs text-[var(--text-secondary)]">Automated CSV/Excel ingestion, median/mode imputation, dropout risk classification, GPA forecasting, and anomaly detection.</p>
   </div>
-  <div class="flex flex-wrap items-center gap-2.5">
+  <div class="flex flex-wrap items-center gap-2">
     <form method="post" action="{% url 'analytics:upload_dataset' %}">
       {% csrf_token %}
       <input type="hidden" name="mode" value="sample">
-      <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-        <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+      <button type="submit" title="Generate 60 sample student records and run ML predictions automatically" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
         <span>Load Sample Dataset &amp; Predict</span>
       </button>
     </form>
     <form method="post" action="{% url 'analytics:run_predictions' %}">
       {% csrf_token %}
-      <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
-        <i class="fa-solid fa-rotate text-xs text-[var(--accent-primary)]"></i>
+      <button type="submit" title="Retrain Random Forest, Ridge, and Isolation Forest models on current MongoDB records" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+        <i class="fa-solid fa-rotate text-[var(--accent-primary)]"></i>
         <span>Retrain &amp; Run ML</span>
       </button>
     </form>
-    <a href="{% url 'panels:analyst_dashboard' %}?batch={{ selected_filters.batch|urlencode }}&course_code={{ selected_filters.course_code|urlencode }}&risk_level={{ selected_filters.risk_level|urlencode }}&export=csv" class="inline-flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
-      <i class="fa-solid fa-file-csv text-xs text-[var(--status-success)]"></i>
+    <a href="{% url 'panels:analyst_dashboard' %}?batch={{ selected_filters.batch|urlencode }}&course_code={{ selected_filters.course_code|urlencode }}&risk_level={{ selected_filters.risk_level|urlencode }}&export=csv" title="Download currently filtered student predictions as CSV" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <i class="fa-solid fa-file-csv text-[var(--status-success)]"></i>
       <span>Export CSV</span>
     </a>
   </div>
 </section>
 
 {% if db_error %}
-<div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-3 text-sm text-[var(--status-danger)]">
+<div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
   <i class="fa-solid fa-circle-exclamation mr-2"></i>Database notice: {{ db_error }}
 </div>
 {% endif %}
@@ -48,21 +48,21 @@
   {% include 'components/metric_card.html' with title="Avg Predicted GPA" value=kpis.avg_predicted_gpa badge="Ridge Regression (0-4.0)" status="success" icon="fa-solid fa-chart-line" %}
 </section>
 
-<section class="grid grid-cols-1 gap-6 xl:grid-cols-12">
-  <div class="xl:col-span-4 min-w-0 space-y-6">
-    <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 space-y-4">
+<section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+  <div class="xl:col-span-4 min-w-0 space-y-4">
+    <div id="ingestion-hub" class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
       <div>
         <h3 class="text-sm font-semibold text-[var(--text-primary)]">CSV / Excel Ingestion Hub</h3>
-        <p class="mt-1 text-xs text-[var(--text-muted)]">Upload educational batches up to 50,000 rows. Missing values are imputed automatically before ML prediction.</p>
+        <p class="mt-1 text-xs text-[var(--text-muted)]">Upload educational batches up to 25 MB. Missing values are imputed automatically before ML prediction.</p>
       </div>
-      <form method="post" action="{% url 'analytics:upload_dataset' %}" enctype="multipart/form-data" class="space-y-4">
+      <form method="post" action="{% url 'analytics:upload_dataset' %}" enctype="multipart/form-data" class="space-y-3">
         {% csrf_token %}
         <input type="hidden" name="mode" value="upload">
-        <div class="space-y-1.5">
+        <div class="space-y-1">
           <label for="dataset-file-input" class="block text-xs font-medium text-[var(--text-secondary)]">Dataset File (.csv or .xlsx)</label>
-          <input id="dataset-file-input" name="dataset_file" type="file" accept=".csv,.xlsx" required class="block w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs text-[var(--text-primary)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--accent-soft)] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[var(--accent-primary)]">
+          <input id="dataset-file-input" name="dataset_file" type="file" accept=".csv,.xlsx" required class="block w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--accent-soft)] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[var(--accent-primary)]">
         </div>
-        <div class="space-y-1.5">
+        <div class="space-y-1">
           <p class="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Required Columns</p>
           <div class="flex flex-wrap gap-1.5">
             {% for col in required_columns %}
@@ -70,61 +70,55 @@
             {% endfor %}
           </div>
         </div>
-        <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-          <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+        <button type="submit" title="Upload, clean missing values, and generate student predictions" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
           <span>Ingest &amp; Run Predictions</span>
         </button>
       </form>
     </div>
 
-    <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5">
-      {% include 'components/data_table.html' with table_id="dataset-logs-table" table_title="Recent Ingestion Logs" headers=dataset_headers rows=dataset_rows empty_message="No datasets ingested yet." %}
+    <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+      {% include 'components/data_table.html' with table_id="dataset-logs-table" table_title="Recent Ingestion Logs" headers=dataset_headers rows=dataset_rows page_size=5 empty_message="No datasets ingested yet." %}
     </div>
   </div>
 
-  <div class="xl:col-span-8 min-w-0 space-y-6">
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 min-w-0">
-        <div class="mb-3 flex items-center justify-between gap-2">
+  <div class="xl:col-span-8 min-w-0 space-y-4">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
+        <div class="mb-2.5 flex items-center justify-between gap-2">
           <h3 class="text-sm font-semibold text-[var(--text-primary)]">Dropout Risk Distribution</h3>
           <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Random Forest</span>
         </div>
-        <div class="relative h-64 w-full">
-          <canvas id="chart-dropout-doughnut"></canvas>
-        </div>
+        <div class="relative h-48 w-full"><canvas id="chart-dropout-doughnut"></canvas></div>
       </div>
 
-      <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 min-w-0">
-        <div class="mb-3 flex items-center justify-between gap-2">
+      <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
+        <div class="mb-2.5 flex items-center justify-between gap-2">
           <h3 class="text-sm font-semibold text-[var(--text-primary)]">Attendance vs. Predicted GPA</h3>
           <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Correlation</span>
         </div>
-        <div class="relative h-64 w-full">
-          <canvas id="chart-correlation-scatter"></canvas>
-        </div>
+        <div class="relative h-48 w-full"><canvas id="chart-correlation-scatter"></canvas></div>
       </div>
     </div>
 
-    <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 min-w-0">
-      <div class="mb-3 flex items-center justify-between gap-2">
+    <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
+      <div class="mb-2.5 flex items-center justify-between gap-2">
         <div>
           <h3 class="text-sm font-semibold text-[var(--text-primary)]">Course Demand Forecast</h3>
           <p class="text-xs text-[var(--text-muted)]">Current enrollment vs. next-term projected demand per course</p>
         </div>
         <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Demand Model</span>
       </div>
-      <div class="relative h-64 w-full">
-        <canvas id="chart-course-demand"></canvas>
-      </div>
+      <div class="relative h-48 w-full"><canvas id="chart-course-demand"></canvas></div>
     </div>
   </div>
 </section>
 
-<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 space-y-4">
+<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-4">
   <form method="get" action="{% url 'panels:analyst_dashboard' %}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 items-end">
     <div class="space-y-1">
       <label for="filter-batch" class="block text-xs font-medium text-[var(--text-secondary)]">Batch</label>
-      <select id="filter-batch" name="batch" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+      <select id="filter-batch" name="batch" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
         <option value="ALL" {% if selected_filters.batch == 'ALL' %}selected{% endif %}>All Batches</option>
         {% for b in filter_options.batches %}
         <option value="{{ b }}" {% if selected_filters.batch == b %}selected{% endif %}>{{ b }}</option>
@@ -133,7 +127,7 @@
     </div>
     <div class="space-y-1">
       <label for="filter-course" class="block text-xs font-medium text-[var(--text-secondary)]">Course</label>
-      <select id="filter-course" name="course_code" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+      <select id="filter-course" name="course_code" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
         <option value="ALL" {% if selected_filters.course_code == 'ALL' %}selected{% endif %}>All Courses</option>
         {% for c in filter_options.courses %}
         <option value="{{ c }}" {% if selected_filters.course_code == c %}selected{% endif %}>{{ c }}</option>
@@ -142,7 +136,7 @@
     </div>
     <div class="space-y-1">
       <label for="filter-risk" class="block text-xs font-medium text-[var(--text-secondary)]">Risk / Anomaly</label>
-      <select id="filter-risk" name="risk_level" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+      <select id="filter-risk" name="risk_level" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
         <option value="ALL" {% if selected_filters.risk_level == 'ALL' %}selected{% endif %}>All Levels</option>
         <option value="HIGH" {% if selected_filters.risk_level == 'HIGH' %}selected{% endif %}>High Risk</option>
         <option value="MEDIUM" {% if selected_filters.risk_level == 'MEDIUM' %}selected{% endif %}>Medium Risk</option>
@@ -151,17 +145,17 @@
       </select>
     </div>
     <div class="flex items-center gap-2 lg:col-span-2">
-      <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-        <i class="fa-solid fa-filter text-xs"></i>
+      <button type="submit" title="Filter predictions table and charts" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+        <i class="fa-solid fa-filter"></i>
         <span>Apply Filters</span>
       </button>
-      <a href="{% url 'panels:analyst_dashboard' %}" class="inline-flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+      <a href="{% url 'panels:analyst_dashboard' %}" title="Reset all prediction filters" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <span>Reset</span>
       </a>
     </div>
   </form>
 
-  {% include 'components/data_table.html' with table_id="analyst-predictions-table" table_title="Student Predictions & Anomaly Insights" headers=prediction_headers rows=prediction_rows empty_message="No records match the current filters. Load the sample dataset or upload a CSV/Excel file above." %}
+  {% include 'components/data_table.html' with table_id="analyst-predictions-table" table_title="Student Predictions & Anomaly Insights" headers=prediction_headers rows=prediction_rows page_size=5 empty_message="No records match the current filters. Load the sample dataset or upload a CSV/Excel file above." %}
 </section>
 {% endblock %}
 
@@ -192,9 +186,7 @@
           responsive: true,
           maintainAspectRatio: false,
           cutout: '64%',
-          plugins: {
-            legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } }
-          }
+          plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } } }
         }
       };
     });
@@ -244,28 +236,14 @@
         data: {
           labels: demand.map(function (d) { return d.course_code; }),
           datasets: [
-            {
-              label: 'Current Enrolled',
-              data: demand.map(function (d) { return d.current_enrolled; }),
-              backgroundColor: tokens.accentSoft,
-              borderColor: tokens.accentPrimary,
-              borderWidth: 1.5,
-              borderRadius: 6
-            },
-            {
-              label: 'Projected Demand',
-              data: demand.map(function (d) { return d.projected_demand; }),
-              backgroundColor: tokens.accentPrimary,
-              borderRadius: 6
-            }
+            { label: 'Current Enrolled', data: demand.map(function (d) { return d.current_enrolled; }), backgroundColor: tokens.accentSoft, borderColor: tokens.accentPrimary, borderWidth: 1.5, borderRadius: 6 },
+            { label: 'Projected Demand', data: demand.map(function (d) { return d.projected_demand; }), backgroundColor: tokens.accentPrimary, borderRadius: 6 }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } }
-          },
+          plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } } },
           scales: {
             x: { grid: { display: false }, ticks: { color: tokens.textMuted } },
             y: { beginAtZero: true, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } }

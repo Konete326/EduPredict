@@ -1,0 +1,73 @@
+---
+trigger: always_on
+description: Mandatory EduPredict project rules, stack lock, UI/DB contracts, viewport-fit pagination, mobile card-lists, one-feature execution cap, and Roman Urdu communication invariants.
+---
+
+# EduPredict Always-On Engineering & UI/UX Rules
+
+> **Pre-Flight Mandate:** Before writing or editing ANY code, read `.agents/prd.md`, `.agents/srd.md`, `.agents/trd.md`, `.agents/design.md`, `.agents/project-rules.md`, and `.agents/git-sync.md` (especially Section 4 Active Handover State).
+
+## 1. Technology Stack Lock & Latest Packages Policy
+- **Pure Django Only (MERN Strictly Prohibited):** Built 100% on Python 3.11+ Django (MVT) + MongoDB Atlas (`pymongo`, `core/db.py`) + Tailwind CSS + Vanilla JS (`static/js/app.js`, `static/js/charts.js`) + FontAwesome + Chart.js v4+.
+- **Reject MERN Artifacts:** Never create React, Vite, Next.js, `.jsx`, `.tsx`, TypeScript files, React `package.json`, or Node/Express servers.
+- **Latest Stable Packages:** Whenever installing or updating any Python dependency, always install the latest stable release (`pip install --upgrade <package>`) and freeze into `requirements.txt`.
+
+## 2. Active Tooling & Environment Hygiene
+- Use native search, file inspection, `python manage.py check`, and verification before finishing any task, regardless of how brief the user prompt is.
+- Keep `.agents/` clean of unauthorized or unrelated skills/clutter (such as `'Ponytail Skill'`).
+
+## 3. Strict One-Feature-At-A-Time Execution Lock (MANDATORY)
+- **Never build the entire project in one go**, even if explicitly asked to build everything at once.
+- **Execution Cap:** Implement **ONLY ONE feature or panel module** per turn (e.g., Core Shell/Auth, Analyst Data & ML, Admin Panel, Teacher Panel, Student Panel).
+- After verifying that single feature, update `.agents/git-sync.md` Section 4, auto-sync/push to GitHub, and **STOP**, asking the user in Roman Urdu:
+  *"Yeh feature mukammal aur test ho gaya hai. Kya main ab agla feature [Next Feature Name] start karun?"*
+
+## 4. Zero Comments in Code
+- All generated or edited Python (`.py`), HTML (`.html`), CSS (`.css`), and JavaScript (`.js`) files MUST contain **ZERO comments** (no `# ...`, no `<!-- ... -->`, no `/* ... */`, no `// ...`). Write clean, self-explanatory identifiers instead.
+
+## 5. Global Components, Module Isolation & File Size Cap
+- **File Length Cap:** No Python, HTML, CSS, or JS file may exceed **350–400 lines** (keep panel view modules `<= 250` lines by extracting DB/CRUD/ML logic into service modules like `panels/admin_services.py` or `analytics/`).
+- **Global Reuse Only:** Never duplicate modal HTML, KPI cards, table wrappers, or CSS inside individual pages. Always `{% include %}` from `templates/components/` (`sidebar.html`, `topbar.html`, `metric_card.html`, `confirm_modal.html`, `form_modal.html`, `data_table.html`, `toast.html`).
+- **Contract Safety:** Never break shared `templates/base.html` block names (`{% block content %}`, `{% block extra_js %}`), `core/db.py`, or existing component APIs. Always use `{% url 'route_name' %}` instead of hardcoded URLs.
+
+## 6. Light & Dark Mode Completeness, Tokens & Z-Index Stack
+- Every surface, button, input, table cell, badge, chart, dropdown, and modal backdrop MUST use CSS variables from `static/css/global.css` (`--bg-canvas`, `--bg-surface`, `--bg-elevated`, `--bg-overlay`, `--text-primary`, `--text-secondary`, `--text-muted`, `--border-subtle`, `--accent-primary`, `--accent-hover`, `--accent-soft`, `--status-success`, `--status-warning`, `--status-danger`). Never hardcode `bg-white` or `text-black` without dark-mode token parity.
+- **Anti-AI-Slop Mandate:** No neon purple-to-cyan gradients, no glowing sci-fi borders, and no oversized `size-12 rounded-2xl bg-muted` icon boxes.
+- **Strict Z-Index Hierarchy:** `z-10` sticky headers/cards, `z-20` topbar, `z-30` desktop sidebar, `z-40` mobile drawer & notification dropdowns, `z-50` global modals (`overflow-hidden` on `body`), `z-60` global toasts.
+
+## 7. Icons, Charts & Modals Standard
+- **Icons:** FontAwesome (`fa-solid fa-...`) loaded globally. Never use AI-generated SVGs or sparkle logos.
+- **Charts:** Chart.js v4+ via theme-aware helper (`window.createThemedChart`) so charts re-theme smoothly.
+- **No Native Browser Popups:** `window.alert()`, `window.confirm()`, and `window.prompt()` are strictly banned. Always use `openConfirmModal`, `openFormModal`, `openComingSoonModal`, or `toast.html`.
+
+## 8. Dynamic MongoDB Atlas Data & Security
+- Every KPI, table, and chart MUST read real data from MongoDB Atlas (`core/db.py`: `users`, `student_records`, `predictions`, `datasets_log`, `notifications`, `support_tickets`, `courses`), backed by clean seeding or upload utilities and graceful fallback modals/toasts on errors.
+- Keep `MONGODB_URI` and `SECRET_KEY` in `.env` (never hardcoded). Hash passwords with Django PBKDF2/Argon2 and keep CSRF protection active on all POST endpoints.
+
+## 9. Roman Urdu Communication & 2 Actionable Suggestions
+- Always communicate with the user strictly in **Roman Urdu**.
+- At the end of every completed task, include **2 concise, actionable improvements** for existing code:
+  - *Problem 1:* [Short bottleneck/issue] -> *Hal:* [1-line actionable fix]
+  - *Problem 2:* [Short UI/code issue] -> *Hal:* [1-line actionable fix]
+
+## 10. `.env` & Full Project Git Auto-Sync Rule (MANDATORY)
+- `.env` and ALL project files (code, `templates/`, `static/`, `requirements.txt`, `.env.example`, `.gitignore`, `.agents/*`) MUST always be tracked, committed, and auto-synced/pushed to GitHub (`feature/<module>` and merged to `main`) before and after every task.
+- `.gitignore` may ONLY ignore `.venv/`, `__pycache__/`, `*.pyc`, `*.pyo`, `*.pyd`, and `db.sqlite3`. Never ignore `.env`.
+
+## 11. Full-Width Fluid Responsive Layout (No Centered Box)
+- NEVER wrap dashboard panels in `max-w-7xl mx-auto` or centered fixed-width containers.
+- Use `<main class="flex-1 w-full min-w-0">` with fluid full-width padding and responsive grid splits (`grid-cols-1 sm:grid-cols-2 xl:grid-cols-4`, `grid-cols-1 xl:grid-cols-12`, `min-w-0`) so desktops use the full available width beside the sidebar and `320px+` mobile screens stack cleanly with zero horizontal overflow.
+
+## 12. Desktop Viewport-Fit & Mandatory 5-Row Pagination
+- Design desktop dashboards, workbenches, and CRUD tables with compact vertical spacing (`p-4`, `gap-4`, `space-y-4`, compact headers), compact chart heights (`h-44` to `h-48`, ~180px–200px), and **mandatory 5-row pagination** (`[data-paginated-container data-page-size="5"]` + `[data-pagination-bar]`) so desktop viewports fit cleanly without unnecessary vertical page scrollbars unless data/content strictly demands scrolling.
+
+## 13. Mobile Card-List Standard (`< md` / `< 768px`)
+- On mobile screens (`< 768px`), NEVER force cramped multi-column tables.
+- Every list/table MUST render clean stacked mobile cards (`md:hidden`, `[data-mobile-card][data-page-item]`) while desktop (`>= md`) renders the tabular view (`hidden md:block`, `tbody tr[data-page-item]`), both synchronized inside `[data-paginated-container data-page-size="5"]` with pagination and quick search (`input[data-table-search]`).
+
+## 14. Collapsible Sidebar on Both Desktop & Mobile
+- The topbar sidebar toggle (`#mobile-sidebar-toggle`) MUST NOT be hidden on desktop (`lg:hidden` is forbidden on the toggle button).
+- Clicking it on desktop (`>= 1024px`) collapses/expands the `w-64` sidebar and `#app-shell-main` left padding (`body.sidebar-collapsed`) with `localStorage` persistence (`edupredict_sidebar_collapsed`) and fires a `resize` event for Chart.js; clicking it on mobile (`< 1024px`) opens/closes the off-canvas drawer + backdrop.
+
+## 15. Coming Soon Modal & Sidebar `"Soon"` Badge Standard
+- All planned/unbuilt panel pages across Admin, Teacher, Student, and Analyst panels MUST appear in `templates/components/sidebar.html` with a `"Soon"` badge and open the global theme-aware Coming Soon modal (`openComingSoonModal` / `[data-coming-soon]`) when clicked, instead of broken links or raw placeholders. Direct routes for unbuilt pages must render `templates/panels/coming_soon_panel.html`.

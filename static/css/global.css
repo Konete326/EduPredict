@@ -130,3 +130,34 @@ html.dark textarea:user-invalid:focus {
 .toast-enter {
   animation: toast-enter 0.18s ease-out forwards;
 }
+
+@media (min-width: 1024px) {
+  body.sidebar-collapsed #mobile-sidebar-drawer {
+    transform: translateX(-100%);
+  }
+
+  body.sidebar-collapsed #app-shell-main {
+    padding-left: 0;
+  }
+}
+
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+button, a[href], select, [role="button"], th[data-sortable] {
+  cursor: pointer;
+}
+
+button:disabled { cursor: not-allowed; }
+button:active:not(:disabled) { transform: scale(0.985); }
+
+th[data-sortable] {
+  user-select: none;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+th[data-sortable]:hover { color: var(--text-primary); }
+th[data-sortable][data-sort-dir] { color: var(--accent-primary); }
+th[data-sortable][data-sort-dir="asc"]::after { content: " \2191"; font-size: 0.75em; }
+th[data-sortable][data-sort-dir="desc"]::after { content: " \2193"; font-size: 0.75em; }

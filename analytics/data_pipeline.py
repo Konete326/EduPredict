@@ -8,6 +8,7 @@ REQUIRED_COLUMNS = (
     "student_id", "attendance_pct", "internal_marks",
     "lms_hours_weekly", "previous_gpa", "course_code",
 )
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 NUMERIC_COLUMNS = (
     "attendance_pct", "internal_marks", "assignment_score",
     "lms_hours_weekly", "previous_gpa",
@@ -109,14 +110,29 @@ def _load_dataframe(file_obj, mode):
         return "edupredict_sample_batch.csv", generate_sample_dataset_df(60), None
     filename = str(getattr(file_obj, "name", "") or "uploaded_dataset.csv")
     lower_name = filename.lower()
+    file_size = getattr(file_obj, "size", None)
+    if file_size is None and hasattr(file_obj, "seek") and hasattr(file_obj, "tell"):
+        try:
+            file_obj.seek(0, 2)
+            file_size = file_obj.tell()
+            file_obj.seek(0)
+        except Exception:
+            file_size = None
+    if file_size is not None and file_size > MAX_UPLOAD_BYTES:
+        return filename, None, "Dataset file exceeds the 25 MB upload limit."
     if hasattr(file_obj, "seek"):
         file_obj.seek(0)
     try:
         if lower_name.endswith(".csv"):
-            return filename, pd.read_csv(file_obj), None
+            chunks = list(pd.read_csv(file_obj, chunksize=2000))
+            if not chunks:
+                return filename, None, "Uploaded CSV file is empty."
+            return filename, pd.concat(chunks, ignore_index=True), None
         if lower_name.endswith(".xlsx"):
             return filename, pd.read_excel(file_obj, engine="openpyxl"), None
         return filename, None, "Unsupported file format. Upload a .csv or .xlsx file."
+    except pd.errors.EmptyDataError:
+        return filename, None, "Uploaded CSV file is empty."
     except Exception as exc:
         return filename, None, f"Failed to read dataset file: {exc}"
 

@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="w-full space-y-4">
+  <section class="flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+    <div class="min-w-0 space-y-1">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[var(--accent-primary)]">
+          <i class="{{ module_icon|default:'fa-solid fa-rocket' }} text-[11px]" aria-hidden="true"></i>
+          <span>{{ module_badge|default:"Module · Coming Soon" }}</span>
+        </span>
+        <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--status-warning)]">Soon</span>
+      </div>
+      <h2 class="text-lg font-semibold tracking-tight text-[var(--text-primary)]">{{ module_title|default:page_title }}</h2>
+      <p class="text-xs text-[var(--text-secondary)]">{{ module_description }}</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="button" data-coming-soon="true" data-coming-panel="{{ module_badge }}" data-coming-title="{{ module_title }}" data-coming-desc="{{ module_description }}" data-coming-features="{{ features_pipe }}" title="Open a quick preview of upcoming tools in this module" class="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+        <i class="fa-solid fa-rocket text-xs" aria-hidden="true"></i>
+        <span>Preview Roadmap Modal</span>
+      </button>
+      <button type="button" id="coming-soon-support-btn" title="Send a feature request to the system administrator" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+        <i class="fa-solid fa-headset text-[var(--accent-primary)]" aria-hidden="true"></i>
+        <span>Request Priority Access</span>
+      </button>
+    </div>
+  </section>
+
+  {% if db_error %}
+  <div class="w-full rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
+    <i class="fa-solid fa-circle-exclamation mr-2" aria-hidden="true"></i>Database notice: {{ db_error }}
+  </div>
+  {% endif %}
+
+  <section class="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    {% for card in live_cards %}
+    {% include 'components/metric_card.html' with title=card.title value=card.value badge=card.badge status=card.status icon=card.icon %}
+    {% endfor %}
+  </section>
+
+  <section class="grid w-full grid-cols-1 gap-4 xl:grid-cols-12">
+    <div class="xl:col-span-7 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h3 class="text-sm font-semibold text-[var(--text-primary)]">Scheduled Feature Roadmap</h3>
+          <p class="text-xs text-[var(--text-muted)]">Capabilities releasing in the next module milestone</p>
+        </div>
+        <span class="rounded border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]">In Queue</span>
+      </div>
+      <ul class="space-y-2">
+        {% for feat in roadmap_features %}
+        <li class="flex items-start gap-2.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2.5 text-xs text-[var(--text-secondary)]">
+          <i class="fa-solid fa-circle-check mt-0.5 text-[var(--accent-primary)] shrink-0" aria-hidden="true"></i>
+          <span>{{ feat }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="xl:col-span-5 min-w-0 flex flex-col justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
+      <div class="space-y-2.5">
+        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Live Portal Readiness</h3>
+        <p class="text-xs leading-relaxed text-[var(--text-secondary)]">Your authenticated session and MongoDB Atlas collections are connected. Live counts above update automatically from the database.</p>
+        <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 space-y-1.5 text-xs">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[var(--text-muted)]">Active Role</span>
+            <span class="font-mono font-semibold text-[var(--text-primary)]">{{ active_role }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[var(--text-muted)]">Account</span>
+            <span class="truncate font-medium text-[var(--text-secondary)]">{{ current_user.email|default:"Signed in" }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[var(--text-muted)]">MongoDB Atlas</span>
+            <span class="font-medium {% if db_connected %}text-[var(--status-success)]{% else %}text-[var(--status-warning)]{% endif %}">{% if db_connected %}Connected{% else %}Offline{% endif %}</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" data-coming-soon="true" data-coming-panel="{{ module_badge }}" data-coming-title="{{ module_title }}" data-coming-desc="{{ module_description }}" data-coming-features="{{ features_pipe }}" title="Preview planned module capabilities in a popup dialog" class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+        <i class="fa-solid fa-circle-info text-[var(--accent-primary)]" aria-hidden="true"></i>
+        <span>Preview Roadmap Modal</span>
+      </button>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const supportBtn = document.getElementById('coming-soon-support-btn');
+    if (supportBtn) {
+      supportBtn.addEventListener('click', function () {
+        openFormModal({
+          title: 'Request Feature Priority',
+          actionUrl: '{% url "panels:submit_support_ticket" %}',
+          fields: [
+            { name: 'subject', label: 'Subject', type: 'text', value: 'Feature access request: {{ module_title|escapejs }}', required: true },
+            { name: 'message', label: 'Details', type: 'textarea', placeholder: 'Share which workflows your team needs first...', required: true }
+          ]
+        });
+      });
+    }
+  });
+</script>
+{% endblock %}

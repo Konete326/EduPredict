@@ -143,3 +143,18 @@ def logout_view(request):
     request.session.flush()
     messages.info(request, "You have been signed out successfully.")
     return redirect("accounts:auth_view")
+
+
+def error_404(request, exception=None):
+    session = getattr(request, "session", None)
+    user = session.get("user") if session is not None else None
+    active_role = user.get("role") if isinstance(user, dict) else None
+    return render(
+        request,
+        "404.html",
+        {
+            "page_title": "Page Not Found",
+            "active_role": active_role,
+        },
+        status=404,
+    )

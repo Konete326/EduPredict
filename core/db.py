@@ -13,6 +13,7 @@ COLLECTIONS = (
     "datasets_log",
     "notifications",
     "support_tickets",
+    "courses",
 )
 
 
@@ -173,6 +174,10 @@ def support_tickets_col():
     return get_collection("support_tickets")
 
 
+def courses_col():
+    return get_collection("courses")
+
+
 def ensure_indexes():
     try:
         users = users_col()
@@ -193,6 +198,9 @@ def ensure_indexes():
         notifs.create_index([("target_user_id", ASCENDING)])
         notifs.create_index([("is_read", ASCENDING)])
         notifs.create_index([("created_at", DESCENDING)])
+
+        courses = courses_col()
+        courses.create_index([("course_code", ASCENDING)], unique=True)
         return True
     except Exception:
         return False

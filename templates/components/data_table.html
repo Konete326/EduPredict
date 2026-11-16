@@ -1,4 +1,4 @@
-<div class="space-y-2.5">
+<div data-paginated-container data-page-size="{{ page_size|default:5 }}"{% if table_id %} data-table-id="{{ table_id }}"{% endif %} class="space-y-2.5">
   {% if table_title %}
   <div class="flex flex-wrap items-center justify-between gap-2">
     <h3 class="text-sm font-semibold text-[var(--text-primary)]">{{ table_title }}</h3>
@@ -7,27 +7,37 @@
     {% endif %}
   </div>
   {% endif %}
-  <div class="overflow-x-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+
+  <div class="hidden md:block overflow-x-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
     <table {% if table_id %}id="{{ table_id }}"{% endif %} data-searchable-table class="w-full border-collapse text-left text-sm">
       {% if headers %}
       <thead class="sticky top-0 z-10 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
         <tr>
           {% for header in headers %}
-          <th scope="col" class="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{% if header.label %}{{ header.label }}{% else %}{{ header }}{% endif %}</th>
+          <th scope="col" class="whitespace-nowrap px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{% if header.label %}{{ header.label }}{% else %}{{ header }}{% endif %}</th>
           {% endfor %}
         </tr>
       </thead>
       {% endif %}
       <tbody class="divide-y divide-[var(--border-subtle)] tabular-nums">
         {% for row in rows %}
-        <tr class="transition-colors hover:bg-[var(--bg-elevated)]">
+        <tr data-page-item class="transition-colors hover:bg-[var(--bg-elevated)]">
           {% for cell in row %}
-          <td class="whitespace-nowrap px-4 py-3 text-[var(--text-primary)]">
-            {% if cell.status and cell.text %}
+          <td class="whitespace-nowrap px-4 py-2.5 text-[var(--text-primary)]">
+            {% if cell.status and cell.text is not None %}
             <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
               <span class="h-1.5 w-1.5 rounded-full {% if cell.status == 'success' %}bg-[var(--status-success)]{% elif cell.status == 'warning' %}bg-[var(--status-warning)]{% elif cell.status == 'danger' or cell.status == 'error' %}bg-[var(--status-danger)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span>
               <span>{{ cell.text }}</span>
             </span>
+            {% elif cell.actions %}
+            <div class="flex flex-wrap items-center gap-1.5">
+              {% for act in cell.actions %}
+              <button type="button"{% if act.onclick %} onclick="{{ act.onclick }}"{% endif %}{% if act.title %} title="{{ act.title }}"{% endif %}{% if act.attrs %}{% for k, v in act.attrs.items %} {{ k }}="{{ v }}"{% endfor %}{% endif %} class="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors {% if act.variant == 'danger' %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]{% elif act.variant == 'primary' %}border-transparent bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]{% else %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+                {% if act.icon %}<i class="{{ act.icon }} text-[11px]" aria-hidden="true"></i>{% endif %}
+                {% if act.label %}<span>{{ act.label }}</span>{% endif %}
+              </button>
+              {% endfor %}
+            </div>
             {% else %}
             {{ cell }}
             {% endif %}
@@ -36,7 +46,7 @@
         </tr>
         {% empty %}
         <tr data-empty-row>
-          <td colspan="{{ headers|length|default:1 }}" class="px-4 py-10 text-center">
+          <td colspan="{{ headers|length|default:1 }}" class="px-4 py-8 text-center">
             <div class="flex flex-col items-center justify-center gap-2 text-[var(--text-muted)]">
               <i class="fa-regular fa-folder-open text-lg" aria-hidden="true"></i>
               <p class="text-sm font-medium text-[var(--text-secondary)]">{{ empty_message|default:"No records found." }}</p>
@@ -46,5 +56,64 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
+
+  <div class="md:hidden space-y-2.5">
+    {% for row in rows %}
+    <div data-mobile-card data-page-item class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 space-y-2">
+      {% for cell in row %}
+      {% with col_idx=forloop.counter0 %}
+      <div class="flex items-start justify-between gap-3 text-xs {% if not forloop.first %}border-t border-[var(--border-subtle)] pt-1.5{% endif %}">
+        <span class="shrink-0 font-semibold uppercase tracking-wider text-[11px] text-[var(--text-muted)]">{% for header in headers %}{% if forloop.counter0 == col_idx %}{% if header.label %}{{ header.label }}{% else %}{{ header }}{% endif %}{% endif %}{% endfor %}</span>
+        <div class="min-w-0 text-right font-medium text-[var(--text-primary)] break-words">
+          {% if cell.status and cell.text is not None %}
+          <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
+            <span class="h-1.5 w-1.5 rounded-full {% if cell.status == 'success' %}bg-[var(--status-success)]{% elif cell.status == 'warning' %}bg-[var(--status-warning)]{% elif cell.status == 'danger' or cell.status == 'error' %}bg-[var(--status-danger)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span>
+            <span>{{ cell.text }}</span>
+          </span>
+          {% elif cell.actions %}
+          <div class="flex flex-wrap items-center justify-end gap-1.5">
+            {% for act in cell.actions %}
+            <button type="button"{% if act.onclick %} onclick="{{ act.onclick }}"{% endif %}{% if act.title %} title="{{ act.title }}"{% endif %}{% if act.attrs %}{% for k, v in act.attrs.items %} {{ k }}="{{ v }}"{% endfor %}{% endif %} class="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors {% if act.variant == 'danger' %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]{% elif act.variant == 'primary' %}border-transparent bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]{% else %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+              {% if act.icon %}<i class="{{ act.icon }} text-[11px]" aria-hidden="true"></i>{% endif %}
+              {% if act.label %}<span>{{ act.label }}</span>{% endif %}
+            </button>
+            {% endfor %}
+          </div>
+          {% else %}
+          {{ cell }}
+          {% endif %}
+        </div>
+      </div>
+      {% endwith %}
+      {% endfor %}
+    </div>
+    {% empty %}
+    <div data-empty-row class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-8 text-center">
+      <div class="flex flex-col items-center justify-center gap-2 text-[var(--text-muted)]">
+        <i class="fa-regular fa-folder-open text-lg" aria-hidden="true"></i>
+        <p class="text-sm font-medium text-[var(--text-secondary)]">{{ empty_message|default:"No records found." }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div data-search-empty class="hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-6 text-center text-xs text-[var(--text-muted)]">
+    No matching records found.
+  </div>
+
+  <div data-pagination-bar class="hidden flex-wrap items-center justify-between gap-2 pt-1 text-xs text-[var(--text-muted)]">
+    <span data-pagination-info class="tabular-nums"></span>
+    <div class="flex items-center gap-1.5">
+      <button type="button" data-page-prev class="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40">
+        <i class="fa-solid fa-chevron-left text-[10px]" aria-hidden="true"></i>
+        <span>Prev</span>
+      </button>
+      <span data-page-indicator class="px-2 font-medium tabular-nums text-[var(--text-secondary)]"></span>
+      <button type="button" data-page-next class="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40">
+        <span>Next</span>
+        <i class="fa-solid fa-chevron-right text-[10px]" aria-hidden="true"></i>
+      </button>
+    </div>
   </div>
 </div>
