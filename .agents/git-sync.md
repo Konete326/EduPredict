@@ -61,34 +61,40 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 4 Verification Agent (@verifier)"
-active_branch_merged_to_main: "feature/admin-panel -> main"
-project_phase: "Phase 4 Complete - Admin Panel, Global Components, Collapsible Shell & 404 Verified"
+last_updated_by_agent: "Phase 5 Lead Implementation & Verification Agent"
+active_branch_merged_to_main: "feature/teacher-panel -> main"
+project_phase: "Phase 5 Complete - Teacher Panel, Zero-Lag Caching, SPA Navigation & Basic English Nav Verified"
 
 completed_modules:
   - "Phase 1: Django Project Init, Core MongoDB Layer & App-Shell-3 Layout (core/, templates/components/, static/)"
   - "Phase 2: Authentication, Default Admin Sync & Role-Based Routing (accounts/services.py, accounts/views.py, templates/accounts/auth.html)"
   - "Phase 3 & Polish: Analyst Panel, ML Engine, chunked CSV + 25MB limit in analytics/data_pipeline.py, compact viewport-fit in analyst_dashboard.html"
-  - "Phase 4 Admin Backend: panels/admin_seed.py (seeding, overview metrics, JSON/CSV backup), panels/admin_services.py (Users/Courses/Tickets CRUD, mark_notifications_read, table formatters), panels/views_admin.py, core/db.py (courses_col + unique index)"
-  - "Phase 4 Global UI & UX: Collapsible desktop/mobile sidebar (Rule 14), 5-row pagination + mobile card sync (Rules 12-13), Coming Soon modal/panel (Rule 15), sortable tables, custom 404 (templates/404.html + accounts.views.error_404), Modern Web Guidance polish (static/css/global.css, static/js/app.js)"
-  - "Phase 4 Admin Templates: templates/panels/admin_{dashboard,users,courses,tickets}.html & coming_soon_panel.html"
+  - "Phase 4 Admin Backend & Global Shell: panels/admin_seed.py, panels/admin_services.py, panels/views_admin.py, core/db.py (courses_col + unique index), 5-row pagination, mobile card sync, Coming Soon modals, 404 handler"
+  - "Phase 5 Zero-Lag Caching & SPA Navigation (Rule 19): In-memory TTL cache (core/db.py get_cached/invalidate_cache), run-once guards on ensure_admin_seed_data & ensure_default_admin (saving 2.5-3.5s per request, warm GETs < 100ms), and static/js/nav.js (smooth client-side navigation + sessionStorage GET cache + hover prefetch + re-executing page scripts)"
+  - "Phase 5 Global UX Polish: Collapsible sidebar on desktop (body.sidebar-collapsed with !important override) & mobile, basic everyday English across all sidebar links & panel headers (Rule 16), collapsible nav groups with localStorage persistence, removed duplicate '+' symbols from action buttons (Rule 17), blocked Admin self-tickets on /support/submit/ and guarded USR-1000 from deletion/deactivation (Rule 18)"
+  - "Phase 5 Teacher Backend & Services: panels/teacher_services.py (333 lines, 0 comments) with student status badges (Excellent, Stable, Needs Help, High Risk), get_teacher_dashboard_context, get_teacher_students_context, get_teacher_ingest_context, update_student_record_inline, send_student_alert (notifications_col), delete_student_record"
+  - "Phase 5 Teacher Views & Routes: panels/views_teacher.py (171 lines, 0 comments) with /teacher-panel/ (Class Home), /teacher-panel/students/ (Student List + filters + CSV export), /teacher-panel/ingest/ (Upload Marks + 1-click sample class sheet + manual entry form + roster editor)"
+  - "Phase 5 Teacher Templates: templates/panels/teacher_dashboard.html (KPIs, Course Attendance & Marks bar chart, Student Status doughnut, At-Risk table), templates/panels/teacher_students.html (filters, 5-row table + mobile cards, Update Marks modal, Send Alert modal, Delete confirm modal), templates/panels/teacher_ingest.html (upload sheet, manual form, class roster editor, upload logs)"
 
 active_routes_and_files:
   - "/, /auth/, /auth/logout/, catch-all 404 -> accounts/views.py & config/urls.py"
   - "/admin-panel/ -> panels:admin_dashboard (KPIs, Dept Enrollment vs Capacity bar chart, Risk doughnut, Recent Tickets)"
   - "/admin-panel/users/, /admin-panel/courses/, /admin-panel/tickets/ -> Full MongoDB Atlas CRUD + filters + 5-row pagination"
   - "/admin-panel/backup/?format=json|csv -> panels:admin_backup_export"
-  - "/support/submit/ -> panels:submit_support_ticket (global sidebar Support modal endpoint)"
+  - "/support/submit/ -> panels:submit_support_ticket (global sidebar Support modal endpoint, blocks Admin self-submission)"
   - "/notifications/mark-read/ -> panels:mark_notifications_read (CSRF POST JSON endpoint)"
   - "/analyst-panel/* -> panels/views_analyst.py & analytics/views.py"
-  - "/teacher-panel/*, /student-panel/* -> Coming Soon roadmap views (panels/views_teacher.py, panels/views_student.py)"
+  - "/teacher-panel/ -> panels:teacher_dashboard (Class Home)"
+  - "/teacher-panel/students/ -> panels:teacher_students (Student List, CSV export, Update Marks, Send Alert)"
+  - "/teacher-panel/ingest/ -> panels:teacher_ingest (Upload spreadsheet, 1-click sample class sheet, manual entry form)"
+  - "/student-panel/* -> Coming Soon roadmap views (panels/views_student.py)"
 
 pending_modules_in_order:
-  - "Phase 5: Teacher Panel (Class Overview, Attendance/Marks Ingestion, Alerts)"
   - "Phase 6: Student Panel (Personal Dashboard, AI Risk Card, Report Download)"
 
 important_notes_for_next_agent:
-  - "Next Phase: Phase 5 — Teacher Panel (Class Overview, Attendance/Marks Ingestion, Alerts) in panels/views_teacher.py and templates/panels/teacher_*.html ONLY."
-  - "Preserve all global contracts: templates/base.html, templates/components/* (5-row pagination, mobile cards, Coming Soon & confirm/form modals), static/css/global.css, static/js/app.js, core/db.py."
+  - "Next Phase: Phase 6 — Student Panel (Personal Dashboard, AI Risk Card, Report Download) in panels/views_student.py and templates/panels/student_*.html ONLY."
+  - "Zero-lag caching is active: wrap heavy read queries in get_cached('student:...', fn, ttl=30.0) and call invalidate_cache() after student updates/mutations."
+  - "Preserve all global contracts: templates/base.html, templates/components/* (5-row pagination, mobile cards, Coming Soon & confirm/form modals), static/css/global.css, static/js/app.js, static/js/nav.js, core/db.py."
   - "Keep .env and .agents/* (including .agents/rules/* and .agents/skills/*) tracked and pushed; maintain zero comments across all .py/.html/.css/.js files, panels/views_*.py <= 250 lines, and other files <= 350 lines."
 ```

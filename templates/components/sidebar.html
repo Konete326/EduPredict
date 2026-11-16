@@ -1,146 +1,165 @@
 <div id="mobile-sidebar-backdrop" class="fixed inset-0 z-40 hidden bg-[var(--bg-overlay)] backdrop-blur-sm lg:hidden" aria-hidden="true"></div>
 
-<aside id="mobile-sidebar-drawer" class="fixed inset-y-0 left-0 z-40 lg:z-30 flex w-64 -translate-x-full lg:translate-x-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-transform duration-200 ease-out" aria-label="Primary Sidebar">
-  <div class="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4">
-    <a href="/" class="flex items-center gap-2.5 min-w-0">
-      <i class="fa-solid fa-graduation-cap text-lg text-[var(--accent-primary)] shrink-0"></i>
-      <span class="truncate text-base font-semibold tracking-tight text-[var(--text-primary)]">EduPredict</span>
-      <span class="shrink-0 rounded border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-primary)]">
-        {{ active_role|default:"Preview" }}
-      </span>
+<aside id="mobile-sidebar-drawer" class="fixed inset-y-0 left-0 z-40 lg:z-30 flex w-64 -translate-x-full lg:translate-x-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-transform duration-200 ease-out" aria-label="Sidebar Menu">
+  <div class="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-3.5">
+    <a href="/" class="flex items-center gap-2 min-w-0">
+      <i class="fa-solid fa-graduation-cap text-base text-[var(--accent-primary)] shrink-0"></i>
+      <span class="truncate text-sm font-semibold tracking-tight text-[var(--text-primary)]">EduPredict</span>
+      <span class="shrink-0 rounded border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-primary)]">{{ active_role|default:"Preview" }}</span>
     </a>
-    <button id="mobile-sidebar-close" type="button" class="lg:hidden rounded-md p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]" aria-label="Close navigation menu">
-      <i class="fa-solid fa-xmark text-base"></i>
+    <button id="mobile-sidebar-close" type="button" title="Hide menu" class="lg:hidden rounded-md p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors" aria-label="Hide menu">
+      <i class="fa-solid fa-xmark text-sm"></i>
     </button>
   </div>
 
-  <nav class="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+  <nav class="flex-1 overflow-y-auto px-2.5 py-2.5 space-y-2.5">
     {% if active_role == 'ADMIN' or not active_role %}
-    <div class="space-y-1">
-      <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Administration</p>
-      <a href="{% url 'panels:admin_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-        <i class="fa-solid fa-gauge-high w-4 text-center shrink-0"></i>
-        <span class="truncate">Admin Overview</span>
-      </a>
-      <a href="{% url 'panels:admin_users' %}" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_users' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-        <i class="fa-solid fa-users w-4 text-center shrink-0"></i>
-        <span class="truncate">User Management</span>
-      </a>
-      <a href="{% url 'panels:admin_courses' %}" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_courses' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-        <i class="fa-solid fa-book-open w-4 text-center shrink-0"></i>
-        <span class="truncate">Courses &amp; Batches</span>
-      </a>
-      <a href="{% url 'panels:admin_tickets' %}" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_tickets' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-        <i class="fa-solid fa-life-ring w-4 text-center shrink-0"></i>
-        <span class="truncate">Support Tickets</span>
-      </a>
-      <a href="#" data-coming-soon="true" data-coming-title="Audit & System Logs" data-coming-panel="Administration" data-coming-desc="Immutable security trail tracking authentication events, RBAC changes, and MongoDB administrative edits." data-coming-features="Real-time login & RBAC audit log|Admin CRUD change history & timestamps|Filterable export for compliance review" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-clock-rotate-left w-4 text-center shrink-0"></i>
-        <span class="truncate">Audit &amp; System Logs</span>
-        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
-      </a>
-      <a href="#" data-coming-soon="true" data-coming-title="Institution Settings" data-coming-panel="Administration" data-coming-desc="Centralized academic term configuration, GPA thresholds, and automated risk alert routing rules." data-coming-features="Academic term & grading scale policies|Dropout risk warning thresholds|Alert & email delivery preferences" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-sliders w-4 text-center shrink-0"></i>
-        <span class="truncate">Institution Settings</span>
-        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
-      </a>
+    <div class="space-y-0.5" data-nav-group="admin">
+      <button type="button" data-nav-group-toggle="admin" aria-expanded="true" title="Show or hide Admin links" class="flex w-full items-center justify-between rounded-md px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+        <span>Admin</span>
+        <i class="nav-group-chevron fa-solid fa-chevron-down text-[10px] transition-transform duration-150"></i>
+      </button>
+      <div data-nav-group-body="admin" class="space-y-0.5">
+        <a href="{% url 'panels:admin_dashboard' %}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors {% if request.resolver_match.view_name == 'panels:admin_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-gauge-high w-4 text-center shrink-0"></i>
+          <span class="truncate">Dashboard</span>
+        </a>
+        <a href="{% url 'panels:admin_users' %}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors {% if request.resolver_match.view_name == 'panels:admin_users' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-users w-4 text-center shrink-0"></i>
+          <span class="truncate">Users</span>
+        </a>
+        <a href="{% url 'panels:admin_courses' %}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors {% if request.resolver_match.view_name == 'panels:admin_courses' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-book-open w-4 text-center shrink-0"></i>
+          <span class="truncate">Courses</span>
+        </a>
+        <a href="{% url 'panels:admin_tickets' %}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors {% if request.resolver_match.view_name == 'panels:admin_tickets' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-life-ring w-4 text-center shrink-0"></i>
+          <span class="truncate">Help Tickets</span>
+        </a>
+        <a href="#" data-coming-soon="true" data-coming-title="Activity Logs" data-coming-panel="Admin" data-coming-desc="See who signed in and what changes were made." data-coming-features="Login history and role updates|Track added, edited, and deleted items|Downloadable activity report" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+          <i class="fa-solid fa-clock-rotate-left w-4 text-center shrink-0"></i>
+          <span class="truncate">Activity Logs</span>
+          <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
+        </a>
+        <a href="#" data-coming-soon="true" data-coming-title="Settings" data-coming-panel="Admin" data-coming-desc="Change school terms, grade limits, and alert rules." data-coming-features="Set term dates and grade scale|Choose warning limits for dropout risk|Control how alerts are sent" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+          <i class="fa-solid fa-sliders w-4 text-center shrink-0"></i>
+          <span class="truncate">Settings</span>
+          <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
+        </a>
+      </div>
     </div>
     {% endif %}
 
     {% if active_role == 'TEACHER' or active_role == 'ADMIN' or not active_role %}
-    <div class="space-y-1">
-      <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Faculty</p>
-      <a href="{% url 'panels:teacher_dashboard' %}" data-coming-soon="true" data-coming-title="Class Overview" data-coming-panel="Faculty" data-coming-desc="Batch-level attendance health, assignment completion velocity, and ML-flagged student summaries for instructors." data-coming-features="Section attendance & GPA pulse|Early-warning student risk roster|Quick batch feedback announcements" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:teacher_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-        <i class="fa-solid fa-chalkboard-user w-4 text-center shrink-0"></i>
-        <span class="truncate">Class Overview</span>
-        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
-      </a>
-      <a href="{% url 'panels:teacher_students' %}" data-coming-soon="true" data-coming-title="Student Tracker" data-coming-panel="Faculty" data-coming-desc="Individual learner drilldowns combining LMS engagement, midterm trajectories, and dropout risk scores." data-coming-features="Per-student risk & GPA timeline|Filter by batch, course, or risk tier|One-click counseling note logging" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:teacher_students' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-        <i class="fa-solid fa-user-graduate w-4 text-center shrink-0"></i>
-        <span class="truncate">Student Tracker</span>
-        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
-      </a>
-      <a href="{% url 'panels:teacher_ingest' %}" data-coming-soon="true" data-coming-title="Data Ingestion" data-coming-panel="Faculty" data-coming-desc="Streamlined CSV attendance and internal marks uploader synced directly to MongoDB and ML scoring." data-coming-features="Course roster CSV/Excel upload|Automated validation & missing-value check|Instant ML risk score refresh" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:teacher_ingest' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-        <i class="fa-solid fa-file-arrow-up w-4 text-center shrink-0"></i>
-        <span class="truncate">Data Ingestion</span>
-        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
-      </a>
-      <a href="#" data-coming-soon="true" data-coming-title="Intervention Alerts" data-coming-panel="Faculty" data-coming-desc="Automated threshold triggers when student attendance or quiz velocity drops sharply mid-semester." data-coming-features="High-risk & anomaly alert queue|Recommended mentor outreach actions|Follow-up resolution tracking" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-bell w-4 text-center shrink-0"></i>
-        <span class="truncate">Intervention Alerts</span>
-        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
-      </a>
+    <div class="space-y-0.5" data-nav-group="teacher">
+      <button type="button" data-nav-group-toggle="teacher" aria-expanded="true" title="Show or hide Teacher links" class="flex w-full items-center justify-between rounded-md px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+        <span>Teacher</span>
+        <i class="nav-group-chevron fa-solid fa-chevron-down text-[10px] transition-transform duration-150"></i>
+      </button>
+      <div data-nav-group-body="teacher" class="space-y-0.5">
+        <a href="{% url 'panels:teacher_dashboard' %}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors {% if request.resolver_match.view_name == 'panels:teacher_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-chalkboard-user w-4 text-center shrink-0"></i>
+          <span class="truncate">Class Home</span>
+        </a>
+        <a href="{% url 'panels:teacher_students' %}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors {% if request.resolver_match.view_name == 'panels:teacher_students' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-user-graduate w-4 text-center shrink-0"></i>
+          <span class="truncate">Student List</span>
+        </a>
+        <a href="{% url 'panels:teacher_ingest' %}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors {% if request.resolver_match.view_name == 'panels:teacher_ingest' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-file-arrow-up w-4 text-center shrink-0"></i>
+          <span class="truncate">Upload Marks</span>
+        </a>
+        <a href="#" data-coming-soon="true" data-coming-title="Risk Alerts" data-coming-panel="Teacher" data-coming-desc="Send quick warning notes when a student misses classes or drops in marks." data-coming-features="Automatic low attendance alerts|One-click warning message to students|Track resolved alerts" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+          <i class="fa-solid fa-bell w-4 text-center shrink-0"></i>
+          <span class="truncate">Risk Alerts</span>
+          <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
+        </a>
+      </div>
     </div>
     {% endif %}
 
     {% if active_role == 'STUDENT' or active_role == 'ADMIN' or not active_role %}
-    <div class="space-y-1">
-      <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Student</p>
-      <a href="{% url 'panels:student_dashboard' %}" data-coming-soon="true" data-coming-title="Learning Dashboard" data-coming-panel="Student" data-coming-desc="Personal academic readiness snapshot displaying attendance health, LMS activity, and projected semester GPA." data-coming-features="Live attendance & assignment progress|Predicted GPA trend gauge|Upcoming milestone reminders" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-        <i class="fa-solid fa-graduation-cap w-4 text-center shrink-0"></i>
-        <span class="truncate">Learning Dashboard</span>
-        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
-      </a>
-      <a href="{% url 'panels:student_report' %}" data-coming-soon="true" data-coming-title="Report Card" data-coming-panel="Student" data-coming-desc="Course-wise breakdown of internal assessments, attendance percentages, and advisor feedback notes." data-coming-features="Subject-level assessment ledger|GPA projection vs target score|Downloadable semester summary" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_report' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-        <i class="fa-solid fa-file-lines w-4 text-center shrink-0"></i>
-        <span class="truncate">Report Card</span>
-        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
-      </a>
-      <a href="#" data-coming-soon="true" data-coming-title="AI Study Advisor" data-coming-panel="Student" data-coming-desc="Personalized weekly study-hour targets and targeted improvement tips derived from predictive analytics." data-coming-features="Smart weekly study plan generator|Risk-factor improvement simulator|Focus reminders for weak topics" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-robot w-4 text-center shrink-0"></i>
-        <span class="truncate">AI Study Advisor</span>
-        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
-      </a>
+    <div class="space-y-0.5" data-nav-group="student">
+      <button type="button" data-nav-group-toggle="student" aria-expanded="true" title="Show or hide Student links" class="flex w-full items-center justify-between rounded-md px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+        <span>Student</span>
+        <i class="nav-group-chevron fa-solid fa-chevron-down text-[10px] transition-transform duration-150"></i>
+      </button>
+      <div data-nav-group-body="student" class="space-y-0.5">
+        <a href="{% url 'panels:student_dashboard' %}" data-coming-soon="true" data-coming-title="My Dashboard" data-coming-panel="Student" data-coming-desc="View your attendance, current progress, and expected final GPA." data-coming-features="Your attendance and assignment score|Expected GPA progress meter|Upcoming class reminders" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors {% if request.resolver_match.view_name == 'panels:student_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-graduation-cap w-4 text-center shrink-0"></i>
+          <span class="truncate">My Dashboard</span>
+          <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
+        </a>
+        <a href="{% url 'panels:student_report' %}" data-coming-soon="true" data-coming-title="My Report Card" data-coming-panel="Student" data-coming-desc="See marks by subject, attendance details, and teacher feedback." data-coming-features="Marks list for each subject|Expected vs target GPA view|Downloadable term report" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors {% if request.resolver_match.view_name == 'panels:student_report' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-file-lines w-4 text-center shrink-0"></i>
+          <span class="truncate">My Report Card</span>
+          <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
+        </a>
+        <a href="#" data-coming-soon="true" data-coming-title="Study Tips" data-coming-panel="Student" data-coming-desc="Get simple weekly study tips based on your attendance and marks." data-coming-features="Weekly study hour suggestions|Simple steps to improve grades|Helpful reminders for weak topics" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+          <i class="fa-solid fa-lightbulb w-4 text-center shrink-0"></i>
+          <span class="truncate">Study Tips</span>
+          <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
+        </a>
+      </div>
     </div>
     {% endif %}
 
     {% if active_role == 'ANALYST' or active_role == 'ADMIN' or not active_role %}
-    <div class="space-y-1">
-      <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Data &amp; ML</p>
-      <a href="{% url 'panels:analyst_dashboard' %}" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:analyst_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-        <i class="fa-solid fa-chart-line w-4 text-center shrink-0"></i>
-        <span class="truncate">Analytics Hub</span>
-      </a>
-      <a href="{% url 'panels:analyst_dashboard' %}#ingestion-hub" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-database w-4 text-center shrink-0"></i>
-        <span class="truncate">Upload Dataset</span>
-      </a>
-      <a href="#" data-coming-soon="true" data-coming-title="Model Benchmarks" data-coming-panel="Data & ML" data-coming-desc="Model evaluation workbench tracking Random Forest accuracy, Ridge Regression RMSE, and feature drift." data-coming-features="Precision/recall & ROC-AUC scorecards|Feature importance drift monitor|Cross-validation training history" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <i class="fa-solid fa-microchip w-4 text-center shrink-0"></i>
-        <span class="truncate">Model Benchmarks</span>
-        <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
-      </a>
+    <div class="space-y-0.5" data-nav-group="analyst">
+      <button type="button" data-nav-group-toggle="analyst" aria-expanded="true" title="Show or hide Data Analyst links" class="flex w-full items-center justify-between rounded-md px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+        <span>Data Analyst</span>
+        <i class="nav-group-chevron fa-solid fa-chevron-down text-[10px] transition-transform duration-150"></i>
+      </button>
+      <div data-nav-group-body="analyst" class="space-y-0.5">
+        <a href="{% url 'panels:analyst_dashboard' %}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors {% if request.resolver_match.view_name == 'panels:analyst_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-chart-line w-4 text-center shrink-0"></i>
+          <span class="truncate">Analytics Home</span>
+        </a>
+        <a href="{% url 'panels:analyst_dashboard' %}#ingestion-hub" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+          <i class="fa-solid fa-database w-4 text-center shrink-0"></i>
+          <span class="truncate">Upload Data</span>
+        </a>
+        <a href="#" data-coming-soon="true" data-coming-title="AI Accuracy" data-coming-panel="Data Analyst" data-coming-desc="See how well the prediction models perform on student data." data-coming-features="Model accuracy and error scores|Top factors affecting student risk|Past model training log" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+          <i class="fa-solid fa-microchip w-4 text-center shrink-0"></i>
+          <span class="truncate">AI Accuracy</span>
+          <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
+        </a>
+      </div>
     </div>
     {% endif %}
 
     {% if not active_role %}
-    <div class="space-y-1">
-      <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Account</p>
-      <a href="{% url 'accounts:auth_view' %}" class="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors {% if request.resolver_match.view_name == 'accounts:auth_view' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <div class="space-y-0.5">
+      <p class="px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Account</p>
+      <a href="{% url 'accounts:auth_view' %}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors {% if request.resolver_match.view_name == 'accounts:auth_view' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
         <i class="fa-solid fa-right-to-bracket w-4 text-center shrink-0"></i>
-        <span class="truncate">Sign In / Register</span>
+        <span class="truncate">Sign In</span>
       </a>
     </div>
     {% endif %}
   </nav>
 
-  <div class="shrink-0 border-t border-[var(--border-subtle)] p-3 space-y-2.5">
-    <div class="flex items-center gap-2.5 px-1">
-      <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-xs font-semibold text-[var(--text-primary)]">
-        {{ current_user.full_name|default:"EP"|slice:":2"|upper }}
-      </div>
+  <div class="shrink-0 border-t border-[var(--border-subtle)] p-3 space-y-2">
+    <div class="flex items-center gap-2 px-0.5">
+      <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[11px] font-semibold text-[var(--text-primary)]">{{ current_user.full_name|default:"EP"|slice:":2"|upper }}</div>
       <div class="min-w-0 flex-1">
-        <p class="truncate text-xs font-medium text-[var(--text-primary)]">{{ current_user.full_name|default:"EduPredict Preview" }}</p>
+        <p class="truncate text-xs font-medium text-[var(--text-primary)]">{{ current_user.full_name|default:"EduPredict User" }}</p>
         <p class="truncate text-[11px] text-[var(--text-muted)]">{{ current_user.email|default:"portal@edupredict.edu" }}</p>
       </div>
     </div>
-
-    <div class="grid grid-cols-2 gap-2">
-      <button type="button" onclick="openFormModal({ title: 'Support & Feedback', actionUrl: '{% url 'panels:submit_support_ticket' %}', fields: [{ name: 'subject', label: 'Subject', type: 'text', placeholder: 'Brief summary', required: true }, { name: 'message', label: 'Details', type: 'textarea', placeholder: 'Describe your question or bug...', required: true }] })" class="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+    <div class="grid grid-cols-2 gap-1.5">
+      {% if active_role == 'ADMIN' %}
+      <a href="{% url 'panels:admin_tickets' %}" title="Open help tickets" class="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+        <i class="fa-solid fa-life-ring text-[11px]"></i>
+        <span class="truncate">Help Tickets</span>
+      </a>
+      {% else %}
+      <button type="button" onclick="openFormModal({ title: 'Need Help', actionUrl: '{% url 'panels:submit_support_ticket' %}', fields: [{ name: 'subject', label: 'Subject', type: 'text', placeholder: 'Short title', required: true }, { name: 'message', label: 'Message', type: 'textarea', placeholder: 'Write your question or issue...', required: true }] })" title="Ask for help or report a problem" class="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
         <i class="fa-solid fa-headset text-[11px]"></i>
-        <span>Support</span>
+        <span class="truncate">Need Help</span>
       </button>
-      <button type="button" onclick="openConfirmModal({ title: 'Confirm Logout', message: 'Are you sure you want to sign out?', onConfirmUrl: '{% url 'accounts:logout_view' %}' })" class="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-xs font-medium text-[var(--status-danger)] hover:bg-[var(--bg-elevated)] transition-colors">
+      {% endif %}
+      <button type="button" onclick="openConfirmModal({ title: 'Log Out', message: 'Are you sure you want to log out?', confirmText: 'Log Out', onConfirmUrl: '{% url 'accounts:logout_view' %}' })" title="Sign out of EduPredict" class="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-1.5 text-xs font-medium text-[var(--status-danger)] hover:bg-[var(--bg-elevated)] transition-colors">
         <i class="fa-solid fa-arrow-right-from-bracket text-[11px]"></i>
         <span>Logout</span>
       </button>

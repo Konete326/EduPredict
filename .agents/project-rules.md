@@ -69,6 +69,19 @@
 - All planned/unbuilt panel pages across Admin, Teacher, Student, and Analyst panels MUST appear in `templates/components/sidebar.html` with a `"Soon"` badge and open the global theme-aware Coming Soon modal (`openComingSoonModal` / `[data-coming-soon]`) when clicked, instead of broken links or raw placeholders.
 - Direct route views for unbuilt modules must render `templates/panels/coming_soon_panel.html` with roadmap details, live MongoDB counts, and a trigger for `openComingSoonModal`.
 
-## Rule 16: Child-Friendly, Ultra-Simple Automated UX & Modern Web Guidance Standard
-- **Effortless, Child-Simple UI:** Keep every panel intuitive with plain action labels, crisp icons, descriptive `title` tooltips on buttons/links, 1-click automated workflows, and progressive disclosure via global modals so pages never feel crowded.
-- **Modern Web Guidance States:** Enforce `cursor: pointer`, clear `:hover`, `:focus-visible`, and `:active` press states, `text-wrap: balance` on headings, clickable table column sorting, mandatory 5-row pagination, and a custom theme-aware `404.html` error page active in both `DEBUG=True` and `DEBUG=False`.
+## Rule 16: Basic Everyday English Only & Compact Collapsible Sidebar
+- **Simple Everyday English:** All UI labels, sidebar links, headings, helper text, modal copy, and toast messages across every panel MUST use plain, everyday English (no complex technical jargon). Keep action labels intuitive with crisp FontAwesome icons and descriptive `title` tooltips.
+- **Compact Collapsible Sidebar & Interactive States:** Sidebar navigation labels MUST stay short and clean, and sidebar section groups (`data-nav-group-toggle`) MUST be collapsible/minimizable via dropdown toggles persisted in `localStorage` (`edupredict_nav_groups`). Keep `cursor: pointer`, crisp `:hover`/`:focus-visible`/`:active` states, `text-wrap: balance` on headings, clickable table column sorting (`data-sortable`), and mandatory 5-row pagination.
+
+## Rule 17: Zero Dead Routes, No Duplicate Icons & Mandatory Coming Soon Modals
+- **Zero Dead Links or Placeholders:** Never leave dead/unfinished links, broken routes, or buttons that lead to 404 or empty placeholders. Either build the complete dynamic route first OR attach `data-coming-soon="true"` (`openComingSoonModal`) directly to the link/button.
+- **No Duplicate `+` Icons:** Never place duplicate `+` icons/symbols on buttons (for example, never pair `<i class="fa-solid fa-plus"></i>` with a literal `+ ` text prefix on the same button).
+- **Custom 404 Safety Net:** Keep the custom theme-aware `404.html` error page active in both `DEBUG=True` and `DEBUG=False` for unrecognized URLs.
+
+## Rule 18: Strict Role Logic & Self-Action Guards
+- **Real-World Role Boundaries:** Admins manage users, courses, and incoming help tickets, so Admins MUST NOT see `"Send Feedback"` or `"New Ticket"` options to message themselves (`submit_support_ticket` blocks `ADMIN`).
+- **Self-Action Guards:** Admins MUST NEVER be able to delete, deactivate/block, or downgrade/change the role of their own active account. Enforce checks against BOTH `user_id` AND `email` in backend services and omit self-destructive buttons on the actor's own table/card row.
+
+## Rule 19: Zero-Lag Caching & SPA-Smooth Navigation
+- **Process-Once Startup & TTL Caching:** Never run DB seeding, index creation (`create_index`), or password-hash checks on every page request — run startup seed, index, and default-admin guards once per process (with thread locks). Use short-TTL in-memory caching in `core/db.py` (`get_cached` / `invalidate_cache` cleared on every mutation) and cache DB health checks.
+- **Cache-Busted Assets & SPA Navigation:** Cache-bust static CSS/JS assets (`?v=`) in `templates/base.html`, and provide SPA-smooth page transitions (`static/js/nav.js` with `sessionStorage` GET cache + hover prefetch, invalidated on form `POST`, re-initializing charts and UI hooks via `window.reinitEduPredictUI()`).

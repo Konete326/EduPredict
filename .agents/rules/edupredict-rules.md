@@ -1,6 +1,6 @@
 ---
 trigger: always_on
-description: Mandatory EduPredict project rules, stack lock, UI/DB contracts, viewport-fit pagination, mobile card-lists, one-feature execution cap, and Roman Urdu communication invariants.
+description: Mandatory EduPredict project rules, stack lock, UI/DB contracts, viewport-fit pagination, mobile card-lists, simple English, role guards, caching/SPA nav, and Roman Urdu invariants.
 ---
 
 # EduPredict Always-On Engineering & UI/UX Rules
@@ -71,3 +71,19 @@ description: Mandatory EduPredict project rules, stack lock, UI/DB contracts, vi
 
 ## 15. Coming Soon Modal & Sidebar `"Soon"` Badge Standard
 - All planned/unbuilt panel pages across Admin, Teacher, Student, and Analyst panels MUST appear in `templates/components/sidebar.html` with a `"Soon"` badge and open the global theme-aware Coming Soon modal (`openComingSoonModal` / `[data-coming-soon]`) when clicked, instead of broken links or raw placeholders. Direct routes for unbuilt pages must render `templates/panels/coming_soon_panel.html`.
+
+## 16. Basic Everyday English Only & Compact Collapsible Sidebar
+- All UI labels, sidebar links, headings, helper text, modal copy, and toast messages across every panel MUST use simple, everyday English (no complex jargon).
+- Sidebar navigation labels must be short and clean, and sidebar section groups (`data-nav-group-toggle`) must be collapsible/minimizable via dropdown toggles persisted in `localStorage` (`edupredict_nav_groups`). Keep clear `title` tooltips, `cursor: pointer`, `:hover`/`:focus-visible`/`:active` states, `text-wrap: balance` on headings, and clickable table column sorting (`data-sortable`).
+
+## 17. Zero Dead Routes, No Duplicate Icons & Mandatory Coming Soon Modals
+- Never leave dead/unfinished links, broken routes, or buttons that lead to 404/empty placeholders. Either build the complete dynamic route first OR attach `data-coming-soon="true"` (`openComingSoonModal`) directly to the link/button.
+- Never place duplicate `+` icons/symbols on buttons. Keep the custom theme-aware `404.html` error page active in both `DEBUG=True` and `DEBUG=False`.
+
+## 18. Strict Role Logic & Self-Action Guards
+- Enforce real-world role boundaries across all panels: Admins manage users, courses, and incoming help tickets, so Admins MUST NOT see `"Send Feedback"` or `"New Ticket"` options to message themselves (`submit_support_ticket` blocks `ADMIN`).
+- Admins MUST NEVER be able to delete, deactivate, or downgrade their own active account (check BOTH `user_id` AND `email` in backend guards and omit self-destructive actions in UI rows).
+
+## 19. Zero-Lag Caching & SPA-Smooth Navigation
+- Never run DB seeding, `create_index`, or password-hash checks on every page request — run startup seed/index/default-admin guards once per process (with thread locks).
+- Use short-TTL in-memory caching in `core/db.py` (`get_cached` / `invalidate_cache` cleared on mutations), cache-bust static assets (`?v=`) in `templates/base.html`, and provide SPA-smooth page transitions (`static/js/nav.js` with `sessionStorage` GET cache + hover prefetch, invalidated on form `POST`).

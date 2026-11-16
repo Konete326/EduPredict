@@ -4,104 +4,89 @@
 <section class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
   <div class="min-w-0 space-y-2">
     <div class="flex flex-wrap items-center gap-2">
-      <a href="{% url 'panels:admin_dashboard' %}" title="Administration Overview" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+      <a href="{% url 'panels:admin_dashboard' %}" title="Admin Dashboard" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <i class="fa-solid fa-gauge-high"></i>
-        <span>Overview</span>
+        <span>Dashboard</span>
       </a>
-      <a href="{% url 'panels:admin_users' %}" title="Manage portal users and roles" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+      <a href="{% url 'panels:admin_users' %}" title="Manage users and roles" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <i class="fa-solid fa-users"></i>
         <span>Users</span>
       </a>
-      <a href="{% url 'panels:admin_courses' %}" title="Manage courses, capacities, and batches" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+      <a href="{% url 'panels:admin_courses' %}" title="Manage courses and batches" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <i class="fa-solid fa-book-open"></i>
-        <span>Courses &amp; Batches</span>
+        <span>Courses</span>
       </a>
-      <a href="{% url 'panels:admin_tickets' %}" title="Resolve institutional support tickets" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-primary)]">
+      <a href="{% url 'panels:admin_tickets' %}" title="View and close help tickets" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-primary)]">
         <i class="fa-solid fa-life-ring"></i>
-        <span>Support Tickets</span>
+        <span>Help Tickets</span>
       </a>
     </div>
-    <p class="text-xs text-[var(--text-secondary)]">Review incoming feedback from teachers, students, and analysts and resolve or reopen support tickets in one click.</p>
+    <p class="text-xs text-[var(--text-secondary)]">Read questions from teachers, students, and analysts and mark tickets solved.</p>
   </div>
-  <button type="button" onclick="openCreateTicketModal()" title="Create a new administrative helpdesk ticket" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-    <i class="fa-solid fa-plus"></i>
-    <span>New Ticket</span>
-  </button>
 </section>
 
 {% if db_error %}
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database notice: {{ db_error }}
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database message: {{ db_error }}
 </div>
 {% endif %}
 
 <section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-4">
   <div class="flex flex-wrap items-center gap-2">
-    <a href="{% url 'panels:admin_tickets' %}" title="Show all support tickets" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_status == 'ALL' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-      <span>All Tickets</span>
+    <a href="{% url 'panels:admin_tickets' %}" title="Show all help tickets" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_status == 'ALL' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <span>All</span>
       <span class="tabular-nums opacity-80">({{ status_counts.ALL|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_tickets' %}?status=OPEN" title="Filter open tickets" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_status == 'OPEN' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_tickets' %}?status=OPEN" title="Show open tickets" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_status == 'OPEN' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>Open</span>
       <span class="tabular-nums opacity-80">({{ status_counts.OPEN|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_tickets' %}?status=RESOLVED" title="Filter resolved tickets" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_status == 'RESOLVED' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_tickets' %}?status=RESOLVED" title="Show solved tickets" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_status == 'RESOLVED' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>Resolved</span>
       <span class="tabular-nums opacity-80">({{ status_counts.RESOLVED|default:0 }})</span>
     </a>
   </div>
 
-  {% include 'components/data_table.html' with table_id="admin-tickets-table" table_title="Helpdesk & Support Queue" headers=ticket_headers rows=ticket_rows page_size=5 empty_message="No support tickets match the selected status filter." %}
+  {% include 'components/data_table.html' with table_id="admin-tickets-table" table_title="Help Tickets" headers=ticket_headers rows=ticket_rows page_size=5 empty_message="No help tickets found." %}
 </section>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  const ADMIN_TICKETS_URL = "{% url 'panels:admin_tickets' %}";
-  const SELECTED_STATUS = "{{ selected_status|escapejs }}";
+  (function () {
+    const adminTicketsUrl = "{% url 'panels:admin_tickets' %}";
+    const selectedStatus = "{{ selected_status|escapejs }}";
 
-  function openCreateTicketModal() {
-    window.openFormModal({
-      title: 'Create Support Ticket',
-      actionUrl: ADMIN_TICKETS_URL,
-      fields: [
-        { type: 'hidden', name: 'action', value: 'create' },
-        { type: 'hidden', name: 'filter_status', value: SELECTED_STATUS },
-        { name: 'subject', label: 'Subject', type: 'text', placeholder: 'Short summary of issue or task', required: true },
-        { name: 'message', label: 'Details', type: 'textarea', placeholder: 'Describe the request or resolution notes...', required: true }
-      ]
-    });
-  }
+    window.openToggleTicketModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      const isOpen = String(d.status || 'OPEN').toUpperCase() === 'OPEN';
+      window.openConfirmModal({
+        title: isOpen ? 'Mark Ticket Resolved' : 'Reopen Ticket',
+        message: (isOpen ? 'Mark ticket ' : 'Reopen ticket ') + (d.ticketId || '') + (d.subject ? ' ("' + d.subject + '")' : '') + '?',
+        confirmText: isOpen ? 'Mark Resolved' : 'Reopen',
+        onConfirmUrl: adminTicketsUrl,
+        fields: {
+          action: 'toggle_status',
+          ticket_id: d.ticketId || '',
+          filter_status: d.filterStatus || selectedStatus
+        }
+      });
+    };
 
-  function openToggleTicketModal(btn) {
-    const d = btn ? btn.dataset : {};
-    const isOpen = String(d.status || 'OPEN').toUpperCase() === 'OPEN';
-    window.openConfirmModal({
-      title: isOpen ? 'Mark Ticket Resolved' : 'Reopen Support Ticket',
-      message: (isOpen ? 'Resolve ticket ' : 'Reopen ticket ') + (d.ticketId || '') + (d.subject ? ' ("' + d.subject + '")' : '') + '?',
-      confirmText: isOpen ? 'Mark Resolved' : 'Reopen Ticket',
-      onConfirmUrl: ADMIN_TICKETS_URL,
-      fields: {
-        action: 'toggle_status',
-        ticket_id: d.ticketId || '',
-        filter_status: d.filterStatus || SELECTED_STATUS
-      }
-    });
-  }
-
-  function openDeleteTicketModal(btn) {
-    const d = btn ? btn.dataset : {};
-    window.openConfirmModal({
-      title: 'Delete Support Ticket',
-      message: 'Permanently delete ticket ' + (d.ticketId || '') + (d.subject ? ' ("' + d.subject + '")' : '') + '?',
-      confirmText: 'Delete Ticket',
-      onConfirmUrl: ADMIN_TICKETS_URL,
-      fields: {
-        action: 'delete',
-        ticket_id: d.ticketId || '',
-        filter_status: d.filterStatus || SELECTED_STATUS
-      }
-    });
-  }
+    window.openDeleteTicketModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      window.openConfirmModal({
+        title: 'Delete Ticket',
+        message: 'Delete ticket ' + (d.ticketId || '') + (d.subject ? ' ("' + d.subject + '")' : '') + ' forever?',
+        confirmText: 'Delete',
+        onConfirmUrl: adminTicketsUrl,
+        fields: {
+          action: 'delete',
+          ticket_id: d.ticketId || '',
+          filter_status: d.filterStatus || selectedStatus
+        }
+      });
+    };
+  })();
 </script>
 {% endblock %}

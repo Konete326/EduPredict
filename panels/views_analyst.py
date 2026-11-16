@@ -5,7 +5,7 @@ from django.shortcuts import render
 from pymongo import DESCENDING
 from analytics.data_pipeline import REQUIRED_COLUMNS
 from analytics.ml_engine import compute_course_demand
-from core.db import datasets_log_col, predictions_col, student_records_col
+from core.db import datasets_log_col, get_cached, predictions_col, student_records_col
 from core.decorators import role_required
 
 
@@ -14,6 +14,17 @@ def _safe_float(val, default=0.0):
         return float(val)
     except (TypeError, ValueError):
         return default
+
+
+def _load_analyst_snapshot():
+    records = list(student_records_col().find({}, {'_id': 0}))
+    pred_map = {}
+    for pred in predictions_col().find({}, {'_id': 0}):
+        sid = str(pred.get('student_id', '')).strip()
+        if sid:
+            pred_map[sid] = pred
+    logs = list(datasets_log_col().find({}, {'_id': 0}).sort('uploaded_at', DESCENDING).limit(6))
+    return records, pred_map, logs
 
 
 def _build_joined_records(records, pred_map):
@@ -41,7 +52,7 @@ def _build_joined_records(records, pred_map):
             'risk_level': risk_level,
             'is_anomaly': bool(pred.get('is_anomaly', False)),
             'anomaly_reason': str(pred.get('anomaly_reason') or ''),
-            'recommendation': str(pred.get('recommendation') or 'Run ML pipeline to generate recommendations.'),
+            'recommendation': str(pred.get('recommendation') or 'Run prediction to get tips.'),
             'raw_record': rec,
         })
     return joined
@@ -96,38 +107,14 @@ def _export_csv_response(rows):
     return response
 
 
-@role_required(['ANALYST', 'ADMIN'])
-def analyst_dashboard(request):
-    selected_batch = str(request.GET.get('batch', 'ALL')).strip() or 'ALL'
-    selected_course = str(request.GET.get('course_code', 'ALL')).strip() or 'ALL'
-    selected_risk = str(request.GET.get('risk_level', 'ALL')).strip().upper() or 'ALL'
-
-    records = []
-    pred_map = {}
-    logs = []
-    db_error = None
-
-    try:
-        records = list(student_records_col().find({}, {'_id': 0}))
-        for pred in predictions_col().find({}, {'_id': 0}):
-            sid = str(pred.get('student_id', '')).strip()
-            if sid:
-                pred_map[sid] = pred
-        logs = list(datasets_log_col().find({}, {'_id': 0}).sort('uploaded_at', DESCENDING).limit(6))
-    except Exception as exc:
-        db_error = str(exc)
-
+def _compute_analyst_data(selected_batch, selected_course, selected_risk):
+    records, pred_map, logs = get_cached('analyst:snapshot', _load_analyst_snapshot, ttl=45.0)
     joined = _build_joined_records(records, pred_map)
     batches = sorted({item['batch'] for item in joined if item['batch']})
     courses = sorted({item['course_code'] for item in joined if item['course_code']})
     filtered = _apply_filters(joined, selected_batch, selected_course, selected_risk)
-
-    if request.GET.get('export') == 'csv':
-        return _export_csv_response(filtered)
-
     risk_order = {'HIGH': 0, 'MEDIUM': 1, 'LOW': 2, 'PENDING': 3}
     filtered.sort(key=lambda x: (risk_order.get(x['risk_level'], 4), -(x['dropout_risk_score'] or 0.0)))
-
     gpa_vals = [r['predicted_gpa'] for r in filtered if r['predicted_gpa'] is not None]
     kpis = {
         'total_records': len(filtered),
@@ -135,43 +122,29 @@ def analyst_dashboard(request):
         'anomalies_count': sum(1 for r in filtered if r['is_anomaly']),
         'avg_predicted_gpa': f"{(sum(gpa_vals) / len(gpa_vals)):.2f}" if gpa_vals else '0.00',
     }
-
     risk_status_map = {'HIGH': 'danger', 'MEDIUM': 'warning', 'LOW': 'success'}
-    prediction_headers = [
-        'Student ID', 'Name', 'Batch', 'Course', 'Attendance',
-        'Prev GPA', 'Pred GPA', 'Dropout Risk', 'Anomaly', 'Insight',
-    ]
     prediction_rows = []
     for r in filtered:
         score_pct = int(round(r['dropout_risk_score'] * 100)) if r['dropout_risk_score'] is not None else 0
         risk_text = f"{r['risk_level']} ({score_pct}%)" if r['dropout_risk_score'] is not None else 'PENDING'
         prediction_rows.append([
-            r['student_id'],
-            r['full_name'],
-            r['batch'],
-            r['course_code'],
-            f"{r['attendance_pct']:.1f}%",
-            f"{r['previous_gpa']:.2f}",
-            f"{r['predicted_gpa']:.2f}" if r['predicted_gpa'] is not None else '-',
+            r['student_id'], r['full_name'], r['batch'], r['course_code'], f"{r['attendance_pct']:.1f}%",
+            f"{r['previous_gpa']:.2f}", f"{r['predicted_gpa']:.2f}" if r['predicted_gpa'] is not None else '-',
             {'text': risk_text, 'status': risk_status_map.get(r['risk_level'], 'info')},
             {'text': 'Flagged' if r['is_anomaly'] else 'Normal', 'status': 'danger' if r['is_anomaly'] else 'success'},
             r['anomaly_reason'] if r['is_anomaly'] and r['anomaly_reason'] else r['recommendation'],
         ])
-
-    dataset_headers = ['Dataset File', 'Rows', 'Fixed', 'Status', 'Uploaded']
     dataset_rows = []
     for log in logs:
         status_val = str(log.get('status') or 'COMPLETED').upper()
         uploaded_at = log.get('uploaded_at')
         uploaded_text = uploaded_at.strftime('%Y-%m-%d %H:%M') if hasattr(uploaded_at, 'strftime') else '-'
         dataset_rows.append([
-            str(log.get('filename') or 'dataset.csv'),
-            int(log.get('rows_processed') or 0),
+            str(log.get('filename') or 'dataset.csv'), int(log.get('rows_processed') or 0),
             int(log.get('missing_values_fixed') or 0),
             {'text': status_val, 'status': 'success' if status_val == 'COMPLETED' else 'danger'},
             uploaded_text,
         ])
-
     raw_filtered = [r['raw_record'] for r in filtered]
     course_demand = compute_course_demand(pd.DataFrame(raw_filtered)) if raw_filtered else []
     chart_data = {
@@ -181,17 +154,39 @@ def analyst_dashboard(request):
             'HIGH': sum(1 for r in filtered if r['risk_level'] == 'HIGH'),
         },
         'scatter_points': [
-            {
-                'x': round(r['attendance_pct'], 1),
-                'y': round(r['predicted_gpa'] if r['predicted_gpa'] is not None else r['previous_gpa'], 2),
-                'label': f"{r['student_id']} ({r['full_name']})",
-                'risk': r['risk_level'],
-            }
+            {'x': round(r['attendance_pct'], 1), 'y': round(r['predicted_gpa'] if r['predicted_gpa'] is not None else r['previous_gpa'], 2), 'label': f"{r['student_id']} ({r['full_name']})", 'risk': r['risk_level']}
             for r in filtered[:250]
         ],
         'course_demand': course_demand,
     }
+    return {
+        'kpis': kpis,
+        'filter_options': {'batches': batches, 'courses': courses},
+        'prediction_rows': prediction_rows,
+        'dataset_rows': dataset_rows,
+        'chart_data': chart_data,
+        'filtered': filtered,
+    }
 
+
+@role_required(['ANALYST', 'ADMIN'])
+def analyst_dashboard(request):
+    selected_batch = str(request.GET.get('batch', 'ALL')).strip() or 'ALL'
+    selected_course = str(request.GET.get('course_code', 'ALL')).strip() or 'ALL'
+    selected_risk = str(request.GET.get('risk_level', 'ALL')).strip().upper() or 'ALL'
+    key = f"analyst:ctx:{selected_batch}:{selected_course}:{selected_risk}"
+    db_error = None
+    try:
+        data = get_cached(key, lambda: _compute_analyst_data(selected_batch, selected_course, selected_risk), ttl=45.0)
+    except Exception as exc:
+        data = _compute_analyst_data(selected_batch, selected_course, selected_risk)
+        db_error = str(exc)
+
+    if request.GET.get('export') == 'csv':
+        return _export_csv_response(data['filtered'])
+
+    prediction_headers = ['Student ID', 'Name', 'Batch', 'Course', 'Attendance', 'Past GPA', 'Next GPA', 'Risk Level', 'Unusual', 'Tip']
+    dataset_headers = ['File Name', 'Rows', 'Fixed', 'Status', 'Date']
     session_user = request.session.get('user') or {}
     active_role = str(session_user.get('role') or 'ANALYST').upper()
 
@@ -199,20 +194,16 @@ def analyst_dashboard(request):
         request,
         'panels/analyst_dashboard.html',
         {
-            'page_title': 'Data Analytics & ML Hub',
+            'page_title': 'Data Dashboard',
             'active_role': active_role,
-            'kpis': kpis,
-            'filter_options': {'batches': batches, 'courses': courses},
-            'selected_filters': {
-                'batch': selected_batch,
-                'course_code': selected_course,
-                'risk_level': selected_risk,
-            },
+            'kpis': data['kpis'],
+            'filter_options': data['filter_options'],
+            'selected_filters': {'batch': selected_batch, 'course_code': selected_course, 'risk_level': selected_risk},
             'prediction_headers': prediction_headers,
-            'prediction_rows': prediction_rows,
+            'prediction_rows': data['prediction_rows'],
             'dataset_headers': dataset_headers,
-            'dataset_rows': dataset_rows,
-            'chart_data': chart_data,
+            'dataset_rows': data['dataset_rows'],
+            'chart_data': data['chart_data'],
             'required_columns': REQUIRED_COLUMNS,
             'db_error': db_error,
         },

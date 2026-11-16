@@ -131,13 +131,28 @@ html.dark textarea:user-invalid:focus {
   animation: toast-enter 0.18s ease-out forwards;
 }
 
+@keyframes page-fade-in {
+  from {
+    opacity: 0.72;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.spa-page-enter {
+  animation: page-fade-in 0.14s ease-out;
+}
+
 @media (min-width: 1024px) {
+  html.sidebar-collapsed #mobile-sidebar-drawer,
   body.sidebar-collapsed #mobile-sidebar-drawer {
-    transform: translateX(-100%);
+    transform: translateX(-100%) !important;
   }
 
+  html.sidebar-collapsed #app-shell-main,
   body.sidebar-collapsed #app-shell-main {
-    padding-left: 0;
+    padding-left: 0 !important;
   }
 }
 

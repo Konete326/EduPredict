@@ -1,13 +1,17 @@
 import csv
 import io
 import json
+import threading
 from datetime import datetime, timezone
 from django.contrib.auth.hashers import make_password
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError
 from accounts.services import ensure_accounts_indexes_once, ensure_default_admin
 import core.db as core_db
-from core.db import datasets_log_col, notifications_col, predictions_col, student_records_col, support_tickets_col, users_col
+from core.db import datasets_log_col, get_cached, notifications_col, predictions_col, student_records_col, support_tickets_col, users_col
+
+_SEED_LOCK = threading.Lock()
+_ADMIN_SEED_DONE = False
 
 DEPT_PREFIX_MAP = {
     "CS": "Computer Science", "DS": "Data Science", "AI": "Artificial Intelligence",
@@ -81,37 +85,44 @@ def _ensure_unique_index(col, field):
 
 
 def ensure_admin_seed_data():
-    ensure_accounts_indexes_once()
-    ensure_default_admin()
-    now = datetime.now(timezone.utc)
-    c_col, u_col, t_col = courses_col(), users_col(), support_tickets_col()
-    _ensure_unique_index(c_col, "course_code")
-    _ensure_unique_index(t_col, "ticket_id")
+    global _ADMIN_SEED_DONE
+    if _ADMIN_SEED_DONE:
+        return
+    with _SEED_LOCK:
+        if _ADMIN_SEED_DONE:
+            return
+        ensure_accounts_indexes_once()
+        ensure_default_admin()
+        now = datetime.now(timezone.utc)
+        c_col, u_col, t_col = courses_col(), users_col(), support_tickets_col()
+        _ensure_unique_index(c_col, "course_code")
+        _ensure_unique_index(t_col, "ticket_id")
 
-    if c_col.count_documents({}) == 0:
-        for code, title, dept, batch, inst, credits, cap in SEED_COURSES:
-            if c_col.find_one({"course_code": code}, {"_id": 1}) is None:
-                c_col.insert_one({"course_code": code, "title": title, "department": dept, "batch": batch, "instructor": inst, "credits": credits, "capacity": cap, "status": "ACTIVE", "created_at": now})
+        if c_col.count_documents({}) == 0:
+            for code, title, dept, batch, inst, credits, cap in SEED_COURSES:
+                if c_col.find_one({"course_code": code}, {"_id": 1}) is None:
+                    c_col.insert_one({"course_code": code, "title": title, "department": dept, "batch": batch, "instructor": inst, "credits": credits, "capacity": cap, "status": "ACTIVE", "created_at": now})
 
-    if u_col.count_documents({}) <= 1:
-        pwd_hash = make_password("EduPredict@2026")
-        for uid, name, email, role, dept, batch, sid in SEED_USERS:
-            if u_col.find_one({"$or": [{"email": email}, {"user_id": uid}]}, {"_id": 1}) is None:
-                doc = {"user_id": uid, "full_name": name, "email": email, "password_hash": pwd_hash, "role": role, "department": dept, "batch": batch, "is_active": True, "created_at": now}
-                if sid:
-                    doc["student_id"] = sid
-                try:
-                    u_col.insert_one(doc)
-                except DuplicateKeyError:
-                    pass
+        if u_col.count_documents({}) <= 1:
+            pwd_hash = make_password("EduPredict@2026")
+            for uid, name, email, role, dept, batch, sid in SEED_USERS:
+                if u_col.find_one({"$or": [{"email": email}, {"user_id": uid}]}, {"_id": 1}) is None:
+                    doc = {"user_id": uid, "full_name": name, "email": email, "password_hash": pwd_hash, "role": role, "department": dept, "batch": batch, "is_active": True, "created_at": now}
+                    if sid:
+                        doc["student_id"] = sid
+                    try:
+                        u_col.insert_one(doc)
+                    except DuplicateKeyError:
+                        pass
 
-    if t_col.count_documents({}) == 0:
-        for tid, uid, uname, role, subj, msg, status in SEED_TICKETS:
-            if t_col.find_one({"ticket_id": tid}, {"_id": 1}) is None:
-                t_col.insert_one({"ticket_id": tid, "user_id": uid, "user_name": uname, "role": role, "subject": subj, "message": msg, "status": status, "created_at": now})
+        if t_col.count_documents({}) == 0:
+            for tid, uid, uname, role, subj, msg, status in SEED_TICKETS:
+                if t_col.find_one({"ticket_id": tid}, {"_id": 1}) is None:
+                    t_col.insert_one({"ticket_id": tid, "user_id": uid, "user_name": uname, "role": role, "subject": subj, "message": msg, "status": status, "created_at": now})
+        _ADMIN_SEED_DONE = True
 
 
-def get_admin_overview_context():
+def _load_admin_overview_context():
     ensure_admin_seed_data()
     u_col, c_col = users_col(), courses_col()
     sr_col, p_col, t_col = student_records_col(), predictions_col(), support_tickets_col()
@@ -181,9 +192,13 @@ def get_admin_overview_context():
             "risk_breakdown": {"labels": ["Low Risk", "Medium Risk", "High Risk"], "counts": [low_risk, med_risk, high_risk]},
         },
         "recent_tickets": recent_tickets,
-        "recent_ticket_headers": ["Ticket ID", "User", "Subject", "Status", "Created"],
+        "recent_ticket_headers": ["Ticket ID", "User", "Subject", "Status", "Date"],
         "recent_ticket_rows": recent_ticket_rows,
     }
+
+
+def get_admin_overview_context():
+    return get_cached("admin:overview", _load_admin_overview_context, ttl=30.0)
 
 
 def build_backup_payload(fmt="json"):

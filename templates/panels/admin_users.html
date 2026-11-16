@@ -4,26 +4,26 @@
 <section class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
   <div class="min-w-0 space-y-2">
     <div class="flex flex-wrap items-center gap-2">
-      <a href="{% url 'panels:admin_dashboard' %}" title="Administration Overview" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+      <a href="{% url 'panels:admin_dashboard' %}" title="Admin Dashboard" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <i class="fa-solid fa-gauge-high"></i>
-        <span>Overview</span>
+        <span>Dashboard</span>
       </a>
-      <a href="{% url 'panels:admin_users' %}" title="Manage portal users and roles" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-primary)]">
+      <a href="{% url 'panels:admin_users' %}" title="Manage users and roles" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-primary)]">
         <i class="fa-solid fa-users"></i>
         <span>Users</span>
       </a>
-      <a href="{% url 'panels:admin_courses' %}" title="Manage courses, capacities, and batches" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+      <a href="{% url 'panels:admin_courses' %}" title="Manage courses and batches" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <i class="fa-solid fa-book-open"></i>
-        <span>Courses &amp; Batches</span>
+        <span>Courses</span>
       </a>
-      <a href="{% url 'panels:admin_tickets' %}" title="Resolve institutional support tickets" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+      <a href="{% url 'panels:admin_tickets' %}" title="View and close help tickets" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <i class="fa-solid fa-life-ring"></i>
-        <span>Support Tickets</span>
+        <span>Help Tickets</span>
       </a>
     </div>
-    <p class="text-xs text-[var(--text-secondary)]">Create, edit, activate/deactivate, or remove Admin, Teacher, Student, and Analyst accounts.</p>
+    <p class="text-xs text-[var(--text-secondary)]">Add, edit, turn on/off, or remove user accounts.</p>
   </div>
-  <button type="button" onclick="openCreateUserModal()" title="Create a new EduPredict user account" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+  <button type="button" onclick="openCreateUserModal()" title="Add a new user account" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
     <i class="fa-solid fa-user-plus"></i>
     <span>Add User</span>
   </button>
@@ -31,7 +31,7 @@
 
 {% if db_error %}
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database notice: {{ db_error }}
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database message: {{ db_error }}
 </div>
 {% endif %}
 
@@ -41,104 +41,106 @@
       <span>All</span>
       <span class="tabular-nums opacity-80">({{ role_counts.ALL|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_users' %}?role=ADMIN" title="Filter administrators" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'ADMIN' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_users' %}?role=ADMIN" title="Show only admins" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'ADMIN' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>Admins</span>
       <span class="tabular-nums opacity-80">({{ role_counts.ADMIN|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_users' %}?role=TEACHER" title="Filter teachers" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'TEACHER' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_users' %}?role=TEACHER" title="Show only teachers" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'TEACHER' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>Teachers</span>
       <span class="tabular-nums opacity-80">({{ role_counts.TEACHER|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_users' %}?role=STUDENT" title="Filter students" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'STUDENT' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_users' %}?role=STUDENT" title="Show only students" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'STUDENT' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>Students</span>
       <span class="tabular-nums opacity-80">({{ role_counts.STUDENT|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_users' %}?role=ANALYST" title="Filter data analysts" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'ANALYST' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_users' %}?role=ANALYST" title="Show only analysts" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'ANALYST' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>Analysts</span>
       <span class="tabular-nums opacity-80">({{ role_counts.ANALYST|default:0 }})</span>
     </a>
   </div>
 
-  {% include 'components/data_table.html' with table_id="admin-users-table" table_title="Portal Users Directory" headers=user_headers rows=user_rows page_size=5 empty_message="No user accounts match the selected role filter." %}
+  {% include 'components/data_table.html' with table_id="admin-users-table" table_title="All Users" headers=user_headers rows=user_rows page_size=5 empty_message="No users found for this role." %}
 </section>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  const ADMIN_USERS_URL = "{% url 'panels:admin_users' %}";
-  const SELECTED_ROLE = "{{ selected_role|escapejs }}";
-  const ROLE_OPTIONS = [
-    { value: 'STUDENT', label: 'Student' },
-    { value: 'TEACHER', label: 'Teacher' },
-    { value: 'ANALYST', label: 'Data Analyst' },
-    { value: 'ADMIN', label: 'Administrator' }
-  ];
+  (function () {
+    const adminUsersUrl = "{% url 'panels:admin_users' %}";
+    const selectedRole = "{{ selected_role|escapejs }}";
+    const roleOptions = [
+      { value: 'STUDENT', label: 'Student' },
+      { value: 'TEACHER', label: 'Teacher' },
+      { value: 'ANALYST', label: 'Data Analyst' },
+      { value: 'ADMIN', label: 'Admin' }
+    ];
 
-  function openCreateUserModal() {
-    window.openFormModal({
-      title: 'Add Portal User',
-      actionUrl: ADMIN_USERS_URL,
-      fields: [
-        { type: 'hidden', name: 'action', value: 'create' },
-        { type: 'hidden', name: 'filter_role', value: SELECTED_ROLE },
-        { name: 'full_name', label: 'Full Name', type: 'text', placeholder: 'Dr. Ayesha Khan', required: true },
-        { name: 'email', label: 'Email Address', type: 'email', placeholder: 'user@edupredict.edu', required: true },
-        { name: 'password', label: 'Temporary Password', type: 'password', placeholder: 'Min 6 characters', required: true },
-        { name: 'role', label: 'Role', type: 'select', options: ROLE_OPTIONS, value: SELECTED_ROLE !== 'ALL' ? SELECTED_ROLE : 'STUDENT', required: true },
-        { name: 'department', label: 'Department', type: 'text', value: 'Computer Science', placeholder: 'Computer Science' },
-        { name: 'batch', label: 'Batch / Term', type: 'text', value: '2026-A', placeholder: '2026-A or ALL' }
-      ]
-    });
-  }
+    window.openCreateUserModal = function () {
+      window.openFormModal({
+        title: 'Add User',
+        actionUrl: adminUsersUrl,
+        fields: [
+          { type: 'hidden', name: 'action', value: 'create' },
+          { type: 'hidden', name: 'filter_role', value: selectedRole },
+          { name: 'full_name', label: 'Full Name', type: 'text', placeholder: 'Dr. Ayesha Khan', required: true },
+          { name: 'email', label: 'Email', type: 'email', placeholder: 'user@edupredict.edu', required: true },
+          { name: 'password', label: 'Password', type: 'password', placeholder: 'At least 6 characters', required: true },
+          { name: 'role', label: 'Role', type: 'select', options: roleOptions, value: selectedRole !== 'ALL' ? selectedRole : 'STUDENT', required: true },
+          { name: 'department', label: 'Department', type: 'text', value: 'Computer Science', placeholder: 'Computer Science' },
+          { name: 'batch', label: 'Batch', type: 'text', value: '2026-A', placeholder: '2026-A or ALL' }
+        ]
+      });
+    };
 
-  function openEditUserModal(btn) {
-    const d = btn ? btn.dataset : {};
-    window.openFormModal({
-      title: 'Edit User (' + (d.userId || '') + ')',
-      actionUrl: ADMIN_USERS_URL,
-      fields: [
-        { type: 'hidden', name: 'action', value: 'update' },
-        { type: 'hidden', name: 'user_id', value: d.userId || '' },
-        { type: 'hidden', name: 'filter_role', value: d.filterRole || SELECTED_ROLE },
-        { name: 'full_name', label: 'Full Name', type: 'text', value: d.fullName || '', required: true },
-        { name: 'email', label: 'Email Address', type: 'email', value: d.email || '', required: true },
-        { name: 'role', label: 'Role', type: 'select', options: ROLE_OPTIONS, value: d.role || 'STUDENT', required: true },
-        { name: 'department', label: 'Department', type: 'text', value: d.department || 'General' },
-        { name: 'batch', label: 'Batch / Term', type: 'text', value: d.batch || 'ALL' },
-        { name: 'password', label: 'Reset Password (optional)', type: 'password', placeholder: 'Leave blank to keep existing password' }
-      ]
-    });
-  }
+    window.openEditUserModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      window.openFormModal({
+        title: 'Edit User (' + (d.userId || '') + ')',
+        actionUrl: adminUsersUrl,
+        fields: [
+          { type: 'hidden', name: 'action', value: 'update' },
+          { type: 'hidden', name: 'user_id', value: d.userId || '' },
+          { type: 'hidden', name: 'filter_role', value: d.filterRole || selectedRole },
+          { name: 'full_name', label: 'Full Name', type: 'text', value: d.fullName || '', required: true },
+          { name: 'email', label: 'Email', type: 'email', value: d.email || '', required: true },
+          { name: 'role', label: 'Role', type: 'select', options: roleOptions, value: d.role || 'STUDENT', required: true },
+          { name: 'department', label: 'Department', type: 'text', value: d.department || 'General' },
+          { name: 'batch', label: 'Batch', type: 'text', value: d.batch || 'ALL' },
+          { name: 'password', label: 'New Password (optional)', type: 'password', placeholder: 'Leave blank to keep current password' }
+        ]
+      });
+    };
 
-  function openToggleUserModal(btn) {
-    const d = btn ? btn.dataset : {};
-    const isActive = String(d.isActive || '').toLowerCase() === 'true';
-    window.openConfirmModal({
-      title: isActive ? 'Deactivate User Account' : 'Activate User Account',
-      message: (isActive ? 'Deactivate ' : 'Activate ') + (d.fullName || d.userId || 'this user') + '?',
-      confirmText: isActive ? 'Deactivate' : 'Activate',
-      onConfirmUrl: ADMIN_USERS_URL,
-      fields: {
-        action: 'toggle',
-        user_id: d.userId || '',
-        filter_role: d.filterRole || SELECTED_ROLE
-      }
-    });
-  }
+    window.openToggleUserModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      const isActive = String(d.isActive || '').toLowerCase() === 'true';
+      window.openConfirmModal({
+        title: isActive ? 'Turn Off User' : 'Turn On User',
+        message: (isActive ? 'Turn off ' : 'Turn on ') + (d.fullName || d.userId || 'this user') + '?',
+        confirmText: isActive ? 'Turn Off' : 'Turn On',
+        onConfirmUrl: adminUsersUrl,
+        fields: {
+          action: 'toggle',
+          user_id: d.userId || '',
+          filter_role: d.filterRole || selectedRole
+        }
+      });
+    };
 
-  function openDeleteUserModal(btn) {
-    const d = btn ? btn.dataset : {};
-    window.openConfirmModal({
-      title: 'Delete User Account',
-      message: 'Permanently delete ' + (d.fullName || d.userId || 'this user') + '? This action cannot be undone.',
-      confirmText: 'Delete User',
-      onConfirmUrl: ADMIN_USERS_URL,
-      fields: {
-        action: 'delete',
-        user_id: d.userId || '',
-        filter_role: d.filterRole || SELECTED_ROLE
-      }
-    });
-  }
+    window.openDeleteUserModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      window.openConfirmModal({
+        title: 'Delete User',
+        message: 'Delete ' + (d.fullName || d.userId || 'this user') + ' forever? This cannot be undone.',
+        confirmText: 'Delete',
+        onConfirmUrl: adminUsersUrl,
+        fields: {
+          action: 'delete',
+          user_id: d.userId || '',
+          filter_role: d.filterRole || selectedRole
+        }
+      });
+    };
+  })();
 </script>
 {% endblock %}

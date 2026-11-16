@@ -13,6 +13,12 @@
         } else {
           document.documentElement.classList.remove('dark');
         }
+        const savedSidebar = localStorage.getItem('edupredict_sidebar_collapsed');
+        if (savedSidebar === 'true' || savedSidebar === '1') {
+          document.documentElement.classList.add('sidebar-collapsed');
+        } else {
+          document.documentElement.classList.remove('sidebar-collapsed');
+        }
       } catch (e) {}
     })();
   </script>
@@ -38,13 +44,13 @@
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="{% static 'css/global.css' %}">
+  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=5">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased">
   {% include 'components/sidebar.html' %}
 
-  <div id="app-shell-main" class="lg:pl-64 min-h-screen w-full min-w-0 flex flex-col transition-all duration-200 ease-out">
+  <div id="app-shell-main" data-active-role="{{ active_role|default:'' }}" class="lg:pl-64 min-h-screen w-full min-w-0 flex flex-col transition-all duration-200 ease-out">
     {% include 'components/topbar.html' %}
 
     <main class="flex-1 w-full min-w-0">
@@ -55,44 +61,44 @@
             <div class="flex items-center gap-2">
               <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[var(--accent-primary)]">
                 <i class="fa-solid fa-layer-group text-[11px]"></i>
-                <span>Phase 1 Shell</span>
+                <span>EduPredict Portal</span>
               </span>
-              <span class="text-xs font-mono text-[var(--text-muted)]">{{ active_role|default:"ALL ROLES PREVIEW" }}</span>
+              <span class="text-xs font-mono text-[var(--text-muted)]">{{ active_role|default:"PREVIEW" }}</span>
             </div>
-            <h2 class="text-lg font-semibold tracking-tight text-[var(--text-primary)]">{{ page_title|default:"EduPredict Workspace" }}</h2>
-            <p class="text-sm text-[var(--text-secondary)]">Unified App-Shell-3 layout with Light/Dark tokens, responsive navigation, global modals, and theme-aware Chart.js integration.</p>
+            <h2 class="text-lg font-semibold tracking-tight text-[var(--text-primary)]">{{ page_title|default:"EduPredict Home" }}</h2>
+            <p class="text-sm text-[var(--text-secondary)]">Simple portal for attendance tracking, grades, and student predictions.</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <button type="button" onclick="openFormModal({ title: 'Quick Student Record Preview', actionUrl: '#', previewMessage: 'Sample record validated in Phase 1 preview.', fields: [{ name: 'student_id', label: 'Student ID', type: 'text', placeholder: 'STD-2026-01', required: true }, { name: 'attendance_pct', label: 'Attendance %', type: 'number', placeholder: '91', required: true }] })" class="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+            <button type="button" onclick="openFormModal({ title: 'Add Sample Student', actionUrl: '#', previewMessage: 'Sample student saved in preview mode.', fields: [{ name: 'student_id', label: 'Student ID', type: 'text', placeholder: 'STD-2026-01', required: true }, { name: 'attendance_pct', label: 'Attendance %', type: 'number', placeholder: '91', required: true }] })" class="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
               <i class="fa-solid fa-plus text-xs"></i>
-              <span>Form Modal</span>
+              <span>Test Form</span>
             </button>
-            <button type="button" onclick="openConfirmModal({ title: 'Confirm Action Preview', message: 'This tests the global confirmation dialog without using browser popups.', onConfirmUrl: '{% url 'accounts:logout_view' %}' })" class="inline-flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+            <button type="button" onclick="openConfirmModal({ title: 'Please Confirm', message: 'Do you want to log out right now?', onConfirmUrl: '{% url 'accounts:logout_view' %}' })" class="inline-flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
               <i class="fa-solid fa-shield-halved text-xs text-[var(--status-danger)]"></i>
-              <span>Confirm Modal</span>
+              <span>Test Confirm</span>
             </button>
-            <button type="button" onclick="showToast('Theme-aware global toast notification active.', 'success')" class="inline-flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+            <button type="button" onclick="showToast('Theme alert box is working.', 'success')" class="inline-flex items-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
               <i class="fa-solid fa-bell text-xs text-[var(--status-success)]"></i>
-              <span>Test Toast</span>
+              <span>Test Alert</span>
             </button>
           </div>
         </section>
 
         <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {% include 'components/metric_card.html' with title="Attendance Rate" value="91.4%" badge="+3.2% this month" status="success" icon="fa-solid fa-calendar-check" %}
-          {% include 'components/metric_card.html' with title="Active Learners" value="1,284" badge="4 academic batches" status="info" icon="fa-solid fa-user-graduate" %}
-          {% include 'components/metric_card.html' with title="Medium Risk Alerts" value="38" badge="Needs follow-up" status="warning" icon="fa-solid fa-triangle-exclamation" %}
-          {% include 'components/metric_card.html' with title="High Dropout Risk" value="14" badge="ML anomaly flagged" status="danger" icon="fa-solid fa-circle-exclamation" %}
+          {% include 'components/metric_card.html' with title="Active Students" value="1,284" badge="4 batches" status="info" icon="fa-solid fa-user-graduate" %}
+          {% include 'components/metric_card.html' with title="Medium Risk" value="38" badge="Needs check" status="warning" icon="fa-solid fa-triangle-exclamation" %}
+          {% include 'components/metric_card.html' with title="High Risk" value="14" badge="Needs help soon" status="danger" icon="fa-solid fa-circle-exclamation" %}
         </section>
 
         <section class="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 lg:col-span-2">
             <div class="mb-3 flex items-center justify-between gap-2">
               <div>
-                <h3 class="text-sm font-semibold text-[var(--text-primary)]">Attendance &amp; Predicted Readiness Trend</h3>
-                <p class="text-xs text-[var(--text-muted)]">Adapts automatically when switching between Light and Dark themes</p>
+                <h3 class="text-sm font-semibold text-[var(--text-primary)]">Attendance &amp; Pass Trend</h3>
+                <p class="text-xs text-[var(--text-muted)]">Colors update automatically in Light and Dark mode</p>
               </div>
-              <span class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-xs font-mono text-[var(--text-secondary)]">Chart.js v4</span>
+              <span class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-xs font-mono text-[var(--text-secondary)]">Chart.js</span>
             </div>
             <div class="relative h-48 w-full">
               <canvas id="shell-preview-chart"></canvas>
@@ -101,36 +107,36 @@
 
           <div class="flex flex-col justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
             <div class="space-y-3">
-              <h3 class="text-sm font-semibold text-[var(--text-primary)]">Component Verification</h3>
-              <p class="text-xs leading-relaxed text-[var(--text-secondary)]">Verify theme tokens, toast severities, and responsive z-index layers before starting Phase 2.</p>
+              <h3 class="text-sm font-semibold text-[var(--text-primary)]">Quick Tests</h3>
+              <p class="text-xs leading-relaxed text-[var(--text-secondary)]">Test theme colors and alert messages here.</p>
               <div class="space-y-2 pt-1">
-                <button type="button" onclick="showToast('Info: Dataset schema validation ready.', 'info')" class="flex w-full items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">
-                  <span>Trigger Info Toast</span>
+                <button type="button" onclick="showToast('Info: Everything is ready.', 'info')" class="flex w-full items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">
+                  <span>Show Info</span>
                   <i class="fa-solid fa-circle-info text-[var(--accent-primary)]"></i>
                 </button>
-                <button type="button" onclick="showToast('Warning: Attendance dropped below 75% threshold.', 'warning')" class="flex w-full items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">
-                  <span>Trigger Warning Toast</span>
+                <button type="button" onclick="showToast('Warning: Attendance fell below 75%.', 'warning')" class="flex w-full items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">
+                  <span>Show Warning</span>
                   <i class="fa-solid fa-triangle-exclamation text-[var(--status-warning)]"></i>
                 </button>
-                <button type="button" onclick="showToast('Danger: High dropout anomaly detected.', 'danger')" class="flex w-full items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">
-                  <span>Trigger Danger Toast</span>
+                <button type="button" onclick="showToast('Alert: Student needs quick support.', 'danger')" class="flex w-full items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">
+                  <span>Show Alert</span>
                   <i class="fa-solid fa-circle-exclamation text-[var(--status-danger)]"></i>
                 </button>
               </div>
             </div>
             <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 text-xs text-[var(--text-secondary)]">
-              <span class="font-semibold text-[var(--text-primary)]">Storage Status:</span>
+              <span class="font-semibold text-[var(--text-primary)]">Database:</span>
               {% if db_connected %}
-              <span class="text-[var(--status-success)] font-medium">MongoDB Atlas connected</span>
+              <span class="text-[var(--status-success)] font-medium">MongoDB connected</span>
               {% else %}
-              <span class="text-[var(--status-warning)] font-medium">Offline / placeholder URI mode</span>
+              <span class="text-[var(--status-warning)] font-medium">MongoDB offline</span>
               {% endif %}
             </div>
           </div>
         </section>
 
         <section>
-          {% include 'components/data_table.html' with table_id="shell-preview-table" table_title="Student Risk & Prediction Feed" headers=sample_headers rows=sample_rows page_size=5 empty_message="No MongoDB records loaded in Phase 1 shell preview. Live student records will populate in Phases 2-6." %}
+          {% include 'components/data_table.html' with table_id="shell-preview-table" table_title="Student Risk List" headers=sample_headers rows=sample_rows page_size=5 empty_message="No student records loaded in preview mode." %}
         </section>
         {% endblock %}
       </div>
@@ -141,8 +147,9 @@
   {% include 'components/form_modal.html' %}
   {% include 'components/toast.html' %}
 
-  <script src="{% static 'js/app.js' %}"></script>
-  <script src="{% static 'js/charts.js' %}"></script>
-  {% block extra_js %}{% endblock %}
+  <script src="{% static 'js/app.js' %}?v=5"></script>
+  <script src="{% static 'js/charts.js' %}?v=5"></script>
+  <script src="{% static 'js/nav.js' %}?v=5"></script>
+  <div id="app-extra-scripts">{% block extra_js %}{% endblock %}</div>
 </body>
 </html>

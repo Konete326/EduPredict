@@ -4,16 +4,51 @@ import time
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.errors import ConnectionFailure
 
-HEALTH_CACHE_TTL_SECONDS = 15.0
+HEALTH_CACHE_TTL_SECONDS = 60.0
+
+_CACHE_LOCK = threading.Lock()
+_MEMORY_CACHE = {}
+_CACHE_EPOCH = 0
+
+
+def get_cached(key, second, third=None, ttl=45.0):
+    if callable(second):
+        builder_fn = second
+        ttl_seconds = float(third) if third is not None else float(ttl)
+    elif callable(third):
+        ttl_seconds = float(second)
+        builder_fn = third
+    else:
+        raise TypeError("get_cached requires a callable builder function.")
+
+    now = time.monotonic()
+    with _CACHE_LOCK:
+        entry = _MEMORY_CACHE.get(key)
+        if entry is not None and now < entry[0]:
+            return entry[1]
+        epoch = _CACHE_EPOCH
+    value = builder_fn()
+    expires_at = time.monotonic() + ttl_seconds
+    with _CACHE_LOCK:
+        if _CACHE_EPOCH == epoch:
+            _MEMORY_CACHE[key] = (expires_at, value)
+    return value
+
+
+def invalidate_cache(prefix=""):
+    global _CACHE_EPOCH
+    with _CACHE_LOCK:
+        _CACHE_EPOCH += 1
+        if not prefix:
+            _MEMORY_CACHE.clear()
+            return
+        target = str(prefix)
+        for k in [key for key in _MEMORY_CACHE if str(key).startswith(target)]:
+            del _MEMORY_CACHE[k]
 
 COLLECTIONS = (
-    "users",
-    "student_records",
-    "predictions",
-    "datasets_log",
-    "notifications",
-    "support_tickets",
-    "courses",
+    "users", "student_records", "predictions",
+    "datasets_log", "notifications", "support_tickets", "courses",
 )
 
 
@@ -136,6 +171,7 @@ class MongoDBClient:
             self._last_error = None
             self._health_cache = None
             self._health_cache_at = 0.0
+        invalidate_cache()
 
 
 def get_client():
@@ -183,24 +219,19 @@ def ensure_indexes():
         users = users_col()
         users.create_index([("email", ASCENDING)], unique=True, sparse=True)
         users.create_index([("user_id", ASCENDING)])
-
         records = student_records_col()
         records.create_index([("student_id", ASCENDING)])
         records.create_index([("batch", ASCENDING)])
         records.create_index([("updated_at", DESCENDING)])
-
         preds = predictions_col()
         preds.create_index([("student_id", ASCENDING)])
         preds.create_index([("generated_at", DESCENDING)])
-
         notifs = notifications_col()
         notifs.create_index([("target_role", ASCENDING)])
         notifs.create_index([("target_user_id", ASCENDING)])
         notifs.create_index([("is_read", ASCENDING)])
         notifs.create_index([("created_at", DESCENDING)])
-
-        courses = courses_col()
-        courses.create_index([("course_code", ASCENDING)], unique=True)
+        courses_col().create_index([("course_code", ASCENDING)], unique=True)
         return True
     except Exception:
         return False

@@ -1,122 +1,171 @@
-from django.shortcuts import render
-from core.db import get_collection, predictions_col, student_records_col, support_tickets_col
+import csv
+from urllib.parse import urlencode
+from django.contrib import messages
+from django.http import HttpResponse
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from analytics.data_pipeline import REQUIRED_COLUMNS, ingest_dataset
+from analytics.ml_engine import run_prediction_pipeline
+from core.db import invalidate_cache
 from core.decorators import role_required
+from panels.teacher_services import (
+    delete_student_record,
+    get_teacher_dashboard_context,
+    get_teacher_ingest_context,
+    get_teacher_students_context,
+    send_student_alert,
+    update_student_record_inline,
+)
 
 
-def _teacher_live_metrics():
-    metrics = {
-        "records": 0,
-        "high_risk": 0,
-        "courses": 0,
-        "tickets": 0,
+def _param(request, key, default=""):
+    return str(request.POST.get(key) or request.GET.get(key) or default).strip()
+
+
+def _active_role(request):
+    user = request.session.get("user") or {}
+    return str(user.get("role") or "TEACHER").strip().upper()
+
+
+def _actor_label(request):
+    user = request.session.get("user") or {}
+    return str(user.get("full_name") or user.get("email") or "Teacher").strip()
+
+
+def _flash(request, ok, err, success_msg):
+    if err or not ok:
+        messages.error(request, err or "Action failed.")
+    else:
+        messages.success(request, success_msg)
+
+
+def _handle_common_post(request):
+    action = _param(request, "action").lower()
+    if action in ("update_student", "manual_entry", "update_marks"):
+        doc, err = update_student_record_inline(request.POST)
+        _flash(request, doc is not None, err, f"Saved marks for {doc['full_name']} ({doc['student_id']}) and updated predictions." if doc else "")
+        return True
+    if action == "send_alert":
+        sev = _param(request, "severity") or _param(request, "urgency", "WARNING")
+        doc, err = send_student_alert(
+            _param(request, "student_id"), _param(request, "full_name"), _param(request, "course_code"),
+            sev, request.POST.get("message") or request.POST.get("message_text"),
+            _actor_label(request),
+        )
+        _flash(request, doc is not None, err, f"Alert sent to {_param(request, 'student_id')}." if doc else "")
+        return True
+    if action == "delete_student":
+        sid = _param(request, "student_id")
+        ok, err = delete_student_record(sid)
+        _flash(request, ok, err, f"Removed student record {sid}.")
+        return True
+    return False
+
+
+@role_required(["TEACHER", "ADMIN"])
+def teacher_dashboard(request):
+    if request.method == "POST":
+        try:
+            if not _handle_common_post(request):
+                messages.error(request, "Unknown action.")
+        except Exception as exc:
+            messages.error(request, f"Database error: {exc}")
+        return redirect("panels:teacher_dashboard")
+
+    context = {
+        "page_title": "Class Home",
+        "active_role": _active_role(request),
+        "kpis": {"total_students": 0, "avg_attendance": 0.0, "avg_marks": 0.0, "at_risk_count": 0, "courses_count": 0},
+        "chart_data": {"course_summary": {"labels": [], "attendance": [], "marks": []}, "badge_breakdown": {"labels": ["Excellent", "Stable", "Needs Help", "High Risk"], "counts": [0, 0, 0, 0]}},
+        "at_risk_headers": ["Student ID", "Name", "Course", "Attendance", "Marks", "Status", "Actions"],
+        "at_risk_rows": [],
         "db_error": None,
     }
     try:
-        metrics["records"] = student_records_col().count_documents({})
-        metrics["high_risk"] = predictions_col().count_documents({"risk_level": "HIGH"})
-        metrics["courses"] = get_collection("courses").count_documents({"status": "ACTIVE"})
-        metrics["tickets"] = support_tickets_col().count_documents({"status": "OPEN"})
+        context.update(get_teacher_dashboard_context())
     except Exception as exc:
-        metrics["db_error"] = str(exc)
-    return metrics
+        context["db_error"] = str(exc)
+    return render(request, "panels/teacher_dashboard.html", context)
 
 
-def _render_teacher_coming_soon(request, page_title, module_badge, module_description, module_icon, features):
-    metrics = _teacher_live_metrics()
-    live_cards = [
-        {
-            "title": "Tracked Student Records",
-            "value": metrics["records"],
-            "badge": "MongoDB Atlas live count",
-            "status": "info",
-            "icon": "fa-solid fa-user-graduate",
-        },
-        {
-            "title": "High Dropout Alerts",
-            "value": metrics["high_risk"],
-            "badge": "Flagged for intervention",
-            "status": "danger",
-            "icon": "fa-solid fa-triangle-exclamation",
-        },
-        {
-            "title": "Active Courses",
-            "value": metrics["courses"],
-            "badge": "Assigned catalog",
-            "status": "success",
-            "icon": "fa-solid fa-book-open",
-        },
-        {
-            "title": "Open Support Tickets",
-            "value": metrics["tickets"],
-            "badge": "Helpdesk queue",
-            "status": "warning",
-            "icon": "fa-solid fa-life-ring",
-        },
-    ]
-    return render(
-        request,
-        "panels/coming_soon_panel.html",
-        {
-            "page_title": page_title,
-            "active_role": "TEACHER",
-            "module_badge": module_badge,
-            "module_title": page_title,
-            "module_description": module_description,
-            "module_icon": module_icon,
-            "roadmap_features": features,
-            "features_pipe": "|".join(features),
-            "live_cards": live_cards,
-            "db_error": metrics["db_error"],
-        },
-    )
-
-
-@role_required(["TEACHER"])
-def teacher_dashboard(request):
-    return _render_teacher_coming_soon(
-        request,
-        page_title="Teacher Command Center",
-        module_badge="Faculty Panel · Coming Soon",
-        module_description="Class-wide attendance monitoring, cohort GPA averages, and real-time early-warning intervention queues.",
-        module_icon="fa-solid fa-chalkboard-user",
-        features=[
-            "Batch-level attendance heatmaps and weekly engagement trends",
-            "One-click high-risk student intervention flags and advisor notes",
-            "Automated midterm grade variance alerts synced with ML predictions",
-            "Exportable cohort readiness briefs for department chairs",
-        ],
-    )
-
-
-@role_required(["TEACHER"])
+@role_required(["TEACHER", "ADMIN"])
 def teacher_students(request):
-    return _render_teacher_coming_soon(
-        request,
-        page_title="Student Performance Tracker",
-        module_badge="Faculty Panel · Coming Soon",
-        module_description="Individual learner trajectory tracking, attendance threshold diagnostics, and personalized mentoring workflows.",
-        module_icon="fa-solid fa-user-graduate",
-        features=[
-            "Searchable and paginated student risk roster across assigned courses",
-            "Side-by-side previous GPA vs. ML predicted GPA breakdown",
-            "Anomaly explanation badges from Isolation Forest diagnostics",
-            "Direct faculty feedback notifications to at-risk students",
-        ],
-    )
+    batch_f = _param(request, "batch", "ALL") or "ALL"
+    course_f = _param(request, "course_code") or _param(request, "course") or "ALL"
+    status_f = _param(request, "status", "ALL") or "ALL"
+
+    if request.method == "POST":
+        try:
+            if not _handle_common_post(request):
+                messages.error(request, "Unknown student action.")
+        except Exception as exc:
+            messages.error(request, f"Student update failed: {exc}")
+        params = {k: v for k, v in (("batch", batch_f), ("course_code", course_f), ("status", status_f)) if v and v != "ALL"}
+        target = reverse("panels:teacher_students")
+        return redirect(f"{target}?{urlencode(params)}" if params else target)
+
+    data = {"filter_options": {"batches": [], "courses": [], "statuses": ["Excellent", "Stable", "Needs Help", "High Risk"]}, "student_headers": ["Student ID", "Name", "Batch", "Course", "Attendance", "Marks", "Pred GPA", "Status", "Actions"], "student_rows": [], "export_rows": []}
+    db_error = None
+    try:
+        data = get_teacher_students_context(batch_f, course_f, status_f)
+    except Exception as exc:
+        db_error = str(exc)
+
+    if request.GET.get("export") == "csv":
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="edupredict_class_students.csv"'
+        writer = csv.writer(response)
+        writer.writerow(["student_id", "full_name", "batch", "course_code", "attendance_pct", "internal_marks", "predicted_gpa", "status"])
+        for r in data["export_rows"]:
+            writer.writerow([r["student_id"], r["full_name"], r["batch"], r["course_code"], r["attendance_pct"], r["internal_marks"], r["predicted_gpa"], r["status"]])
+        return response
+
+    return render(request, "panels/teacher_students.html", {
+        "page_title": "Student List",
+        "active_role": _active_role(request),
+        "filter_options": data["filter_options"],
+        "selected_filters": {"batch": batch_f, "course_code": course_f, "course": course_f, "status": status_f},
+        "student_headers": data["student_headers"],
+        "student_rows": data["student_rows"],
+        "db_error": db_error,
+    })
 
 
-@role_required(["TEACHER"])
+@role_required(["TEACHER", "ADMIN"])
 def teacher_ingest(request):
-    return _render_teacher_coming_soon(
-        request,
-        page_title="Class Data Ingestion",
-        module_badge="Faculty Panel · Coming Soon",
-        module_description="Streamlined CSV and Excel attendance, quiz, and assignment score uploads scoped directly to faculty sections.",
-        module_icon="fa-solid fa-file-arrow-up",
-        features=[
-            "Course-scoped spreadsheet upload with instant schema validation",
-            "Automated median and mode imputation preview before commit",
-            "Automatic ML pipeline trigger after section grades are posted",
-            "Upload audit log with fixed cell counters per submission",
-        ],
-    )
+    if request.method == "POST":
+        try:
+            if not _handle_common_post(request):
+                mode = _param(request, "mode", "upload").lower()
+                actor = _actor_label(request)
+                if mode == "sample":
+                    ingest_res = ingest_dataset(mode="sample", uploaded_by=actor)
+                else:
+                    file_obj = request.FILES.get("dataset_file")
+                    if not file_obj:
+                        messages.error(request, "Please select a .csv or .xlsx file first.")
+                        return redirect("panels:teacher_ingest")
+                    ingest_res = ingest_dataset(file_obj=file_obj, uploaded_by=actor, mode="upload")
+                if ingest_res.get("status") != "COMPLETED":
+                    messages.error(request, ingest_res.get("error") or "Upload failed.")
+                else:
+                    ml_res = run_prediction_pipeline()
+                    invalidate_cache()
+                    messages.success(request, f"Saved {ingest_res.get('rows_processed', 0)} student rows ({ingest_res.get('missing_values_fixed', 0)} blanks fixed) and updated {ml_res.get('predictions_generated', 0)} predictions.")
+        except Exception as exc:
+            messages.error(request, f"Upload error: {exc}")
+        return redirect("panels:teacher_ingest")
+
+    data = {"roster_headers": ["Student ID", "Name", "Batch", "Course", "Attendance", "Marks", "GPA", "Actions"], "roster_rows": [], "log_headers": ["File Name", "Rows", "Fixed", "Status", "Uploaded"], "log_rows": [], "courses_list": ["CS-101"], "required_columns": REQUIRED_COLUMNS}
+    db_error = None
+    try:
+        data = get_teacher_ingest_context()
+    except Exception as exc:
+        db_error = str(exc)
+
+    return render(request, "panels/teacher_ingest.html", {
+        "page_title": "Upload Marks",
+        "active_role": _active_role(request),
+        **data,
+        "db_error": db_error,
+    })

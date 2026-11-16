@@ -35,7 +35,7 @@ def _flash_result(request, ok, error, success_msg):
 @role_required(["ADMIN"])
 def admin_dashboard(request):
     context = {
-        "page_title": "Admin Overview",
+        "page_title": "Admin Home",
         "active_role": "ADMIN",
         "kpis": {
             "total_students": 0, "student_accounts": 0, "active_teachers": 0,
@@ -49,7 +49,7 @@ def admin_dashboard(request):
             "risk_breakdown": {"labels": ["Low Risk", "Medium Risk", "High Risk"], "counts": [0, 0, 0]},
         },
         "recent_tickets": [],
-        "recent_ticket_headers": ["Ticket ID", "User", "Subject", "Status", "Created"],
+        "recent_ticket_headers": ["Ticket ID", "User", "Subject", "Status", "Date"],
         "recent_ticket_rows": [],
         "db_error": None,
     }
@@ -63,7 +63,9 @@ def admin_dashboard(request):
 @role_required(["ADMIN"])
 def admin_users(request):
     filter_role = (_param(request, "filter_role") or _param(request, "role") or "ALL").upper()
-    actor_id = str((request.session.get("user") or {}).get("user_id") or "").strip()
+    session_user = request.session.get("user") or {}
+    actor_id = str(session_user.get("user_id") or "").strip()
+    actor_email = str(session_user.get("email") or "").strip().lower()
     if request.method == "POST":
         action = _param(request, "action").lower()
         user_id = _param(request, "user_id")
@@ -73,18 +75,18 @@ def admin_users(request):
                 created, err = create_user_record(full_name, request.POST.get("email"), request.POST.get("password"), request.POST.get("role"), request.POST.get("department"), request.POST.get("batch"))
                 _flash_result(request, created is not None, err, f"User {created['full_name']} ({created['user_id']}) created." if created else "")
             elif action == "update":
-                ok, err = update_user_record(user_id, full_name, request.POST.get("email"), request.POST.get("role"), request.POST.get("department"), request.POST.get("batch"), request.POST.get("password") or "", actor_user_id=actor_id)
-                _flash_result(request, ok, err, f"User {user_id} updated successfully.")
+                ok, err = update_user_record(user_id, full_name, request.POST.get("email"), request.POST.get("role"), request.POST.get("department"), request.POST.get("batch"), request.POST.get("password") or "", actor_user_id=actor_id, actor_email=actor_email)
+                _flash_result(request, ok, err, f"User {user_id} updated.")
             elif action == "toggle":
-                new_state, err = toggle_user_status(user_id, actor_user_id=actor_id)
+                new_state, err = toggle_user_status(user_id, actor_user_id=actor_id, actor_email=actor_email)
                 _flash_result(request, new_state is not None, err, f"User {user_id} {'activated' if new_state else 'deactivated'}.")
             elif action == "delete":
-                ok, err = delete_user_record(user_id, actor_user_id=actor_id)
+                ok, err = delete_user_record(user_id, actor_user_id=actor_id, actor_email=actor_email)
                 _flash_result(request, ok, err, f"User {user_id} deleted.")
             else:
-                messages.error(request, "Unsupported user management action.")
+                messages.error(request, "Unknown user action.")
         except Exception as exc:
-            messages.error(request, f"Database operation failed: {exc}")
+            messages.error(request, f"Database error: {exc}")
         return _redirect_with_filter("panels:admin_users", "role", filter_role)
 
     users, role_counts, db_error = [], {"ALL": 0, "ADMIN": 0, "TEACHER": 0, "STUDENT": 0, "ANALYST": 0}, None
@@ -92,9 +94,9 @@ def admin_users(request):
         users, role_counts = list_users(filter_role)
     except Exception as exc:
         db_error = str(exc)
-    user_headers, user_rows = build_user_table_data(users, filter_role, actor_id)
+    user_headers, user_rows = build_user_table_data(users, filter_role, actor_id, actor_email=actor_email)
     return render(request, "panels/admin_users.html", {
-        "page_title": "User Management",
+        "page_title": "Users",
         "active_role": "ADMIN",
         "users": users,
         "user_headers": user_headers,
@@ -122,9 +124,9 @@ def admin_courses(request):
                 ok, err = delete_course_record(code)
                 _flash_result(request, ok, err, f"Course {code} removed.")
             else:
-                messages.error(request, "Unsupported course action.")
+                messages.error(request, "Unknown course action.")
         except Exception as exc:
-            messages.error(request, f"Course operation failed: {exc}")
+            messages.error(request, f"Course error: {exc}")
         return _redirect_with_filter("panels:admin_courses", "department", filter_dept)
 
     courses, departments, dept_counts, db_error = [], [], {"ALL": 0}, None
@@ -134,7 +136,7 @@ def admin_courses(request):
         db_error = str(exc)
     course_headers, course_rows = build_course_table_data(courses, filter_dept)
     return render(request, "panels/admin_courses.html", {
-        "page_title": "Courses & Batches",
+        "page_title": "Courses",
         "active_role": "ADMIN",
         "courses": courses,
         "course_headers": course_headers,
@@ -152,21 +154,17 @@ def admin_tickets(request):
     if request.method == "POST":
         action = _param(request, "action").lower()
         ticket_id = _param(request, "ticket_id")
-        user = request.session.get("user") or {}
         try:
-            if action == "create":
-                created, err = create_ticket_record(user.get("user_id", ""), user.get("full_name") or user.get("email") or "Administrator", user.get("role") or "ADMIN", request.POST.get("subject"), request.POST.get("message"))
-                _flash_result(request, created is not None, err, f"Ticket {created['ticket_id']} created." if created else "")
-            elif action == "toggle_status":
+            if action == "toggle_status":
                 new_status, err = toggle_ticket_status(ticket_id)
                 _flash_result(request, new_status is not None, err, f"Ticket {ticket_id} marked as {new_status}.")
             elif action == "delete":
                 ok, err = delete_ticket_record(ticket_id)
                 _flash_result(request, ok, err, f"Ticket {ticket_id} deleted.")
             else:
-                messages.error(request, "Unsupported ticket action.")
+                messages.error(request, "Unknown ticket action.")
         except Exception as exc:
-            messages.error(request, f"Ticket operation failed: {exc}")
+            messages.error(request, f"Ticket error: {exc}")
         return _redirect_with_filter("panels:admin_tickets", "status", filter_status)
 
     tickets, status_counts, db_error = [], {"ALL": 0, "OPEN": 0, "RESOLVED": 0}, None
@@ -176,7 +174,7 @@ def admin_tickets(request):
         db_error = str(exc)
     ticket_headers, ticket_rows = build_ticket_table_data(tickets, filter_status)
     return render(request, "panels/admin_tickets.html", {
-        "page_title": "Support Tickets",
+        "page_title": "Help Tickets",
         "active_role": "ADMIN",
         "tickets": tickets,
         "ticket_headers": ticket_headers,
@@ -207,13 +205,16 @@ def submit_support_ticket(request):
     fallback_url = reverse(get_dashboard_route(user.get("role")))
     referer = request.META.get("HTTP_REFERER", "")
     next_url = referer if referer and url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}) else fallback_url
+    if str(user.get("role") or "").strip().upper() == "ADMIN":
+        messages.warning(request, "Admins manage help tickets directly and cannot send tickets to themselves.")
+        return redirect("panels:admin_tickets")
     if request.method != "POST":
         return redirect(next_url)
     try:
         created, err = create_ticket_record(user.get("user_id", ""), user.get("full_name") or user.get("email") or "Portal User", user.get("role") or "USER", request.POST.get("subject"), request.POST.get("message"))
-        _flash_result(request, created is not None, err, f"Support ticket {created['ticket_id']} submitted to administration." if created else "")
+        _flash_result(request, created is not None, err, f"Help ticket {created['ticket_id']} sent to Admin." if created else "")
     except Exception as exc:
-        messages.error(request, f"Could not submit support ticket: {exc}")
+        messages.error(request, f"Could not send help ticket: {exc}")
     return redirect(next_url)
 
 

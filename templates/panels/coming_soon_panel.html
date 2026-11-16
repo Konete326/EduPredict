@@ -7,7 +7,7 @@
       <div class="flex flex-wrap items-center gap-2">
         <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[var(--accent-primary)]">
           <i class="{{ module_icon|default:'fa-solid fa-rocket' }} text-[11px]" aria-hidden="true"></i>
-          <span>{{ module_badge|default:"Module · Coming Soon" }}</span>
+          <span>{{ module_badge|default:"Coming Soon" }}</span>
         </span>
         <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--status-warning)]">Soon</span>
       </div>
@@ -15,20 +15,22 @@
       <p class="text-xs text-[var(--text-secondary)]">{{ module_description }}</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
-      <button type="button" data-coming-soon="true" data-coming-panel="{{ module_badge }}" data-coming-title="{{ module_title }}" data-coming-desc="{{ module_description }}" data-coming-features="{{ features_pipe }}" title="Open a quick preview of upcoming tools in this module" class="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <button type="button" data-coming-soon="true" data-coming-panel="{{ module_badge }}" data-coming-title="{{ module_title }}" data-coming-desc="{{ module_description }}" data-coming-features="{{ features_pipe }}" title="See what is planned for this page" class="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
         <i class="fa-solid fa-rocket text-xs" aria-hidden="true"></i>
-        <span>Preview Roadmap Modal</span>
+        <span>View Plan</span>
       </button>
-      <button type="button" id="coming-soon-support-btn" title="Send a feature request to the system administrator" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      {% if active_role != 'ADMIN' %}
+      <button type="button" id="coming-soon-support-btn" title="Send feedback to the admin" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
         <i class="fa-solid fa-headset text-[var(--accent-primary)]" aria-hidden="true"></i>
-        <span>Request Priority Access</span>
+        <span>Send Feedback</span>
       </button>
+      {% endif %}
     </div>
   </section>
 
   {% if db_error %}
   <div class="w-full rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-    <i class="fa-solid fa-circle-exclamation mr-2" aria-hidden="true"></i>Database notice: {{ db_error }}
+    <i class="fa-solid fa-circle-exclamation mr-2" aria-hidden="true"></i>Database message: {{ db_error }}
   </div>
   {% endif %}
 
@@ -42,10 +44,10 @@
     <div class="xl:col-span-7 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
       <div class="flex items-center justify-between gap-2">
         <div>
-          <h3 class="text-sm font-semibold text-[var(--text-primary)]">Scheduled Feature Roadmap</h3>
-          <p class="text-xs text-[var(--text-muted)]">Capabilities releasing in the next module milestone</p>
+          <h3 class="text-sm font-semibold text-[var(--text-primary)]">What Is Coming Next</h3>
+          <p class="text-xs text-[var(--text-muted)]">Tools planned for the next update</p>
         </div>
-        <span class="rounded border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]">In Queue</span>
+        <span class="rounded border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]">Planned</span>
       </div>
       <ul class="space-y-2">
         {% for feat in roadmap_features %}
@@ -59,11 +61,11 @@
 
     <div class="xl:col-span-5 min-w-0 flex flex-col justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
       <div class="space-y-2.5">
-        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Live Portal Readiness</h3>
-        <p class="text-xs leading-relaxed text-[var(--text-secondary)]">Your authenticated session and MongoDB Atlas collections are connected. Live counts above update automatically from the database.</p>
+        <h3 class="text-sm font-semibold text-[var(--text-primary)]">System Status</h3>
+        <p class="text-xs leading-relaxed text-[var(--text-secondary)]">Your account and database are ready. The numbers above show live MongoDB data.</p>
         <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 space-y-1.5 text-xs">
           <div class="flex items-center justify-between gap-2">
-            <span class="text-[var(--text-muted)]">Active Role</span>
+            <span class="text-[var(--text-muted)]">Your Role</span>
             <span class="font-mono font-semibold text-[var(--text-primary)]">{{ active_role }}</span>
           </div>
           <div class="flex items-center justify-between gap-2">
@@ -71,14 +73,14 @@
             <span class="truncate font-medium text-[var(--text-secondary)]">{{ current_user.email|default:"Signed in" }}</span>
           </div>
           <div class="flex items-center justify-between gap-2">
-            <span class="text-[var(--text-muted)]">MongoDB Atlas</span>
+            <span class="text-[var(--text-muted)]">Database</span>
             <span class="font-medium {% if db_connected %}text-[var(--status-success)]{% else %}text-[var(--status-warning)]{% endif %}">{% if db_connected %}Connected{% else %}Offline{% endif %}</span>
           </div>
         </div>
       </div>
-      <button type="button" data-coming-soon="true" data-coming-panel="{{ module_badge }}" data-coming-title="{{ module_title }}" data-coming-desc="{{ module_description }}" data-coming-features="{{ features_pipe }}" title="Preview planned module capabilities in a popup dialog" class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <button type="button" data-coming-soon="true" data-coming-panel="{{ module_badge }}" data-coming-title="{{ module_title }}" data-coming-desc="{{ module_description }}" data-coming-features="{{ features_pipe }}" title="See what is planned for this page" class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
         <i class="fa-solid fa-circle-info text-[var(--accent-primary)]" aria-hidden="true"></i>
-        <span>Preview Roadmap Modal</span>
+        <span>View Plan</span>
       </button>
     </div>
   </section>
@@ -87,20 +89,29 @@
 
 {% block extra_js %}
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const supportBtn = document.getElementById('coming-soon-support-btn');
-    if (supportBtn) {
-      supportBtn.addEventListener('click', function () {
-        openFormModal({
-          title: 'Request Feature Priority',
-          actionUrl: '{% url "panels:submit_support_ticket" %}',
-          fields: [
-            { name: 'subject', label: 'Subject', type: 'text', value: 'Feature access request: {{ module_title|escapejs }}', required: true },
-            { name: 'message', label: 'Details', type: 'textarea', placeholder: 'Share which workflows your team needs first...', required: true }
-          ]
+  (function () {
+    function initComingSoonSupport() {
+      const supportBtn = document.getElementById('coming-soon-support-btn');
+      if (supportBtn && !supportBtn.dataset.bound) {
+        supportBtn.dataset.bound = '1';
+        supportBtn.addEventListener('click', function () {
+          openFormModal({
+            title: 'Send Feedback',
+            actionUrl: '{% url "panels:submit_support_ticket" %}',
+            fields: [
+              { name: 'subject', label: 'Subject', type: 'text', value: 'Early access request: {{ module_title|escapejs }}', required: true },
+              { name: 'message', label: 'Message', type: 'textarea', placeholder: 'Tell us what tool you need first...', required: true }
+            ]
+          });
         });
-      });
+      }
     }
-  });
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initComingSoonSupport, { once: true });
+    } else {
+      initComingSoonSupport();
+    }
+  })();
 </script>
 {% endblock %}

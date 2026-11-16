@@ -4,26 +4,26 @@
 <section class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
   <div class="min-w-0 space-y-2">
     <div class="flex flex-wrap items-center gap-2">
-      <a href="{% url 'panels:admin_dashboard' %}" title="Administration Overview" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+      <a href="{% url 'panels:admin_dashboard' %}" title="Admin Dashboard" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <i class="fa-solid fa-gauge-high"></i>
-        <span>Overview</span>
+        <span>Dashboard</span>
       </a>
-      <a href="{% url 'panels:admin_users' %}" title="Manage portal users and roles" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+      <a href="{% url 'panels:admin_users' %}" title="Manage users and roles" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <i class="fa-solid fa-users"></i>
         <span>Users</span>
       </a>
-      <a href="{% url 'panels:admin_courses' %}" title="Manage courses, capacities, and batches" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-primary)]">
+      <a href="{% url 'panels:admin_courses' %}" title="Manage courses and batches" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-primary)]">
         <i class="fa-solid fa-book-open"></i>
-        <span>Courses &amp; Batches</span>
+        <span>Courses</span>
       </a>
-      <a href="{% url 'panels:admin_tickets' %}" title="Resolve institutional support tickets" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+      <a href="{% url 'panels:admin_tickets' %}" title="View and close help tickets" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <i class="fa-solid fa-life-ring"></i>
-        <span>Support Tickets</span>
+        <span>Help Tickets</span>
       </a>
     </div>
-    <p class="text-xs text-[var(--text-secondary)]">Create, update, or archive academic courses, credit hours, instructors, and enrollment capacities.</p>
+    <p class="text-xs text-[var(--text-secondary)]">Add, edit, or delete courses, teachers, and class seat limits.</p>
   </div>
-  <button type="button" onclick="openCreateCourseModal()" title="Create a new course and assign an academic batch" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+  <button type="button" onclick="openCreateCourseModal()" title="Add a new course" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
     <i class="fa-solid fa-plus"></i>
     <span>Add Course</span>
   </button>
@@ -31,7 +31,7 @@
 
 {% if db_error %}
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database notice: {{ db_error }}
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database message: {{ db_error }}
 </div>
 {% endif %}
 
@@ -42,78 +42,80 @@
       <span class="tabular-nums opacity-80">({{ dept_counts.ALL|default:0 }})</span>
     </a>
     {% for dept in departments %}
-    <a href="{% url 'panels:admin_courses' %}?department={{ dept|urlencode }}" title="Filter courses in {{ dept }}" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_dept == dept %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_courses' %}?department={{ dept|urlencode }}" title="Show {{ dept }} courses" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_dept == dept %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>{{ dept }}</span>
       {% for k, cnt in dept_counts.items %}{% if k == dept %}<span class="tabular-nums opacity-80">({{ cnt }})</span>{% endif %}{% endfor %}
     </a>
     {% endfor %}
   </div>
 
-  {% include 'components/data_table.html' with table_id="admin-courses-table" table_title="Courses & Academic Batches" headers=course_headers rows=course_rows page_size=5 empty_message="No courses found for the selected department." %}
+  {% include 'components/data_table.html' with table_id="admin-courses-table" table_title="Courses List" headers=course_headers rows=course_rows page_size=5 empty_message="No courses found in this department." %}
 </section>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  const ADMIN_COURSES_URL = "{% url 'panels:admin_courses' %}";
-  const SELECTED_DEPT = "{{ selected_dept|escapejs }}";
-  const COURSE_STATUS_OPTIONS = [
-    { value: 'ACTIVE', label: 'Active' },
-    { value: 'ARCHIVED', label: 'Archived' }
-  ];
+  (function () {
+    const adminCoursesUrl = "{% url 'panels:admin_courses' %}";
+    const selectedDept = "{{ selected_dept|escapejs }}";
+    const courseStatusOptions = [
+      { value: 'ACTIVE', label: 'Active' },
+      { value: 'ARCHIVED', label: 'Archived' }
+    ];
 
-  function openCreateCourseModal() {
-    window.openFormModal({
-      title: 'Add Academic Course',
-      actionUrl: ADMIN_COURSES_URL,
-      fields: [
-        { type: 'hidden', name: 'action', value: 'create' },
-        { type: 'hidden', name: 'filter_dept', value: SELECTED_DEPT },
-        { name: 'course_code', label: 'Course Code', type: 'text', placeholder: 'CS-305', required: true },
-        { name: 'title', label: 'Course Title', type: 'text', placeholder: 'Cloud & Distributed Systems', required: true },
-        { name: 'department', label: 'Department', type: 'text', value: SELECTED_DEPT !== 'ALL' ? SELECTED_DEPT : 'Computer Science', required: true },
-        { name: 'batch', label: 'Batch / Term', type: 'text', value: '2026-A', required: true },
-        { name: 'instructor', label: 'Instructor', type: 'text', placeholder: 'Dr. Ayesha Khan', required: true },
-        { name: 'credits', label: 'Credit Hours', type: 'number', value: '3', required: true },
-        { name: 'capacity', label: 'Seat Capacity', type: 'number', value: '60', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: COURSE_STATUS_OPTIONS, value: 'ACTIVE' }
-      ]
-    });
-  }
+    window.openCreateCourseModal = function () {
+      window.openFormModal({
+        title: 'Add Course',
+        actionUrl: adminCoursesUrl,
+        fields: [
+          { type: 'hidden', name: 'action', value: 'create' },
+          { type: 'hidden', name: 'filter_dept', value: selectedDept },
+          { name: 'course_code', label: 'Course Code', type: 'text', placeholder: 'CS-305', required: true },
+          { name: 'title', label: 'Course Name', type: 'text', placeholder: 'Cloud Systems', required: true },
+          { name: 'department', label: 'Department', type: 'text', value: selectedDept !== 'ALL' ? selectedDept : 'Computer Science', required: true },
+          { name: 'batch', label: 'Batch', type: 'text', value: '2026-A', required: true },
+          { name: 'instructor', label: 'Teacher', type: 'text', placeholder: 'Dr. Ayesha Khan', required: true },
+          { name: 'credits', label: 'Credits', type: 'number', value: '3', required: true },
+          { name: 'capacity', label: 'Total Seats', type: 'number', value: '60', required: true },
+          { name: 'status', label: 'Status', type: 'select', options: courseStatusOptions, value: 'ACTIVE' }
+        ]
+      });
+    };
 
-  function openEditCourseModal(btn) {
-    const d = btn ? btn.dataset : {};
-    window.openFormModal({
-      title: 'Edit Course (' + (d.courseCode || '') + ')',
-      actionUrl: ADMIN_COURSES_URL,
-      fields: [
-        { type: 'hidden', name: 'action', value: 'update' },
-        { type: 'hidden', name: 'course_code', value: d.courseCode || '' },
-        { type: 'hidden', name: 'filter_dept', value: d.filterDept || SELECTED_DEPT },
-        { name: 'title', label: 'Course Title', type: 'text', value: d.title || '', required: true },
-        { name: 'department', label: 'Department', type: 'text', value: d.department || 'General', required: true },
-        { name: 'batch', label: 'Batch / Term', type: 'text', value: d.batch || '2026-A', required: true },
-        { name: 'instructor', label: 'Instructor', type: 'text', value: d.instructor || 'TBA', required: true },
-        { name: 'credits', label: 'Credit Hours', type: 'number', value: d.credits || '3', required: true },
-        { name: 'capacity', label: 'Seat Capacity', type: 'number', value: d.capacity || '60', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: COURSE_STATUS_OPTIONS, value: d.status || 'ACTIVE' }
-      ]
-    });
-  }
+    window.openEditCourseModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      window.openFormModal({
+        title: 'Edit Course (' + (d.courseCode || '') + ')',
+        actionUrl: adminCoursesUrl,
+        fields: [
+          { type: 'hidden', name: 'action', value: 'update' },
+          { type: 'hidden', name: 'course_code', value: d.courseCode || '' },
+          { type: 'hidden', name: 'filter_dept', value: d.filterDept || selectedDept },
+          { name: 'title', label: 'Course Name', type: 'text', value: d.title || '', required: true },
+          { name: 'department', label: 'Department', type: 'text', value: d.department || 'General', required: true },
+          { name: 'batch', label: 'Batch', type: 'text', value: d.batch || '2026-A', required: true },
+          { name: 'instructor', label: 'Teacher', type: 'text', value: d.instructor || 'TBA', required: true },
+          { name: 'credits', label: 'Credits', type: 'number', value: d.credits || '3', required: true },
+          { name: 'capacity', label: 'Total Seats', type: 'number', value: d.capacity || '60', required: true },
+          { name: 'status', label: 'Status', type: 'select', options: courseStatusOptions, value: d.status || 'ACTIVE' }
+        ]
+      });
+    };
 
-  function openDeleteCourseModal(btn) {
-    const d = btn ? btn.dataset : {};
-    window.openConfirmModal({
-      title: 'Delete Course Record',
-      message: 'Remove course ' + (d.courseCode || '') + (d.title ? ' (' + d.title + ')' : '') + '? Existing student records remain preserved.',
-      confirmText: 'Delete Course',
-      onConfirmUrl: ADMIN_COURSES_URL,
-      fields: {
-        action: 'delete',
-        course_code: d.courseCode || '',
-        filter_dept: d.filterDept || SELECTED_DEPT
-      }
-    });
-  }
+    window.openDeleteCourseModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      window.openConfirmModal({
+        title: 'Delete Course',
+        message: 'Delete course ' + (d.courseCode || '') + (d.title ? ' (' + d.title + ')' : '') + '? Student records will stay safe.',
+        confirmText: 'Delete',
+        onConfirmUrl: adminCoursesUrl,
+        fields: {
+          action: 'delete',
+          course_code: d.courseCode || '',
+          filter_dept: d.filterDept || selectedDept
+        }
+      });
+    };
+  })();
 </script>
 {% endblock %}

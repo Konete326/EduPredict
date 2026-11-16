@@ -6,79 +6,79 @@
     <div class="flex items-center gap-2">
       <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[var(--accent-primary)]">
         <i class="fa-solid fa-microchip text-[11px]"></i>
-        <span>Scikit-Learn ML Engine</span>
+        <span>Prediction Tool</span>
       </span>
     </div>
-    <h2 class="text-lg font-semibold tracking-tight text-[var(--text-primary)]">Predictive Analytics &amp; Big Data Hub</h2>
-    <p class="text-xs text-[var(--text-secondary)]">Automated CSV/Excel ingestion, median/mode imputation, dropout risk classification, GPA forecasting, and anomaly detection.</p>
+    <h2 class="text-lg font-semibold tracking-tight text-[var(--text-primary)]">Data &amp; Predictions</h2>
+    <p class="text-xs text-[var(--text-secondary)]">Upload a student file, fix blank cells, and predict grades and dropout risk.</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
     <form method="post" action="{% url 'analytics:upload_dataset' %}">
       {% csrf_token %}
       <input type="hidden" name="mode" value="sample">
-      <button type="submit" title="Generate 60 sample student records and run ML predictions automatically" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <button type="submit" title="Add 60 sample students and run predictions" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
         <i class="fa-solid fa-wand-magic-sparkles"></i>
-        <span>Load Sample Dataset &amp; Predict</span>
+        <span>Load Sample Data</span>
       </button>
     </form>
     <form method="post" action="{% url 'analytics:run_predictions' %}">
       {% csrf_token %}
-      <button type="submit" title="Retrain Random Forest, Ridge, and Isolation Forest models on current MongoDB records" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <button type="submit" title="Run predictions again on current MongoDB records" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
         <i class="fa-solid fa-rotate text-[var(--accent-primary)]"></i>
-        <span>Retrain &amp; Run ML</span>
+        <span>Run Predictions</span>
       </button>
     </form>
-    <a href="{% url 'panels:analyst_dashboard' %}?batch={{ selected_filters.batch|urlencode }}&course_code={{ selected_filters.course_code|urlencode }}&risk_level={{ selected_filters.risk_level|urlencode }}&export=csv" title="Download currently filtered student predictions as CSV" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+    <a href="{% url 'panels:analyst_dashboard' %}?batch={{ selected_filters.batch|urlencode }}&course_code={{ selected_filters.course_code|urlencode }}&risk_level={{ selected_filters.risk_level|urlencode }}&export=csv" title="Save filtered predictions as a CSV file" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
       <i class="fa-solid fa-file-csv text-[var(--status-success)]"></i>
-      <span>Export CSV</span>
+      <span>Download CSV</span>
     </a>
   </div>
 </section>
 
 {% if db_error %}
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database notice: {{ db_error }}
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database message: {{ db_error }}
 </div>
 {% endif %}
 
 <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-  {% include 'components/metric_card.html' with title="Total Student Records" value=kpis.total_records badge="Filtered dataset rows" status="info" icon="fa-solid fa-database" %}
-  {% include 'components/metric_card.html' with title="High Dropout Risk" value=kpis.high_risk_count badge=">= 70% probability" status="danger" icon="fa-solid fa-triangle-exclamation" %}
-  {% include 'components/metric_card.html' with title="Anomalies Flagged" value=kpis.anomalies_count badge="Isolation Forest / Z-score" status="warning" icon="fa-solid fa-wave-square" %}
-  {% include 'components/metric_card.html' with title="Avg Predicted GPA" value=kpis.avg_predicted_gpa badge="Ridge Regression (0-4.0)" status="success" icon="fa-solid fa-chart-line" %}
+  {% include 'components/metric_card.html' with title="Student Records" value=kpis.total_records badge="Matching filters" status="info" icon="fa-solid fa-database" %}
+  {% include 'components/metric_card.html' with title="High Risk" value=kpis.high_risk_count badge="70% or higher risk" status="danger" icon="fa-solid fa-triangle-exclamation" %}
+  {% include 'components/metric_card.html' with title="Unusual Drops" value=kpis.anomalies_count badge="Sudden drop flagged" status="warning" icon="fa-solid fa-wave-square" %}
+  {% include 'components/metric_card.html' with title="Average Pred. GPA" value=kpis.avg_predicted_gpa badge="Out of 4.0" status="success" icon="fa-solid fa-chart-line" %}
 </section>
 
 <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
   <div class="xl:col-span-4 min-w-0 space-y-4">
-    <div id="ingestion-hub" class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
+    <div id="upload-box" class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
       <div>
-        <h3 class="text-sm font-semibold text-[var(--text-primary)]">CSV / Excel Ingestion Hub</h3>
-        <p class="mt-1 text-xs text-[var(--text-muted)]">Upload educational batches up to 25 MB. Missing values are imputed automatically before ML prediction.</p>
+        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Upload Student File</h3>
+        <p class="mt-1 text-xs text-[var(--text-muted)]">Choose a .csv or .xlsx file (up to 25 MB). Blank values are filled automatically.</p>
       </div>
       <form method="post" action="{% url 'analytics:upload_dataset' %}" enctype="multipart/form-data" class="space-y-3">
         {% csrf_token %}
         <input type="hidden" name="mode" value="upload">
         <div class="space-y-1">
-          <label for="dataset-file-input" class="block text-xs font-medium text-[var(--text-secondary)]">Dataset File (.csv or .xlsx)</label>
+          <label for="dataset-file-input" class="block text-xs font-medium text-[var(--text-secondary)]">File (.csv or .xlsx)</label>
           <input id="dataset-file-input" name="dataset_file" type="file" accept=".csv,.xlsx" required class="block w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--accent-soft)] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[var(--accent-primary)]">
         </div>
         <div class="space-y-1">
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Required Columns</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Needed Columns</p>
           <div class="flex flex-wrap gap-1.5">
             {% for col in required_columns %}
             <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">{{ col }}</span>
             {% endfor %}
           </div>
         </div>
-        <button type="submit" title="Upload, clean missing values, and generate student predictions" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+        <button type="submit" title="Upload file, clean blank cells, and run predictions" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
           <i class="fa-solid fa-cloud-arrow-up"></i>
-          <span>Ingest &amp; Run Predictions</span>
+          <span>Upload &amp; Predict</span>
         </button>
       </form>
     </div>
 
     <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
-      {% include 'components/data_table.html' with table_id="dataset-logs-table" table_title="Recent Ingestion Logs" headers=dataset_headers rows=dataset_rows page_size=5 empty_message="No datasets ingested yet." %}
+      {% include 'components/data_table.html' with table_id="dataset-logs-table" table_title="Recent Uploads" headers=dataset_headers rows=dataset_rows page_size=5 empty_message="No files uploaded yet." %}
     </div>
   </div>
 
@@ -86,8 +86,8 @@
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
         <div class="mb-2.5 flex items-center justify-between gap-2">
-          <h3 class="text-sm font-semibold text-[var(--text-primary)]">Dropout Risk Distribution</h3>
-          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Random Forest</span>
+          <h3 class="text-sm font-semibold text-[var(--text-primary)]">Dropout Risk Levels</h3>
+          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Risk Split</span>
         </div>
         <div class="relative h-48 w-full"><canvas id="chart-dropout-doughnut"></canvas></div>
       </div>
@@ -95,7 +95,7 @@
       <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
         <div class="mb-2.5 flex items-center justify-between gap-2">
           <h3 class="text-sm font-semibold text-[var(--text-primary)]">Attendance vs. Predicted GPA</h3>
-          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Correlation</span>
+          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Scatter Plot</span>
         </div>
         <div class="relative h-48 w-full"><canvas id="chart-correlation-scatter"></canvas></div>
       </div>
@@ -104,10 +104,10 @@
     <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
       <div class="mb-2.5 flex items-center justify-between gap-2">
         <div>
-          <h3 class="text-sm font-semibold text-[var(--text-primary)]">Course Demand Forecast</h3>
-          <p class="text-xs text-[var(--text-muted)]">Current enrollment vs. next-term projected demand per course</p>
+          <h3 class="text-sm font-semibold text-[var(--text-primary)]">Course Demand</h3>
+          <p class="text-xs text-[var(--text-muted)]">Current students compared to expected seats next term</p>
         </div>
-        <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Demand Model</span>
+        <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Forecast</span>
       </div>
       <div class="relative h-48 w-full"><canvas id="chart-course-demand"></canvas></div>
     </div>
@@ -135,122 +135,130 @@
       </select>
     </div>
     <div class="space-y-1">
-      <label for="filter-risk" class="block text-xs font-medium text-[var(--text-secondary)]">Risk / Anomaly</label>
+      <label for="filter-risk" class="block text-xs font-medium text-[var(--text-secondary)]">Risk Level</label>
       <select id="filter-risk" name="risk_level" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
         <option value="ALL" {% if selected_filters.risk_level == 'ALL' %}selected{% endif %}>All Levels</option>
         <option value="HIGH" {% if selected_filters.risk_level == 'HIGH' %}selected{% endif %}>High Risk</option>
         <option value="MEDIUM" {% if selected_filters.risk_level == 'MEDIUM' %}selected{% endif %}>Medium Risk</option>
         <option value="LOW" {% if selected_filters.risk_level == 'LOW' %}selected{% endif %}>Low Risk</option>
-        <option value="ANOMALY" {% if selected_filters.risk_level == 'ANOMALY' %}selected{% endif %}>Anomalies Only</option>
+        <option value="ANOMALY" {% if selected_filters.risk_level == 'ANOMALY' %}selected{% endif %}>Unusual Drops Only</option>
       </select>
     </div>
     <div class="flex items-center gap-2 lg:col-span-2">
-      <button type="submit" title="Filter predictions table and charts" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <button type="submit" title="Filter student predictions" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
         <i class="fa-solid fa-filter"></i>
-        <span>Apply Filters</span>
+        <span>Filter</span>
       </button>
-      <a href="{% url 'panels:analyst_dashboard' %}" title="Reset all prediction filters" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-        <span>Reset</span>
+      <a href="{% url 'panels:analyst_dashboard' %}" title="Clear all filters" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <span>Clear</span>
       </a>
     </div>
   </form>
 
-  {% include 'components/data_table.html' with table_id="analyst-predictions-table" table_title="Student Predictions & Anomaly Insights" headers=prediction_headers rows=prediction_rows page_size=5 empty_message="No records match the current filters. Load the sample dataset or upload a CSV/Excel file above." %}
+  {% include 'components/data_table.html' with table_id="analyst-predictions-table" table_title="Student Predictions" headers=prediction_headers rows=prediction_rows page_size=5 empty_message="No matching rows found. Load sample data or upload a file above." %}
 </section>
 {% endblock %}
 
 {% block extra_js %}
 {{ chart_data|json_script:"analyst-chart-data" }}
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const dataNode = document.getElementById('analyst-chart-data');
-    if (!dataNode || typeof window.createThemedChart !== 'function') return;
-    const payload = JSON.parse(dataNode.textContent || '{}');
-    const counts = payload.dropout_counts || { LOW: 0, MEDIUM: 0, HIGH: 0 };
-    const scatter = payload.scatter_points || [];
-    const demand = payload.course_demand || [];
+  (function () {
+    function initAnalystCharts() {
+      const dataNode = document.getElementById('analyst-chart-data');
+      if (!dataNode || typeof window.createThemedChart !== 'function') return;
+      const payload = JSON.parse(dataNode.textContent || '{}');
+      const counts = payload.dropout_counts || { LOW: 0, MEDIUM: 0, HIGH: 0 };
+      const scatter = payload.scatter_points || [];
+      const demand = payload.course_demand || [];
 
-    window.createThemedChart('chart-dropout-doughnut', function (tokens) {
-      return {
-        type: 'doughnut',
-        data: {
-          labels: ['Low Risk', 'Medium Risk', 'High Risk'],
-          datasets: [{
-            data: [counts.LOW || 0, counts.MEDIUM || 0, counts.HIGH || 0],
-            backgroundColor: [tokens.statusSuccess, tokens.statusWarning, tokens.statusDanger],
-            borderColor: tokens.bgSurface,
-            borderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '64%',
-          plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } } }
-        }
-      };
-    });
-
-    window.createThemedChart('chart-correlation-scatter', function (tokens) {
-      const pointColors = scatter.map(function (pt) {
-        if (pt.risk === 'HIGH') return tokens.statusDanger;
-        if (pt.risk === 'MEDIUM') return tokens.statusWarning;
-        return tokens.statusSuccess;
+      window.createThemedChart('chart-dropout-doughnut', function (tokens) {
+        return {
+          type: 'doughnut',
+          data: {
+            labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+            datasets: [{
+              data: [counts.LOW || 0, counts.MEDIUM || 0, counts.HIGH || 0],
+              backgroundColor: [tokens.statusSuccess, tokens.statusWarning, tokens.statusDanger],
+              borderColor: tokens.bgSurface,
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '64%',
+            plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } } }
+          }
+        };
       });
-      return {
-        type: 'scatter',
-        data: {
-          datasets: [{
-            label: 'Students',
-            data: scatter.map(function (pt) { return { x: pt.x, y: pt.y, label: pt.label }; }),
-            backgroundColor: pointColors,
-            pointRadius: 4.5,
-            pointHoverRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: function (ctx) {
-                  const raw = ctx.raw || {};
-                  return (raw.label || 'Student') + ': ' + ctx.parsed.x + '% att, ' + ctx.parsed.y + ' GPA';
+
+      window.createThemedChart('chart-correlation-scatter', function (tokens) {
+        const pointColors = scatter.map(function (pt) {
+          if (pt.risk === 'HIGH') return tokens.statusDanger;
+          if (pt.risk === 'MEDIUM') return tokens.statusWarning;
+          return tokens.statusSuccess;
+        });
+        return {
+          type: 'scatter',
+          data: {
+            datasets: [{
+              label: 'Students',
+              data: scatter.map(function (pt) { return { x: pt.x, y: pt.y, label: pt.label }; }),
+              backgroundColor: pointColors,
+              pointRadius: 4.5,
+              pointHoverRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function (ctx) {
+                    const raw = ctx.raw || {};
+                    return (raw.label || 'Student') + ': ' + ctx.parsed.x + '% att, ' + ctx.parsed.y + ' GPA';
+                  }
                 }
               }
+            },
+            scales: {
+              x: { min: 0, max: 100, title: { display: true, text: 'Attendance %', color: tokens.textMuted }, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } },
+              y: { min: 0, max: 4.0, title: { display: true, text: 'Predicted GPA', color: tokens.textMuted }, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } }
             }
-          },
-          scales: {
-            x: { min: 0, max: 100, title: { display: true, text: 'Attendance %', color: tokens.textMuted }, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } },
-            y: { min: 0, max: 4.0, title: { display: true, text: 'Predicted GPA', color: tokens.textMuted }, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } }
           }
-        }
-      };
-    });
+        };
+      });
 
-    window.createThemedChart('chart-course-demand', function (tokens) {
-      return {
-        type: 'bar',
-        data: {
-          labels: demand.map(function (d) { return d.course_code; }),
-          datasets: [
-            { label: 'Current Enrolled', data: demand.map(function (d) { return d.current_enrolled; }), backgroundColor: tokens.accentSoft, borderColor: tokens.accentPrimary, borderWidth: 1.5, borderRadius: 6 },
-            { label: 'Projected Demand', data: demand.map(function (d) { return d.projected_demand; }), backgroundColor: tokens.accentPrimary, borderRadius: 6 }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } } },
-          scales: {
-            x: { grid: { display: false }, ticks: { color: tokens.textMuted } },
-            y: { beginAtZero: true, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } }
+      window.createThemedChart('chart-course-demand', function (tokens) {
+        return {
+          type: 'bar',
+          data: {
+            labels: demand.map(function (d) { return d.course_code; }),
+            datasets: [
+              { label: 'Joined Now', data: demand.map(function (d) { return d.current_enrolled; }), backgroundColor: tokens.accentSoft, borderColor: tokens.accentPrimary, borderWidth: 1.5, borderRadius: 6 },
+              { label: 'Next Term Need', data: demand.map(function (d) { return d.projected_demand; }), backgroundColor: tokens.accentPrimary, borderRadius: 6 }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } } },
+            scales: {
+              x: { grid: { display: false }, ticks: { color: tokens.textMuted } },
+              y: { beginAtZero: true, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } }
+            }
           }
-        }
-      };
-    });
-  });
+        };
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAnalystCharts, { once: true });
+    } else {
+      initAnalystCharts();
+    }
+  })();
 </script>
 {% endblock %}

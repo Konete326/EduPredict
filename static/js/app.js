@@ -1,6 +1,5 @@
 (function () {
-  const THEME_KEY = 'edupredict_theme';
-  const SIDEBAR_KEY = 'edupredict_sidebar_collapsed';
+  const THEME_KEY = 'edupredict_theme', SIDEBAR_KEY = 'edupredict_sidebar_collapsed';
   const MODAL_IDS = ['confirm-modal', 'form-modal', 'coming-soon-modal'];
   const FIELD_CLS = 'w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none';
   const TOAST_STYLES = {
@@ -9,11 +8,11 @@
     danger: { border: 'var(--status-danger)', icon: 'fa-solid fa-circle-exclamation', color: 'var(--status-danger)' },
     info: { border: 'var(--accent-primary)', icon: 'fa-solid fa-circle-info', color: 'var(--accent-primary)' }
   };
-  let activeSubmitHandler = null;
+  let activeSubmitHandler = null, globalsBound = false;
   const paginatedControllers = [];
   const byId = (id) => document.getElementById(id);
   const isDesktop = () => window.innerWidth >= 1024;
-  const onId = (id, ev, fn) => { const n = byId(id); if (n) n.addEventListener(ev, fn); };
+  const bindOnce = (el, ev, fn) => { if (el && el.dataset['bound_' + ev] !== '1') { el.dataset['bound_' + ev] = '1'; el.addEventListener(ev, fn); } };
   const mk = (tag, cls, text, attrs) => {
     const n = document.createElement(tag);
     if (cls) n.className = cls;
@@ -27,6 +26,7 @@
   };
 
   function syncBodyScrollLock() {
+    if (!document.body) return;
     const modalOpen = MODAL_IDS.some((id) => { const m = byId(id); return m && !m.classList.contains('hidden'); });
     const drawer = byId('mobile-sidebar-drawer');
     document.body.classList.toggle('modal-open', Boolean(modalOpen));
@@ -42,8 +42,8 @@
   function openConfirmModal(options) {
     const opts = options || {}, modal = byId('confirm-modal'), titleEl = byId('confirm-modal-title'), msgEl = byId('confirm-modal-message'), formEl = byId('confirm-modal-form');
     if (!modal || !titleEl || !msgEl || !formEl) return;
-    titleEl.textContent = opts.title || 'Confirm Action';
-    msgEl.textContent = opts.message || 'Are you sure you want to continue?';
+    titleEl.textContent = opts.title || 'Please Confirm';
+    msgEl.textContent = opts.message || 'Are you sure you want to do this?';
     formEl.setAttribute('action', opts.onConfirmUrl || '');
     formEl.querySelectorAll('[data-confirm-field]').forEach((el) => el.remove());
     if (opts.fields && typeof opts.fields === 'object') {
@@ -58,11 +58,11 @@
   function openComingSoonModal(options) {
     const opts = options || {}, modal = byId('coming-soon-modal'), titleEl = byId('coming-soon-modal-title'), descEl = byId('coming-soon-modal-desc'), listEl = byId('coming-soon-modal-features');
     if (!modal || !titleEl || !descEl || !listEl) return;
-    if (byId('coming-soon-modal-panel')) byId('coming-soon-modal-panel').textContent = opts.panel || 'Upcoming Module';
-    titleEl.textContent = opts.title || 'Coming Soon';
-    descEl.textContent = opts.desc || opts.description || 'This feature is planned for an upcoming release and will connect to live institutional MongoDB data.';
+    if (byId('coming-soon-modal-panel')) byId('coming-soon-modal-panel').textContent = opts.panel || 'Coming Soon';
+    titleEl.textContent = opts.title || 'Feature Coming Soon';
+    descEl.textContent = opts.desc || opts.description || 'This feature is planned next and will use live data from MongoDB.';
     let items = Array.isArray(opts.features) ? opts.features : (typeof opts.features === 'string' && opts.features.trim() ? opts.features.split('|').map((s) => s.trim()).filter(Boolean) : []);
-    if (!items.length) items = ['Role-scoped live MongoDB metrics', 'Interactive charts & paginated views', 'Automated notifications & CSV exports'];
+    if (!items.length) items = ['Live numbers from MongoDB', 'Easy charts and 5-row tables', 'Quick alerts and CSV downloads'];
     listEl.innerHTML = '';
     items.forEach((text) => {
       const li = mk('li', 'flex items-start gap-2');
@@ -73,11 +73,7 @@
   }
   const closeComingSoonModal = () => setModalOpen(byId('coming-soon-modal'), false);
   function createFieldNode(field) {
-    if (field.type === 'hidden') {
-      const h = mk('input', '', undefined, { type: 'hidden', name: field.name || '', value: field.value !== undefined ? field.value : '' });
-      h.hidden = true;
-      return h;
-    }
+    if (field.type === 'hidden') return mk('input', '', undefined, { type: 'hidden', name: field.name || '', value: field.value !== undefined ? field.value : '', hidden: 'true' });
     const wrapper = mk('div', 'space-y-1.5'), fieldId = 'modal-field-' + (field.name || Math.random().toString(36).slice(2, 8));
     const label = mk('label', 'block text-sm font-medium text-[var(--text-secondary)]', field.label || field.name || 'Field', { for: fieldId });
     const tag = field.type === 'textarea' ? 'textarea' : (field.type === 'select' ? 'select' : 'input'), el = mk(tag, FIELD_CLS, undefined, { id: fieldId });
@@ -100,17 +96,17 @@
   function openFormModal(options) {
     const opts = options || {}, modal = byId('form-modal'), titleEl = byId('form-modal-title'), formEl = byId('form-modal-element'), fieldsEl = byId('form-modal-fields');
     if (!modal || !titleEl || !formEl || !fieldsEl) return;
-    titleEl.textContent = opts.title || 'Modal Form';
+    titleEl.textContent = opts.title || 'Form';
     const actionUrl = opts.actionUrl || '';
     formEl.setAttribute('action', actionUrl);
     formEl.setAttribute('method', opts.method || 'post');
-    if (byId('form-modal-submit-btn')) byId('form-modal-submit-btn').textContent = opts.submitText || 'Submit';
+    if (byId('form-modal-submit-btn')) byId('form-modal-submit-btn').textContent = opts.submitText || 'Save';
     fieldsEl.innerHTML = '';
     if (Array.isArray(opts.fields)) opts.fields.forEach((f) => fieldsEl.appendChild(createFieldNode(f)));
     else if (typeof opts.fieldsHtml === 'string') fieldsEl.innerHTML = opts.fieldsHtml;
     if (activeSubmitHandler) { formEl.removeEventListener('submit', activeSubmitHandler); activeSubmitHandler = null; }
     if (!actionUrl || actionUrl === '#') {
-      activeSubmitHandler = (e) => { e.preventDefault(); if (!formEl.checkValidity()) { formEl.reportValidity(); return; } closeFormModal(); showToast(opts.previewMessage || 'Submitted successfully.', 'success'); };
+      activeSubmitHandler = (e) => { e.preventDefault(); if (!formEl.checkValidity()) { formEl.reportValidity(); return; } closeFormModal(); showToast(opts.previewMessage || 'Saved.', 'success'); };
       formEl.addEventListener('submit', activeSubmitHandler);
     }
     setModalOpen(modal, true);
@@ -133,7 +129,7 @@
     toast.style.borderLeftColor = style.border;
     const icon = mk('i', style.icon + ' mt-0.5 text-base shrink-0');
     icon.style.color = style.color;
-    const closeBtn = mk('button', 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]', undefined, { type: 'button', 'aria-label': 'Dismiss notification' });
+    const closeBtn = mk('button', 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]', undefined, { type: 'button', 'aria-label': 'Dismiss alert' });
     closeBtn.innerHTML = '<i class="fa-solid fa-xmark text-xs"></i>';
     closeBtn.addEventListener('click', () => removeToastNode(toast));
     toast.append(icon, mk('p', 'flex-1 text-sm font-medium leading-snug text-[var(--text-primary)]', message || ''), closeBtn);
@@ -141,13 +137,22 @@
     setTimeout(() => removeToastNode(toast), 4500);
   }
 
+  function applyDesktopSidebarClasses(collapsed) {
+    document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
+    if (document.body) document.body.classList.toggle('sidebar-collapsed', collapsed);
+    const drawer = byId('mobile-sidebar-drawer'), main = byId('app-shell-main');
+    if (drawer) { drawer.classList.toggle('lg:-translate-x-full', collapsed); drawer.classList.toggle('lg:translate-x-0', !collapsed); }
+    if (main) { main.classList.toggle('lg:pl-0', collapsed); main.classList.toggle('lg:pl-64', !collapsed); }
+  }
   function syncSidebarToggleA11y() {
     const btn = byId('mobile-sidebar-toggle'), drawer = byId('mobile-sidebar-drawer');
-    if (btn) btn.setAttribute('aria-expanded', (isDesktop() ? !document.body.classList.contains('sidebar-collapsed') : Boolean(drawer && !drawer.classList.contains('-translate-x-full'))) ? 'true' : 'false');
+    const collapsed = document.documentElement.classList.contains('sidebar-collapsed') || (document.body && document.body.classList.contains('sidebar-collapsed'));
+    if (btn) btn.setAttribute('aria-expanded', (isDesktop() ? !collapsed : Boolean(drawer && !drawer.classList.contains('-translate-x-full'))) ? 'true' : 'false');
   }
   function restoreSidebarState() {
-    if (!document.body) return;
-    try { const saved = localStorage.getItem(SIDEBAR_KEY); document.body.classList.toggle('sidebar-collapsed', saved === 'true' || saved === '1'); } catch (e) {}
+    let collapsed = document.documentElement.classList.contains('sidebar-collapsed');
+    try { const saved = localStorage.getItem(SIDEBAR_KEY); if (saved !== null) collapsed = saved === 'true' || saved === '1'; } catch (e) {}
+    applyDesktopSidebarClasses(collapsed);
     syncSidebarToggleA11y();
   }
   function setMobileSidebar(open) {
@@ -159,16 +164,17 @@
   }
   const openMobileSidebar = () => setMobileSidebar(true);
   const closeMobileSidebar = () => setMobileSidebar(false);
+  function setDesktopCollapsed(collapsed) {
+    applyDesktopSidebarClasses(collapsed);
+    try { localStorage.setItem(SIDEBAR_KEY, collapsed ? 'true' : 'false'); } catch (e) {}
+    syncSidebarToggleA11y();
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 220);
+  }
   function toggleSidebar() {
-    if (isDesktop()) {
-      const collapsed = document.body.classList.toggle('sidebar-collapsed');
-      try { localStorage.setItem(SIDEBAR_KEY, collapsed ? 'true' : 'false'); } catch (e) {}
-      syncSidebarToggleA11y();
-      setTimeout(() => window.dispatchEvent(new Event('resize')), 220);
-      return;
-    }
+    if (isDesktop()) { setDesktopCollapsed(!(document.documentElement.classList.contains('sidebar-collapsed') || (document.body && document.body.classList.contains('sidebar-collapsed')))); return; }
     setMobileSidebar(!(byId('mobile-sidebar-drawer') && !byId('mobile-sidebar-drawer').classList.contains('-translate-x-full')));
   }
+  const closeSidebarAny = () => (isDesktop() ? setDesktopCollapsed(true) : closeMobileSidebar());
   function syncThemeButton() {
     const isDark = document.documentElement.classList.contains('dark');
     if (byId('theme-toggle-btn')) byId('theme-toggle-btn').setAttribute('aria-pressed', isDark ? 'true' : 'false');
@@ -194,12 +200,12 @@
     return dir === 'asc' ? cmp : -cmp;
   }
   function initPaginatedContainers() {
+    paginatedControllers.length = 0;
     document.querySelectorAll('[data-paginated-container]').forEach((container) => {
-      if (container.dataset.paginationReady === '1') return;
+      if (container.dataset.paginationReady === '1') { if (container._paginationController) paginatedControllers.push(container._paginationController); return; }
       container.dataset.paginationReady = '1';
       const pageSize = Math.max(1, parseInt(container.getAttribute('data-page-size') || '5', 10) || 5);
-      const desktopRows = Array.from(container.querySelectorAll('tbody tr[data-page-item]'));
-      const mobileCards = Array.from(container.querySelectorAll('[data-mobile-card][data-page-item]'));
+      const desktopRows = Array.from(container.querySelectorAll('tbody tr[data-page-item]')), mobileCards = Array.from(container.querySelectorAll('[data-mobile-card][data-page-item]'));
       const fallback = (!desktopRows.length && !mobileCards.length) ? Array.from(container.querySelectorAll('[data-page-item]')) : [];
       const rowCount = fallback.length || Math.max(desktopRows.length, mobileCards.length);
       const entries = Array.from({ length: rowCount }, (_, i) => {
@@ -226,8 +232,7 @@
         entries.sort((a, b) => compareCells(a.nodes[0], b.nodes[0], colIdx, dir));
         const tbody = container.querySelector('tbody'), mobileWrap = mobileCards[0]?.parentElement;
         entries.forEach((e) => { if (tbody && e.nodes[0]?.parentNode === tbody) tbody.appendChild(e.nodes[0]); if (mobileWrap && e.nodes[1]?.parentNode === mobileWrap) mobileWrap.appendChild(e.nodes[1]); });
-        currentPage = 1;
-        renderPage();
+        currentPage = 1; renderPage();
       };
       if (prevBtn) prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage -= 1; renderPage(); } });
       if (nextBtn) nextBtn.addEventListener('click', () => { currentPage += 1; renderPage(); });
@@ -244,14 +249,12 @@
       headers.forEach((th, colIdx) => {
         const label = (th.textContent || '').trim();
         if (!label || label.toLowerCase() === 'actions' || th.getAttribute('data-sortable') === 'false') return;
-        th.setAttribute('data-sortable', 'true');
-        th.setAttribute('aria-sort', 'none');
+        th.setAttribute('data-sortable', 'true'); th.setAttribute('aria-sort', 'none');
         if (!th.getAttribute('title')) th.setAttribute('title', 'Sort by ' + label);
         th.addEventListener('click', () => {
           const dir = th.getAttribute('data-sort-dir') === 'asc' ? 'desc' : 'asc';
           headers.forEach((h) => { h.removeAttribute('data-sort-dir'); h.setAttribute('aria-sort', 'none'); });
-          th.setAttribute('data-sort-dir', dir);
-          th.setAttribute('aria-sort', dir === 'asc' ? 'ascending' : 'descending');
+          th.setAttribute('data-sort-dir', dir); th.setAttribute('aria-sort', dir === 'asc' ? 'ascending' : 'descending');
           const container = table.closest('[data-paginated-container]');
           if (container?._paginationController) { container._paginationController.sortEntries(colIdx, dir); return; }
           const tbody = table.querySelector('tbody');
@@ -265,7 +268,7 @@
   }
   function bindTableSearch() {
     document.querySelectorAll('input[data-table-search]').forEach((input) => {
-      input.addEventListener('input', () => {
+      bindOnce(input, 'input', () => {
         const q = input.value.trim().toLowerCase(), targetEl = byId(input.getAttribute('data-table-search'));
         if (targetEl) {
           const container = targetEl.hasAttribute('data-paginated-container') ? targetEl : targetEl.closest('[data-paginated-container]');
@@ -278,56 +281,61 @@
       });
     });
   }
-
-  function initShellBindings() {
-    restoreSidebarState();
-    syncThemeButton();
-    onId('theme-toggle-btn', 'click', toggleTheme);
-    onId('mobile-sidebar-toggle', 'click', toggleSidebar);
-    onId('mobile-sidebar-close', 'click', closeMobileSidebar);
-    onId('mobile-sidebar-backdrop', 'click', closeMobileSidebar);
-    const bell = byId('notification-bell-btn'), dropdown = byId('notification-dropdown');
-    if (bell && dropdown) {
-      bell.addEventListener('click', (e) => { e.stopPropagation(); const open = dropdown.classList.contains('hidden'); dropdown.classList.toggle('hidden', !open); bell.setAttribute('aria-expanded', open ? 'true' : 'false'); });
-      document.addEventListener('click', (e) => { if (!dropdown.contains(e.target) && !bell.contains(e.target)) closeNotificationDropdown(); });
-    }
-    onId('mark-notifications-read-btn', 'click', () => {
+  function bindDynamicControls() {
+    restoreSidebarState(); syncThemeButton();
+    bindOnce(byId('theme-toggle-btn'), 'click', toggleTheme);
+    bindOnce(byId('mobile-sidebar-toggle'), 'click', toggleSidebar);
+    bindOnce(byId('mobile-sidebar-close'), 'click', closeSidebarAny);
+    bindOnce(byId('mobile-sidebar-backdrop'), 'click', closeMobileSidebar);
+    bindOnce(byId('notification-bell-btn'), 'click', (e) => {
+      e.stopPropagation();
+      const dropdown = byId('notification-dropdown'), bell = byId('notification-bell-btn');
+      if (!dropdown || !bell) return;
+      const open = dropdown.classList.contains('hidden');
+      dropdown.classList.toggle('hidden', !open); bell.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    bindOnce(byId('mark-notifications-read-btn'), 'click', () => {
       const token = getCsrfToken();
       if (typeof fetch === 'function') fetch('/notifications/mark-read/', { method: 'POST', headers: token ? { 'X-CSRFToken': token } : {}, credentials: 'same-origin' }).catch(function () {});
       if (byId('notification-unread-badge')) { byId('notification-unread-badge').classList.add('hidden'); byId('notification-unread-badge').textContent = '0'; }
-      if (byId('notification-list')) byId('notification-list').innerHTML = '<div class="px-4 py-6 text-center text-xs text-[var(--text-muted)]">No unread notifications.</div>';
-      closeNotificationDropdown();
-      showToast('All notifications marked as read.', 'info');
+      if (byId('notification-list')) byId('notification-list').innerHTML = '<div class="px-4 py-6 text-center text-xs text-[var(--text-muted)]">No new alerts.</div>';
+      closeNotificationDropdown(); showToast('All alerts marked as read.', 'info');
     });
-    initPaginatedContainers();
-    initSortableTables();
-    bindTableSearch();
+    initPaginatedContainers(); initSortableTables(); bindTableSearch();
+    const toastContainer = byId('toast-container');
+    if (toastContainer) toastContainer.querySelectorAll('[data-toast]').forEach((node) => setTimeout(() => removeToastNode(node), 5000));
+  }
+  function bindDocumentGlobalsOnce() {
+    if (globalsBound) return;
+    globalsBound = true;
     document.addEventListener('click', (e) => {
+      const dropdown = byId('notification-dropdown'), bell = byId('notification-bell-btn');
+      if (dropdown && bell && !dropdown.contains(e.target) && !bell.contains(e.target)) closeNotificationDropdown();
       const comingTrigger = e.target.closest('[data-coming-soon]');
       if (comingTrigger) {
-        e.preventDefault();
-        if (!isDesktop()) closeMobileSidebar();
-        openComingSoonModal({ title: comingTrigger.getAttribute('data-coming-title') || comingTrigger.textContent.trim(), panel: comingTrigger.getAttribute('data-coming-panel') || 'Upcoming Module', desc: comingTrigger.getAttribute('data-coming-desc') || '', features: comingTrigger.getAttribute('data-coming-features') || '' });
+        e.preventDefault(); if (!isDesktop()) closeMobileSidebar();
+        openComingSoonModal({ title: comingTrigger.getAttribute('data-coming-title') || comingTrigger.textContent.trim(), panel: comingTrigger.getAttribute('data-coming-panel') || 'Coming Soon', desc: comingTrigger.getAttribute('data-coming-desc') || '', features: comingTrigger.getAttribute('data-coming-features') || '' });
         return;
       }
       if (e.target.closest('#mobile-sidebar-drawer a[href]') && !isDesktop()) closeMobileSidebar();
     });
-    MODAL_IDS.forEach((id) => onId(id, 'click', (e) => { if (e.target === byId(id)) setModalOpen(byId(id), false); }));
+    MODAL_IDS.forEach((id) => bindOnce(byId(id), 'click', (e) => { if (e.target === byId(id)) setModalOpen(byId(id), false); }));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeConfirmModal(); closeFormModal(); closeComingSoonModal(); closeMobileSidebar(); closeNotificationDropdown(); } });
     window.addEventListener('resize', () => {
       if (isDesktop()) {
         if (byId('mobile-sidebar-backdrop')) byId('mobile-sidebar-backdrop').classList.add('hidden');
         const drawer = byId('mobile-sidebar-drawer');
         if (drawer) { drawer.classList.add('-translate-x-full'); drawer.classList.remove('translate-x-0'); }
-        syncBodyScrollLock();
+        restoreSidebarState(); syncBodyScrollLock();
       }
       syncSidebarToggleA11y();
     });
-    const toastContainer = byId('toast-container');
-    if (toastContainer) toastContainer.querySelectorAll('[data-toast]').forEach((node) => setTimeout(() => removeToastNode(node), 5000));
   }
+  function reinitEduPredictUI() { closeConfirmModal(); closeFormModal(); closeComingSoonModal(); closeNotificationDropdown(); bindDynamicControls(); }
+  function initShellBindings() { bindDocumentGlobalsOnce(); bindDynamicControls(); }
 
   restoreSidebarState();
-  Object.assign(window, { openConfirmModal, closeConfirmModal, openFormModal, closeFormModal, openComingSoonModal, closeComingSoonModal, showToast, toggleTheme, openMobileSidebar, closeMobileSidebar, toggleSidebar });
-  document.addEventListener('DOMContentLoaded', initShellBindings);
+  Object.assign(window, { openConfirmModal, closeConfirmModal, openFormModal, closeFormModal, openComingSoonModal, closeComingSoonModal, showToast, toggleTheme, openMobileSidebar, closeMobileSidebar, toggleSidebar, closeSidebarAny, reinitEduPredictUI });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initShellBindings);
+  else initShellBindings();
 })();

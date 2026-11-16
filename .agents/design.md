@@ -52,19 +52,19 @@ html.dark {
 Since this is a Pure Django project, the `@efferd/app-shell-3` structure is implemented natively in `templates/base.html` using Tailwind CSS:
 
 - **Collapsible Left Sidebar (`w-64 fixed inset-y-0 left-0 z-30`, `#mobile-sidebar-drawer`):**
-  - Top Brand Header: EduPredict Logo + Role Badge (`Admin`, `Teacher`, `Student`, or `Analyst`).
-  - Navigation Groups: Clean single-line links (`truncate`) with `fa-solid` icons across all panel groups (`Administration`, `Faculty`, `Student`, `Data & ML`). Active route gets `bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium`.
+  - Top Brand Header: EduPredict Logo + Role Badge (`Admin`, `Teacher`, `Student`, or `Analyst`) + close button (`#mobile-sidebar-close`, visible on both desktop and mobile).
+  - Collapsible Navigation Groups: Compact, single-line links (`truncate`) using short, everyday English labels with `fa-solid` icons across all panel groups (`Admin`, `Teacher`, `Student`, `Data & ML`). Each section group MUST support collapsing/minimizing via dropdown toggles (`data-nav-group-toggle`) persisted in `localStorage` (`edupredict_nav_groups`). Active route gets `bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium`.
   - Coming Soon Links: Planned/unbuilt pages appear in the sidebar with a `"Soon"` badge and `data-coming-soon="true"` attributes, opening the global theme-aware Coming Soon modal (`openComingSoonModal`) instead of broken links or raw placeholders.
-  - Sidebar Footer: Logged-in user name, email, Support button (opens `form_modal.html` posting to `panels:submit_support_ticket`), and Logout button (triggers global `confirm_modal.html`).
-- **Collapsible Sidebar on Both Desktop & Mobile (`#mobile-sidebar-toggle`):**
-  - The topbar sidebar toggle (`#mobile-sidebar-toggle`) MUST be visible and active on BOTH desktop (`>= 1024px`) and mobile (`< 1024px`) — never hide it with `lg:hidden`.
-  - **Desktop (`>= 1024px`):** Clicking `#mobile-sidebar-toggle` toggles `body.sidebar-collapsed`, sliding `#mobile-sidebar-drawer` (`w-64`) off-canvas (`transform: translateX(-100%)`) and switching `#app-shell-main` left padding (`lg:pl-64` <-> `0`) smoothly (`transition-all duration-200 ease-out`). State persists in `localStorage` (`edupredict_sidebar_collapsed`), and a `resize` event fires after transition (~220ms) so Chart.js canvases resize cleanly.
-  - **Mobile (`< 1024px`):** Clicking `#mobile-sidebar-toggle` opens/closes the off-canvas drawer over a backdrop (`z-40`); closes on `Esc` key or outside tap.
+  - Sidebar Footer: Logged-in user name, email, Support button for non-Admin roles (hidden for `ADMIN` per Rule 18; opens `form_modal.html` posting to `panels:submit_support_ticket`), and Logout button (triggers global `confirm_modal.html`).
+- **Collapsible Sidebar on Both Desktop & Mobile (`#mobile-sidebar-toggle`, `#mobile-sidebar-close`):**
+  - Both the topbar sidebar toggle (`#mobile-sidebar-toggle`) and the sidebar close button (`#mobile-sidebar-close`) MUST be visible and active on BOTH desktop (`>= 1024px`) and mobile (`< 1024px`) — never hide them with `lg:hidden`.
+  - **Desktop (`>= 1024px`):** Clicking `#mobile-sidebar-toggle` (or `#mobile-sidebar-close`) toggles `sidebar-collapsed` on BOTH `<html>` (`document.documentElement`) and `<body>`, using `@media (min-width: 1024px)` CSS rules (`!important`) so `#mobile-sidebar-drawer` (`w-64`) slides off-canvas (`transform: translateX(-100%)`) and `#app-shell-main` switches left padding (`lg:pl-64` <-> `0`) smoothly (`transition-all duration-200 ease-out`). State restores pre-paint from `localStorage` (`edupredict_sidebar_collapsed`), and a `resize` event fires after transition (~220ms) so Chart.js canvases resize cleanly.
+  - **Mobile (`< 1024px`):** Clicking `#mobile-sidebar-toggle` opens/closes the off-canvas drawer over a backdrop (`z-40`); closes via `#mobile-sidebar-close`, `Esc` key, or outside tap.
 - **Sticky Topbar (`h-16 sticky top-0 z-20 backdrop-blur`):**
   - Sidebar toggle (`#mobile-sidebar-toggle`) + Breadcrumb / Current Page Title on the left.
   - Quick Search input (`input[data-table-search]`), Notification Bell dropdown, and Light/Dark Theme Toggle on the right.
 - **Main Content Area (`#app-shell-main`, `lg:pl-64 min-h-screen w-full min-w-0 flex flex-col transition-all duration-200 ease-out`):**
-  - **Full-Width Fluid Container (No Centered Box):** Do NOT wrap panels in centered `max-w-* mx-auto` containers. Use `<main class="flex-1 w-full min-w-0"><div class="w-full px-3 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-4 xl:px-8 space-y-4">` so large desktop screens span the full available width beside the sidebar.
+  - **Full-Width Fluid Container (No Centered Box):** Do NOT wrap panels in centered `max-w-* mx-auto` containers. Use `<main class="flex-1 w-full min-w-0"><div class="w-full px-3 py-3 sm:px-5 sm:py-3.5 lg:px-6 lg:py-4 xl:px-8 space-y-4">` so large desktop screens span the full available width beside the sidebar, with `<div id="page-extra-js">{% block extra_js %}{% endblock %}</div>` enabling smooth SPA script swaps while keeping `{% block content %}` and `{% block extra_js %}` contracts intact.
   - **Responsive Grid Splits (`320px+` Mobile to Large Desktop):** Use responsive splits (`grid-cols-1 sm:grid-cols-2 xl:grid-cols-4` for KPI cards and `grid-cols-1 xl:grid-cols-12` for split workbenches) with `min-w-0` on grid/flex columns so mobile screens (`320px+`) stack cleanly with zero horizontal overflow.
 
 ## 4. Strict Z-Index & Overlay Hierarchy (Zero Broken Overlays)
@@ -103,6 +103,20 @@ To guarantee overlays, dropdowns, and modals never clash or clip across panels:
   - Trigger via `window.openComingSoonModal({ panel, title, description, features })` or declaratively on any link/card with `data-coming-soon="true"`, `data-coming-panel`, `data-coming-title`, `data-coming-desc`, and pipe-separated (`|`) `data-coming-features`.
 - **Direct Routes for Unbuilt Modules:** Any unbuilt panel route renders `templates/panels/coming_soon_panel.html` with a viewport-fit roadmap summary, live MongoDB counts, and a modal trigger (`openComingSoonModal`).
 
-## 8. Child-Friendly, Ultra-Simple Automated UX & Modern Web Guidance Standard
-- **Effortless, Child-Simple UI:** Every button and link must use plain, clear action labels paired with FontAwesome icons and descriptive `title` tooltips, rely on 1-click automated workflows, and apply progressive disclosure through global modals (`form_modal.html`, `confirm_modal.html`, `#coming-soon-modal`) so dashboards remain uncluttered and beginner-friendly.
-- **Modern Web Guidance Interactive States:** Apply `cursor: pointer` on all interactive buttons, links, selects, and sortable headers, ensure crisp `:hover`, `:focus-visible`, and `:active` press feedback, apply `text-wrap: balance` on headings, provide clickable table column sorting (`data-sortable`), enforce mandatory 5-row pagination (`data-page-size="5"`), and serve a custom theme-aware `404.html` page in both `DEBUG=True` and `DEBUG=False`.
+## 8. Basic Everyday English, Compact Collapsible Sidebar & Interactive States (Rule 16)
+- **Simple Everyday English:** All UI labels, sidebar links, headings, helper text, modal copy, and toast messages across every panel MUST use plain, everyday English (no complex jargon). Pair crisp FontAwesome icons with descriptive `title` tooltips and progressive disclosure via global modals (`form_modal.html`, `confirm_modal.html`, `#coming-soon-modal`).
+- **Compact Collapsible Sidebar Groups:** Keep sidebar links short and scannable (`text-xs`, tight padding), and provide collapsible/minimizable section dropdown toggles (`data-nav-group-toggle`) persisted in `localStorage` (`edupredict_nav_groups`).
+- **Interactive Guidance States:** Apply `cursor: pointer` on all interactive buttons, links, selects, and sortable headers, ensure crisp `:hover`, `:focus-visible`, and `:active` press feedback, apply `text-wrap: balance` on headings, provide clickable table column sorting (`data-sortable`), and enforce mandatory 5-row pagination (`data-page-size="5"`).
+
+## 9. Zero Dead Routes, Single Icons & Custom 404 Safety Net (Rule 17)
+- **Zero Dead Links or Placeholders:** Every button, card action, and sidebar link MUST either navigate to a fully built dynamic route OR attach `data-coming-soon="true"` (`openComingSoonModal`) directly on the element.
+- **No Duplicate `+` Icons:** Never place duplicate `+` icons/symbols on buttons (use either `<i class="fa-solid fa-plus"></i>` or `+` text, never both).
+- **Theme-Aware 404 Page:** Keep the custom theme-aware `404.html` error page active in both `DEBUG=True` and `DEBUG=False` for unrecognized URLs.
+
+## 10. Strict Role Boundaries & Self-Action UI Guards (Rule 18)
+- **Admin Ticket Boundary:** Admins manage users, courses, and incoming help tickets, so hide `"Send Feedback"` and `"New Ticket"` self-submission controls for `ADMIN` in both `sidebar.html` and `admin_tickets.html` (backed by `submit_support_ticket` blocking `ADMIN`).
+- **Self-Action Guards:** Never render Delete, Deactivate, or self-role-downgrade actions on the logged-in Admin's own table/card row (matching both `user_id` and `email`), matching backend guards in `panels/admin_services.py`.
+
+## 11. Zero-Lag Caching, Cache-Busting & SPA-Smooth Navigation (Rule 19)
+- **Process-Once Startup & Short-TTL Cache:** Never run DB seeding, index creation, or password-hash verification on every request; use process-once startup guards and `core/db.py` short-TTL caching (`get_cached` / `invalidate_cache` cleared on every mutation).
+- **Cache-Busted Assets & SPA Page Swaps:** Append `?v=` query versions to CSS/JS assets in `templates/base.html`, and use `static/js/nav.js` (`sessionStorage` GET cache + hover prefetch, invalidated on form `POST`) to swap `#app-shell-main` and `#page-extra-js` smoothly and invoke `window.reinitEduPredictUI()`.

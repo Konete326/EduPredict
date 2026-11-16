@@ -4,12 +4,14 @@ import uuid
 from datetime import datetime, timezone
 from django.contrib.auth.hashers import check_password, make_password
 from pymongo.errors import DuplicateKeyError
-from core.db import ensure_indexes, student_records_col, users_col
+from core.db import ensure_indexes, invalidate_cache, student_records_col, users_col
 
 VALID_ROLES = ("ADMIN", "TEACHER", "STUDENT", "ANALYST")
 
 _INDEXES_ENSURED = False
 _INDEX_LOCK = threading.Lock()
+_DEFAULT_ADMIN_ENSURED = False
+_DEFAULT_ADMIN_LOCK = threading.Lock()
 
 
 def ensure_accounts_indexes_once():
@@ -26,44 +28,53 @@ def ensure_accounts_indexes_once():
 
 
 def ensure_default_admin():
-    admin_email = (os.getenv("ADMIN_EMAIL") or "admin@gmail.com").strip().lower() or "admin@gmail.com"
-    admin_password = os.getenv("ADMIN_PASSWORD") or "admin123"
-    admin_full_name = (os.getenv("ADMIN_FULL_NAME") or "System Administrator").strip() or "System Administrator"
+    global _DEFAULT_ADMIN_ENSURED
+    if _DEFAULT_ADMIN_ENSURED:
+        return None
+    with _DEFAULT_ADMIN_LOCK:
+        if _DEFAULT_ADMIN_ENSURED:
+            return None
 
-    ensure_accounts_indexes_once()
-    col = users_col()
-    existing = col.find_one({"email": admin_email})
-    if existing is None:
-        admin_doc = {
-            "user_id": "USR-1000",
-            "full_name": admin_full_name,
-            "email": admin_email,
-            "password_hash": make_password(admin_password),
-            "role": "ADMIN",
-            "department": "Administration",
-            "batch": "ALL",
-            "is_active": True,
-            "created_at": datetime.now(timezone.utc),
-        }
-        try:
-            col.insert_one(admin_doc)
-            return admin_doc
-        except DuplicateKeyError:
-            existing = col.find_one({"email": admin_email})
-            if existing is None:
-                raise
+        admin_email = (os.getenv("ADMIN_EMAIL") or "admin@gmail.com").strip().lower() or "admin@gmail.com"
+        admin_password = os.getenv("ADMIN_PASSWORD") or "admin123"
+        admin_full_name = (os.getenv("ADMIN_FULL_NAME") or "System Administrator").strip() or "System Administrator"
 
-    updates = {}
-    if existing.get("role") != "ADMIN":
-        updates["role"] = "ADMIN"
-    if existing.get("is_active") is not True:
-        updates["is_active"] = True
-    if not check_password(admin_password, existing.get("password_hash", "")):
-        updates["password_hash"] = make_password(admin_password)
-    if updates:
-        col.update_one({"_id": existing["_id"]}, {"$set": updates})
-        existing.update(updates)
-    return existing
+        ensure_accounts_indexes_once()
+        col = users_col()
+        existing = col.find_one({"email": admin_email})
+        if existing is None:
+            admin_doc = {
+                "user_id": "USR-1000",
+                "full_name": admin_full_name,
+                "email": admin_email,
+                "password_hash": make_password(admin_password),
+                "role": "ADMIN",
+                "department": "Administration",
+                "batch": "ALL",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc),
+            }
+            try:
+                col.insert_one(admin_doc)
+                _DEFAULT_ADMIN_ENSURED = True
+                return admin_doc
+            except DuplicateKeyError:
+                existing = col.find_one({"email": admin_email})
+                if existing is None:
+                    raise
+
+        updates = {}
+        if existing.get("role") != "ADMIN":
+            updates["role"] = "ADMIN"
+        if existing.get("is_active") is not True:
+            updates["is_active"] = True
+        if not check_password(admin_password, existing.get("password_hash", "")):
+            updates["password_hash"] = make_password(admin_password)
+        if updates:
+            col.update_one({"_id": existing["_id"]}, {"$set": updates})
+            existing.update(updates)
+        _DEFAULT_ADMIN_ENSURED = True
+        return existing
 
 
 def serialize_session_user(user_doc):
@@ -170,5 +181,9 @@ def register_user(full_name, email, password, role, department, batch):
                     "updated_at": datetime.now(timezone.utc),
                 }
             )
+        invalidate_cache("analyst:")
+        invalidate_cache("teacher:")
 
+    invalidate_cache("admin:")
+    invalidate_cache("soon:")
     return user_doc, None

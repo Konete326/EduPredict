@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+  <div class="min-w-0 space-y-2">
+    <div class="flex flex-wrap items-center gap-2">
+      <a href="{% url 'panels:teacher_dashboard' %}" title="Class overview and students needing help" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <i class="fa-solid fa-chalkboard-user"></i>
+        <span>Class Home</span>
+      </a>
+      <a href="{% url 'panels:teacher_students' %}" title="View full student list and marks" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-primary)]">
+        <i class="fa-solid fa-user-graduate"></i>
+        <span>Student List</span>
+      </a>
+      <a href="{% url 'panels:teacher_ingest' %}" title="Upload attendance or marks sheet" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <i class="fa-solid fa-file-arrow-up"></i>
+        <span>Upload Marks</span>
+      </a>
+      <button type="button" data-coming-soon="true" data-coming-panel="Teacher" data-coming-title="Class Risk Alerts" data-coming-desc="Review every warning message sent to students and track follow-up actions." data-coming-features="Full alert history per course|Quick follow-up reminders|Filter by alert level" title="View sent alerts (Coming Soon)" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <i class="fa-solid fa-bell"></i>
+        <span>Risk Alerts</span>
+        <span class="rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent-primary)]">Soon</span>
+      </button>
+    </div>
+    <p class="text-xs text-[var(--text-secondary)]">Search students by batch, course, or status, edit marks in one click, or send a quick help message.</p>
+  </div>
+  <a href="{% url 'panels:teacher_ingest' %}" title="Add or upload student marks" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+    <i class="fa-solid fa-file-arrow-up"></i>
+    <span>Upload Marks</span>
+  </a>
+</section>
+
+{% if db_error %}
+<div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database notice: {{ db_error }}
+</div>
+{% endif %}
+
+<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-4">
+  <form method="get" action="{% url 'panels:teacher_students' %}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6 items-end">
+    <div class="space-y-1">
+      <label for="teacher-filter-batch" class="block text-xs font-medium text-[var(--text-secondary)]">Batch</label>
+      <select id="teacher-filter-batch" name="batch" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+        <option value="ALL" {% if selected_filters.batch == 'ALL' %}selected{% endif %}>All Batches</option>
+        {% for b in filter_options.batches %}
+        <option value="{{ b }}" {% if selected_filters.batch == b %}selected{% endif %}>{{ b }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="space-y-1">
+      <label for="teacher-filter-course" class="block text-xs font-medium text-[var(--text-secondary)]">Course</label>
+      <select id="teacher-filter-course" name="course_code" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+        <option value="ALL" {% if selected_filters.course_code == 'ALL' %}selected{% endif %}>All Courses</option>
+        {% for c in filter_options.courses %}
+        <option value="{{ c }}" {% if selected_filters.course_code == c %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="space-y-1">
+      <label for="teacher-filter-status" class="block text-xs font-medium text-[var(--text-secondary)]">Status</label>
+      <select id="teacher-filter-status" name="status" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+        <option value="ALL" {% if selected_filters.status == 'ALL' %}selected{% endif %}>All Statuses</option>
+        {% for st in filter_options.statuses %}
+        <option value="{{ st }}" {% if selected_filters.status == st %}selected{% endif %}>{{ st }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 lg:col-span-3">
+      <button type="submit" title="Apply selected filters" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+        <i class="fa-solid fa-filter"></i>
+        <span>Apply</span>
+      </button>
+      <a href="{% url 'panels:teacher_students' %}" title="Clear all filters" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <span>Reset</span>
+      </a>
+      <a href="{% url 'panels:teacher_students' %}?batch={{ selected_filters.batch|default:'ALL'|urlencode }}&course_code={{ selected_filters.course_code|default:'ALL'|urlencode }}&status={{ selected_filters.status|default:'ALL'|urlencode }}&export=csv" title="Download student list as CSV" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+        <i class="fa-solid fa-file-csv text-[var(--status-success)]"></i>
+        <span>Export CSV</span>
+      </a>
+    </div>
+  </form>
+
+  {% include 'components/data_table.html' with table_id="teacher-students-table" table_title="Student Performance List" headers=student_headers rows=student_rows page_size=5 empty_message="No students match these filters. Upload class marks or reset filters." %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const TEACHER_STUDENTS_URL = "{% url 'panels:teacher_students' %}";
+
+  function openUpdateMarksModal(btn) {
+    const d = btn ? btn.dataset : {};
+    window.openFormModal({
+      title: 'Update Marks & Attendance (' + (d.studentId || '') + ')',
+      actionUrl: TEACHER_STUDENTS_URL,
+      fields: [
+        { type: 'hidden', name: 'action', value: 'update_student' },
+        { type: 'hidden', name: 'student_id', value: d.studentId || '' },
+        { name: 'full_name', label: 'Student Name', type: 'text', value: d.fullName || '', required: true },
+        { name: 'batch', label: 'Batch', type: 'text', value: d.batch || '2026-A', required: true },
+        { name: 'course_code', label: 'Course Code', type: 'text', value: d.courseCode || 'CS-101', required: true },
+        { name: 'attendance_pct', label: 'Attendance (%)', type: 'text', value: d.attendancePct || '85', required: true },
+        { name: 'internal_marks', label: 'Class Marks (0-100)', type: 'text', value: d.internalMarks || '75', required: true },
+        { name: 'assignment_score', label: 'Assignment Score (0-100)', type: 'text', value: d.assignmentScore || '80', required: true },
+        { name: 'lms_hours_weekly', label: 'Weekly Study Hours', type: 'text', value: d.lmsHoursWeekly || '10', required: true },
+        { name: 'previous_gpa', label: 'Previous GPA (0-4.0)', type: 'text', value: d.previousGpa || '3.0', required: true }
+      ]
+    });
+  }
+
+  function openSendAlertModal(btn) {
+    const d = btn ? btn.dataset : {};
+    window.openFormModal({
+      title: 'Send Help Message to ' + (d.fullName || d.studentId || 'Student'),
+      actionUrl: TEACHER_STUDENTS_URL,
+      fields: [
+        { type: 'hidden', name: 'action', value: 'send_alert' },
+        { type: 'hidden', name: 'student_id', value: d.studentId || '' },
+        { type: 'hidden', name: 'full_name', value: d.fullName || '' },
+        { type: 'hidden', name: 'course_code', value: d.courseCode || '' },
+        { name: 'severity', label: 'Message Level', type: 'select', options: [{ value: 'WARNING', label: 'Needs Attention (Warning)' }, { value: 'DANGER', label: 'Urgent Help Needed' }, { value: 'INFO', label: 'Friendly Reminder' }], value: 'WARNING' },
+        { name: 'message', label: 'Message to Student', type: 'textarea', placeholder: 'Please attend extra help hours and submit missing work this week.', required: true }
+      ]
+    });
+  }
+
+  function openDeleteStudentModal(btn) {
+    const d = btn ? btn.dataset : {};
+    window.openConfirmModal({
+      title: 'Remove Student Record',
+      message: 'Remove ' + (d.fullName || d.studentId || 'this student') + ' from the class list?',
+      confirmText: 'Remove Student',
+      onConfirmUrl: TEACHER_STUDENTS_URL,
+      fields: {
+        action: 'delete_student',
+        student_id: d.studentId || ''
+      }
+    });
+  }
+</script>
+{% endblock %}

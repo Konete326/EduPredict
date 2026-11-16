@@ -18,7 +18,7 @@ Before inspecting code or editing files, read all six project specification docu
 2. [srd.md](../../srd.md) — Architecture, RBAC, data pipeline, ML & NFR specs
 3. [trd.md](../../trd.md) — Stack, directory layout, MongoDB schemas, URL map, component contracts
 4. [design.md](../../design.md) — Theme tokens, app-shell-3, z-index stack, viewport-fit & mobile card-list rules
-5. [project-rules.md](../../project-rules.md) — All 15 mandatory engineering, UI/UX, and communication rules
+5. [project-rules.md](../../project-rules.md) — All 19 mandatory engineering, UI/UX, role, caching, and communication rules
 6. [git-sync.md](../../git-sync.md) — Git automation, module isolation, and Section 4 Active Handover State
 
 ## 2. Pre-Task Git Routine
@@ -48,7 +48,7 @@ Use role/module branch names such as `feature/core-shell`, `feature/auth-rbac`, 
 
 Verify every rule below while coding (see [project-rules.md](../../project-rules.md) and [design.md](../../design.md)):
 
-- **Stack Lock:** Pure Python 3.11+ Django (MVT) + MongoDB Atlas (`pymongo`) + Tailwind CSS + Vanilla JS (`static/js/app.js`, `charts.js`). Zero React/MERN/TSX/JSX.
+- **Stack Lock:** Pure Python 3.11+ Django (MVT) + MongoDB Atlas (`pymongo`) + Tailwind CSS + Vanilla JS (`static/js/app.js`, `charts.js`, `nav.js`). Zero React/MERN/TSX/JSX.
 - **Latest Packages:** If installing/updating dependencies, run `pip install --upgrade <package>` and update `requirements.txt`.
 - **Zero Comments:** ZERO comments in `.py`, `.html`, `.css`, and `.js` files (no `#`, `<!-- -->`, `/* */`, `//`).
 - **File Size Discipline:** Keep every file `<= 350–400` lines (`<= 250` lines for panel view files; move DB/ML logic to service modules).
@@ -56,7 +56,9 @@ Verify every rule below while coding (see [project-rules.md](../../project-rules
 - **Full-Width Fluid Layout:** Never wrap panels in `max-w-7xl mx-auto`. Use `<main class="flex-1 w-full min-w-0">` with responsive grids (`grid-cols-1 sm:grid-cols-2 xl:grid-cols-4`, `xl:grid-cols-12`, `min-w-0`).
 - **Desktop Viewport-Fit & 5-Row Pagination:** Use compact vertical spacing (`p-4`, `gap-4`, `space-y-4`), compact chart heights (`h-44` to `h-48`), and `[data-paginated-container data-page-size="5"]` + `[data-pagination-bar]` so desktop views avoid unnecessary vertical scrollbars.
 - **Mobile Card-Lists (`< md`):** Every list/table renders BOTH desktop `hidden md:block` table rows (`tbody tr[data-page-item]`) AND mobile `md:hidden` stacked cards (`[data-mobile-card][data-page-item]`) inside the same paginated container, synced with `input[data-table-search]`.
-- **Collapsible Sidebar & Coming Soon:** Keep `#mobile-sidebar-toggle` functional on both desktop (`body.sidebar-collapsed` + `localStorage`) and mobile drawer; mark unbuilt sidebar items with `"Soon"` badges + `data-coming-soon="true"` (`openComingSoonModal`).
+- **Collapsible Sidebar & Coming Soon (Rules 14–17):** Keep `#mobile-sidebar-toggle` and `#mobile-sidebar-close` working on both desktop (`html/body.sidebar-collapsed` + `localStorage`) and mobile drawer; make sidebar groups collapsible (`data-nav-group-toggle` in `localStorage`); attach `data-coming-soon="true"` (`openComingSoonModal`) to every unbuilt link/button (zero dead 404 links, zero duplicate `+` icons).
+- **Basic Everyday English & Role Guards (Rules 16, 18):** Use plain, everyday English in all UI labels, headings, modals, and toasts; hide `"Send Feedback / New Ticket"` self-submission controls from `ADMIN` (`submit_support_ticket` blocks `ADMIN`); check both `user_id` and `email` so Admins cannot delete, deactivate, or downgrade themselves.
+- **Zero-Lag Caching & SPA Navigation (Rule 19):** Run startup seeding/indexing/default-admin checks once per process; cache MongoDB reads via `core/db.py` (`get_cached` / `invalidate_cache` on every mutation); cache-bust static assets (`?v=`); keep `static/js/nav.js` (`sessionStorage` GET cache + hover prefetch, invalidated on form `POST`, calling `window.reinitEduPredictUI()`).
 - **Live MongoDB Atlas Data:** Query real collections via `core/db.py`; never ship dummy static data or hardcoded secrets (`.env` only).
 
 ## 5. Verification Checklist
@@ -68,10 +70,10 @@ Run and confirm every check after your final edit:
    python manage.py check
    ```
    (On Windows with project venv: `.\.venv\Scripts\python.exe manage.py check`)
-2. Confirm zero comments in every modified/created `.py`, `.html`, `.css`, and `.js` file.
-3. Confirm line counts stay within `<= 350–400` lines (`<= 250` lines for view files).
-4. Confirm Light & Dark mode tokens, desktop viewport-fit (5-row pagination, `h-44`/`h-48` charts), mobile card-lists (`md:hidden`), collapsible sidebar, and named `{% url %}` routes work cleanly.
-5. Confirm `.env` and `.agents/*` are NOT ignored in `.gitignore`.
+2. Confirm zero comments in every modified/created `.py`, `.html`, `.css`, and `.js` file, and run `node --check static/js/app.js` and `node --check static/js/nav.js`.
+3. Confirm line counts stay within `<= 350–400` lines (`<= 250` lines for view files) and `.agents/rules/edupredict-rules.md` remains `< 24,000` bytes.
+4. Confirm Light & Dark mode tokens, desktop viewport-fit (5-row pagination, `h-44`/`h-48` charts), mobile card-lists (`md:hidden`), collapsible sidebar & nav groups, simple everyday English, zero duplicate `+` icons, zero dead routes, and named `{% url %}` routes work cleanly.
+5. Confirm role guards (`ADMIN` blocked on `submit_support_ticket`, no self-delete/self-deactivate/self-downgrade by `user_id` or `email`), TTL caching (`get_cached`/`invalidate_cache`), `?v=` cache-busting, and `.env`/`.agents/*` git tracking.
 
 ## 6. Post-Task `git-sync.md` Rewrite & Git Auto-Sync
 
