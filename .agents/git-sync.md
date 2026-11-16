@@ -60,35 +60,34 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 1 Verification Agent (@verifier)"
-active_branch_merged_to_main: "feature/core-shell -> main"
-project_phase: "Phase 1 Complete - Core Django Shell, MongoDB Layer & App-Shell-3 Layout Verified"
+last_updated_by_agent: "Phase 2 Verification Agent (@verifier)"
+active_branch_merged_to_main: "feature/auth-rbac -> main"
+project_phase: "Phase 2 Complete - Authentication, Default Admin Sync & Role-Based Routing Verified"
 
 completed_modules:
-  - "Phase 1: Django Project Init (config/, accounts/, panels/, analytics/, manage.py, requirements.txt, .env.example, .gitignore)"
-  - "Core Layer: core/db.py (MongoDBClient singleton, 6 collection helpers, ensure_indexes, check_db_health), core/decorators.py (login_required_custom, role_required), core/context_processors.py (global_context)"
-  - "App-Shell-3 & Static Assets: templates/base.html, static/css/global.css (Light/Dark tokens), static/js/app.js (modals, toasts, theme toggle, drawer, table search), static/js/charts.js (Chart.js theme adapter)"
-  - "Global UI Components: templates/components/{sidebar,topbar,metric_card,confirm_modal,form_modal,data_table,toast}.html"
+  - "Phase 1: Django Project Init, Core MongoDB Layer & App-Shell-3 Layout (templates/base.html, components/, static/)"
+  - "Phase 2: Authentication & Role-Based Routing (accounts/services.py, accounts/views.py, templates/accounts/auth.html)"
+  - "Core DB Caching & Env: 15s health TTL cache in core/db.py, ADMIN_EMAIL/ADMIN_PASSWORD/ADMIN_FULL_NAME in .env/.env.example, .env tracked per user instruction"
+  - "RBAC View Guards: @role_required applied to all 12 routes in panels/views_{admin,teacher,student,analyst}.py and analytics/views.py"
 
-active_routes:
-  - "/ -> accounts.views.root_redirect"
-  - "/auth/ -> accounts:auth_view"
-  - "/auth/logout/ -> accounts:logout_view"
-  - "/admin-panel/, /admin-panel/users/, /admin-panel/courses/, /admin-panel/tickets/ -> panels:admin_*"
-  - "/teacher-panel/, /teacher-panel/students/, /teacher-panel/ingest/ -> panels:teacher_*"
-  - "/student-panel/, /student-panel/report/ -> panels:student_*"
-  - "/analyst-panel/ -> panels:analyst_dashboard"
-  - "/analyst-panel/upload/, /analyst-panel/run-ml/ -> analytics:upload_dataset, analytics:run_predictions"
+active_routes_and_files:
+  - "/ -> accounts.views.root_redirect (unauth -> /auth/; authenticated -> role dashboard)"
+  - "/auth/ -> accounts:auth_view (GET standalone Sign In / Create Account; POST action=login|register against MongoDB Atlas)"
+  - "/auth/logout/ -> accounts:logout_view (session.flush() + toast + redirect /auth/)"
+  - "/admin-panel/* -> panels/views_admin.py (@role_required(['ADMIN']))"
+  - "/teacher-panel/* -> panels/views_teacher.py (@role_required(['TEACHER']))"
+  - "/student-panel/* -> panels/views_student.py (@role_required(['STUDENT']))"
+  - "/analyst-panel/ -> panels/views_analyst.py (@role_required(['ANALYST']))"
+  - "/analyst-panel/upload/, /analyst-panel/run-ml/ -> analytics/views.py (@role_required(['ANALYST']))"
 
 pending_modules_in_order:
-  - "Phase 2: Authentication & Role-Based Routing (accounts app)"
   - "Phase 3: Analyst Panel + CSV Ingestion + Scikit-Learn ML Pipeline (analytics app)"
   - "Phase 4: Admin Panel (User/Course CRUD, Metrics, Support Tickets)"
   - "Phase 5: Teacher Panel (Class Overview, Attendance/Marks Ingestion, Alerts)"
   - "Phase 6: Student Panel (Personal Dashboard, AI Risk Card, Report Download)"
 
 important_notes_for_next_agent:
-  - "Next Phase: Phase 2 — Authentication & Role-Based Routing (accounts app) ONLY."
-  - "Preserve all global contracts: templates/base.html, templates/components/*, static/css/global.css, core/db.py, core/decorators.py, core/context_processors.py."
-  - "Wire @role_required and login_required_custom onto protected panel/analytics views as Phase 2 auth is activated; maintain zero comments across all .py/.html/.css/.js files."
+  - "Next Phase: Phase 3 — Analyst Panel + CSV Ingestion + Scikit-Learn ML Pipeline (panels/views_analyst.py, analytics/*, templates/panels/analyst_*.html) ONLY."
+  - "Preserve all global contracts: templates/base.html, templates/components/*, static/css/global.css, core/db.py, core/decorators.py, core/context_processors.py, accounts/*."
+  - "Maintain zero comments across all .py/.html/.css/.js files, file length <= 350 lines, and zero native alert/confirm/prompt popups."
 ```

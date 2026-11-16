@@ -1,6 +1,8 @@
 from django.shortcuts import render
+from core.decorators import role_required
 
 
+@role_required(['TEACHER'])
 def teacher_dashboard(request):
     return render(
         request,
@@ -12,6 +14,7 @@ def teacher_dashboard(request):
     )
 
 
+@role_required(['TEACHER'])
 def teacher_students(request):
     return render(
         request,
@@ -23,6 +26,7 @@ def teacher_students(request):
     )
 
 
+@role_required(['TEACHER'])
 def teacher_ingest(request):
     return render(
         request,

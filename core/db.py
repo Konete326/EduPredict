@@ -1,7 +1,10 @@
 import os
 import threading
+import time
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.errors import ConnectionFailure
+
+HEALTH_CACHE_TTL_SECONDS = 15.0
 
 COLLECTIONS = (
     "users",
@@ -26,6 +29,8 @@ class MongoDBClient:
                     instance._uri = None
                     instance._db_name = None
                     instance._last_error = None
+                    instance._health_cache = None
+                    instance._health_cache_at = 0.0
                     cls._instance = instance
         return cls._instance
 
@@ -52,6 +57,9 @@ class MongoDBClient:
                 except Exception:
                     pass
                 self._client = None
+            if self._uri != uri or self._db_name != db_name:
+                self._health_cache = None
+                self._health_cache_at = 0.0
             self._uri = uri
             self._db_name = db_name
             if not uri:
@@ -83,17 +91,36 @@ class MongoDBClient:
         return self.get_db()
 
     def check_health(self):
+        uri = (os.getenv("MONGODB_URI") or "").strip()
+        db_name = (os.getenv("MONGODB_DB_NAME") or "edupredict_db").strip() or "edupredict_db"
+        now = time.monotonic()
+        with self._lock:
+            if (
+                self._health_cache is not None
+                and self._uri == uri
+                and self._db_name == db_name
+                and (now - self._health_cache_at) < HEALTH_CACHE_TTL_SECONDS
+            ):
+                return dict(self._health_cache)
+
         client = self.get_client()
         if client is None:
-            return {
+            result = {
                 "connected": False,
                 "error": self._last_error or "MONGODB_URI is not configured.",
             }
-        try:
-            client.admin.command("ping")
-            return {"connected": True, "error": None}
-        except Exception as exc:
-            return {"connected": False, "error": str(exc)}
+        else:
+            try:
+                client.admin.command("ping")
+                result = {"connected": True, "error": None}
+            except Exception as exc:
+                result = {"connected": False, "error": str(exc)}
+
+        with self._lock:
+            if self._uri == uri and self._db_name == db_name:
+                self._health_cache = dict(result)
+                self._health_cache_at = time.monotonic()
+        return result
 
     def close(self):
         with self._lock:
@@ -103,9 +130,11 @@ class MongoDBClient:
                 except Exception:
                     pass
                 self._client = None
-                self._uri = None
-                self._db_name = None
-                self._last_error = None
+            self._uri = None
+            self._db_name = None
+            self._last_error = None
+            self._health_cache = None
+            self._health_cache_at = 0.0
 
 
 def get_client():

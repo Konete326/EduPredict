@@ -1,6 +1,8 @@
 from django.shortcuts import render
+from core.decorators import role_required
 
 
+@role_required(['ADMIN'])
 def admin_dashboard(request):
     return render(
         request,
@@ -12,6 +14,7 @@ def admin_dashboard(request):
     )
 
 
+@role_required(['ADMIN'])
 def admin_users(request):
     return render(
         request,
@@ -23,6 +26,7 @@ def admin_users(request):
     )
 
 
+@role_required(['ADMIN'])
 def admin_courses(request):
     return render(
         request,
@@ -34,6 +38,7 @@ def admin_courses(request):
     )
 
 
+@role_required(['ADMIN'])
 def admin_tickets(request):
     return render(
         request,

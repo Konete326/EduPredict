@@ -1,6 +1,8 @@
 from django.shortcuts import render
+from core.decorators import role_required
 
 
+@role_required(['ANALYST'])
 def analyst_dashboard(request):
     return render(
         request,

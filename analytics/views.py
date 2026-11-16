@@ -1,6 +1,8 @@
 from django.shortcuts import render
+from core.decorators import role_required
 
 
+@role_required(['ANALYST'])
 def upload_dataset(request):
     return render(
         request,
@@ -12,6 +14,7 @@ def upload_dataset(request):
     )
 
 
+@role_required(['ANALYST'])
 def run_predictions(request):
     return render(
         request,
