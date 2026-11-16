@@ -59,42 +59,51 @@ Person working on Admin Panel edits panels/views_admin.py and templates/panels/a
 
 Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and templates/panels/analyst_*.html.
 
-4. Active Handover State (Agents: Replace This Block on Every Push)
+## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 5 Lead Implementation & Verification Agent"
-active_branch_merged_to_main: "feature/teacher-panel -> main"
-project_phase: "Phase 5 Complete - Teacher Panel, Zero-Lag Caching, SPA Navigation & Basic English Nav Verified"
+last_updated_by_agent: "QA Verifier & Release Engineer (@qa-v2)"
+active_branch_merged_to_main: "feature/admin-panel -> main"
+project_phase: "Admin Panel & System Performance Optimization Complete - Zero-Lag Caching, SPA Smooth Nav, Desktop Sidebar Collapse, Role Guards & Basic English 100% Verified"
 
 completed_modules:
   - "Phase 1: Django Project Init, Core MongoDB Layer & App-Shell-3 Layout (core/, templates/components/, static/)"
   - "Phase 2: Authentication, Default Admin Sync & Role-Based Routing (accounts/services.py, accounts/views.py, templates/accounts/auth.html)"
-  - "Phase 3 & Polish: Analyst Panel, ML Engine, chunked CSV + 25MB limit in analytics/data_pipeline.py, compact viewport-fit in analyst_dashboard.html"
-  - "Phase 4 Admin Backend & Global Shell: panels/admin_seed.py, panels/admin_services.py, panels/views_admin.py, core/db.py (courses_col + unique index), 5-row pagination, mobile card sync, Coming Soon modals, 404 handler"
-  - "Phase 5 Zero-Lag Caching & SPA Navigation (Rule 19): In-memory TTL cache (core/db.py get_cached/invalidate_cache), run-once guards on ensure_admin_seed_data & ensure_default_admin (saving 2.5-3.5s per request, warm GETs < 100ms), and static/js/nav.js (smooth client-side navigation + sessionStorage GET cache + hover prefetch + re-executing page scripts)"
-  - "Phase 5 Global UX Polish: Collapsible sidebar on desktop (body.sidebar-collapsed with !important override) & mobile, basic everyday English across all sidebar links & panel headers (Rule 16), collapsible nav groups with localStorage persistence, removed duplicate '+' symbols from action buttons (Rule 17), blocked Admin self-tickets on /support/submit/ and guarded USR-1000 from deletion/deactivation (Rule 18)"
-  - "Phase 5 Teacher Backend & Services: panels/teacher_services.py (333 lines, 0 comments) with student status badges (Excellent, Stable, Needs Help, High Risk), get_teacher_dashboard_context, get_teacher_students_context, get_teacher_ingest_context, update_student_record_inline, send_student_alert (notifications_col), delete_student_record"
-  - "Phase 5 Teacher Views & Routes: panels/views_teacher.py (171 lines, 0 comments) with /teacher-panel/ (Class Home), /teacher-panel/students/ (Student List + filters + CSV export), /teacher-panel/ingest/ (Upload Marks + 1-click sample class sheet + manual entry form + roster editor)"
-  - "Phase 5 Teacher Templates: templates/panels/teacher_dashboard.html (KPIs, Course Attendance & Marks bar chart, Student Status doughnut, At-Risk table), templates/panels/teacher_students.html (filters, 5-row table + mobile cards, Update Marks modal, Send Alert modal, Delete confirm modal), templates/panels/teacher_ingest.html (upload sheet, manual form, class roster editor, upload logs)"
+  - "Phase 3: Analyst Panel, ML Engine, chunked CSV ingestion, anomaly detection & full-width dashboard"
+  - "Phase 4 & 5: Admin Panel (CRUD, 5-row pagination, mobile cards, backups), Teacher Panel, Zero-Lag Caching & SPA Navigation"
+  - "Phase 5 Performance & Stability Polish (Rules 16-19):"
+      - "Zero-Lag In-Memory TTL Caching: Added get_cached/invalidate_cache in core/db.py with process-once thread locks for ensure_admin_seed_data & ensure_default_admin. Cached read queries across admin overview, users, courses, tickets, analyst context, and teacher/student KPIs. All cached GET endpoints respond in < 15ms."
+      - "Strict Role Logic & Self-Action Guards: Blocked Admin from submitting self-tickets on /support/submit/; hidden New Ticket / feedback buttons for Admin in admin_tickets.html and sidebar.html footer; enforced dual user_id and email guards preventing Admin self-deletion, deactivation, or role modification."
+      - "Desktop Sidebar Collapse & Nav Groups: Ensured html.sidebar-collapsed and body.sidebar-collapsed use !important transforms; added collapsible section toggles (data-nav-group-toggle) with localStorage persistence (edupredict_nav_groups) and desktop sidebar close action."
+      - "SPA Smooth Navigation: static/js/nav.js with 45s prefetch cache, smooth page swapping with #page-extra-js script re-execution, form submit cache invalidation, and ?v=5 static asset cache-busting."
+      - "Everyday Basic English: Replaced technical jargon across all headings, sidebar links, toast alerts, modals, and table headers with plain everyday English."
+      - "Coming Soon Modals: All unbuilt routes across Teacher and Student panels display theme-aware Coming Soon modals with HTTP 200 Admin preview support."
+
+verification_results:
+  - "manage.py check: 0 issues reported."
+  - "JS syntax check: node --check static/js/app.js & static/js/nav.js exit 0."
+  - "File limits & zero comments: All .py, .html, .css, .js files <= 350 lines (views <= 250 lines) with 0 comments."
+  - "Rule file size: .agents/rules/edupredict-rules.md is 10,364 bytes (< 24,000 bytes)."
+  - "GET benchmarks: /admin-panel/ (8.2ms), /admin-panel/users/ (12.8ms), /admin-panel/courses/ (17.1ms), /admin-panel/tickets/ (10.3ms), /analyst-panel/ (1.3ms) all < 50ms."
+  - "Functional checks: Admin self-action guards, CRUD on temporary user/course/ticket with identical initial/final MongoDB counts, JSON/CSV backups, and student coming-soon routes passed 100%."
 
 active_routes_and_files:
   - "/, /auth/, /auth/logout/, catch-all 404 -> accounts/views.py & config/urls.py"
-  - "/admin-panel/ -> panels:admin_dashboard (KPIs, Dept Enrollment vs Capacity bar chart, Risk doughnut, Recent Tickets)"
-  - "/admin-panel/users/, /admin-panel/courses/, /admin-panel/tickets/ -> Full MongoDB Atlas CRUD + filters + 5-row pagination"
+  - "/admin-panel/ -> panels:admin_dashboard"
+  - "/admin-panel/users/ -> panels:admin_users"
+  - "/admin-panel/courses/ -> panels:admin_courses"
+  - "/admin-panel/tickets/ -> panels:admin_tickets"
   - "/admin-panel/backup/?format=json|csv -> panels:admin_backup_export"
-  - "/support/submit/ -> panels:submit_support_ticket (global sidebar Support modal endpoint, blocks Admin self-submission)"
-  - "/notifications/mark-read/ -> panels:mark_notifications_read (CSRF POST JSON endpoint)"
-  - "/analyst-panel/* -> panels/views_analyst.py & analytics/views.py"
-  - "/teacher-panel/ -> panels:teacher_dashboard (Class Home)"
-  - "/teacher-panel/students/ -> panels:teacher_students (Student List, CSV export, Update Marks, Send Alert)"
-  - "/teacher-panel/ingest/ -> panels:teacher_ingest (Upload spreadsheet, 1-click sample class sheet, manual entry form)"
-  - "/student-panel/* -> Coming Soon roadmap views (panels/views_student.py)"
+  - "/support/submit/ -> panels:submit_support_ticket (Admin self-submission blocked)"
+  - "/notifications/mark-read/ -> panels:mark_notifications_read"
+  - "/analyst-panel/ -> panels:analyst_dashboard"
+  - "/teacher-panel/* -> panels:views_teacher.py"
+  - "/student-panel/* -> panels:views_student.py"
 
 pending_modules_in_order:
-  - "Phase 6: Student Panel (Personal Dashboard, AI Risk Card, Report Download)"
+  - "Phase 6: Student Panel Full Implementation (Personal Dashboard, AI Risk Card, Report Download, Study Recommendations)"
 
 important_notes_for_next_agent:
-  - "Next Phase: Phase 6 — Student Panel (Personal Dashboard, AI Risk Card, Report Download) in panels/views_student.py and templates/panels/student_*.html ONLY."
-  - "Zero-lag caching is active: wrap heavy read queries in get_cached('student:...', fn, ttl=30.0) and call invalidate_cache() after student updates/mutations."
-  - "Preserve all global contracts: templates/base.html, templates/components/* (5-row pagination, mobile cards, Coming Soon & confirm/form modals), static/css/global.css, static/js/app.js, static/js/nav.js, core/db.py."
-  - "Keep .env and .agents/* (including .agents/rules/* and .agents/skills/*) tracked and pushed; maintain zero comments across all .py/.html/.css/.js files, panels/views_*.py <= 250 lines, and other files <= 350 lines."
+  - "Next Phase: Build the dedicated Student Panel in panels/views_student.py and templates/panels/student_*.html."
+  - "Preserve zero-lag caching (core/db.py get_cached/invalidate_cache), SPA transitions (#page-extra-js), 5-row pagination, mobile cards, and zero comments policy."
+  - "Keep .env and .agents/* tracked in Git."
 ```

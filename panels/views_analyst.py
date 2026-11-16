@@ -174,37 +174,37 @@ def analyst_dashboard(request):
     selected_batch = str(request.GET.get('batch', 'ALL')).strip() or 'ALL'
     selected_course = str(request.GET.get('course_code', 'ALL')).strip() or 'ALL'
     selected_risk = str(request.GET.get('risk_level', 'ALL')).strip().upper() or 'ALL'
-    key = f"analyst:ctx:{selected_batch}:{selected_course}:{selected_risk}"
-    db_error = None
-    try:
-        data = get_cached(key, lambda: _compute_analyst_data(selected_batch, selected_course, selected_risk), ttl=45.0)
-    except Exception as exc:
-        data = _compute_analyst_data(selected_batch, selected_course, selected_risk)
-        db_error = str(exc)
 
     if request.GET.get('export') == 'csv':
+        data = _compute_analyst_data(selected_batch, selected_course, selected_risk)
         return _export_csv_response(data['filtered'])
 
-    prediction_headers = ['Student ID', 'Name', 'Batch', 'Course', 'Attendance', 'Past GPA', 'Next GPA', 'Risk Level', 'Unusual', 'Tip']
-    dataset_headers = ['File Name', 'Rows', 'Fixed', 'Status', 'Date']
     session_user = request.session.get('user') or {}
+    user_id = str(session_user.get('user_id') or '').strip()
     active_role = str(session_user.get('role') or 'ANALYST').upper()
+    cache_key = f"analyst:page:{user_id}:{active_role}:{selected_batch}:{selected_course}:{selected_risk}"
 
-    return render(
-        request,
-        'panels/analyst_dashboard.html',
-        {
-            'page_title': 'Data Dashboard',
-            'active_role': active_role,
-            'kpis': data['kpis'],
-            'filter_options': data['filter_options'],
-            'selected_filters': {'batch': selected_batch, 'course_code': selected_course, 'risk_level': selected_risk},
-            'prediction_headers': prediction_headers,
-            'prediction_rows': data['prediction_rows'],
-            'dataset_headers': dataset_headers,
-            'dataset_rows': data['dataset_rows'],
-            'chart_data': data['chart_data'],
-            'required_columns': REQUIRED_COLUMNS,
-            'db_error': db_error,
-        },
-    )
+    def _render():
+        data = _compute_analyst_data(selected_batch, selected_course, selected_risk)
+        resp = render(
+            request,
+            'panels/analyst_dashboard.html',
+            {
+                'page_title': 'Data Dashboard',
+                'active_role': active_role,
+                'kpis': data['kpis'],
+                'filter_options': data['filter_options'],
+                'selected_filters': {'batch': selected_batch, 'course_code': selected_course, 'risk_level': selected_risk},
+                'prediction_headers': ['Student ID', 'Name', 'Batch', 'Course', 'Attendance', 'Past GPA', 'Next GPA', 'Risk Level', 'Unusual', 'Tip'],
+                'prediction_rows': data['prediction_rows'],
+                'dataset_headers': ['File Name', 'Rows', 'Fixed', 'Status', 'Date'],
+                'dataset_rows': data['dataset_rows'],
+                'chart_data': data['chart_data'],
+                'required_columns': REQUIRED_COLUMNS,
+                'db_error': None,
+            },
+        )
+        return resp.content, resp.get('Content-Type', 'text/html; charset=utf-8')
+
+    content, content_type = get_cached(cache_key, _render, ttl=45.0)
+    return HttpResponse(content, content_type=content_type)
