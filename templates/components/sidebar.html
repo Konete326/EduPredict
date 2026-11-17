@@ -119,9 +119,13 @@
           <i class="fa-solid fa-chart-line w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Data &amp; ML Hub</span>
         </a>
-        <a href="{% url 'panels:analyst_accuracy' %}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:analyst_accuracy' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <a href="{% url 'panels:analyst_dashboard' %}#ml-evaluation-section" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
           <i class="fa-solid fa-microchip w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">AI Accuracy</span>
+        </a>
+        <a href="{% url 'panels:analyst_accuracy' %}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:analyst_accuracy' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-heart-pulse w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Model Health</span>
         </a>
       </div>
     </div>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 <section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
@@ -157,10 +158,13 @@
 
   {% include 'components/data_table.html' with table_id="analyst-predictions-table" table_title="Student Predictions" headers=prediction_headers rows=prediction_rows page_size=5 empty_message="No matching rows found. Load sample data or upload a file above." %}
 </section>
+
+{% include 'panels/analyst_evaluation_section.html' %}
 {% endblock %}
 
 {% block extra_js %}
 {{ chart_data|json_script:"analyst-chart-data" }}
+<script src="{% static 'js/analyst_evaluation.js' %}?v=1"></script>
 <script>
   (function () {
     function initAnalystCharts() {

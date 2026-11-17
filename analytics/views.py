@@ -1,8 +1,11 @@
 from django.contrib import messages
+from django.http import JsonResponse
 from django.shortcuts import redirect
 from analytics.data_pipeline import ingest_dataset
-from analytics.ml_engine import run_prediction_pipeline
-from core.db import invalidate_cache, student_records_col
+from analytics.evaluation import DEFAULT_TEST_SIZE
+from analytics.ml_engine import evaluate_models, run_prediction_pipeline
+from analytics.preprocessing import DEFAULT_RANDOM_STATE, validate_eval_params
+from core.db import get_cached, invalidate_cache, student_records_col
 from core.decorators import role_required
 
 
@@ -84,3 +87,33 @@ def run_predictions(request):
         messages.error(request, f'Could not run predictions: {exc}')
 
     return redirect('panels:analyst_dashboard')
+
+
+def _is_truthy(value):
+    return str(value or '').strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+@role_required(['ANALYST', 'ADMIN'])
+def model_evaluation(request):
+    try:
+        raw_test_size = request.GET.get('test_size')
+        raw_random_state = request.GET.get('random_state')
+        test_size_val = DEFAULT_TEST_SIZE if raw_test_size in (None, '') else raw_test_size
+        random_state_val = DEFAULT_RANDOM_STATE if raw_random_state in (None, '') else raw_random_state
+        ts, rs = validate_eval_params(test_size_val, random_state_val)
+        refresh = _is_truthy(request.GET.get('refresh'))
+        if ts == DEFAULT_TEST_SIZE and rs == DEFAULT_RANDOM_STATE:
+            if refresh:
+                invalidate_cache('analyst:')
+            report = get_cached(
+                'analyst:evaluation:default',
+                lambda: evaluate_models(test_size=ts, random_state=rs),
+                ttl=45.0,
+            )
+        else:
+            report = evaluate_models(test_size=ts, random_state=rs)
+        return JsonResponse(report, status=200)
+    except ValueError as exc:
+        return JsonResponse({'status': 'ERROR', 'error': str(exc)}, status=400)
+    except Exception as exc:
+        return JsonResponse({'status': 'ERROR', 'error': f'Evaluation failed: {exc}'}, status=500)

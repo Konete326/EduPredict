@@ -2,7 +2,8 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 from pymongo import UpdateOne
-from core.db import datasets_log_col, ensure_indexes, student_records_col
+from analytics.preprocessing import parse_binary_label, parse_gpa_label
+from core.db import datasets_log_col, ensure_indexes, invalidate_cache, student_records_col
 
 REQUIRED_COLUMNS = ("student_id",)
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
@@ -53,6 +54,20 @@ COLUMN_ALIASES = {
     "gpa": "previous_gpa",
     "prev_gpa": "previous_gpa",
     "cgpa": "previous_gpa",
+    "actual_dropout": "dropout_label",
+    "dropped_out": "dropout_label",
+    "is_dropout": "dropout_label",
+    "dropout": "dropout_label",
+    "dropout_status": "dropout_label",
+    "target_dropout": "dropout_label",
+    "final_gpa": "actual_gpa",
+    "next_gpa": "actual_gpa",
+    "target_gpa": "actual_gpa",
+    "semester_gpa": "actual_gpa",
+    "earned_gpa": "actual_gpa",
+    "actual_anomaly": "anomaly_label",
+    "is_anomaly_label": "anomaly_label",
+    "anomaly_target": "anomaly_label",
 }
 FIRST_NAMES = (
     "Ayesha", "Bilal", "Zainab", "Hamza", "Fatima", "Usman", "Hira", "Saad",
@@ -228,7 +243,7 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload"):
     for col in CATEGORICAL_COLUMNS:
         df[col] = _clean_categorical_series(df[col])
     for col in NUMERIC_COLUMNS:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
+        df[col] = pd.to_numeric(df[col], errors="coerce").replace([np.inf, -np.inf], np.nan)
 
     tracked_cols = ["student_id", *CATEGORICAL_COLUMNS, *NUMERIC_COLUMNS]
     missing_values_fixed = int(df[tracked_cols].isna().sum().sum())
@@ -245,8 +260,19 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload"):
         modes = df[col].dropna().mode()
         df[col] = df[col].fillna(str(modes.iloc[0]) if not modes.empty else CATEGORICAL_DEFAULTS[col])
 
+    has_dropout_label = "dropout_label" in df.columns
+    has_actual_gpa = "actual_gpa" in df.columns
+    has_anomaly_label = "anomaly_label" in df.columns
+    if has_dropout_label:
+        df["dropout_label"] = df["dropout_label"].apply(parse_binary_label)
+    if has_actual_gpa:
+        df["actual_gpa"] = df["actual_gpa"].apply(parse_gpa_label)
+    if has_anomaly_label:
+        df["anomaly_label"] = df["anomaly_label"].apply(parse_binary_label)
+
     now = datetime.now(timezone.utc)
     operations = []
+    label_counts = {"dropout_label": 0, "actual_gpa": 0, "anomaly_label": 0}
     for row in df.to_dict(orient="records"):
         sid = str(row["student_id"]).strip()
         doc = {
@@ -261,6 +287,21 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload"):
             "previous_gpa": round(float(row["previous_gpa"]), 2),
             "updated_at": now,
         }
+        if has_dropout_label:
+            lbl = row.get("dropout_label")
+            doc["dropout_label"] = int(lbl) if pd.notna(lbl) else None
+            if doc["dropout_label"] is not None:
+                label_counts["dropout_label"] += 1
+        if has_actual_gpa:
+            gpa_lbl = row.get("actual_gpa")
+            doc["actual_gpa"] = float(gpa_lbl) if pd.notna(gpa_lbl) else None
+            if doc["actual_gpa"] is not None:
+                label_counts["actual_gpa"] += 1
+        if has_anomaly_label:
+            anom_lbl = row.get("anomaly_label")
+            doc["anomaly_label"] = int(anom_lbl) if pd.notna(anom_lbl) else None
+            if doc["anomaly_label"] is not None:
+                label_counts["anomaly_label"] += 1
         operations.append(UpdateOne({"student_id": sid}, {"$set": doc}, upsert=True))
 
     try:
@@ -276,6 +317,7 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload"):
             "status": "COMPLETED",
             "uploaded_at": now,
         })
+        invalidate_cache("analyst:")
     except Exception as exc:
         return _failed_result(filename, uploaded_by, f"Database write failed: {exc}", missing_values_fixed)
 
@@ -284,4 +326,5 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload"):
         "filename": filename,
         "rows_processed": len(operations),
         "missing_values_fixed": missing_values_fixed,
+        "labels_detected": label_counts,
     }

@@ -61,47 +61,33 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Coordinator & Senior Full-Stack Architect (@coordinator)"
-active_branch_merged_to_main: "feature/student-panel -> main (Phase 6 & 7)"
-project_phase: "Phase 7: Teacher Risk Alerts page & Analyst AI Accuracy page (all Coming Soon panel modules eliminated)"
+last_updated_by_agent: "Analyst Cache, ML Evaluation & Navigation Integrator"
+active_branch_merged_to_main: "feature/ml-evaluation -> main"
+project_phase: "Phase 7 & ML Evaluation Tasks 1-3 Complete"
 
 completed_modules:
-  - "Phase 1: Django Project Init, Core MongoDB Layer & App-Shell-3 Layout (core/, templates/components/, static/)"
-  - "Phase 2: Authentication, Default Admin Sync & Role-Based Routing (accounts/services.py, accounts/views.py, templates/accounts/auth.html)"
-  - "Phase 3: Analyst Panel, ML Engine, chunked CSV ingestion, anomaly detection & full-width dashboard"
-  - "Phase 4 & 5: Admin Panel (CRUD, 5-row pagination, mobile cards, backups), Teacher Panel, Zero-Lag Caching & SPA Navigation"
-  - "Rule 20 Verified: strict role sidebar isolation across all panels (sidebar.html)"
-  - "Phase 6: Student Panel built on live MongoDB data (panels/student_services.py, panels/views_student.py):"
-      - "student_dashboard: attendance/GPA/class-standing/credits KPI cards, AI Learning Insight card, My-vs-Class-Average bar chart, subject-wise 5-row paginated table + mobile cards, recent reminders, quick actions"
-      - "student_report: course-wise result table, report summary, Print + CSV download (student_report_download)"
-      - "student_tips: weekly study tips generated from attendance/marks/study hours + insight points"
-      - "student_notifications: teacher/system alerts (severity badges, mark one/all read POST with CSRF), my help-request tickets table, Need Help modal"
-      - "sidebar.html student group rewired to real routes - zero Coming Soon placeholders in Student nav"
-  - "Phase 7: Teacher Risk Alerts & Analyst AI Accuracy pages built on live MongoDB data:"
-      - "panels/teacher_alert_services.py + /teacher-panel/alerts/ (panels:teacher_alerts): students-needing-attention roster with one-click Send Alert modal, 'Alerts I Sent' history table (regex ^Teacher Alert), KPI cards (Need Attention, High Risk, Medium Risk, Alerts Sent + unread)"
-      - "analytics/model_health.py + /analyst-panel/accuracy/ (panels:analyst_accuracy): model card (version, last run, training features), GPA MAE & stable-share metrics, low-attendance flag agreement, risk-split doughnut + GPA error bucket bar chart, course demand forecast & training data summary tables"
-      - "sidebar.html: Teacher 'Risk Alerts' and Analyst 'AI Accuracy' links now real routes (zero dead links left in Teacher/Analyst nav)"
+  - "Phase 1-5: Core Shell, Auth/RBAC, Admin/Teacher Panels & Rule 20 Sidebar Isolation"
+  - "Phase 6 & 7: Student Panel (Dashboard, Report Card, Study Tips, Alerts & Support), Teacher Risk Alerts & Analyst Model Health"
+  - "ML Evaluation Tasks 1-3 (analytics/preprocessing.py, analytics/evaluation.py, analytics/ml_engine.py, analytics/data_pipeline.py, analytics/views.py, panels/views_analyst.py, templates/panels/analyst_evaluation_section.html, static/js/analyst_evaluation.js, analytics/tests.py, panels/tests.py):"
+      - "Leakage-free sklearn Pipelines (MedianFallbackImputer + StandardScaler) and train/test split evaluation for Dropout Classifier and GPA Regressor."
+      - "Integrated ML Performance & Validation section into analyst_dashboard.html with shared 'analyst:evaluation:default' TTL caching, ?refresh=1 support, and AI Accuracy sidebar navigation."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "Live integration test: /teacher-panel/alerts/ and /analyst-panel/accuracy/ return 200 with real MongoDB data; existing dashboards unaffected (200)."
-  - "POST send_alert via /teacher-panel/alerts/ stores notification (Teacher Alert (CS-101)) and appears in history table."
-  - "Role guards: STUDENT blocked from teacher/analyst pages (302 -> own panel); TEACHER blocked from analyst accuracy; ANALYST blocked from teacher alerts."
-  - "Zero comments verified in all new/modified files; file caps respected (views_analyst.py 244 < 250, model_health.py 155, teacher_alert_services.py 81)."
+  - "manage.py test analytics panels --verbosity=2: 19/19 tests PASSED."
+  - "Zero comments and <= 350-400 line caps verified across all modified files."
 
 active_routes_and_files:
-  - "/teacher-panel/alerts/ -> panels:teacher_alerts (GET + POST send_alert)"
+  - "/analyst-panel/ -> panels:analyst_dashboard (includes #ml-evaluation-section)"
+  - "/analyst-panel/evaluation/ -> analytics:model_evaluation (cached default + custom params + refresh=1)"
   - "/analyst-panel/accuracy/ -> panels:analyst_accuracy"
-  - "New: panels/teacher_alert_services.py, analytics/model_health.py, templates/panels/teacher_alerts.html, templates/panels/analyst_accuracy.html"
-  - "Modified: panels/urls.py, panels/views_teacher.py, panels/views_analyst.py, templates/components/sidebar.html"
+  - "/teacher-panel/alerts/ -> panels:teacher_alerts"
+  - "/student-panel/* -> panels:student_dashboard, student_report, student_tips, student_notifications"
 
 pending_modules_in_order:
-  - "Phase 8 (optional hardening): Admin Activity Logs & Settings pages (still Coming Soon), print-friendly student report CSS, deadline tracking source of truth"
+  - "Phase 8 (optional hardening): Admin Activity Logs & Settings pages"
 
 important_notes_for_next_agent:
-  - "Teacher alert history query matches target_role=STUDENT with title regex '^Teacher Alert'; auto ML alerts (title 'High Dropout Risk: ...') are excluded on purpose."
-  - "Student identity: session user carries student_id; student alert queries must match BOTH user_id and student_id."
-  - "Keep role navigation strictly isolated across all panels per Rule 20; preserve get_cached TTL keys (teacher:alerts, analyst:model_health) and invalidate_cache on mutations."
-  - "Git identity for this repo: Fouzan980 <fouzanuddin729@gmail.com>."
+  - "Keep role navigation strictly isolated across all panels per Rule 20; preserve get_cached TTL keys and invalidate_cache on mutations."
   - "Always track .env and .agents/* in Git."
 ```
