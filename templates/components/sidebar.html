@@ -73,10 +73,9 @@
           <i class="fa-solid fa-file-arrow-up w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Upload Marks</span>
         </a>
-        <a href="#" data-coming-soon="true" data-coming-title="Risk Alerts" data-coming-panel="Teacher" data-coming-desc="Send quick warning notes when a student misses classes or drops in marks." data-coming-features="Automatic low attendance alerts|One-click warning message to students|Track resolved alerts" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <a href="{% url 'panels:teacher_alerts' %}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:teacher_alerts' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-bell w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Risk Alerts</span>
-          <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
         </a>
       </div>
     </div>
@@ -120,10 +119,9 @@
           <i class="fa-solid fa-chart-line w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Data &amp; ML Hub</span>
         </a>
-        <a href="#" data-coming-soon="true" data-coming-title="AI Accuracy" data-coming-panel="Data Analyst" data-coming-desc="See how well the prediction models perform on student data." data-coming-features="Model accuracy and error scores|Top factors affecting student risk|Past model training log" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <a href="{% url 'panels:analyst_accuracy' %}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:analyst_accuracy' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-microchip w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">AI Accuracy</span>
-          <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
         </a>
       </div>
     </div>

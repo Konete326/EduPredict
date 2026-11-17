@@ -62,8 +62,8 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
 last_updated_by_agent: "Coordinator & Senior Full-Stack Architect (@coordinator)"
-active_branch_merged_to_main: "feature/student-panel -> main"
-project_phase: "Phase 6: Student Panel Full Implementation (Dashboard, Report Card, Study Tips, Alerts & Support)"
+active_branch_merged_to_main: "feature/student-panel -> main (Phase 6 & 7)"
+project_phase: "Phase 7: Teacher Risk Alerts page & Analyst AI Accuracy page (all Coming Soon panel modules eliminated)"
 
 completed_modules:
   - "Phase 1: Django Project Init, Core MongoDB Layer & App-Shell-3 Layout (core/, templates/components/, static/)"
@@ -72,38 +72,36 @@ completed_modules:
   - "Phase 4 & 5: Admin Panel (CRUD, 5-row pagination, mobile cards, backups), Teacher Panel, Zero-Lag Caching & SPA Navigation"
   - "Rule 20 Verified: strict role sidebar isolation across all panels (sidebar.html)"
   - "Phase 6: Student Panel built on live MongoDB data (panels/student_services.py, panels/views_student.py):"
-      - "student_dashboard: attendance/GPA/class-standing/credits KPI cards, AI Learning Insight card (risk-aware plain-language summary), My-vs-Class-Average bar chart, subject-wise 5-row paginated table + mobile cards, recent reminders, quick actions"
-      - "student_report: course-wise result table (5-row pagination + mobile cards), report summary (GPA, batch, credits, prediction timestamp, teacher advice), Print + CSV download (student_report_download)"
+      - "student_dashboard: attendance/GPA/class-standing/credits KPI cards, AI Learning Insight card, My-vs-Class-Average bar chart, subject-wise 5-row paginated table + mobile cards, recent reminders, quick actions"
+      - "student_report: course-wise result table, report summary, Print + CSV download (student_report_download)"
       - "student_tips: weekly study tips generated from attendance/marks/study hours + insight points"
       - "student_notifications: teacher/system alerts (severity badges, mark one/all read POST with CSRF), my help-request tickets table, Need Help modal"
-      - "sidebar.html student group rewired to real routes (My Dashboard, My Report Card, Study Tips, Alerts & Support) - zero Coming Soon placeholders left in Student nav"
-  - "TTL caching via get_cached (student:overview / student:alerts keys), invalidate_cache on mark-read mutations"
+      - "sidebar.html student group rewired to real routes - zero Coming Soon placeholders in Student nav"
+  - "Phase 7: Teacher Risk Alerts & Analyst AI Accuracy pages built on live MongoDB data:"
+      - "panels/teacher_alert_services.py + /teacher-panel/alerts/ (panels:teacher_alerts): students-needing-attention roster with one-click Send Alert modal, 'Alerts I Sent' history table (regex ^Teacher Alert), KPI cards (Need Attention, High Risk, Medium Risk, Alerts Sent + unread)"
+      - "analytics/model_health.py + /analyst-panel/accuracy/ (panels:analyst_accuracy): model card (version, last run, training features), GPA MAE & stable-share metrics, low-attendance flag agreement, risk-split doughnut + GPA error bucket bar chart, course demand forecast & training data summary tables"
+      - "sidebar.html: Teacher 'Risk Alerts' and Analyst 'AI Accuracy' links now real routes (zero dead links left in Teacher/Analyst nav)"
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "Live integration test: all 4 student pages + CSV download return 200 with real MongoDB Atlas data."
-  - "POST mark_all redirects to /student-panel/notifications/ and renders success toast."
-  - "Role guards: ANALYST -> /analyst-panel/, TEACHER -> /teacher-panel/, guest -> /auth/ (302); ADMIN can view student panel (200)."
-  - "Custom 404 page active for unknown URLs."
-  - "Zero comments verified in all new/modified files; node --check app.js + nav.js passed."
-  - "File caps: student_services.py 386 (<400), views_student.py 214 (<250)."
+  - "Live integration test: /teacher-panel/alerts/ and /analyst-panel/accuracy/ return 200 with real MongoDB data; existing dashboards unaffected (200)."
+  - "POST send_alert via /teacher-panel/alerts/ stores notification (Teacher Alert (CS-101)) and appears in history table."
+  - "Role guards: STUDENT blocked from teacher/analyst pages (302 -> own panel); TEACHER blocked from analyst accuracy; ANALYST blocked from teacher alerts."
+  - "Zero comments verified in all new/modified files; file caps respected (views_analyst.py 244 < 250, model_health.py 155, teacher_alert_services.py 81)."
 
 active_routes_and_files:
-  - "/student-panel/ -> panels:student_dashboard"
-  - "/student-panel/report/ -> panels:student_report"
-  - "/student-panel/report/download/ -> panels:student_report_download (CSV)"
-  - "/student-panel/tips/ -> panels:student_tips"
-  - "/student-panel/notifications/ -> panels:student_notifications (GET + POST mark_read/mark_all)"
-  - "New: panels/student_services.py, templates/panels/student_dashboard.html, student_report.html, student_tips.html, student_notifications.html"
-  - "Modified: panels/urls.py, panels/views_student.py, templates/components/sidebar.html (student group)"
+  - "/teacher-panel/alerts/ -> panels:teacher_alerts (GET + POST send_alert)"
+  - "/analyst-panel/accuracy/ -> panels:analyst_accuracy"
+  - "New: panels/teacher_alert_services.py, analytics/model_health.py, templates/panels/teacher_alerts.html, templates/panels/analyst_accuracy.html"
+  - "Modified: panels/urls.py, panels/views_teacher.py, panels/views_analyst.py, templates/components/sidebar.html"
 
 pending_modules_in_order:
-  - "Phase 7 (optional hardening): teacher Risk Alerts page (currently Coming Soon), analyst AI Accuracy page, admin Activity Logs & Settings pages"
+  - "Phase 8 (optional hardening): Admin Activity Logs & Settings pages (still Coming Soon), print-friendly student report CSS, deadline tracking source of truth"
 
 important_notes_for_next_agent:
-  - "Student identity: session user carries student_id (accounts/services.py); teacher alerts target target_user_id = student_id, so student alert queries must match BOTH user_id and student_id."
-  - "Keep role navigation strictly isolated across all panels per Rule 20."
-  - "Preserve zero-lag caching (core/db.py get_cached/invalidate_cache), 5-row pagination, mobile cards, and zero comments policy."
-  - "Requirements installed latest-stable on Python 3.12 per requirements.txt (Django 6.1.3, pandas 3.1.1, pymongo 4.20.0)."
+  - "Teacher alert history query matches target_role=STUDENT with title regex '^Teacher Alert'; auto ML alerts (title 'High Dropout Risk: ...') are excluded on purpose."
+  - "Student identity: session user carries student_id; student alert queries must match BOTH user_id and student_id."
+  - "Keep role navigation strictly isolated across all panels per Rule 20; preserve get_cached TTL keys (teacher:alerts, analyst:model_health) and invalidate_cache on mutations."
+  - "Git identity for this repo: Fouzan980 <fouzanuddin729@gmail.com>."
   - "Always track .env and .agents/* in Git."
 ```

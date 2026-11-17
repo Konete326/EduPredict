@@ -5,6 +5,7 @@ from django.shortcuts import render
 from pymongo import DESCENDING
 from analytics.data_pipeline import REQUIRED_COLUMNS
 from analytics.ml_engine import compute_course_demand
+from analytics.model_health import get_analyst_accuracy_page_context
 from core.db import datasets_log_col, get_cached, predictions_col, student_records_col
 from core.decorators import role_required
 
@@ -167,6 +168,39 @@ def _compute_analyst_data(selected_batch, selected_course, selected_risk):
         'chart_data': chart_data,
         'filtered': filtered,
     }
+
+
+@role_required(['ANALYST', 'ADMIN'])
+def analyst_accuracy(request):
+    session_user = request.session.get('user') or {}
+    active_role = str(session_user.get('role') or 'ANALYST').upper()
+    try:
+        data = get_analyst_accuracy_page_context()
+    except Exception as exc:
+        data = {
+            'kpis': {}, 'model_info': {'version': 'untrained', 'generated': 'Never', 'features': []},
+            'demand_headers': [], 'demand_rows': [], 'upload_headers': [], 'upload_rows': [],
+            'display': {'gpa_mae': 'N/A', 'stable_share': 'N/A', 'risk_agreement': 'N/A'},
+            'chart_data': {}, 'db_error': str(exc),
+        }
+
+    return render(request, 'panels/analyst_accuracy.html', {
+        'page_title': 'AI Accuracy',
+        'active_role': active_role,
+        'kpis': data['kpis'],
+        'model_info': data['model_info'],
+        'risk_counts': data['risk_counts'],
+        'error_buckets': data['error_buckets'],
+        'gpa_mae_display': data['display']['gpa_mae'],
+        'stable_share_display': data['display']['stable_share'],
+        'risk_agreement_display': data['display']['risk_agreement'],
+        'demand_headers': data['demand_headers'],
+        'demand_rows': data['demand_rows'],
+        'upload_headers': data['upload_headers'],
+        'upload_rows': data['upload_rows'],
+        'chart_data': data['chart_data'],
+        'db_error': data['db_error'],
+    })
 
 
 @role_required(['ANALYST', 'ADMIN'])

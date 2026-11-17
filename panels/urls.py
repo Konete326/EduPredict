@@ -13,6 +13,7 @@ urlpatterns = [
     path('notifications/mark-read/', views_admin.mark_notifications_read_view, name='mark_notifications_read'),
     path('teacher-panel/', views_teacher.teacher_dashboard, name='teacher_dashboard'),
     path('teacher-panel/students/', views_teacher.teacher_students, name='teacher_students'),
+    path('teacher-panel/alerts/', views_teacher.teacher_alerts, name='teacher_alerts'),
     path('teacher-panel/ingest/', views_teacher.teacher_ingest, name='teacher_ingest'),
     path('student-panel/', views_student.student_dashboard, name='student_dashboard'),
     path('student-panel/report/', views_student.student_report, name='student_report'),
@@ -20,4 +21,5 @@ urlpatterns = [
     path('student-panel/tips/', views_student.student_tips, name='student_tips'),
     path('student-panel/notifications/', views_student.student_notifications, name='student_notifications'),
     path('analyst-panel/', views_analyst.analyst_dashboard, name='analyst_dashboard'),
+    path('analyst-panel/accuracy/', views_analyst.analyst_accuracy, name='analyst_accuracy'),
 ]

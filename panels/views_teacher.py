@@ -8,6 +8,7 @@ from analytics.data_pipeline import REQUIRED_COLUMNS, ingest_dataset
 from analytics.ml_engine import run_prediction_pipeline
 from core.db import invalidate_cache
 from core.decorators import role_required
+from panels.teacher_alert_services import get_teacher_alerts_context
 from panels.teacher_services import (
     delete_student_record,
     get_teacher_dashboard_context,
@@ -127,6 +128,43 @@ def teacher_students(request):
         "selected_filters": {"batch": batch_f, "course_code": course_f, "course": course_f, "status": status_f},
         "student_headers": data["student_headers"],
         "student_rows": data["student_rows"],
+        "db_error": db_error,
+    })
+
+
+@role_required(["TEACHER", "ADMIN"])
+def teacher_alerts(request):
+    if request.method == "POST":
+        try:
+            if not _handle_common_post(request):
+                messages.error(request, "Unknown alert action.")
+        except Exception as exc:
+            messages.error(request, f"Alert error: {exc}")
+        return redirect("panels:teacher_alerts")
+
+    data = {
+        "kpis": {"at_risk_count": 0, "high_risk_count": 0, "medium_risk_count": 0, "alerts_sent": 0, "unread_alerts": 0},
+        "roster_headers": ["Student ID", "Name", "Course", "Attendance", "Marks", "Status", "Actions"],
+        "roster_rows": [],
+        "history_headers": ["Title", "Student", "Message", "Level", "Read", "Date"],
+        "history_rows": [],
+        "students_picker": [],
+    }
+    db_error = None
+    try:
+        data = get_teacher_alerts_context()
+    except Exception as exc:
+        db_error = str(exc)
+
+    return render(request, "panels/teacher_alerts.html", {
+        "page_title": "Risk Alerts",
+        "active_role": "TEACHER",
+        "kpis": data["kpis"],
+        "roster_headers": data["roster_headers"],
+        "roster_rows": data["roster_rows"],
+        "history_headers": data["history_headers"],
+        "history_rows": data["history_rows"],
+        "students_picker": data["students_picker"],
         "db_error": db_error,
     })
 

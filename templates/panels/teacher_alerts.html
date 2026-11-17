@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
+  <div class="min-w-0 space-y-1">
+    <div class="flex items-center gap-2">
+      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">
+        <i class="fa-solid fa-bell text-xs"></i>
+        <span>Teacher Portal</span>
+      </span>
+    </div>
+    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Risk Alerts</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Send warning notes to students who miss classes or drop in marks, and see what you already sent.</p>
+  </div>
+  <a href="{% url 'panels:teacher_dashboard' %}" title="Back to class overview" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+    <i class="fa-solid fa-arrow-left text-[10px]"></i>
+    <span>Class Home</span>
+  </a>
+</section>
+
+{% if db_error %}
+<div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database notice: {{ db_error }}
+</div>
+{% endif %}
+
+<section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  {% include 'components/metric_card.html' with title="Need Attention" value=kpis.at_risk_count badge="High risk or needs help" status="danger" icon="fa-solid fa-triangle-exclamation" %}
+  {% include 'components/metric_card.html' with title="High Risk" value=kpis.high_risk_count badge="From AI predictions" status="danger" icon="fa-solid fa-fire" %}
+  {% include 'components/metric_card.html' with title="Medium Risk" value=kpis.medium_risk_count badge="Watch closely" status="warning" icon="fa-solid fa-eye" %}
+  {% include 'components/metric_card.html' with title="Alerts Sent" value=kpis.alerts_sent badge=kpis.unread_alerts|stringformat:"s"|add:" unread by students" status="info" icon="fa-solid fa-paper-plane" %}
+</section>
+
+<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+  {% include 'components/data_table.html' with table_id="teacher-alert-roster-table" table_title="Students Needing Attention" headers=roster_headers rows=roster_rows page_size=5 empty_message="Great news! No students need urgent attention right now." %}
+</section>
+
+<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+  {% include 'components/data_table.html' with table_id="teacher-alert-history-table" table_title="Alerts I Sent" headers=history_headers rows=history_rows page_size=5 empty_message="You have not sent any alert yet. Pick a student above and send the first one." %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openSendAlertModal(btn) {
+    const d = btn ? btn.dataset : {};
+    window.openFormModal({
+      title: 'Send Help Message to ' + (d.fullName || d.studentId || 'Student'),
+      actionUrl: "{% url 'panels:teacher_alerts' %}",
+      fields: [
+        { type: 'hidden', name: 'action', value: 'send_alert' },
+        { type: 'hidden', name: 'student_id', value: d.studentId || '' },
+        { type: 'hidden', name: 'full_name', value: d.fullName || '' },
+        { type: 'hidden', name: 'course_code', value: d.courseCode || '' },
+        { name: 'severity', label: 'Message Level', type: 'select', options: [{ value: 'WARNING', label: 'Needs Attention (Warning)' }, { value: 'DANGER', label: 'Urgent Help Needed' }, { value: 'INFO', label: 'Friendly Reminder' }], value: 'WARNING' },
+        { name: 'message', label: 'Message to Student', type: 'textarea', placeholder: 'Please attend extra help hours and submit missing work this week.', required: true }
+      ]
+    });
+  }
+</script>
+{% endblock %}
