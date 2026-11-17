@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
+  <div class="min-w-0 space-y-1">
+    <div class="flex items-center gap-2">
+      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">
+        <i class="fa-solid fa-lightbulb text-xs"></i>
+        <span>Student Portal</span>
+      </span>
+    </div>
+    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">My Study Tips</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Simple weekly suggestions made from your attendance, marks, and study hours.</p>
+  </div>
+  <a href="{% url 'panels:student_dashboard' %}" title="Back to dashboard" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+    <i class="fa-solid fa-arrow-left text-[10px]"></i>
+    <span>Back to Dashboard</span>
+  </a>
+</section>
+
+{% if db_error %}
+<div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database notice: {{ db_error }}
+</div>
+{% endif %}
+
+<section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  {% include 'components/metric_card.html' with title="My Attendance" value=record.avg_attendance|stringformat:"s"|add:"%" badge="Target: 85%" status="success" icon="fa-solid fa-calendar-check" %}
+  {% include 'components/metric_card.html' with title="My Avg Marks" value=record.avg_marks|stringformat:"s"|add:" / 100" badge="All courses" status="info" icon="fa-solid fa-award" %}
+  {% include 'components/metric_card.html' with title="Weekly Study Time" value=record.lms_hours_weekly|stringformat:"s"|add:" h" badge="Aim for 6-8 hours" status="info" icon="fa-solid fa-clock" %}
+  {% include 'components/metric_card.html' with title="Class Standing" value=class_standing_display badge="By marks in your batch" status="success" icon="fa-solid fa-ranking-star" %}
+</section>
+
+<section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+  <div class="xl:col-span-7 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
+    <h3 class="text-sm font-semibold text-[var(--text-primary)]">This Week's Tips</h3>
+    {% if tips %}
+    <div class="space-y-2.5">
+      {% for tip in tips %}
+      <div class="flex items-start gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5">
+        <i class="fa-solid {% if tip.status == 'danger' %}fa-circle-exclamation text-[var(--status-danger)]{% elif tip.status == 'warning' %}fa-triangle-exclamation text-[var(--status-warning)]{% else %}fa-circle-check text-[var(--status-success)]{% endif %} mt-0.5"></i>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-[var(--text-primary)]">{{ tip.title }}</p>
+          <p class="mt-0.5 text-xs leading-relaxed text-[var(--text-secondary)]">{{ tip.text }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-6 text-center">
+      <i class="fa-regular fa-lightbulb mb-2 text-lg text-[var(--text-muted)]"></i>
+      <p class="text-sm text-[var(--text-secondary)]">Tips will appear once your marks are uploaded.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="xl:col-span-5 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-2.5">
+    <h3 class="text-sm font-semibold text-[var(--text-primary)]">My Learning Insight</h3>
+    <p class="text-xs sm:text-sm leading-relaxed text-[var(--text-secondary)]">{{ insight.summary }}</p>
+    {% if insight.points %}
+    <ul class="space-y-1.5 pt-1">
+      {% for point in insight.points %}
+      <li class="flex items-start gap-2 text-xs text-[var(--text-secondary)]">
+        <i class="fa-solid fa-circle-check mt-0.5 text-[var(--accent-primary)] shrink-0"></i>
+        <span>{{ point }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 text-xs leading-relaxed text-[var(--text-secondary)]">
+      <p class="mb-1 font-semibold text-[var(--text-primary)]">Teacher advice</p>
+      <p>{{ record.recommendation|default:"No advice available yet." }}</p>
+    </div>
+    <button type="button" onclick="openFormModal({ title: 'Need Help', actionUrl: '{% url 'panels:submit_support_ticket' %}', fields: [{ name: 'subject', label: 'Subject', type: 'text', placeholder: 'Short title', required: true }, { name: 'message', label: 'Message', type: 'textarea', placeholder: 'Write your question or issue...', required: true }] })" title="Send a question to the Admin office" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <i class="fa-solid fa-headset mr-1.5 text-[var(--accent-primary)]"></i>
+      Ask for help
+    </button>
+  </div>
+</section>
+{% endblock %}

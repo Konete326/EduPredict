@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
+  <div class="min-w-0 space-y-1">
+    <div class="flex items-center gap-2">
+      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">
+        <i class="fa-solid fa-graduation-cap text-xs"></i>
+        <span>Student Portal</span>
+      </span>
+      {% if record.batch %}
+      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">{{ record.batch }}</span>
+      {% endif %}
+    </div>
+    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Hello, {{ record.full_name|default:"Student" }}!</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">This is your personal learning summary. See how you are doing and what to do next.</p>
+  </div>
+  <div class="flex flex-wrap items-center gap-2">
+    <a href="{% url 'panels:student_notifications' %}" title="See teacher alerts and reminders" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <i class="fa-solid fa-bell text-[var(--status-warning)]"></i>
+      <span>Alerts</span>
+      {% if unread_alerts %}<span class="rounded-full bg-[var(--status-danger)] px-1.5 py-0.5 text-[10px] font-bold text-white tabular-nums">{{ unread_alerts }}</span>{% endif %}
+    </a>
+    <a href="{% url 'panels:student_report' %}" title="Open your report card" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+      <i class="fa-solid fa-file-lines text-xs"></i>
+      <span>My Report Card</span>
+    </a>
+  </div>
+</section>
+
+{% if db_error %}
+<div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database notice: {{ db_error }}
+</div>
+{% endif %}
+
+<section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  {% include 'components/metric_card.html' with title="My Attendance" value=record.avg_attendance|stringformat:"s"|add:"%" badge="All courses" status="success" icon="fa-solid fa-calendar-check" %}
+  {% include 'components/metric_card.html' with title="Predicted GPA" value=predicted_gpa_display badge="Expected final score" status="info" icon="fa-solid fa-chart-line" %}
+  {% include 'components/metric_card.html' with title="Class Standing" value=class_standing_display badge="By marks in your batch" status="info" icon="fa-solid fa-ranking-star" %}
+  {% include 'components/metric_card.html' with title="Earned Credits" value=credits_display badge="Across your courses" status="success" icon="fa-solid fa-layer-group" %}
+</section>
+
+<section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+  <div class="xl:col-span-7 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-2.5">
+    <div class="flex items-start justify-between gap-2">
+      <div>
+        <h3 class="text-sm font-semibold text-[var(--text-primary)]">My Progress vs Class Average</h3>
+        <p class="text-xs text-[var(--text-muted)]">Marks comparison for each of your courses</p>
+      </div>
+      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Live Data</span>
+    </div>
+    <div class="relative h-48 w-full"><canvas id="chart-student-progress"></canvas></div>
+  </div>
+
+  <div class="xl:col-span-5 min-w-0 rounded-xl border p-4 space-y-2.5 {% if insight.status == 'danger' %}border-[var(--status-danger)]{% elif insight.status == 'warning' %}border-[var(--status-warning)]{% elif insight.status == 'success' %}border-[var(--status-success)]{% else %}border-[var(--border-subtle)]{% endif %} bg-[var(--bg-surface)]">
+    <div class="flex items-center justify-between gap-2">
+      <h3 class="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+        <i class="fa-solid fa-wand-magic-sparkles text-[var(--accent-primary)]"></i>
+        <span>My Learning Insight</span>
+      </h3>
+      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-semibold {% if risk_status == 'danger' %}text-[var(--status-danger)]{% elif risk_status == 'warning' %}text-[var(--status-warning)]{% elif risk_status == 'success' %}text-[var(--status-success)]{% else %}text-[var(--text-muted)]{% endif %}">{{ record.risk_level }} RISK</span>
+    </div>
+    <p class="text-xs sm:text-sm leading-relaxed text-[var(--text-secondary)]">{{ insight.summary }}</p>
+    {% if insight.points %}
+    <ul class="space-y-1.5 pt-1">
+      {% for point in insight.points %}
+      <li class="flex items-start gap-2 text-xs text-[var(--text-secondary)]">
+        <i class="fa-solid fa-circle-check mt-0.5 text-[var(--accent-primary)] shrink-0"></i>
+        <span>{{ point }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <a href="{% url 'panels:student_tips' %}" class="inline-flex items-center gap-1.5 pt-1 text-xs font-semibold text-[var(--accent-primary)] hover:text-[var(--accent-hover)]">
+      <span>See my study tips</span>
+      <i class="fa-solid fa-arrow-right text-[10px]"></i>
+    </a>
+  </div>
+</section>
+
+<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+  {% include 'components/data_table.html' with table_id="student-subject-table" table_title="Subject-wise Progress" headers=subject_headers rows=subject_table_rows page_size=5 empty_message="No course marks uploaded yet. Ask your teacher to upload marks for your batch." %}
+</section>
+
+<section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+  <div class="xl:col-span-7 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-2.5">
+    <h3 class="text-sm font-semibold text-[var(--text-primary)]">Recent Reminders</h3>
+    {% if teacher_alerts %}
+    <div class="space-y-2">
+      {% for alert in teacher_alerts %}
+      <div class="flex items-start gap-2.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3">
+        <i class="fa-solid {% if alert.status == 'danger' %}fa-circle-exclamation text-[var(--status-danger)]{% elif alert.status == 'warning' %}fa-triangle-exclamation text-[var(--status-warning)]{% else %}fa-circle-info text-[var(--accent-primary)]{% endif %} mt-0.5"></i>
+        <div class="min-w-0 space-y-0.5">
+          <p class="text-xs font-semibold text-[var(--text-primary)]">{{ alert.title }}</p>
+          <p class="text-xs text-[var(--text-secondary)]">{{ alert.message }}</p>
+          <p class="text-[11px] font-mono text-[var(--text-muted)]">{{ alert.created }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <a href="{% url 'panels:student_notifications' %}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--accent-primary)] hover:text-[var(--accent-hover)]">
+      <span>View all alerts</span>
+      <i class="fa-solid fa-arrow-right text-[10px]"></i>
+    </a>
+    {% else %}
+    <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-6 text-center">
+      <i class="fa-regular fa-bell-slash mb-2 text-lg text-[var(--text-muted)]"></i>
+      <p class="text-sm text-[var(--text-secondary)]">No reminders right now. You are all caught up.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="xl:col-span-5 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-2.5">
+    <h3 class="text-sm font-semibold text-[var(--text-primary)]">Quick Actions</h3>
+    <a href="{% url 'panels:student_report_download' %}" title="Download report card as CSV" class="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <span class="flex items-center gap-2"><i class="fa-solid fa-file-csv text-[var(--status-success)]"></i><span>Download my report card</span></span>
+      <i class="fa-solid fa-download text-[var(--text-muted)] text-[10px]"></i>
+    </a>
+    <button type="button" onclick="openFormModal({ title: 'Need Help', actionUrl: '{% url 'panels:submit_support_ticket' %}', fields: [{ name: 'subject', label: 'Subject', type: 'text', placeholder: 'Short title', required: true }, { name: 'message', label: 'Message', type: 'textarea', placeholder: 'Write your question or issue...', required: true }] })" title="Send a question to the Admin office" class="flex w-full items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <span class="flex items-center gap-2"><i class="fa-solid fa-headset text-[var(--accent-primary)]"></i><span>Ask for help</span></span>
+      <i class="fa-solid fa-arrow-right text-[var(--text-muted)] text-[10px]"></i>
+    </button>
+    <a href="{% url 'panels:student_tips' %}" title="Get weekly study suggestions" class="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <span class="flex items-center gap-2"><i class="fa-solid fa-lightbulb text-[var(--status-warning)]"></i><span>See study tips</span></span>
+      <i class="fa-solid fa-arrow-right text-[var(--text-muted)] text-[10px]"></i>
+    </a>
+    <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 text-xs text-[var(--text-secondary)]">
+      <span class="font-semibold text-[var(--text-primary)]">Weekly study time:</span> {{ record.lms_hours_weekly|stringformat:"s"|add:" h" }} per week
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+{{ chart_data|json_script:"student-chart-data" }}
+<script>
+  function initStudentCharts() {
+    const node = document.getElementById('student-chart-data');
+    if (!node || typeof window.createThemedChart !== 'function') return;
+    const payload = JSON.parse(node.textContent || '{}');
+    window.createThemedChart('chart-student-progress', function (tokens) {
+      return {
+        type: 'bar',
+        data: {
+          labels: payload.labels || [],
+          datasets: [
+            { label: 'My Marks', data: payload.mine || [], backgroundColor: tokens.accentPrimary, borderRadius: 6 },
+            { label: 'Class Average', data: payload.class_avg || [], backgroundColor: tokens.statusSuccess, borderRadius: 6 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: tokens.textMuted } },
+            y: { min: 0, max: 100, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } }
+          }
+        }
+      };
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initStudentCharts);
+  } else {
+    initStudentCharts();
+  }
+</script>
+{% endblock %}

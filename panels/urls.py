@@ -16,5 +16,8 @@ urlpatterns = [
     path('teacher-panel/ingest/', views_teacher.teacher_ingest, name='teacher_ingest'),
     path('student-panel/', views_student.student_dashboard, name='student_dashboard'),
     path('student-panel/report/', views_student.student_report, name='student_report'),
+    path('student-panel/report/download/', views_student.student_report_download, name='student_report_download'),
+    path('student-panel/tips/', views_student.student_tips, name='student_tips'),
+    path('student-panel/notifications/', views_student.student_notifications, name='student_notifications'),
     path('analyst-panel/', views_analyst.analyst_dashboard, name='analyst_dashboard'),
 ]

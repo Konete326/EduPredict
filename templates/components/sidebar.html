@@ -89,20 +89,21 @@
         <i data-nav-chevron class="nav-group-chevron fa-solid fa-chevron-down text-xs transition-transform duration-150"></i>
       </button>
       <div data-nav-group-body="student" class="space-y-1">
-        <a href="{% url 'panels:student_dashboard' %}" data-coming-soon="true" data-coming-title="My Dashboard" data-coming-panel="Student" data-coming-desc="View your attendance, current progress, and expected final GPA." data-coming-features="Your attendance and assignment score|Expected GPA progress meter|Upcoming class reminders" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <a href="{% url 'panels:student_dashboard' %}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_dashboard' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-graduation-cap w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">My Dashboard</span>
-          <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
         </a>
-        <a href="{% url 'panels:student_report' %}" data-coming-soon="true" data-coming-title="My Report Card" data-coming-panel="Student" data-coming-desc="See marks by subject, attendance details, and teacher feedback." data-coming-features="Marks list for each subject|Expected vs target GPA view|Downloadable term report" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_report' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+        <a href="{% url 'panels:student_report' %}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_report' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-file-lines w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">My Report Card</span>
-          <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
         </a>
-        <a href="#" data-coming-soon="true" data-coming-title="Study Tips" data-coming-panel="Student" data-coming-desc="Get simple weekly study tips based on your attendance and marks." data-coming-features="Weekly study hour suggestions|Simple steps to improve grades|Helpful reminders for weak topics" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <a href="{% url 'panels:student_tips' %}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_tips' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-lightbulb w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Study Tips</span>
-          <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
+        </a>
+        <a href="{% url 'panels:student_notifications' %}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:student_notifications' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-bell w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Alerts &amp; Support</span>
         </a>
       </div>
     </div>

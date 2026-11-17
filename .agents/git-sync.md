@@ -62,41 +62,48 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
 last_updated_by_agent: "Coordinator & Senior Full-Stack Architect (@coordinator)"
-active_branch_merged_to_main: "feature/admin-panel -> main"
-project_phase: "Strict Role Navigation Isolation Verified & Enforced Across All Panels (sidebar.html)"
+active_branch_merged_to_main: "feature/student-panel -> main"
+project_phase: "Phase 6: Student Panel Full Implementation (Dashboard, Report Card, Study Tips, Alerts & Support)"
 
 completed_modules:
   - "Phase 1: Django Project Init, Core MongoDB Layer & App-Shell-3 Layout (core/, templates/components/, static/)"
   - "Phase 2: Authentication, Default Admin Sync & Role-Based Routing (accounts/services.py, accounts/views.py, templates/accounts/auth.html)"
   - "Phase 3: Analyst Panel, ML Engine, chunked CSV ingestion, anomaly detection & full-width dashboard"
   - "Phase 4 & 5: Admin Panel (CRUD, 5-row pagination, mobile cards, backups), Teacher Panel, Zero-Lag Caching & SPA Navigation"
-  - "Rule 20 Enforced & Verified (templates/components/sidebar.html):"
-      - "Completely removed cross-role 'or active_role == ADMIN' conditions from Teacher, Student, and Analyst navigation groups in sidebar.html."
-      - "Admin Panel exclusively displays the Admin navigation group (Dashboard, Users, Courses, Help Tickets, System Logs, Backups, Settings)."
-      - "Teacher Panel exclusively displays the Teacher navigation group (Class Home, Student List, Upload Marks, Risk Alerts Soon)."
-      - "Student Panel exclusively displays the Student navigation group (My Overview, Predictions & Risk, Courses, Support Soon)."
-      - "Data Analyst Panel exclusively displays the Analyst navigation group (Workbench, Datasets, Training, Anomaly Detection)."
-      - "Executed comprehensive automated Django template test across all 4 roles verifying 16/16 strict isolation assertions (no cross-panel link leakage)."
+  - "Rule 20 Verified: strict role sidebar isolation across all panels (sidebar.html)"
+  - "Phase 6: Student Panel built on live MongoDB data (panels/student_services.py, panels/views_student.py):"
+      - "student_dashboard: attendance/GPA/class-standing/credits KPI cards, AI Learning Insight card (risk-aware plain-language summary), My-vs-Class-Average bar chart, subject-wise 5-row paginated table + mobile cards, recent reminders, quick actions"
+      - "student_report: course-wise result table (5-row pagination + mobile cards), report summary (GPA, batch, credits, prediction timestamp, teacher advice), Print + CSV download (student_report_download)"
+      - "student_tips: weekly study tips generated from attendance/marks/study hours + insight points"
+      - "student_notifications: teacher/system alerts (severity badges, mark one/all read POST with CSRF), my help-request tickets table, Need Help modal"
+      - "sidebar.html student group rewired to real routes (My Dashboard, My Report Card, Study Tips, Alerts & Support) - zero Coming Soon placeholders left in Student nav"
+  - "TTL caching via get_cached (student:overview / student:alerts keys), invalidate_cache on mark-read mutations"
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "Sidebar role isolation test: 16/16 assertions PASSED (Admin sees only Admin, Teacher sees only Teacher, Student sees only Student, Analyst sees only Analyst)."
-  - "File limits & zero comments: sidebar.html is 163 lines (< 350 cap) and has 0 comments."
+  - "Live integration test: all 4 student pages + CSV download return 200 with real MongoDB Atlas data."
+  - "POST mark_all redirects to /student-panel/notifications/ and renders success toast."
+  - "Role guards: ANALYST -> /analyst-panel/, TEACHER -> /teacher-panel/, guest -> /auth/ (302); ADMIN can view student panel (200)."
+  - "Custom 404 page active for unknown URLs."
+  - "Zero comments verified in all new/modified files; node --check app.js + nav.js passed."
+  - "File caps: student_services.py 386 (<400), views_student.py 214 (<250)."
 
 active_routes_and_files:
-  - "templates/components/sidebar.html (Strict role navigation isolation per Rule 20)"
-  - "/auth/ -> accounts:auth_view (Astryx login-split layout with dynamic stats)"
-  - "/admin-panel/* -> panels:views_admin.py (Admin only sees Admin navigation)"
-  - "/teacher-panel/* -> panels:views_teacher.py (Teacher only sees Teacher navigation)"
-  - "/student-panel/* -> panels:views_student.py (Student only sees Student navigation)"
-  - "/analyst-panel/* -> panels:views_analyst.py (Analyst only sees Analyst navigation)"
+  - "/student-panel/ -> panels:student_dashboard"
+  - "/student-panel/report/ -> panels:student_report"
+  - "/student-panel/report/download/ -> panels:student_report_download (CSV)"
+  - "/student-panel/tips/ -> panels:student_tips"
+  - "/student-panel/notifications/ -> panels:student_notifications (GET + POST mark_read/mark_all)"
+  - "New: panels/student_services.py, templates/panels/student_dashboard.html, student_report.html, student_tips.html, student_notifications.html"
+  - "Modified: panels/urls.py, panels/views_student.py, templates/components/sidebar.html (student group)"
 
 pending_modules_in_order:
-  - "Phase 6: Student Panel Full Implementation (Personal Dashboard, AI Risk Card, Report Download, Study Recommendations)"
+  - "Phase 7 (optional hardening): teacher Risk Alerts page (currently Coming Soon), analyst AI Accuracy page, admin Activity Logs & Settings pages"
 
 important_notes_for_next_agent:
-  - "Next Phase: Build the dedicated Student Panel in panels/views_student.py and templates/panels/student_*.html."
+  - "Student identity: session user carries student_id (accounts/services.py); teacher alerts target target_user_id = student_id, so student alert queries must match BOTH user_id and student_id."
   - "Keep role navigation strictly isolated across all panels per Rule 20."
   - "Preserve zero-lag caching (core/db.py get_cached/invalidate_cache), 5-row pagination, mobile cards, and zero comments policy."
+  - "Requirements installed latest-stable on Python 3.12 per requirements.txt (Django 6.1.3, pandas 3.1.1, pymongo 4.20.0)."
   - "Always track .env and .agents/* in Git."
 ```
