@@ -2,6 +2,7 @@ from unittest.mock import DEFAULT, MagicMock, patch
 from django.test import Client, TestCase
 from django.urls import reverse
 from core.db import invalidate_cache
+import panels.student_alert_services as student_alert_svc
 from panels.student_alert_services import _load_recent_alerts, get_student_alerts_context
 from panels.student_services import _batch_rank, _build_tips, _load_student_overview
 
@@ -233,6 +234,9 @@ class StudentPanelTests(TestCase):
         self.assertEqual(len(res), 2)
         self.assertEqual(mock_notifs.return_value.find.call_count, 1)
         self.assertEqual(mock_notifs.return_value.find_one.call_count, 0)
+        self.assertTrue(hasattr(student_alert_svc, "_alert_targets"))
+        self.assertFalse(hasattr(student_alert_svc, "_load_alert_detail"))
+        mock_notifs.return_value.find.assert_called_once_with({"$or": student_alert_svc._alert_targets("STD-1", "USR-1", "STUDENT")})
         _resolve_runtime_settings.return_value = {"min_attendance_pct": 90}
         docs = [
             {"student_id": "STD-1", "full_name": "Ali", "batch": "2026-A", "course_code": "CS-101", "internal_marks": 85.0, "attendance_pct": 86.0},
@@ -247,6 +251,7 @@ class StudentPanelTests(TestCase):
         courses_col.return_value.count_documents.return_value = 2
         courses_col.return_value.find.return_value = [{"credits": 3.0}, {"credits": 3.0}]
         statuses = {r["course_code"]: r["status"]["text"] for r in _load_student_overview("STD-1", "USR-1", "STUDENT")["subject_rows"]}
+        self.assertEqual(student_records_col.return_value.find.call_count, 2)
         self.assertEqual(statuses["CS-101"], "Needs Help")
         self.assertNotEqual(statuses["CS-101"], "Excellent")
         self.assertEqual(statuses["CS-102"], "Excellent")

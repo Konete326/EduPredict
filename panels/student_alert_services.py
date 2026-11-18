@@ -20,21 +20,17 @@ def _format_alert_doc(doc):
     }
 
 
-def _load_recent_alerts(student_id, user_id, role, limit=5):
+def _alert_targets(student_id, user_id, role):
     targets = [{"target_user_id": student_id}, {"target_user_id": user_id}]
-    for target_role in (role, "ALL"):
+    for target_role in dict.fromkeys(r for r in (role, "ALL") if r):
         targets.append({"target_role": target_role, "target_user_id": {"$in": [None, ""]}})
         targets.append({"target_role": target_role, "target_user_id": {"$exists": False}})
-    cursor = notifications_col().find({"$or": targets}).sort("created_at", DESCENDING).limit(int(limit))
+    return targets
+
+
+def _load_recent_alerts(student_id, user_id, role, limit=5):
+    cursor = notifications_col().find({"$or": _alert_targets(student_id, user_id, role)}).sort("created_at", DESCENDING).limit(int(limit))
     return [a for a in (_format_alert_doc(doc) for doc in cursor) if a]
-
-
-def _load_alert_detail(alert_id):
-    try:
-        doc = notifications_col().find_one({"_id": __import__("bson").ObjectId(alert_id)})
-    except Exception:
-        return None
-    return _format_alert_doc(doc)
 
 
 def _build_student_alerts(student_id, user_id, role):
@@ -65,10 +61,7 @@ def mark_alert_read(alert_id, student_id, user_id, role):
         oid = __import__("bson").ObjectId(str(alert_id).strip())
     except Exception:
         return False, "This alert no longer exists."
-    targets = [{"target_user_id": student_id}, {"target_user_id": user_id}]
-    if role:
-        targets.append({"target_role": role, "target_user_id": {"$in": [None, ""]}})
-        targets.append({"target_role": "ALL", "target_user_id": {"$in": [None, ""]}})
+    targets = _alert_targets(student_id, user_id, role)
     updated = notifications_col().update_one({"_id": oid, "is_read": False, "$or": targets}, {"$set": {"is_read": True, "read_at": datetime.now(timezone.utc)}})
     invalidate_cache()
     if updated.modified_count:

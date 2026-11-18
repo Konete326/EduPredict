@@ -44,17 +44,19 @@ def _empty_record(student_id):
 
 
 def _fetch_student_docs(student_id):
-    records = []
-    for rec in student_records_col().find({"student_id": student_id}, {"_id": 0}).sort("updated_at", DESCENDING):
-        records.append(rec)
+    records = list(student_records_col().find({"student_id": student_id}, {"_id": 0}).sort("updated_at", DESCENDING))
     prediction = predictions_col().find_one({"student_id": student_id}, {"_id": 0, "generated_at": -1})
     return records, prediction
 
 
-def _course_class_stats(batch):
+def _fetch_batch_docs(batch):
+    return list(student_records_col().find({"batch": batch} if batch else {}, {"_id": 0, "student_id": 1, "course_code": 1, "attendance_pct": 1, "internal_marks": 1, "assignment_score": 1}))
+
+
+def _course_class_stats(batch, docs=None):
     stats = {}
-    query = {"batch": batch} if batch else {}
-    for rec in student_records_col().find(query, {"_id": 0, "course_code": 1, "attendance_pct": 1, "internal_marks": 1, "assignment_score": 1}):
+    iterable = docs if docs is not None else student_records_col().find({"batch": batch} if batch else {}, {"_id": 0, "course_code": 1, "attendance_pct": 1, "internal_marks": 1, "assignment_score": 1})
+    for rec in iterable:
         code = str(rec.get("course_code") or "").strip().upper()
         if not code:
             continue
@@ -75,12 +77,12 @@ def _course_class_stats(batch):
     return class_stats
 
 
-def _batch_rank(student_id, batch, student_avg_marks):
+def _batch_rank(student_id, batch, student_avg_marks, docs=None):
     if batch is None:
         return None
-    query = {"batch": batch} if batch else {}
+    iterable = docs if docs is not None else student_records_col().find({"batch": batch} if batch else {}, {"_id": 0, "student_id": 1, "internal_marks": 1})
     peer_totals = {}
-    for rec in student_records_col().find(query, {"_id": 0, "student_id": 1, "internal_marks": 1}):
+    for rec in iterable:
         sid = str(rec.get("student_id") or "").strip()
         if not sid:
             continue
@@ -188,10 +190,8 @@ def _load_student_overview(student_id, user_id, role):
     records, prediction = _fetch_student_docs(student_id)
     if records:
         primary = records[0]
-        record.update({
-            "full_name": str(primary.get("full_name") or ""),
-            "batch": str(primary.get("batch") or ""),
-        })
+        record["full_name"] = str(primary.get("full_name") or "")
+        record["batch"] = str(primary.get("batch") or "")
         course_rows = []
         for rec in records:
             course_rows.append({
@@ -220,7 +220,8 @@ def _load_student_overview(student_id, user_id, role):
         gen = prediction.get("generated_at")
         record["generated_at"] = gen.strftime("%Y-%m-%d %H:%M") if hasattr(gen, "strftime") else None
 
-    class_stats = _course_class_stats(record["batch"])
+    batch_docs = _fetch_batch_docs(record["batch"])
+    class_stats = _course_class_stats(record["batch"], docs=batch_docs)
     subject_rows = []
     chart_labels, chart_mine, chart_class = [], [], []
     for course in record["courses"]:
@@ -248,9 +249,9 @@ def _load_student_overview(student_id, user_id, role):
         chart_mine.append(course["internal_marks"])
         chart_class.append(avg["marks"])
 
-    rank = _batch_rank(student_id, record["batch"], record["avg_marks"]) if record["batch"] else None
-    avg_marks_all = _safe_float(_batch_class_average(record["batch"]))
-    avg_att_all = _safe_float(_batch_class_attendance(record["batch"]))
+    rank = _batch_rank(student_id, record["batch"], record["avg_marks"], docs=batch_docs) if record["batch"] else None
+    avg_marks_all = _safe_float(_batch_class_average(record["batch"], docs=batch_docs))
+    avg_att_all = _safe_float(_batch_class_attendance(record["batch"], docs=batch_docs))
     tips = _build_tips(record, prediction, avg_marks_all, avg_att_all, min_att=min_att)
     insight = _build_insight(record, rank)
 
@@ -284,15 +285,15 @@ def _load_student_overview(student_id, user_id, role):
     }
 
 
-def _batch_class_average(batch):
-    query = {"batch": batch} if batch else {}
-    values = [_safe_float(r.get("internal_marks")) for r in student_records_col().find(query, {"_id": 0, "internal_marks": 1})]
+def _batch_class_average(batch, docs=None):
+    iterable = docs if docs is not None else student_records_col().find({"batch": batch} if batch else {}, {"_id": 0, "internal_marks": 1})
+    values = [_safe_float(r.get("internal_marks")) for r in iterable]
     return round(sum(values) / len(values), 1) if values else 0.0
 
 
-def _batch_class_attendance(batch):
-    query = {"batch": batch} if batch else {}
-    values = [_safe_float(r.get("attendance_pct")) for r in student_records_col().find(query, {"_id": 0, "attendance_pct": 1})]
+def _batch_class_attendance(batch, docs=None):
+    iterable = docs if docs is not None else student_records_col().find({"batch": batch} if batch else {}, {"_id": 0, "attendance_pct": 1})
+    values = [_safe_float(r.get("attendance_pct")) for r in iterable]
     return round(sum(values) / len(values), 1) if values else 0.0
 
 
