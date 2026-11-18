@@ -238,6 +238,22 @@ class PredictionPipelineAndDataPipelineTests(SimpleTestCase):
         self.assertEqual(compute_course_demand(pd.DataFrame()), [])
         self.assertTrue(validate_dataset_columns(["roll_no", "marks", "att"])["valid"])
 
+    def test_prediction_pipeline_applies_custom_portal_settings(self):
+        sample_df = generate_sample_dataset_df(16)
+        res = run_prediction_pipeline(
+            records=sample_df,
+            persist=False,
+            portal_settings={
+                "high_risk_threshold": 60, "medium_risk_threshold": 30,
+                "anomaly_drop_pct": 20, "auto_student_alerts": True, "auto_teacher_alerts": False,
+            },
+        )
+        self.assertEqual(res["applied_settings"]["high_risk_threshold"], 60)
+        self.assertEqual(res["applied_settings"]["medium_risk_threshold"], 30)
+        self.assertFalse(res["applied_settings"]["auto_teacher_alerts"])
+        self.assertEqual(classify_dropout_risk(0.62, 0.60, 0.30), "HIGH")
+        self.assertEqual(classify_dropout_risk(0.32, 0.60, 0.30), "MEDIUM")
+
     @patch("analytics.data_pipeline.ensure_indexes")
     @patch("analytics.data_pipeline.datasets_log_col")
     @patch("analytics.data_pipeline.student_records_col")

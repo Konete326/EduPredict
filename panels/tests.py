@@ -6,6 +6,7 @@ from analytics.data_pipeline import generate_sample_dataset_df
 from analytics.tests import _build_genuine_labelled_records
 from core.db import _MEMORY_CACHE, invalidate_cache
 import panels.admin_audit_services as audit_svc
+from panels.admin_services import create_course_record
 
 
 class AnalystDashboardEvaluationTests(TestCase):
@@ -291,6 +292,8 @@ class AdminLogsAndSettingsTests(TestCase):
             self.assertIn(text, html)
         self.assertNotIn('data-coming-title="Activity Logs"', html)
         self.assertNotIn('data-coming-title="Settings"', html)
+        self.assertIn('id="mobile-sidebar-close"', html)
+        self.assertNotIn('id="mobile-sidebar-close" type="button" title="Hide menu" class="lg:hidden', html)
         data_resp = client.get(reverse("panels:admin_logs"), {"category": "DATA"})
         self.assertEqual(data_resp.status_code, 200)
         self.assertIn("fall_2026.csv", data_resp.content.decode("utf-8"))
@@ -311,6 +314,10 @@ class AdminLogsAndSettingsTests(TestCase):
         clear_resp = client.post(reverse("panels:admin_logs"), {"action": "clear_custom"})
         self.assertRedirects(clear_resp, reverse("panels:admin_logs"), fetch_redirect_response=False)
         self.assertNotIn("Nightly audit note recorded", client.get(reverse("panels:admin_logs")).content.decode("utf-8"))
+        created_course, err = create_course_record("AI-900", "Deep Learning", "AI", "2026-A", "Dr. Bilal", 3, 50)
+        self.assertIsNone(err)
+        self.assertIsNotNone(created_course)
+        self.assertTrue(any(d.get("action") == "CREATE_COURSE" and "AI-900" in d.get("summary", "") for d in self.cols["activity_logs"].docs))
 
     def test_admin_settings_get_update_and_reset_defaults(self):
         client = self._login_as("ADMIN")

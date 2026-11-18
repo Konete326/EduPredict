@@ -61,33 +61,31 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 8 Admin Activity Logs & Portal Settings Swarm"
-active_branch_merged_to_main: "feature/admin-logs-settings -> main"
-project_phase: "Phase 8 Complete: Admin Activity Logs & Portal Settings"
+last_updated_by_agent: "Phase 9 Admin Audit Triggers, ML Portal Settings & Sidebar Close Integrator"
+active_branch_merged_to_main: "feature/settings-ml-audit -> main"
+project_phase: "Phase 9 Complete: Admin Audit Triggers, Dynamic ML Settings & Desktop Sidebar Close"
 
 completed_modules:
-  - "Phase 1-5: Core Shell, Auth/RBAC, Admin/Teacher Panels & Rule 20 Sidebar Isolation"
-  - "Phase 6 & 7: Student Panel (Dashboard, Report Card, Study Tips, Alerts & Support), Teacher Risk Alerts & Analyst Model Health"
-  - "ML Evaluation Tasks 1-3: Leakage-free sklearn Pipelines, analyst_evaluation_section, TTL caching"
-  - "Phase 8: Admin Activity Logs & Portal Settings:"
-      - "Created panels/admin_audit_services.py (activity_logs & system_settings MongoDB collections, TTL cache admin:logs:<cat> & admin:settings, CSV export, manual log notes, settings update & reset)."
-      - "Updated panels/admin_seed.py, panels/views_admin.py (admin_logs & admin_settings), and panels/urls.py (panels:admin_logs, panels:admin_settings)."
-      - "Created templates/panels/admin_logs.html & templates/panels/admin_settings.html (CSS tokens, 4 KPI cards, 5-row data_table, mobile cards, modals) and wired live sidebar links in templates/components/sidebar.html."
-      - "Added AdminLogsAndSettingsTests in panels/tests.py."
+  - "Phase 1-8: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings"
+  - "Phase 9: Audit Triggers, ML Dynamic Settings & Rule 14 Sidebar Close:"
+      - "Wired record_audit_log triggers across all user, course, and ticket CRUD/status mutations in panels/admin_services.py."
+      - "Connected analytics/ml_engine.py (classify_dropout_risk, _build_anomaly_reason, run_prediction_pipeline) to system_settings thresholds (high_risk_threshold, medium_risk_threshold, anomaly_drop_pct) and auto_student_alerts/auto_teacher_alerts flags."
+      - "Removed lg:hidden from #mobile-sidebar-close in templates/components/sidebar.html per Rule 14."
+      - "Added audit trigger, sidebar close, and custom ML portal settings tests in panels/tests.py and analytics/tests.py."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py test analytics panels --verbosity=2: 23/23 tests PASSED."
+  - "manage.py test analytics panels --verbosity=2: 24/24 tests PASSED."
   - "node --check static/js/app.js & static/js/nav.js: PASSED."
-  - "Zero comments and line-count limits verified across all 8 modified/created files."
+  - "Zero comments and line-count limits verified across all 5 modified files."
 
 active_routes_and_files:
-  - "/admin-panel/logs/ -> panels:admin_logs (panels/views_admin.py, panels/admin_audit_services.py, templates/panels/admin_logs.html)"
-  - "/admin-panel/settings/ -> panels:admin_settings (panels/views_admin.py, panels/admin_audit_services.py, templates/panels/admin_settings.html)"
-  - "templates/components/sidebar.html, panels/admin_seed.py, panels/urls.py, panels/tests.py"
+  - "panels/admin_services.py (340 lines), analytics/ml_engine.py (349 lines), templates/components/sidebar.html (164 lines), panels/tests.py (347 lines), analytics/tests.py (383 lines)"
+  - "/admin-panel/logs/ -> panels:admin_logs"
+  - "/admin-panel/settings/ -> panels:admin_settings"
 
 pending_modules_in_order:
-  - "All Phase 1-8 core and optional Admin modules completed; ready for user acceptance testing or new feature requests."
+  - "Phase 10 (optional UX polish): pass actor_name into admin_services audit logs & add runtime portal settings test/UI indicator in Analyst Hub"
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

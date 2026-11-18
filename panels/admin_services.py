@@ -7,10 +7,18 @@ from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError
 from accounts.services import VALID_ROLES, ensure_accounts_indexes_once, generate_unique_student_id, generate_unique_user_id
 from core.db import get_cached, invalidate_cache, notifications_col, student_records_col, support_tickets_col, users_col
+from panels.admin_audit_services import record_audit_log
 from panels.admin_seed import _format_dt, _safe_int, build_backup_payload, courses_col, ensure_admin_seed_data, get_admin_overview_context
 
 VALID_TICKET_STATUSES = ("OPEN", "RESOLVED")
 VALID_COURSE_STATUSES = ("ACTIVE", "ARCHIVED")
+
+
+def _audit(category, action, summary, severity="INFO", actor="System Admin"):
+    try:
+        record_audit_log(actor, "ADMIN", category, action, summary, severity=severity, source="SYSTEM")
+    except Exception:
+        pass
 
 
 def _generate_unique_ticket_id(col):
@@ -86,6 +94,7 @@ def create_user_record(full_name, email, password, role, department, batch):
 
     if student_id and student_records_col().find_one({"student_id": student_id}, {"_id": 1}) is None:
         student_records_col().insert_one({"student_id": student_id, "full_name": clean_name, "batch": clean_batch, "course_code": "CS-101", "attendance_pct": 85.0, "internal_marks": 75.0, "assignment_score": 80.0, "lms_hours_weekly": 10.0, "previous_gpa": 3.2, "updated_at": datetime.now(timezone.utc)})
+    _audit("USERS", "CREATE_USER", f"Created user {clean_name} ({user_id}, {clean_role}).", "SUCCESS")
     invalidate_cache()
     return doc, None
 
@@ -112,6 +121,7 @@ def update_user_record(user_id, full_name, email, role, department, batch, passw
     if clean_role == "STUDENT" and not existing.get("student_id"):
         updates["student_id"] = generate_unique_student_id(student_records_col(), clean_uid)
     col.update_one({"_id": existing["_id"]}, {"$set": updates})
+    _audit("USERS", "UPDATE_USER", f"Updated user {clean_uid} ({clean_role}).", "INFO")
     invalidate_cache()
     return True, None
 
@@ -125,6 +135,7 @@ def toggle_user_status(user_id, actor_user_id=None, actor_email=""):
         return None, "User record not found."
     new_state = not bool(existing.get("is_active", True))
     col.update_one({"_id": existing["_id"]}, {"$set": {"is_active": new_state}})
+    _audit("USERS", "TOGGLE_USER", f"{'Activated' if new_state else 'Deactivated'} user {clean_uid}.", "SUCCESS" if new_state else "WARNING")
     invalidate_cache()
     return new_state, None
 
@@ -135,6 +146,7 @@ def delete_user_record(user_id, actor_user_id=None, actor_email=""):
     if _is_self_target(existing, clean_uid, actor_user_id, actor_email):
         return False, "You cannot delete your own active admin account."
     if col.delete_one({"user_id": clean_uid}).deleted_count:
+        _audit("USERS", "DELETE_USER", f"Deleted user {clean_uid}.", "DANGER")
         invalidate_cache()
         return True, None
     return False, "User record not found."
@@ -180,6 +192,7 @@ def create_course_record(course_code, title, department, batch, instructor, cred
         return None, f"Course {clean_code} already exists."
     doc = {"course_code": clean_code, "created_at": datetime.now(timezone.utc), **_course_fields(title, department, batch, instructor, credits, capacity, status)}
     col.insert_one(doc)
+    _audit("COURSES", "CREATE_COURSE", f"Added course {clean_code} ({clean_title}).", "SUCCESS")
     invalidate_cache()
     return doc, None
 
@@ -195,12 +208,15 @@ def update_course_record(course_code, title, department, batch, instructor, cred
     updates = _course_fields(title, department, batch, instructor, credits, capacity, status, fallback=existing)
     updates["updated_at"] = datetime.now(timezone.utc)
     col.update_one({"_id": existing["_id"]}, {"$set": updates})
+    _audit("COURSES", "UPDATE_COURSE", f"Updated course {clean_code} ({clean_title}).", "INFO")
     invalidate_cache()
     return True, None
 
 
 def delete_course_record(course_code):
-    if courses_col().delete_one({"course_code": str(course_code or "").strip().upper()}).deleted_count:
+    clean_code = str(course_code or "").strip().upper()
+    if courses_col().delete_one({"course_code": clean_code}).deleted_count:
+        _audit("COURSES", "DELETE_COURSE", f"Removed course {clean_code}.", "DANGER")
         invalidate_cache()
         return True, None
     return False, "Course record not found."
@@ -242,12 +258,15 @@ def toggle_ticket_status(ticket_id):
         return None, "Support ticket not found."
     new_status = "RESOLVED" if str(existing.get("status") or "OPEN").strip().upper() == "OPEN" else "OPEN"
     col.update_one({"_id": existing["_id"]}, {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}})
+    _audit("TICKETS", "TOGGLE_TICKET", f"Ticket {existing.get('ticket_id') or ticket_id} marked as {new_status}.", "SUCCESS" if new_status == "RESOLVED" else "WARNING")
     invalidate_cache()
     return new_status, None
 
 
 def delete_ticket_record(ticket_id):
-    if support_tickets_col().delete_one({"ticket_id": str(ticket_id or "").strip()}).deleted_count:
+    clean_tid = str(ticket_id or "").strip()
+    if support_tickets_col().delete_one({"ticket_id": clean_tid}).deleted_count:
+        _audit("TICKETS", "DELETE_TICKET", f"Deleted support ticket {clean_tid}.", "DANGER")
         invalidate_cache()
         return True, None
     return False, "Support ticket not found."

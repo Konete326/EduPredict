@@ -2,25 +2,20 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 from pymongo import UpdateOne
-from analytics.evaluation import (
-    DEFAULT_TEST_SIZE,
-    evaluate_model_suite,
-)
+from analytics.evaluation import DEFAULT_TEST_SIZE, evaluate_model_suite
 from analytics.preprocessing import (
-    DEFAULT_RANDOM_STATE,
-    FEATURE_COLUMNS,
-    FEATURE_DEFAULTS,
-    build_anomaly_pipeline,
-    build_dropout_pipeline,
-    build_gpa_pipeline,
-    parse_binary_label,
-    parse_gpa_label,
-    prepare_feature_frame,
-    validate_eval_params,
+    DEFAULT_RANDOM_STATE, FEATURE_COLUMNS, FEATURE_DEFAULTS, build_anomaly_pipeline,
+    build_dropout_pipeline, build_gpa_pipeline, parse_binary_label, parse_gpa_label,
+    prepare_feature_frame, validate_eval_params,
 )
 from core.db import invalidate_cache, notifications_col, predictions_col, student_records_col
 
 MODEL_VERSION = "sklearn-rf-ridge-if-v1.1"
+DEFAULT_RUNTIME_SETTINGS = {
+    "high_risk_threshold": 70, "medium_risk_threshold": 35, "anomaly_drop_pct": 25,
+    "min_attendance_pct": 75, "passing_gpa": 2.0,
+    "auto_student_alerts": True, "auto_teacher_alerts": True,
+}
 ANCHOR_SAMPLES = np.array([
     [96.0, 92.0, 94.0, 18.0, 3.90], [90.0, 84.0, 86.0, 14.0, 3.60],
     [85.0, 78.0, 80.0, 11.0, 3.25], [82.0, 74.0, 78.0, 12.0, 3.10],
@@ -41,10 +36,10 @@ ANCHOR_GPA_TARGETS = np.array([
 ], dtype=float)
 
 
-def classify_dropout_risk(score):
-    if score >= 0.70:
+def classify_dropout_risk(score, high_threshold=0.70, medium_threshold=0.35):
+    if score >= high_threshold:
         return "HIGH"
-    if score >= 0.35:
+    if score >= medium_threshold:
         return "MEDIUM"
     return "LOW"
 
@@ -156,17 +151,45 @@ def _positive_class_probs(pipeline, features):
     return np.zeros(len(features), dtype=float)
 
 
-def _build_anomaly_reason(att, marks, gpa, iso_flag):
+def _build_anomaly_reason(att, marks, gpa, iso_flag, drop_limit=25.0):
     reasons = []
     if att < 60.0:
         reasons.append("Attendance below 60%")
     if marks < 45.0:
         reasons.append("Internal marks below 45%")
-    if (gpa * 25.0 - marks) > 25.0:
-        reasons.append("Sudden >25% score drop vs previous GPA")
+    if (gpa * 25.0 - marks) > drop_limit:
+        reasons.append(f"Sudden >{int(round(drop_limit))}% score drop vs previous GPA")
     if iso_flag == -1 and not reasons:
         reasons.append("Outlier pattern flagged by Isolation Forest")
     return "; ".join(reasons)
+
+
+def _resolve_runtime_settings(portal_settings=None, persist=True):
+    cfg = dict(DEFAULT_RUNTIME_SETTINGS)
+    source = portal_settings if isinstance(portal_settings, dict) else None
+    if source is None and persist:
+        try:
+            from panels.admin_audit_services import get_portal_settings
+            loaded = get_portal_settings()
+            source = loaded.get("settings_data") if isinstance(loaded, dict) else None
+        except Exception:
+            source = None
+    if isinstance(source, dict):
+        for key in ("high_risk_threshold", "medium_risk_threshold", "anomaly_drop_pct", "min_attendance_pct"):
+            if key in source:
+                try:
+                    cfg[key] = int(source[key])
+                except (TypeError, ValueError):
+                    pass
+        if "passing_gpa" in source:
+            try:
+                cfg["passing_gpa"] = float(source["passing_gpa"])
+            except (TypeError, ValueError):
+                pass
+        for key in ("auto_student_alerts", "auto_teacher_alerts"):
+            if key in source:
+                cfg[key] = bool(source[key])
+    return cfg
 
 
 def _build_recommendation(risk_level, is_anomaly, att, marks, assign, lms):
@@ -203,29 +226,16 @@ def evaluate_models(records=None, test_size=DEFAULT_TEST_SIZE, random_state=DEFA
     return report
 
 
-def run_prediction_pipeline(
-    records=None,
-    persist=True,
-    test_size=DEFAULT_TEST_SIZE,
-    random_state=DEFAULT_RANDOM_STATE,
-):
+def run_prediction_pipeline(records=None, persist=True, test_size=DEFAULT_TEST_SIZE, random_state=DEFAULT_RANDOM_STATE, portal_settings=None):
     ts, rs = validate_eval_params(test_size, random_state)
-    raw_records = (
-        list(student_records_col().find({}, {"_id": 0}))
-        if records is None
-        else records
-    )
+    cfg = _resolve_runtime_settings(portal_settings=portal_settings, persist=persist)
+    raw_records = list(student_records_col().find({}, {"_id": 0})) if records is None else records
     df = _prepare_dataframe(raw_records)
     if df.empty:
         return {
-            "status": "EMPTY",
-            "model_version": MODEL_VERSION,
-            "predictions_generated": 0,
-            "high_risk_count": 0,
-            "medium_risk_count": 0,
-            "low_risk_count": 0,
-            "anomalies_count": 0,
-            "course_demand": [],
+            "status": "EMPTY", "model_version": MODEL_VERSION, "predictions_generated": 0,
+            "high_risk_count": 0, "medium_risk_count": 0, "low_risk_count": 0, "anomalies_count": 0,
+            "course_demand": [], "applied_settings": cfg,
             "evaluation": evaluate_model_suite(df, test_size=ts, random_state=rs),
         }
 
@@ -273,14 +283,15 @@ def run_prediction_pipeline(
     counts = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
     anomaly_count = 0
 
+    high_t, med_t, drop_lim = cfg["high_risk_threshold"] / 100.0, cfg["medium_risk_threshold"] / 100.0, float(cfg["anomaly_drop_pct"])
     for idx, row in enumerate(df.to_dict(orient="records")):
         sid = row["student_id"]
         att, marks, assign, lms, gpa = [float(imputed_features[idx, col_i]) for col_i in range(5)]
 
         risk_score = round(float(risk_probs[idx]), 4)
         pred_gpa = round(float(predicted_gpas[idx]), 2)
-        risk_level = classify_dropout_risk(risk_score)
-        anomaly_reason = _build_anomaly_reason(att, marks, gpa, int(iso_preds[idx]))
+        risk_level = classify_dropout_risk(risk_score, high_t, med_t)
+        anomaly_reason = _build_anomaly_reason(att, marks, gpa, int(iso_preds[idx]), drop_limit=drop_lim)
         is_anomaly = bool(anomaly_reason)
         recommendation = _build_recommendation(risk_level, is_anomaly, att, marks, assign, lms)
 
@@ -300,15 +311,17 @@ def run_prediction_pipeline(
             severity = "DANGER" if risk_level == "HIGH" else "WARNING"
             title = f"High Dropout Risk: {sid}" if risk_level == "HIGH" else f"Academic Anomaly Flagged: {sid}"
             detail = anomaly_reason if anomaly_reason else f"Dropout risk score {round(risk_score * 100)}%"
-            notif_ops.append(UpdateOne(
-                {"target_role": "TEACHER", "target_user_id": sid, "is_read": False},
-                {"$set": {
-                    "target_role": "TEACHER", "target_user_id": sid, "title": title,
-                    "message": f"{row['full_name']} ({row['course_code']}): {detail}.",
-                    "severity": severity, "is_read": False, "created_at": now,
-                }},
-                upsert=True,
-            ))
+            targets = ([("TEACHER", sid)] if cfg["auto_teacher_alerts"] else []) + ([("STUDENT", sid)] if cfg["auto_student_alerts"] else [])
+            for target_role, target_uid in targets:
+                notif_ops.append(UpdateOne(
+                    {"target_role": target_role, "target_user_id": target_uid, "is_read": False},
+                    {"$set": {
+                        "target_role": target_role, "target_user_id": target_uid, "title": title,
+                        "message": f"{row['full_name']} ({row['course_code']}): {detail}.",
+                        "severity": severity, "is_read": False, "created_at": now,
+                    }},
+                    upsert=True,
+                ))
 
     if persist:
         preds_col = predictions_col()
@@ -321,17 +334,12 @@ def run_prediction_pipeline(
         invalidate_cache("analyst:")
 
     result = {
-        "status": "COMPLETED",
-        "model_version": MODEL_VERSION,
-        "predictions_generated": len(pred_docs),
-        "high_risk_count": counts["HIGH"],
-        "medium_risk_count": counts["MEDIUM"],
-        "low_risk_count": counts["LOW"],
-        "anomalies_count": anomaly_count,
-        "course_demand": compute_course_demand(df),
+        "status": "COMPLETED", "model_version": MODEL_VERSION, "predictions_generated": len(pred_docs),
+        "high_risk_count": counts["HIGH"], "medium_risk_count": counts["MEDIUM"],
+        "low_risk_count": counts["LOW"], "anomalies_count": anomaly_count,
+        "course_demand": compute_course_demand(df), "applied_settings": cfg,
         "training_modes": {
-            "dropout_classifier": dropout_mode,
-            "gpa_regressor": gpa_mode,
+            "dropout_classifier": dropout_mode, "gpa_regressor": gpa_mode,
             "anomaly_detector": "unsupervised_isolation_forest",
         },
         "evaluation": evaluation,
