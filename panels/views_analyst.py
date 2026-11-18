@@ -190,7 +190,7 @@ def analyst_accuracy(request):
             'risk_counts': {'LOW': 0, 'MEDIUM': 0, 'HIGH': 0}, 'error_buckets': {},
             'demand_headers': [], 'demand_rows': [], 'upload_headers': [], 'upload_rows': [],
             'display': {'gpa_mae': 'N/A', 'stable_share': 'N/A', 'risk_agreement': 'N/A'},
-            'chart_data': {}, 'db_error': str(exc),
+            'chart_data': {}, 'portal_settings': _resolve_runtime_settings(persist=False), 'db_error': str(exc),
         }
     return render(request, 'panels/analyst_accuracy.html', {
         'page_title': 'AI Accuracy', 'active_role': active_role, 'kpis': data['kpis'],
@@ -200,7 +200,7 @@ def analyst_accuracy(request):
         'risk_agreement_display': data['display']['risk_agreement'],
         'demand_headers': data['demand_headers'], 'demand_rows': data['demand_rows'],
         'upload_headers': data['upload_headers'], 'upload_rows': data['upload_rows'],
-        'chart_data': data['chart_data'], 'db_error': data['db_error'],
+        'chart_data': data['chart_data'], 'portal_settings': data['portal_settings'], 'db_error': data['db_error'],
     })
 
 

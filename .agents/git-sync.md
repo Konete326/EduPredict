@@ -61,32 +61,33 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 11 Dynamic Attendance Tip & Ticket Creation Audit Team"
-active_branch_merged_to_main: "feature/min-att-ticket-audit -> main"
-project_phase: "Phase 11 Complete: Dynamic min_attendance_pct Recommendation & Ticket Creation Audit Log"
+last_updated_by_agent: "Phase 12 Test-Split & Accuracy Thresholds Team"
+active_branch_merged_to_main: "feature/test-split-accuracy-thresholds -> main"
+project_phase: "Phase 12 Complete: Analytics Test Split & Active Portal Thresholds on Model Health Page"
 
 completed_modules:
-  - "Phase 1-10: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Active Thresholds"
-  - "Phase 11: Dynamic min_attendance_pct Tip & Ticket Creation Audit Log:"
-      - "Updated _build_recommendation(..., min_att=75.0) and run_prediction_pipeline in analytics/ml_engine.py to compute boost_target from portal_settings min_attendance_pct."
-      - "Updated create_ticket_record in panels/admin_services.py to log CREATE_TICKET audit entries with actor=doc['user_name'] via _audit before invalidate_cache()."
-      - "Extended unit tests in panels/tests.py and analytics/tests.py covering CREATE_TICKET audit logging and dynamic min_att=85.0 recommendation output."
+  - "Phase 1-11: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Dynamic min_attendance_pct Tips"
+  - "Phase 12: Analytics Test Split & Accuracy Page Portal Thresholds:"
+      - "Split PredictionPipelineAndDataPipelineTests into analytics/test_pipeline.py (109 lines) and trimmed analytics/tests.py (293 lines) with 0 comments."
+      - "Updated analytics/model_health.py (160 lines) to read active portal_settings via _resolve_runtime_settings, apply min_attendance_pct to low-attendance agreement, and expose portal_settings in context."
+      - "Updated panels/views_analyst.py (239 lines) and templates/panels/analyst_accuracy.html (166 lines) to render active Min Att, Pass GPA, High Risk, and Active Risk Cutoffs badges."
+      - "Updated panels/tests.py (365 lines) to mock analytics.model_health._resolve_runtime_settings and verify rendered portal threshold badges on panels:analyst_accuracy."
 
 verification_results:
   - "manage.py check: 0 issues reported."
   - "manage.py test analytics panels --verbosity=2: 24/24 tests PASSED."
-  - "node --check static/js/app.js & static/js/nav.js: PASSED."
-  - "Zero comments and line-count limits verified across analytics/ml_engine.py (350/350), panels/admin_services.py (341/345), panels/tests.py (355/356), analytics/tests.py (398/399)."
+  - "node --check static/js/app.js, static/js/nav.js, static/js/charts.js: PASSED."
+  - "Zero comments and line-count limits verified: analytics/tests.py (293/310), analytics/test_pipeline.py (109/135), analytics/model_health.py (160/175), panels/views_analyst.py (239/245), templates/panels/analyst_accuracy.html (166/175), panels/tests.py (365/365)."
 
 active_routes_and_files:
-  - "analytics/ml_engine.py (350 lines), panels/admin_services.py (341 lines), panels/tests.py (355 lines), analytics/tests.py (398 lines)"
-  - "/admin-panel/logs/ -> panels:admin_logs"
-  - "/admin-panel/tickets/ -> panels:admin_tickets"
-  - "/admin-panel/settings/ -> panels:admin_settings"
+  - "analytics/tests.py (293 lines), analytics/test_pipeline.py (109 lines), analytics/model_health.py (160 lines), panels/views_analyst.py (239 lines), templates/panels/analyst_accuracy.html (166 lines), panels/tests.py (365 lines)"
   - "/analyst-panel/ -> panels:analyst_dashboard"
+  - "/analyst-panel/accuracy/ -> panels:analyst_accuracy"
+  - "/admin-panel/settings/ -> panels:admin_settings"
+  - "/admin-panel/logs/ -> panels:admin_logs"
 
 pending_modules_in_order:
-  - "All Phase 1-11 core and polish items complete; ready for full-stack UAT or next user-requested feature."
+  - "All Phase 1-12 core and polish items complete; ready for full-stack UAT or next user-requested feature."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

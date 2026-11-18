@@ -1,6 +1,6 @@
 from pymongo import DESCENDING
 import pandas as pd
-from analytics.ml_engine import FEATURE_COLUMNS, compute_course_demand
+from analytics.ml_engine import FEATURE_COLUMNS, _resolve_runtime_settings, compute_course_demand
 from core.db import datasets_log_col, get_cached, predictions_col, student_records_col
 
 
@@ -60,10 +60,12 @@ def _load_model_health():
         else:
             buckets["large"] += 1
 
+    portal_settings = _resolve_runtime_settings(persist=True)
+    min_att = float(portal_settings.get("min_attendance_pct", 75))
     low_att_total, low_att_flagged = 0, 0
     for sid, rec in record_map.items():
         att = _safe_float(rec.get("attendance_pct"), 100.0)
-        if att >= 75.0:
+        if att >= min_att:
             continue
         p = pred_map.get(sid)
         if not p:
@@ -101,6 +103,7 @@ def _load_model_health():
         "error_buckets": buckets,
         "demand": demand,
         "uploads": {"count": upload_count, "rows_processed": rows_processed},
+        "portal_settings": portal_settings,
     }
 
 
@@ -117,6 +120,7 @@ def get_analyst_accuracy_page_context():
         "error_buckets": {"excellent": 0, "acceptable": 0, "large": 0},
         "demand": [],
         "uploads": {"count": 0, "rows_processed": 0},
+        "portal_settings": _resolve_runtime_settings(persist=False),
     }
     try:
         data = get_model_health_context()
@@ -151,5 +155,6 @@ def get_analyst_accuracy_page_context():
         ]],
         "chart_data": data,
         "display": display,
+        "portal_settings": data.get("portal_settings") or _resolve_runtime_settings(persist=False),
         "db_error": db_error,
     }

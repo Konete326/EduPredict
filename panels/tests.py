@@ -12,9 +12,11 @@ from panels.admin_services import create_course_record, create_ticket_record
 class AnalystDashboardEvaluationTests(TestCase):
     def setUp(self):
         invalidate_cache()
-        p = patch("panels.views_analyst._resolve_runtime_settings", return_value={"high_risk_threshold": 70, "medium_risk_threshold": 35, "anomaly_drop_pct": 25, "min_attendance_pct": 75, "passing_gpa": 2.0, "auto_student_alerts": True, "auto_teacher_alerts": True})
-        p.start()
-        self.addCleanup(p.stop)
+        settings = {"high_risk_threshold": 70, "medium_risk_threshold": 35, "anomaly_drop_pct": 25, "min_attendance_pct": 75, "passing_gpa": 2.0, "auto_student_alerts": True, "auto_teacher_alerts": True}
+        for target in ("panels.views_analyst._resolve_runtime_settings", "analytics.model_health._resolve_runtime_settings"):
+            p = patch(target, return_value=dict(settings))
+            p.start()
+            self.addCleanup(p.stop)
 
     def _login_as(self, role, user_id="USR-TEST-1"):
         client = Client()
@@ -102,6 +104,14 @@ class AnalystDashboardEvaluationTests(TestCase):
             eval_resp = client.get(reverse("analytics:model_evaluation"))
             self.assertEqual(eval_resp.status_code, 200)
             self.assertEqual(mock_ml_records.call_count, 0)
+
+        logs_col.count_documents.return_value = 0
+        with patch("analytics.model_health.student_records_col", return_value=records_col), patch("analytics.model_health.predictions_col", return_value=preds_col), patch("analytics.model_health.datasets_log_col", return_value=logs_col):
+            acc_resp = client.get(reverse("panels:analyst_accuracy"))
+        self.assertEqual(acc_resp.status_code, 200)
+        acc_html = acc_resp.content.decode("utf-8")
+        self.assertIn("Min Att 75% &middot; Pass GPA 2.0 &middot; High Risk &ge;70%", acc_html)
+        self.assertIn("High &ge;70% / Med &ge;35%", acc_html)
 
     @patch("core.context_processors.notifications_col")
     @patch("core.db.MongoDBClient.check_health")
