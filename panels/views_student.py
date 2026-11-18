@@ -183,7 +183,7 @@ def student_notifications(request):
                 else:
                     messages.error(request, err or "Could not mark alert as read.")
             elif action == "mark_all":
-                updated = mark_notifications_read({"user_id": user_id, "role": role})
+                updated = mark_notifications_read({"user_id": user_id, "student_id": student_id, "role": role})
                 messages.success(request, f"{updated} alert(s) marked as read.")
             else:
                 messages.error(request, "Unknown alert action.")

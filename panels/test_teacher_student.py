@@ -2,6 +2,7 @@ from unittest.mock import DEFAULT, MagicMock, patch
 from django.test import Client, TestCase
 from django.urls import reverse
 from core.db import invalidate_cache
+from panels.admin_services import mark_notifications_read
 import panels.student_alert_services as student_alert_svc
 from panels.student_alert_services import _load_recent_alerts, get_student_alerts_context
 from panels.student_services import _batch_rank, _build_tips, _fetch_batch_docs, _load_student_overview
@@ -198,7 +199,7 @@ class StudentPanelTests(TestCase):
         student = _login_client({"user_id": "USR-1003", "student_id": "STD-2026-001", "role": "STUDENT", "email": "s@edupredict.edu", "full_name": "Zainab Raza"})
         resp = student.post(reverse("panels:student_notifications"), {"action": "mark_all"})
         self.assertRedirects(resp, reverse("panels:student_notifications"), fetch_redirect_response=False)
-        mock_mark.assert_called_once_with({"user_id": "USR-1003", "role": "STUDENT"})
+        mock_mark.assert_called_once_with({"user_id": "USR-1003", "student_id": "STD-2026-001", "role": "STUDENT"})
 
         for role, expected_dash in (("TEACHER", "panels:teacher_dashboard"), ("ANALYST", "panels:analyst_dashboard")):
             client = _login_client({"user_id": f"USR-{role}", "role": role, "email": f"{role.lower()}@edupredict.edu", "full_name": f"Test {role.title()}"})
@@ -258,3 +259,16 @@ class StudentPanelTests(TestCase):
         notifications_col.return_value.count_documents.assert_called_once_with({"is_read": False, "$or": student_alert_svc._alert_targets("STD-1", "USR-1", "STUDENT")})
         _fetch_batch_docs("", course_codes=["CS-101", "CS-102"])
         student_records_col.return_value.find.assert_called_with({"course_code": {"$in": ["CS-101", "CS-102"]}}, {"_id": 0, "student_id": 1, "course_code": 1, "attendance_pct": 1, "internal_marks": 1, "assignment_score": 1})
+        with patch("panels.admin_services.notifications_col") as mock_admin_notifs:
+            mock_admin_notifs.return_value.update_many.return_value.modified_count = 1
+            self.assertEqual(mark_notifications_read({"user_id": "USR-1", "student_id": "STD-1", "role": "STUDENT"}), 1)
+            or_list = mock_admin_notifs.return_value.update_many.call_args[0][0]["$or"]
+            self.assertTrue({"target_user_id": "USR-1"} in or_list and {"target_user_id": "STD-1"} in or_list and {"target_user_id": ""} not in or_list)
+            mark_notifications_read({"user_id": "USR-2", "student_id": "", "role": "ADMIN"})
+            self.assertNotIn({"target_user_id": ""}, mock_admin_notifs.return_value.update_many.call_args[0][0]["$or"])
+        student_records_col.return_value.find.reset_mock()
+        empty_cur = MagicMock(**{"sort.return_value": []})
+        empty_cur.__iter__.side_effect = lambda: iter([])
+        student_records_col.return_value.find.return_value = empty_cur
+        _load_student_overview("STD-EMPTY", "USR-EMPTY", "STUDENT")
+        self.assertEqual(student_records_col.return_value.find.call_count, 1)

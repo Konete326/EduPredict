@@ -275,18 +275,15 @@ def delete_ticket_record(ticket_id, actor_name="System Admin"):
 
 def mark_notifications_read(user_doc):
     user = user_doc if isinstance(user_doc, dict) else {}
-    user_id, active_role = str(user.get("user_id") or "").strip(), str(user.get("role") or "").strip().upper()
-    if not user_id and not active_role:
+    user_id = str(user.get("user_id") or "").strip()
+    student_id = str(user.get("student_id") or "").strip()
+    active_role = str(user.get("role") or "").strip().upper()
+    if not user_id and not student_id and not active_role:
         return 0
-    targets = [
-        {"target_role": "ALL", "target_user_id": {"$in": [None, ""]}},
-        {"target_role": "ALL", "target_user_id": {"$exists": False}},
-    ]
-    if user_id:
-        targets.append({"target_user_id": user_id})
-    if active_role:
-        targets.append({"target_role": active_role, "target_user_id": {"$in": [None, ""]}})
-        targets.append({"target_role": active_role, "target_user_id": {"$exists": False}})
+    targets = [{"target_user_id": tid} for tid in dict.fromkeys(x for x in (user_id, student_id) if x)]
+    for target_role in dict.fromkeys(r for r in (active_role, "ALL") if r):
+        targets.append({"target_role": target_role, "target_user_id": {"$in": [None, ""]}})
+        targets.append({"target_role": target_role, "target_user_id": {"$exists": False}})
     modified = int(notifications_col().update_many({"is_read": False, "$or": targets}, {"$set": {"is_read": True}}).modified_count)
     invalidate_cache()
     return modified

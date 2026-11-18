@@ -61,24 +61,26 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 18 Student Query Scope & Alert Targets Team"
-active_branch_merged_to_main: "feature/student-query-scope-and-alert-targets -> main"
-project_phase: "Phase 18 Complete: Scoped Batch Query & Unread Alert Targets"
+last_updated_by_agent: "Phase 19 Notification Student ID & Empty Batch Guard Team"
+active_branch_merged_to_main: "feature/notif-student-id-and-empty-batch-guard -> main"
+project_phase: "Phase 19 Complete: Student ID Notification Read & Empty Batch Guard"
 
 completed_modules:
-  - "Phase 1-17: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Dynamic Thresholds, Analytics/Panel Test Splits & Coverage, Student _batch_rank Marks-Scale Fix, Admin Guard/CRUD Tests, Student Alert Extraction, Single-Query Alerts + Dynamic Excellent Threshold, and Single-Query Batch Stats + Alert Target Cleanup"
-  - "Phase 18: Scoped Batch Query & Unread Alert Targets:"
-      - "Updated panels/student_services.py (316 lines, 0 comments) to import _alert_targets from panels.student_alert_services, accept optional course_codes in _fetch_batch_docs(batch, course_codes=None) to scope empty-batch queries with {\"course_code\": {\"$in\": clean_courses}}, and reuse _alert_targets(student_id, user_id, role) for unread_alerts count_documents inside _load_student_overview."
-      - "Updated panels/test_teacher_student.py (260 lines, 0 comments) to assert notifications_col.return_value.count_documents uses _alert_targets(\"STD-1\", \"USR-1\", \"STUDENT\") and _fetch_batch_docs(\"\", course_codes=[\"CS-101\", \"CS-102\"]) scopes student_records_col.find by course_code $in."
+  - "Phase 1-18: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Dynamic Thresholds, Analytics/Panel Test Splits & Coverage, Student _batch_rank Marks-Scale Fix, Admin Guard/CRUD Tests, Student Alert Extraction, Single-Query Alerts + Dynamic Excellent Threshold, Single-Query Batch Stats + Alert Target Cleanup, and Scoped Batch Query & Unread Alert Targets"
+  - "Phase 19: Student ID Notification Read & Empty Batch Guard:"
+      - "Updated panels/admin_services.py (338 lines, 0 comments) so mark_notifications_read includes student_id via dict.fromkeys alongside user_id and skips empty strings for target_user_id and target_role."
+      - "Updated panels/views_student.py (214 lines, 0 comments) so student_notifications mark_all passes student_id to mark_notifications_read."
+      - "Updated panels/student_services.py (317 lines, 0 comments) so _load_student_overview skips _fetch_batch_docs when both record[\"batch\"] and course_codes are empty."
+      - "Updated panels/test_teacher_student.py (274 lines, 0 comments) to verify student_id forwarding in student_notifications, target_user_id/empty-guard $or targets in mark_notifications_read, and single student_records_col.find call on empty student profile."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py test analytics panels --verbosity=2 (and full manage.py test): 33/33 tests PASSED."
+  - "manage.py test analytics panels --verbosity=2: 33/33 tests PASSED (4.160s)."
   - "node --check static/js/app.js, static/js/nav.js, static/js/charts.js: PASSED."
-  - "Zero comments and line-count limits verified: panels/student_services.py (316/318), panels/test_teacher_student.py (260/265); .agents/rules/edupredict-rules.md (11899 bytes); .env tracked in Git."
+  - "Zero comments and line-count limits verified: panels/admin_services.py (338/345), panels/views_student.py (214/216), panels/student_services.py (317/318), panels/test_teacher_student.py (274/275); .agents/rules/edupredict-rules.md (11899 bytes); .env tracked in Git."
 
 active_routes_and_files:
-  - "panels/student_services.py (316 lines), panels/test_teacher_student.py (260 lines), panels/student_alert_services.py"
+  - "panels/admin_services.py (338 lines), panels/views_student.py (214 lines), panels/student_services.py (317 lines), panels/test_teacher_student.py (274 lines)"
   - "/admin-panel/ -> panels:admin_dashboard, /admin-panel/users/ -> panels:admin_users, /admin-panel/courses/ -> panels:admin_courses, /admin-panel/tickets/ -> panels:admin_tickets, /admin-panel/backup/ -> panels:admin_backup_export, /admin-panel/logs/ -> panels:admin_logs, /admin-panel/settings/ -> panels:admin_settings"
   - "/support/submit/ -> panels:submit_support_ticket"
   - "/teacher-panel/ -> panels:teacher_dashboard, /teacher-panel/students/ -> panels:teacher_students, /teacher-panel/alerts/ -> panels:teacher_alerts, /teacher-panel/ingest/ -> panels:teacher_ingest"
@@ -86,7 +88,7 @@ active_routes_and_files:
   - "/analyst-panel/ -> panels:analyst_dashboard, /analyst-panel/accuracy/ -> panels:analyst_accuracy"
 
 pending_modules_in_order:
-  - "All Phase 1-18 implementation, optimization, modularization, and test coverage suites complete; ready for full-stack UAT or next user-requested feature."
+  - "All Phase 1-19 implementation, optimization, modularization, and test coverage suites complete; ready for full-stack UAT or next user-requested feature."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

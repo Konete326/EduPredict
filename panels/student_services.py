@@ -223,7 +223,8 @@ def _load_student_overview(student_id, user_id, role):
         gen = prediction.get("generated_at")
         record["generated_at"] = gen.strftime("%Y-%m-%d %H:%M") if hasattr(gen, "strftime") else None
 
-    batch_docs = _fetch_batch_docs(record["batch"], course_codes=[x["course_code"] for x in record["courses"] if x.get("course_code")])
+    course_codes = [x["course_code"] for x in record["courses"] if x.get("course_code")]
+    batch_docs = _fetch_batch_docs(record["batch"], course_codes=course_codes) if (record["batch"] or course_codes) else []
     class_stats = _course_class_stats(record["batch"], docs=batch_docs)
     subject_rows = []
     chart_labels, chart_mine, chart_class = [], [], []
