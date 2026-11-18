@@ -6,7 +6,7 @@ from analytics.data_pipeline import generate_sample_dataset_df
 from analytics.tests import _build_genuine_labelled_records
 from core.db import _MEMORY_CACHE, invalidate_cache
 import panels.admin_audit_services as audit_svc
-from panels.admin_services import create_course_record
+from panels.admin_services import create_course_record, create_ticket_record
 
 
 class AnalystDashboardEvaluationTests(TestCase):
@@ -322,6 +322,10 @@ class AdminLogsAndSettingsTests(TestCase):
         self.assertIsNone(err)
         self.assertIsNotNone(created_course)
         self.assertTrue(any(d.get("action") == "CREATE_COURSE" and d.get("actor") == "Dr. Admin Lead" and "AI-900" in d.get("summary", "") for d in self.cols["activity_logs"].docs))
+        created_ticket, t_err = create_ticket_record("USR-1003", "Zainab Raza", "STUDENT", "Lab issue", "Cannot open lab")
+        self.assertIsNone(t_err)
+        self.assertIsNotNone(created_ticket)
+        self.assertTrue(any(d.get("action") == "CREATE_TICKET" and d.get("actor") == "Zainab Raza" for d in self.cols["activity_logs"].docs))
 
     def test_admin_settings_get_update_and_reset_defaults(self):
         client = self._login_as("ADMIN")

@@ -247,6 +247,7 @@ def create_ticket_record(user_id, user_name, role, subject, message):
     col = support_tickets_col()
     doc = {"ticket_id": _generate_unique_ticket_id(col), "user_id": str(user_id or ""), "user_name": str(user_name or "Portal User").strip() or "Portal User", "role": str(role or "USER").strip().upper(), "subject": clean_subject, "message": clean_message, "status": "OPEN", "created_at": datetime.now(timezone.utc)}
     col.insert_one(doc)
+    _audit("TICKETS", "CREATE_TICKET", f"Support ticket {doc['ticket_id']} submitted by {doc['user_name']}: {clean_subject}", "WARNING", actor=doc["user_name"])
     invalidate_cache()
     return doc, None
 

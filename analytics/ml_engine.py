@@ -192,7 +192,7 @@ def _resolve_runtime_settings(portal_settings=None, persist=True):
     return cfg
 
 
-def _build_recommendation(risk_level, is_anomaly, att, marks, assign, lms):
+def _build_recommendation(risk_level, is_anomaly, att, marks, assign, lms, min_att=75.0):
     if risk_level == "HIGH":
         return (
             "Schedule immediate advisor check-in, target >=80% class attendance, "
@@ -204,8 +204,9 @@ def _build_recommendation(risk_level, is_anomaly, att, marks, assign, lms):
             "to stabilize current term trajectory."
         )
     if risk_level == "MEDIUM":
-        if att < 75.0:
-            return "Attend the next 4 consecutive lectures to lift attendance above 80%."
+        if att < float(min_att):
+            boost_target = min(100, int(round(float(min_att))) + 5)
+            return f"Attend the next 4 consecutive lectures to lift attendance above {boost_target}%."
         if marks < 65.0 or assign < 65.0:
             return "Focus on upcoming internal quizzes and assignment submissions to boost GPA."
         if lms < 7.0:
@@ -283,17 +284,17 @@ def run_prediction_pipeline(records=None, persist=True, test_size=DEFAULT_TEST_S
     counts = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
     anomaly_count = 0
 
-    high_t, med_t, drop_lim = cfg["high_risk_threshold"] / 100.0, cfg["medium_risk_threshold"] / 100.0, float(cfg["anomaly_drop_pct"])
+    high_t, med_t = cfg["high_risk_threshold"] / 100.0, cfg["medium_risk_threshold"] / 100.0
+    drop_lim, min_att = float(cfg["anomaly_drop_pct"]), float(cfg["min_attendance_pct"])
     for idx, row in enumerate(df.to_dict(orient="records")):
         sid = row["student_id"]
         att, marks, assign, lms, gpa = [float(imputed_features[idx, col_i]) for col_i in range(5)]
-
         risk_score = round(float(risk_probs[idx]), 4)
         pred_gpa = round(float(predicted_gpas[idx]), 2)
         risk_level = classify_dropout_risk(risk_score, high_t, med_t)
         anomaly_reason = _build_anomaly_reason(att, marks, gpa, int(iso_preds[idx]), drop_limit=drop_lim)
         is_anomaly = bool(anomaly_reason)
-        recommendation = _build_recommendation(risk_level, is_anomaly, att, marks, assign, lms)
+        recommendation = _build_recommendation(risk_level, is_anomaly, att, marks, assign, lms, min_att=min_att)
 
         counts[risk_level] += 1
         if is_anomaly:
