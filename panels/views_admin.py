@@ -59,19 +59,19 @@ def admin_users(request):
     session_user = request.session.get("user") or {}
     actor_id, actor_email = str(session_user.get("user_id") or "").strip(), str(session_user.get("email") or "").strip().lower()
     if request.method == "POST":
-        action, user_id, full_name = _param(request, "action").lower(), _param(request, "user_id"), request.POST.get("full_name") or request.POST.get("name")
+        action, user_id, full_name, actor = _param(request, "action").lower(), _param(request, "user_id"), request.POST.get("full_name") or request.POST.get("name"), _actor_name(request)
         try:
             if action == "create":
-                created, err = create_user_record(full_name, request.POST.get("email"), request.POST.get("password"), request.POST.get("role"), request.POST.get("department"), request.POST.get("batch"))
+                created, err = create_user_record(full_name, request.POST.get("email"), request.POST.get("password"), request.POST.get("role"), request.POST.get("department"), request.POST.get("batch"), actor_name=actor)
                 _flash_result(request, created is not None, err, f"User {created['full_name']} ({created['user_id']}) created." if created else "")
             elif action == "update":
-                ok, err = update_user_record(user_id, full_name, request.POST.get("email"), request.POST.get("role"), request.POST.get("department"), request.POST.get("batch"), request.POST.get("password") or "", actor_user_id=actor_id, actor_email=actor_email)
+                ok, err = update_user_record(user_id, full_name, request.POST.get("email"), request.POST.get("role"), request.POST.get("department"), request.POST.get("batch"), request.POST.get("password") or "", actor_user_id=actor_id, actor_email=actor_email, actor_name=actor)
                 _flash_result(request, ok, err, f"User {user_id} updated.")
             elif action == "toggle":
-                new_state, err = toggle_user_status(user_id, actor_user_id=actor_id, actor_email=actor_email)
+                new_state, err = toggle_user_status(user_id, actor_user_id=actor_id, actor_email=actor_email, actor_name=actor)
                 _flash_result(request, new_state is not None, err, f"User {user_id} {'activated' if new_state else 'deactivated'}.")
             elif action == "delete":
-                ok, err = delete_user_record(user_id, actor_user_id=actor_id, actor_email=actor_email)
+                ok, err = delete_user_record(user_id, actor_user_id=actor_id, actor_email=actor_email, actor_name=actor)
                 _flash_result(request, ok, err, f"User {user_id} deleted.")
             else:
                 messages.error(request, "Unknown user action.")
@@ -91,16 +91,16 @@ def admin_users(request):
 def admin_courses(request):
     filter_dept = _param(request, "filter_dept") or _param(request, "department") or "ALL"
     if request.method == "POST":
-        action, code = _param(request, "action").lower(), _param(request, "course_code").upper()
+        action, code, actor = _param(request, "action").lower(), _param(request, "course_code").upper(), _actor_name(request)
         try:
             if action == "create":
-                created, err = create_course_record(code, request.POST.get("title"), request.POST.get("department"), request.POST.get("batch"), request.POST.get("instructor"), request.POST.get("credits"), request.POST.get("capacity"), request.POST.get("status") or "ACTIVE")
+                created, err = create_course_record(code, request.POST.get("title"), request.POST.get("department"), request.POST.get("batch"), request.POST.get("instructor"), request.POST.get("credits"), request.POST.get("capacity"), request.POST.get("status") or "ACTIVE", actor_name=actor)
                 _flash_result(request, created is not None, err, f"Course {created['course_code']} added." if created else "")
             elif action == "update":
-                ok, err = update_course_record(code, request.POST.get("title"), request.POST.get("department"), request.POST.get("batch"), request.POST.get("instructor"), request.POST.get("credits"), request.POST.get("capacity"), request.POST.get("status") or "ACTIVE")
+                ok, err = update_course_record(code, request.POST.get("title"), request.POST.get("department"), request.POST.get("batch"), request.POST.get("instructor"), request.POST.get("credits"), request.POST.get("capacity"), request.POST.get("status") or "ACTIVE", actor_name=actor)
                 _flash_result(request, ok, err, f"Course {code} updated.")
             elif action == "delete":
-                ok, err = delete_course_record(code)
+                ok, err = delete_course_record(code, actor_name=actor)
                 _flash_result(request, ok, err, f"Course {code} removed.")
             else:
                 messages.error(request, "Unknown course action.")
@@ -120,13 +120,13 @@ def admin_courses(request):
 def admin_tickets(request):
     filter_status = (_param(request, "filter_status") or _param(request, "status") or "ALL").upper()
     if request.method == "POST":
-        action, ticket_id = _param(request, "action").lower(), _param(request, "ticket_id")
+        action, ticket_id, actor = _param(request, "action").lower(), _param(request, "ticket_id"), _actor_name(request)
         try:
             if action == "toggle_status":
-                new_status, err = toggle_ticket_status(ticket_id)
+                new_status, err = toggle_ticket_status(ticket_id, actor_name=actor)
                 _flash_result(request, new_status is not None, err, f"Ticket {ticket_id} marked as {new_status}.")
             elif action == "delete":
-                ok, err = delete_ticket_record(ticket_id)
+                ok, err = delete_ticket_record(ticket_id, actor_name=actor)
                 _flash_result(request, ok, err, f"Ticket {ticket_id} deleted.")
             else:
                 messages.error(request, "Unknown ticket action.")

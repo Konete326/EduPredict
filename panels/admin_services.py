@@ -72,7 +72,7 @@ def _validate_user_input(full_name, email, role, department, batch):
     return (clean_name, clean_email, clean_role, clean_dept, clean_batch), None
 
 
-def create_user_record(full_name, email, password, role, department, batch):
+def create_user_record(full_name, email, password, role, department, batch, actor_name="System Admin"):
     ensure_accounts_indexes_once()
     parsed, err = _validate_user_input(full_name, email, role, department, batch)
     if err:
@@ -94,12 +94,12 @@ def create_user_record(full_name, email, password, role, department, batch):
 
     if student_id and student_records_col().find_one({"student_id": student_id}, {"_id": 1}) is None:
         student_records_col().insert_one({"student_id": student_id, "full_name": clean_name, "batch": clean_batch, "course_code": "CS-101", "attendance_pct": 85.0, "internal_marks": 75.0, "assignment_score": 80.0, "lms_hours_weekly": 10.0, "previous_gpa": 3.2, "updated_at": datetime.now(timezone.utc)})
-    _audit("USERS", "CREATE_USER", f"Created user {clean_name} ({user_id}, {clean_role}).", "SUCCESS")
+    _audit("USERS", "CREATE_USER", f"Created user {clean_name} ({user_id}, {clean_role}).", "SUCCESS", actor=actor_name)
     invalidate_cache()
     return doc, None
 
 
-def update_user_record(user_id, full_name, email, role, department, batch, password="", actor_user_id=None, actor_email=""):
+def update_user_record(user_id, full_name, email, role, department, batch, password="", actor_user_id=None, actor_email="", actor_name="System Admin"):
     col, clean_uid = users_col(), str(user_id or "").strip()
     existing = col.find_one({"user_id": clean_uid})
     if existing is None:
@@ -121,12 +121,12 @@ def update_user_record(user_id, full_name, email, role, department, batch, passw
     if clean_role == "STUDENT" and not existing.get("student_id"):
         updates["student_id"] = generate_unique_student_id(student_records_col(), clean_uid)
     col.update_one({"_id": existing["_id"]}, {"$set": updates})
-    _audit("USERS", "UPDATE_USER", f"Updated user {clean_uid} ({clean_role}).", "INFO")
+    _audit("USERS", "UPDATE_USER", f"Updated user {clean_uid} ({clean_role}).", "INFO", actor=actor_name)
     invalidate_cache()
     return True, None
 
 
-def toggle_user_status(user_id, actor_user_id=None, actor_email=""):
+def toggle_user_status(user_id, actor_user_id=None, actor_email="", actor_name="System Admin"):
     clean_uid, col = str(user_id or "").strip(), users_col()
     existing = col.find_one({"user_id": clean_uid})
     if _is_self_target(existing, clean_uid, actor_user_id, actor_email):
@@ -135,18 +135,18 @@ def toggle_user_status(user_id, actor_user_id=None, actor_email=""):
         return None, "User record not found."
     new_state = not bool(existing.get("is_active", True))
     col.update_one({"_id": existing["_id"]}, {"$set": {"is_active": new_state}})
-    _audit("USERS", "TOGGLE_USER", f"{'Activated' if new_state else 'Deactivated'} user {clean_uid}.", "SUCCESS" if new_state else "WARNING")
+    _audit("USERS", "TOGGLE_USER", f"{'Activated' if new_state else 'Deactivated'} user {clean_uid}.", "SUCCESS" if new_state else "WARNING", actor=actor_name)
     invalidate_cache()
     return new_state, None
 
 
-def delete_user_record(user_id, actor_user_id=None, actor_email=""):
+def delete_user_record(user_id, actor_user_id=None, actor_email="", actor_name="System Admin"):
     clean_uid, col = str(user_id or "").strip(), users_col()
     existing = col.find_one({"user_id": clean_uid}, {"_id": 1, "email": 1})
     if _is_self_target(existing, clean_uid, actor_user_id, actor_email):
         return False, "You cannot delete your own active admin account."
     if col.delete_one({"user_id": clean_uid}).deleted_count:
-        _audit("USERS", "DELETE_USER", f"Deleted user {clean_uid}.", "DANGER")
+        _audit("USERS", "DELETE_USER", f"Deleted user {clean_uid}.", "DANGER", actor=actor_name)
         invalidate_cache()
         return True, None
     return False, "User record not found."
@@ -183,7 +183,7 @@ def _course_fields(title, department, batch, instructor, credits, capacity, stat
     }
 
 
-def create_course_record(course_code, title, department, batch, instructor, credits, capacity, status="ACTIVE"):
+def create_course_record(course_code, title, department, batch, instructor, credits, capacity, status="ACTIVE", actor_name="System Admin"):
     clean_code, clean_title = str(course_code or "").strip().upper(), str(title or "").strip()
     if len(clean_code) < 2 or not clean_title:
         return None, "Course code and title are required."
@@ -192,12 +192,12 @@ def create_course_record(course_code, title, department, batch, instructor, cred
         return None, f"Course {clean_code} already exists."
     doc = {"course_code": clean_code, "created_at": datetime.now(timezone.utc), **_course_fields(title, department, batch, instructor, credits, capacity, status)}
     col.insert_one(doc)
-    _audit("COURSES", "CREATE_COURSE", f"Added course {clean_code} ({clean_title}).", "SUCCESS")
+    _audit("COURSES", "CREATE_COURSE", f"Added course {clean_code} ({clean_title}).", "SUCCESS", actor=actor_name)
     invalidate_cache()
     return doc, None
 
 
-def update_course_record(course_code, title, department, batch, instructor, credits, capacity, status="ACTIVE"):
+def update_course_record(course_code, title, department, batch, instructor, credits, capacity, status="ACTIVE", actor_name="System Admin"):
     clean_code, clean_title = str(course_code or "").strip().upper(), str(title or "").strip()
     if not clean_code or not clean_title:
         return False, "Course code and title are required."
@@ -208,15 +208,15 @@ def update_course_record(course_code, title, department, batch, instructor, cred
     updates = _course_fields(title, department, batch, instructor, credits, capacity, status, fallback=existing)
     updates["updated_at"] = datetime.now(timezone.utc)
     col.update_one({"_id": existing["_id"]}, {"$set": updates})
-    _audit("COURSES", "UPDATE_COURSE", f"Updated course {clean_code} ({clean_title}).", "INFO")
+    _audit("COURSES", "UPDATE_COURSE", f"Updated course {clean_code} ({clean_title}).", "INFO", actor=actor_name)
     invalidate_cache()
     return True, None
 
 
-def delete_course_record(course_code):
+def delete_course_record(course_code, actor_name="System Admin"):
     clean_code = str(course_code or "").strip().upper()
     if courses_col().delete_one({"course_code": clean_code}).deleted_count:
-        _audit("COURSES", "DELETE_COURSE", f"Removed course {clean_code}.", "DANGER")
+        _audit("COURSES", "DELETE_COURSE", f"Removed course {clean_code}.", "DANGER", actor=actor_name)
         invalidate_cache()
         return True, None
     return False, "Course record not found."
@@ -251,22 +251,22 @@ def create_ticket_record(user_id, user_name, role, subject, message):
     return doc, None
 
 
-def toggle_ticket_status(ticket_id):
+def toggle_ticket_status(ticket_id, actor_name="System Admin"):
     col = support_tickets_col()
     existing = col.find_one({"ticket_id": str(ticket_id or "").strip()})
     if existing is None:
         return None, "Support ticket not found."
     new_status = "RESOLVED" if str(existing.get("status") or "OPEN").strip().upper() == "OPEN" else "OPEN"
     col.update_one({"_id": existing["_id"]}, {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}})
-    _audit("TICKETS", "TOGGLE_TICKET", f"Ticket {existing.get('ticket_id') or ticket_id} marked as {new_status}.", "SUCCESS" if new_status == "RESOLVED" else "WARNING")
+    _audit("TICKETS", "TOGGLE_TICKET", f"Ticket {existing.get('ticket_id') or ticket_id} marked as {new_status}.", "SUCCESS" if new_status == "RESOLVED" else "WARNING", actor=actor_name)
     invalidate_cache()
     return new_status, None
 
 
-def delete_ticket_record(ticket_id):
+def delete_ticket_record(ticket_id, actor_name="System Admin"):
     clean_tid = str(ticket_id or "").strip()
     if support_tickets_col().delete_one({"ticket_id": clean_tid}).deleted_count:
-        _audit("TICKETS", "DELETE_TICKET", f"Deleted support ticket {clean_tid}.", "DANGER")
+        _audit("TICKETS", "DELETE_TICKET", f"Deleted support ticket {clean_tid}.", "DANGER", actor=actor_name)
         invalidate_cache()
         return True, None
     return False, "Support ticket not found."

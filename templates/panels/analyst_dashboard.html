@@ -4,10 +4,14 @@
 {% block content %}
 <section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
   <div class="min-w-0 space-y-1">
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2">
       <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">
         <i class="fa-solid fa-microchip text-xs"></i>
         <span>Machine Learning Engine</span>
+      </span>
+      <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-0.5 text-xs font-mono font-medium text-[var(--text-secondary)]">
+        <i class="fa-solid fa-sliders text-[11px] text-[var(--accent-primary)]"></i>
+        <span>High &ge;{{ portal_settings.high_risk_threshold|default:70 }}% &middot; Med &ge;{{ portal_settings.medium_risk_threshold|default:35 }}% &middot; Drop &gt;{{ portal_settings.anomaly_drop_pct|default:25 }}%</span>
       </span>
     </div>
     <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Data &amp; Predictions Hub</h2>
@@ -44,7 +48,7 @@
 
 <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
   {% include 'components/metric_card.html' with title="Student Records" value=kpis.total_records badge="Matching filters" status="info" icon="fa-solid fa-database" %}
-  {% include 'components/metric_card.html' with title="High Risk" value=kpis.high_risk_count badge="70% or higher risk" status="danger" icon="fa-solid fa-triangle-exclamation" %}
+  {% include 'components/metric_card.html' with title="High Risk" value=kpis.high_risk_count badge=portal_settings.high_risk_threshold|default:70|stringformat:"s"|add:"% or higher risk" status="danger" icon="fa-solid fa-triangle-exclamation" %}
   {% include 'components/metric_card.html' with title="Unusual Drops" value=kpis.anomalies_count badge="Sudden drop flagged" status="warning" icon="fa-solid fa-wave-square" %}
   {% include 'components/metric_card.html' with title="Average Pred. GPA" value=kpis.avg_predicted_gpa badge="Out of 4.0" status="success" icon="fa-solid fa-chart-line" %}
 </section>

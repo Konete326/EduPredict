@@ -12,6 +12,9 @@ from panels.admin_services import create_course_record
 class AnalystDashboardEvaluationTests(TestCase):
     def setUp(self):
         invalidate_cache()
+        p = patch("panels.views_analyst._resolve_runtime_settings", return_value={"high_risk_threshold": 70, "medium_risk_threshold": 35, "anomaly_drop_pct": 25, "min_attendance_pct": 75, "passing_gpa": 2.0, "auto_student_alerts": True, "auto_teacher_alerts": True})
+        p.start()
+        self.addCleanup(p.stop)
 
     def _login_as(self, role, user_id="USR-TEST-1"):
         client = Client()
@@ -93,6 +96,7 @@ class AnalystDashboardEvaluationTests(TestCase):
         self.assertIn("Student Predictions", html)
         self.assertIn('href="/analyst-panel/#ml-evaluation-section"', html)
         self.assertNotIn('data-coming-title="AI Accuracy"', html)
+        self.assertIn('High &ge;70% &middot; Med &ge;35% &middot; Drop &gt;25%', html)
 
         with patch("analytics.ml_engine.student_records_col") as mock_ml_records:
             eval_resp = client.get(reverse("analytics:model_evaluation"))
@@ -314,10 +318,10 @@ class AdminLogsAndSettingsTests(TestCase):
         clear_resp = client.post(reverse("panels:admin_logs"), {"action": "clear_custom"})
         self.assertRedirects(clear_resp, reverse("panels:admin_logs"), fetch_redirect_response=False)
         self.assertNotIn("Nightly audit note recorded", client.get(reverse("panels:admin_logs")).content.decode("utf-8"))
-        created_course, err = create_course_record("AI-900", "Deep Learning", "AI", "2026-A", "Dr. Bilal", 3, 50)
+        created_course, err = create_course_record("AI-900", "Deep Learning", "AI", "2026-A", "Dr. Bilal", 3, 50, actor_name="Dr. Admin Lead")
         self.assertIsNone(err)
         self.assertIsNotNone(created_course)
-        self.assertTrue(any(d.get("action") == "CREATE_COURSE" and "AI-900" in d.get("summary", "") for d in self.cols["activity_logs"].docs))
+        self.assertTrue(any(d.get("action") == "CREATE_COURSE" and d.get("actor") == "Dr. Admin Lead" and "AI-900" in d.get("summary", "") for d in self.cols["activity_logs"].docs))
 
     def test_admin_settings_get_update_and_reset_defaults(self):
         client = self._login_as("ADMIN")

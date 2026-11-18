@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from pymongo import DESCENDING
 from analytics.data_pipeline import REQUIRED_COLUMNS
-from analytics.ml_engine import compute_course_demand, evaluate_models
+from analytics.ml_engine import _resolve_runtime_settings, compute_course_demand, evaluate_models
 from analytics.model_health import get_analyst_accuracy_page_context
 from core.db import datasets_log_col, get_cached, predictions_col, student_records_col
 from core.decorators import role_required
@@ -174,6 +174,7 @@ def _compute_analyst_data(selected_batch, selected_course, selected_risk):
         'chart_data': chart_data, 'filtered': filtered, 'evaluation': evaluation,
         'evaluation_models': _ordered_evaluation_models(evaluation),
         'evaluation_error': evaluation_error,
+        'portal_settings': _resolve_runtime_settings(persist=True),
     }
 
 
@@ -228,7 +229,8 @@ def analyst_dashboard(request):
             'dataset_headers': ['File Name', 'Rows', 'Fixed', 'Status', 'Date'],
             'dataset_rows': data['dataset_rows'], 'chart_data': data['chart_data'],
             'evaluation': data['evaluation'], 'evaluation_models': data['evaluation_models'],
-            'evaluation_error': data['evaluation_error'], 'required_columns': REQUIRED_COLUMNS,
+            'evaluation_error': data['evaluation_error'], 'portal_settings': data['portal_settings'],
+            'required_columns': REQUIRED_COLUMNS,
             'db_error': None,
         })
         return resp.content, resp.get('Content-Type', 'text/html; charset=utf-8')
