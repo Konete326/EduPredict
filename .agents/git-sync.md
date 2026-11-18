@@ -61,25 +61,25 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 15 Student Service Split & Min-Attendance Team"
-active_branch_merged_to_main: "feature/student-service-split-and-min-att -> main"
-project_phase: "Phase 15 Complete: Student Alert Service Extraction & Dynamic min_attendance_pct Tips"
+last_updated_by_agent: "Phase 16 Student Alert N+1 Fix & Dynamic Excellent Threshold Team"
+active_branch_merged_to_main: "feature/alert-n1-fix-and-excellent-threshold -> main"
+project_phase: "Phase 16 Complete: Single-Query Student Alerts & Dynamic Excellent Attendance Threshold"
 
 completed_modules:
-  - "Phase 1-14: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Dynamic Thresholds, Analytics/Panel Test Splits & Coverage, Student _batch_rank Marks-Scale Fix & Admin Guard/CRUD Tests"
-  - "Phase 15: Student Alert Service Extraction & Dynamic min_attendance_pct Tips:"
-      - "Extracted _load_recent_alerts, _load_alert_detail, _build_student_alerts, get_student_alerts_context, and mark_alert_read into panels/student_alert_services.py (78 lines, 0 AST comments)."
-      - "Updated panels/student_services.py (319 lines, 0 AST comments) to re-export student alert helpers from panels.student_alert_services, resolve runtime portal settings via _resolve_runtime_settings(persist=True), apply min_attendance_pct to course 'Stable' status, and pass min_att to _build_tips."
-      - "Updated panels/test_teacher_student.py (229 lines, 0 AST comments) to verify _build_tips(..., min_att=80.0) tip generation and callable(get_student_alerts_context)."
+  - "Phase 1-15: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Dynamic Thresholds, Analytics/Panel Test Splits & Coverage, Student _batch_rank Marks-Scale Fix, Admin Guard/CRUD Tests, and Student Alert Extraction"
+  - "Phase 16: Single-Query Student Alerts & Dynamic Excellent Attendance Threshold:"
+      - "Updated panels/student_alert_services.py (76 lines, 0 AST comments) with _format_alert_doc(doc), single-query _load_recent_alerts(student_id, user_id, role, limit=5) eliminating N+1 find_one calls, and _load_alert_detail delegating to _format_alert_doc."
+      - "Updated panels/student_services.py (320 lines, 0 AST comments) so _build_tips and _load_student_overview align the 'Excellent' attendance tip/status threshold (min(100.0, max(90.0, float(min_att) + 10.0)) and excellent_att = min(100.0, max(85.0, min_att + 5.0))) strictly above min_attendance_pct."
+      - "Updated panels/test_teacher_student.py (252 lines, 0 AST comments) with test_single_query_recent_alerts_and_dynamic_excellent_threshold verifying 1 find() / 0 find_one() calls in _load_recent_alerts and Needs Help vs Excellent classification under min_attendance_pct=90."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py test analytics panels --verbosity=2: 32/32 tests PASSED in 4.360s (full manage.py test: 32/32 PASSED in 3.913s)."
+  - "manage.py test analytics panels --verbosity=2 (and full manage.py test): 33/33 tests PASSED."
   - "node --check static/js/app.js, static/js/nav.js, static/js/charts.js: PASSED."
-  - "Zero comments and line-count limits verified: panels/student_alert_services.py (78/95), panels/student_services.py (319/325), panels/test_teacher_student.py (229/235); .agents/rules/edupredict-rules.md (11899 bytes); .env tracked in Git."
+  - "Zero comments and line-count limits verified: panels/student_alert_services.py (76/78), panels/student_services.py (320/322), panels/test_teacher_student.py (252/255); .agents/rules/edupredict-rules.md (11899 bytes); .env tracked in Git."
 
 active_routes_and_files:
-  - "panels/student_alert_services.py (78 lines), panels/student_services.py (319 lines), panels/test_teacher_student.py (229 lines)"
+  - "panels/student_alert_services.py (76 lines), panels/student_services.py (320 lines), panels/test_teacher_student.py (252 lines)"
   - "/admin-panel/ -> panels:admin_dashboard, /admin-panel/users/ -> panels:admin_users, /admin-panel/courses/ -> panels:admin_courses, /admin-panel/tickets/ -> panels:admin_tickets, /admin-panel/backup/ -> panels:admin_backup_export, /admin-panel/logs/ -> panels:admin_logs, /admin-panel/settings/ -> panels:admin_settings"
   - "/support/submit/ -> panels:submit_support_ticket"
   - "/teacher-panel/ -> panels:teacher_dashboard, /teacher-panel/students/ -> panels:teacher_students, /teacher-panel/alerts/ -> panels:teacher_alerts, /teacher-panel/ingest/ -> panels:teacher_ingest"
@@ -87,7 +87,7 @@ active_routes_and_files:
   - "/analyst-panel/ -> panels:analyst_dashboard, /analyst-panel/accuracy/ -> panels:analyst_accuracy"
 
 pending_modules_in_order:
-  - "All Phase 1-15 implementation, modularization, and test coverage suites complete; ready for full-stack UAT or next user-requested feature."
+  - "All Phase 1-16 implementation, optimization, modularization, and test coverage suites complete; ready for full-stack UAT or next user-requested feature."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

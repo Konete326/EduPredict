@@ -1,9 +1,9 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import DEFAULT, MagicMock, patch
 from django.test import Client, TestCase
 from django.urls import reverse
 from core.db import invalidate_cache
-from panels.student_alert_services import get_student_alerts_context
-from panels.student_services import _batch_rank, _build_tips
+from panels.student_alert_services import _load_recent_alerts, get_student_alerts_context
+from panels.student_services import _batch_rank, _build_tips, _load_student_overview
 
 
 def _login_client(user_data):
@@ -218,12 +218,35 @@ class StudentPanelTests(TestCase):
         self.assertEqual(_batch_rank("STD-3", "2026-A", 60.0), {"rank": 3, "total": 3})
         self.assertIsNone(_batch_rank("STD-2", None, 75.0))
         mock_records_col.return_value.find.assert_called_with({"batch": "2026-A"}, {"_id": 0, "student_id": 1, "internal_marks": 1})
-        tips = _build_tips(
-            {"avg_attendance": 78.0, "avg_marks": 80.0, "risk_level": "LOW", "lms_hours_weekly": 8.0},
-            None,
-            75.0,
-            82.0,
-            min_att=80.0,
-        )
+        tips = _build_tips({"avg_attendance": 78.0, "avg_marks": 80.0, "risk_level": "LOW", "lms_hours_weekly": 8.0}, None, 75.0, 82.0, min_att=80.0)
         self.assertEqual(tips[0]["title"], "Raise your attendance above 90%")
         self.assertTrue(callable(get_student_alerts_context))
+
+    @patch("panels.student_alert_services.notifications_col")
+    @patch.multiple("panels.student_services", _resolve_runtime_settings=DEFAULT, student_records_col=DEFAULT, predictions_col=DEFAULT, notifications_col=DEFAULT, courses_col=DEFAULT)
+    def test_single_query_recent_alerts_and_dynamic_excellent_threshold(self, mock_notifs, _resolve_runtime_settings, student_records_col, predictions_col, notifications_col, courses_col):
+        mock_notifs.return_value.find.return_value.sort.return_value.limit.return_value = [
+            {"_id": "a1", "title": "Alert 1", "message": "Check attendance", "severity": "WARNING", "is_read": False},
+            {"_id": "a2", "title": "Alert 2", "message": "Great quiz", "severity": "INFO", "is_read": True},
+        ]
+        res = _load_recent_alerts("STD-1", "USR-1", "STUDENT", limit=5)
+        self.assertEqual(len(res), 2)
+        self.assertEqual(mock_notifs.return_value.find.call_count, 1)
+        self.assertEqual(mock_notifs.return_value.find_one.call_count, 0)
+        _resolve_runtime_settings.return_value = {"min_attendance_pct": 90}
+        docs = [
+            {"student_id": "STD-1", "full_name": "Ali", "batch": "2026-A", "course_code": "CS-101", "internal_marks": 85.0, "attendance_pct": 86.0},
+            {"student_id": "STD-1", "full_name": "Ali", "batch": "2026-A", "course_code": "CS-102", "internal_marks": 85.0, "attendance_pct": 96.0},
+        ]
+        rec_cur = MagicMock()
+        rec_cur.sort.return_value = docs
+        rec_cur.__iter__.side_effect = lambda: iter(docs)
+        student_records_col.return_value.find.return_value = rec_cur
+        predictions_col.return_value.find_one.return_value = None
+        notifications_col.return_value = _mock_notifs_col()
+        courses_col.return_value.count_documents.return_value = 2
+        courses_col.return_value.find.return_value = [{"credits": 3.0}, {"credits": 3.0}]
+        statuses = {r["course_code"]: r["status"]["text"] for r in _load_student_overview("STD-1", "USR-1", "STUDENT")["subject_rows"]}
+        self.assertEqual(statuses["CS-101"], "Needs Help")
+        self.assertNotEqual(statuses["CS-101"], "Excellent")
+        self.assertEqual(statuses["CS-102"], "Excellent")

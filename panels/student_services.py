@@ -112,7 +112,7 @@ def _build_tips(record, prediction, class_avg_marks, class_avg_att, min_att=75.0
             "title": f"Raise your attendance above {target_att}%",
             "text": f"You are at {att:.1f}%. Attending the next {max(1, needed)} lectures will push you over {target_att}%.",
         })
-    elif att >= 90.0:
+    elif att >= min(100.0, max(90.0, float(min_att) + 10.0)):
         tips.append({
             "icon": "fa-solid fa-medal",
             "status": "success",
@@ -183,6 +183,7 @@ def _build_insight(record, rank):
 def _load_student_overview(student_id, user_id, role):
     portal_settings = _resolve_runtime_settings(persist=True)
     min_att = float(portal_settings.get("min_attendance_pct", 75.0))
+    excellent_att = min(100.0, max(85.0, min_att + 5.0))
     record = _empty_record(student_id)
     records, prediction = _fetch_student_docs(student_id)
     if records:
@@ -226,7 +227,7 @@ def _load_student_overview(student_id, user_id, role):
         code = course["course_code"] or "GENERAL"
         avg = class_stats.get(code) or {"attendance": 0.0, "marks": 0.0, "assignment": 0.0, "count": 0}
         diff = round(course["internal_marks"] - avg["marks"], 1)
-        if course["internal_marks"] >= 80.0 and course["attendance_pct"] >= 85.0:
+        if course["internal_marks"] >= 80.0 and course["attendance_pct"] >= excellent_att:
             status = {"text": "Excellent", "status": "success"}
         elif course["internal_marks"] >= avg["marks"] - 2.0 and course["attendance_pct"] >= min_att:
             status = {"text": "Stable", "status": "info"}

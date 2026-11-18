@@ -3,33 +3,14 @@ from pymongo import DESCENDING
 from core.db import get_cached, invalidate_cache, notifications_col, support_tickets_col
 
 
-def _load_recent_alerts(student_id, user_id, role, limit=5):
-    targets = [
-        {"target_user_id": student_id},
-        {"target_user_id": user_id},
-        {"target_role": role, "target_user_id": {"$in": [None, ""]}},
-        {"target_role": role, "target_user_id": {"$exists": False}},
-        {"target_role": "ALL", "target_user_id": {"$in": [None, ""]}},
-        {"target_role": "ALL", "target_user_id": {"$exists": False}},
-    ]
-    alerts = []
-    for doc in notifications_col().find({"$or": targets}, {"_id": 1}).sort("created_at", DESCENDING).limit(int(limit)):
-        alerts.append(_load_alert_detail(str(doc["_id"])))
-    return [a for a in alerts if a]
-
-
-def _load_alert_detail(alert_id):
-    try:
-        doc = notifications_col().find_one({"_id": __import__("bson").ObjectId(alert_id)})
-    except Exception:
-        return None
+def _format_alert_doc(doc):
     if not doc:
         return None
     created = doc.get("created_at")
     severity = str(doc.get("severity") or "INFO").upper()
     status_map = {"DANGER": "danger", "WARNING": "warning"}
     return {
-        "id": str(doc["_id"]),
+        "id": str(doc.get("_id") or ""),
         "title": str(doc.get("title") or "Notice"),
         "message": str(doc.get("message") or ""),
         "severity": severity,
@@ -37,6 +18,23 @@ def _load_alert_detail(alert_id):
         "created": created.strftime("%Y-%m-%d %H:%M") if hasattr(created, "strftime") else "-",
         "status": status_map.get(severity, "info"),
     }
+
+
+def _load_recent_alerts(student_id, user_id, role, limit=5):
+    targets = [{"target_user_id": student_id}, {"target_user_id": user_id}]
+    for target_role in (role, "ALL"):
+        targets.append({"target_role": target_role, "target_user_id": {"$in": [None, ""]}})
+        targets.append({"target_role": target_role, "target_user_id": {"$exists": False}})
+    cursor = notifications_col().find({"$or": targets}).sort("created_at", DESCENDING).limit(int(limit))
+    return [a for a in (_format_alert_doc(doc) for doc in cursor) if a]
+
+
+def _load_alert_detail(alert_id):
+    try:
+        doc = notifications_col().find_one({"_id": __import__("bson").ObjectId(alert_id)})
+    except Exception:
+        return None
+    return _format_alert_doc(doc)
 
 
 def _build_student_alerts(student_id, user_id, role):
