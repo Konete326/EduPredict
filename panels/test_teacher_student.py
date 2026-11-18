@@ -2,7 +2,8 @@ from unittest.mock import MagicMock, patch
 from django.test import Client, TestCase
 from django.urls import reverse
 from core.db import invalidate_cache
-from panels.student_services import _batch_rank
+from panels.student_alert_services import get_student_alerts_context
+from panels.student_services import _batch_rank, _build_tips
 
 
 def _login_client(user_data):
@@ -217,3 +218,12 @@ class StudentPanelTests(TestCase):
         self.assertEqual(_batch_rank("STD-3", "2026-A", 60.0), {"rank": 3, "total": 3})
         self.assertIsNone(_batch_rank("STD-2", None, 75.0))
         mock_records_col.return_value.find.assert_called_with({"batch": "2026-A"}, {"_id": 0, "student_id": 1, "internal_marks": 1})
+        tips = _build_tips(
+            {"avg_attendance": 78.0, "avg_marks": 80.0, "risk_level": "LOW", "lms_hours_weekly": 8.0},
+            None,
+            75.0,
+            82.0,
+            min_att=80.0,
+        )
+        self.assertEqual(tips[0]["title"], "Raise your attendance above 90%")
+        self.assertTrue(callable(get_student_alerts_context))

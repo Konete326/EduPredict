@@ -1,13 +1,16 @@
-from datetime import datetime, timezone
 from pymongo import DESCENDING
+from analytics.ml_engine import _resolve_runtime_settings
 from core.db import (
     courses_col,
     get_cached,
-    invalidate_cache,
     notifications_col,
     predictions_col,
     student_records_col,
-    support_tickets_col,
+)
+from panels.student_alert_services import (
+    _load_recent_alerts,
+    get_student_alerts_context,
+    mark_alert_read,
 )
 
 
@@ -91,7 +94,7 @@ def _batch_rank(student_id, batch, student_avg_marks):
     return {"rank": better + 1, "total": len(peer_totals)}
 
 
-def _build_tips(record, prediction, class_avg_marks, class_avg_att):
+def _build_tips(record, prediction, class_avg_marks, class_avg_att, min_att=75.0):
     tips = []
     att = record["avg_attendance"]
     marks = record["avg_marks"]
@@ -99,14 +102,15 @@ def _build_tips(record, prediction, class_avg_marks, class_avg_att):
     lms = record["lms_hours_weekly"]
     class_att = class_avg_att or 0.0
 
-    if att < 75.0:
+    if att < float(min_att):
         weekly_lectures = 5
-        needed = max(0, int(round((85.0 - att) / max(weekly_lectures, 1) * 10)))
+        target_att = min(100, int(round(float(min_att))) + 10)
+        needed = max(0, int(round((float(target_att) - att) / max(weekly_lectures, 1) * 10)))
         tips.append({
             "icon": "fa-solid fa-calendar-check",
             "status": "danger" if att < 60.0 else "warning",
-            "title": "Raise your attendance above 85%",
-            "text": f"You are at {att:.1f}%. Attending the next {max(1, needed)} lectures will push you over 85%.",
+            "title": f"Raise your attendance above {target_att}%",
+            "text": f"You are at {att:.1f}%. Attending the next {max(1, needed)} lectures will push you over {target_att}%.",
         })
     elif att >= 90.0:
         tips.append({
@@ -177,6 +181,8 @@ def _build_insight(record, rank):
 
 
 def _load_student_overview(student_id, user_id, role):
+    portal_settings = _resolve_runtime_settings(persist=True)
+    min_att = float(portal_settings.get("min_attendance_pct", 75.0))
     record = _empty_record(student_id)
     records, prediction = _fetch_student_docs(student_id)
     if records:
@@ -222,7 +228,7 @@ def _load_student_overview(student_id, user_id, role):
         diff = round(course["internal_marks"] - avg["marks"], 1)
         if course["internal_marks"] >= 80.0 and course["attendance_pct"] >= 85.0:
             status = {"text": "Excellent", "status": "success"}
-        elif course["internal_marks"] >= avg["marks"] - 2.0 and course["attendance_pct"] >= 75.0:
+        elif course["internal_marks"] >= avg["marks"] - 2.0 and course["attendance_pct"] >= min_att:
             status = {"text": "Stable", "status": "info"}
         elif diff >= -8.0:
             status = {"text": "Needs Help", "status": "warning"}
@@ -244,7 +250,7 @@ def _load_student_overview(student_id, user_id, role):
     rank = _batch_rank(student_id, record["batch"], record["avg_marks"]) if record["batch"] else None
     avg_marks_all = _safe_float(_batch_class_average(record["batch"]))
     avg_att_all = _safe_float(_batch_class_attendance(record["batch"]))
-    tips = _build_tips(record, prediction, avg_marks_all, avg_att_all)
+    tips = _build_tips(record, prediction, avg_marks_all, avg_att_all, min_att=min_att)
     insight = _build_insight(record, rank)
 
     unread_alerts = notifications_col().count_documents({
@@ -289,84 +295,9 @@ def _batch_class_attendance(batch):
     return round(sum(values) / len(values), 1) if values else 0.0
 
 
-def _load_recent_alerts(student_id, user_id, role, limit=5):
-    targets = [
-        {"target_user_id": student_id},
-        {"target_user_id": user_id},
-        {"target_role": role, "target_user_id": {"$in": [None, ""]}},
-        {"target_role": role, "target_user_id": {"$exists": False}},
-        {"target_role": "ALL", "target_user_id": {"$in": [None, ""]}},
-        {"target_role": "ALL", "target_user_id": {"$exists": False}},
-    ]
-    alerts = []
-    for doc in notifications_col().find({"$or": targets}, {"_id": 1}).sort("created_at", DESCENDING).limit(int(limit)):
-        alerts.append(_load_alert_detail(str(doc["_id"])))
-    return [a for a in alerts if a]
-
-
-def _load_alert_detail(alert_id):
-    try:
-        doc = notifications_col().find_one({"_id": __import__("bson").ObjectId(alert_id)})
-    except Exception:
-        return None
-    if not doc:
-        return None
-    created = doc.get("created_at")
-    severity = str(doc.get("severity") or "INFO").upper()
-    status_map = {"DANGER": "danger", "WARNING": "warning"}
-    return {
-        "id": str(doc["_id"]),
-        "title": str(doc.get("title") or "Notice"),
-        "message": str(doc.get("message") or ""),
-        "severity": severity,
-        "is_read": bool(doc.get("is_read")),
-        "created": created.strftime("%Y-%m-%d %H:%M") if hasattr(created, "strftime") else "-",
-        "status": status_map.get(severity, "info"),
-    }
-
-
-def _build_student_alerts(student_id, user_id, role):
-    items = _load_recent_alerts(student_id, user_id, role, limit=30)
-    my_tickets = []
-    for t in support_tickets_col().find({"$or": [{"user_id": user_id}, {"user_id": student_id}]}, {"_id": 0}).sort("created_at", DESCENDING).limit(10):
-        created = t.get("created_at")
-        status = str(t.get("status") or "OPEN").upper()
-        my_tickets.append({
-            "ticket_id": str(t.get("ticket_id") or ""),
-            "subject": str(t.get("subject") or ""),
-            "message": str(t.get("message") or ""),
-            "status": status,
-            "status_badge": {"text": "Resolved" if status == "RESOLVED" else "Open", "status": "success" if status == "RESOLVED" else "warning"},
-            "created": created.strftime("%Y-%m-%d %H:%M") if hasattr(created, "strftime") else "-",
-        })
-    unread = sum(1 for a in items if not a["is_read"])
-    return {"alerts": items, "my_tickets": my_tickets, "unread": unread, "total": len(items)}
-
-
 def get_student_overview_context(student_id, user_id, role):
     key = f"student:overview:{student_id}:{user_id}:{role}"
     return get_cached(key, lambda: _load_student_overview(student_id, user_id, role), ttl=30.0)
-
-
-def get_student_alerts_context(student_id, user_id, role):
-    key = f"student:alerts:{student_id}:{user_id}:{role}"
-    return get_cached(key, lambda: _build_student_alerts(student_id, user_id, role), ttl=20.0)
-
-
-def mark_alert_read(alert_id, student_id, user_id, role):
-    try:
-        oid = __import__("bson").ObjectId(str(alert_id).strip())
-    except Exception:
-        return False, "This alert no longer exists."
-    targets = [{"target_user_id": student_id}, {"target_user_id": user_id}]
-    if role:
-        targets.append({"target_role": role, "target_user_id": {"$in": [None, ""]}})
-        targets.append({"target_role": "ALL", "target_user_id": {"$in": [None, ""]}})
-    updated = notifications_col().update_one({"_id": oid, "is_read": False, "$or": targets}, {"$set": {"is_read": True, "read_at": datetime.now(timezone.utc)}})
-    invalidate_cache()
-    if updated.modified_count:
-        return True, None
-    return False, "Alert not found or already read."
 
 
 def build_report_export_rows(record, subject_rows):
