@@ -4,7 +4,7 @@ from django.urls import reverse
 from core.db import invalidate_cache
 import panels.student_alert_services as student_alert_svc
 from panels.student_alert_services import _load_recent_alerts, get_student_alerts_context
-from panels.student_services import _batch_rank, _build_tips, _load_student_overview
+from panels.student_services import _batch_rank, _build_tips, _fetch_batch_docs, _load_student_overview
 
 
 def _login_client(user_data):
@@ -255,3 +255,6 @@ class StudentPanelTests(TestCase):
         self.assertEqual(statuses["CS-101"], "Needs Help")
         self.assertNotEqual(statuses["CS-101"], "Excellent")
         self.assertEqual(statuses["CS-102"], "Excellent")
+        notifications_col.return_value.count_documents.assert_called_once_with({"is_read": False, "$or": student_alert_svc._alert_targets("STD-1", "USR-1", "STUDENT")})
+        _fetch_batch_docs("", course_codes=["CS-101", "CS-102"])
+        student_records_col.return_value.find.assert_called_with({"course_code": {"$in": ["CS-101", "CS-102"]}}, {"_id": 0, "student_id": 1, "course_code": 1, "attendance_pct": 1, "internal_marks": 1, "assignment_score": 1})

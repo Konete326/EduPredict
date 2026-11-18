@@ -8,6 +8,7 @@ from core.db import (
     student_records_col,
 )
 from panels.student_alert_services import (
+    _alert_targets,
     _load_recent_alerts,
     get_student_alerts_context,
     mark_alert_read,
@@ -49,8 +50,10 @@ def _fetch_student_docs(student_id):
     return records, prediction
 
 
-def _fetch_batch_docs(batch):
-    return list(student_records_col().find({"batch": batch} if batch else {}, {"_id": 0, "student_id": 1, "course_code": 1, "attendance_pct": 1, "internal_marks": 1, "assignment_score": 1}))
+def _fetch_batch_docs(batch, course_codes=None):
+    clean_courses = [c for c in (course_codes or []) if c]
+    query = {"batch": batch} if batch else ({"course_code": {"$in": clean_courses}} if clean_courses else {})
+    return list(student_records_col().find(query, {"_id": 0, "student_id": 1, "course_code": 1, "attendance_pct": 1, "internal_marks": 1, "assignment_score": 1}))
 
 
 def _course_class_stats(batch, docs=None):
@@ -220,7 +223,7 @@ def _load_student_overview(student_id, user_id, role):
         gen = prediction.get("generated_at")
         record["generated_at"] = gen.strftime("%Y-%m-%d %H:%M") if hasattr(gen, "strftime") else None
 
-    batch_docs = _fetch_batch_docs(record["batch"])
+    batch_docs = _fetch_batch_docs(record["batch"], course_codes=[x["course_code"] for x in record["courses"] if x.get("course_code")])
     class_stats = _course_class_stats(record["batch"], docs=batch_docs)
     subject_rows = []
     chart_labels, chart_mine, chart_class = [], [], []
@@ -255,15 +258,7 @@ def _load_student_overview(student_id, user_id, role):
     tips = _build_tips(record, prediction, avg_marks_all, avg_att_all, min_att=min_att)
     insight = _build_insight(record, rank)
 
-    unread_alerts = notifications_col().count_documents({
-        "is_read": False,
-        "$or": [
-            {"target_user_id": student_id},
-            {"target_user_id": user_id},
-            {"target_role": role, "target_user_id": {"$in": [None, ""]}},
-            {"target_role": "ALL", "target_user_id": {"$in": [None, ""]}},
-        ],
-    })
+    unread_alerts = notifications_col().count_documents({"is_read": False, "$or": _alert_targets(student_id, user_id, role)})
     active_courses = courses_col().count_documents({"status": "ACTIVE"})
     credits = 0.0
     for c in courses_col().find({"course_code": {"$in": [x["course_code"] for x in record["courses"]]}}, {"_id": 0, "credits": 1}):
