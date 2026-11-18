@@ -72,21 +72,23 @@ def _course_class_stats(batch):
     return class_stats
 
 
-def _batch_rank(student_id, batch, predicted_gpa):
+def _batch_rank(student_id, batch, student_avg_marks):
     if batch is None:
         return None
     query = {"batch": batch} if batch else {}
-    better, total = 0, 0
+    peer_totals = {}
     for rec in student_records_col().find(query, {"_id": 0, "student_id": 1, "internal_marks": 1}):
         sid = str(rec.get("student_id") or "").strip()
         if not sid:
             continue
-        total += 1
-        if sid != student_id and _safe_float(rec.get("internal_marks")) > _safe_float(predicted_gpa):
-            better += 1
-    if total == 0:
+        bucket = peer_totals.setdefault(sid, [0.0, 0])
+        bucket[0] += _safe_float(rec.get("internal_marks"))
+        bucket[1] += 1
+    if not peer_totals:
         return None
-    return {"rank": better + 1, "total": total}
+    my_score = _safe_float(student_avg_marks)
+    better = sum(1 for sid, (s, c) in peer_totals.items() if sid != student_id and (s / max(c, 1)) > my_score)
+    return {"rank": better + 1, "total": len(peer_totals)}
 
 
 def _build_tips(record, prediction, class_avg_marks, class_avg_att):

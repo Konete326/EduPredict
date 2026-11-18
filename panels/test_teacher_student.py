@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch
 from django.test import Client, TestCase
 from django.urls import reverse
 from core.db import invalidate_cache
+from panels.student_services import _batch_rank
 
 
 def _login_client(user_data):
@@ -201,3 +202,18 @@ class StudentPanelTests(TestCase):
             client = _login_client({"user_id": f"USR-{role}", "role": role, "email": f"{role.lower()}@edupredict.edu", "full_name": f"Test {role.title()}"})
             for route_name in ("panels:student_dashboard", "panels:student_report"):
                 self.assertRedirects(client.get(reverse(route_name)), reverse(expected_dash), fetch_redirect_response=False)
+
+    @patch("panels.student_services.student_records_col")
+    def test_batch_rank_aggregates_distinct_students_on_marks_scale(self, mock_records_col):
+        mock_records_col.return_value.find.return_value = [
+            {"student_id": "STD-1", "internal_marks": 90},
+            {"student_id": "STD-1", "internal_marks": 80},
+            {"student_id": "STD-2", "internal_marks": 78},
+            {"student_id": "STD-2", "internal_marks": 72},
+            {"student_id": "STD-3", "internal_marks": 60},
+        ]
+        self.assertEqual(_batch_rank("STD-2", "2026-A", 75.0), {"rank": 2, "total": 3})
+        self.assertEqual(_batch_rank("STD-1", "2026-A", 85.0), {"rank": 1, "total": 3})
+        self.assertEqual(_batch_rank("STD-3", "2026-A", 60.0), {"rank": 3, "total": 3})
+        self.assertIsNone(_batch_rank("STD-2", None, 75.0))
+        mock_records_col.return_value.find.assert_called_with({"batch": "2026-A"}, {"_id": 0, "student_id": 1, "internal_marks": 1})

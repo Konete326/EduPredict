@@ -61,32 +61,33 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 13 Panel Test-Split & Coverage Team"
-active_branch_merged_to_main: "feature/panel-test-split-and-coverage -> main"
-project_phase: "Phase 13 Complete: Panel Test Split & Teacher/Student Coverage Suite"
+last_updated_by_agent: "Phase 14 Rank-Fix & Admin-Guard Test Team"
+active_branch_merged_to_main: "feature/rank-fix-and-admin-guard-tests -> main"
+project_phase: "Phase 14 Complete: Student _batch_rank Marks-Scale Fix & Admin Guard/CRUD Tests"
 
 completed_modules:
-  - "Phase 1-12: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Dynamic Thresholds, Analytics Test Split & Accuracy Thresholds"
-  - "Phase 13: Panel Test Split & Teacher/Student Coverage Suite:"
-      - "Split AdminLogsAndSettingsTests, _MemCursor, and _MemCol into panels/test_admin.py (164 lines, 0 comments)."
-      - "Trimmed panels/tests.py (205 lines, 0 comments) to AnalystDashboardEvaluationTests only without duplicate test imports."
-      - "Added panels/test_teacher_student.py (203 lines, 0 comments) with TeacherPanelTests and StudentPanelTests covering GET views, Rule 20 sidebar isolation, CSV exports/template/report download, POST send_alert/mark_all redirects, and RBAC redirects."
+  - "Phase 1-13: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Dynamic Thresholds, Analytics/Panel Test Splits & Coverage"
+  - "Phase 14: Student _batch_rank Marks-Scale Fix & Admin Guard/CRUD Tests:"
+      - "Updated _batch_rank(student_id, batch, student_avg_marks) in panels/student_services.py (388 lines, 0 AST comments) to aggregate internal_marks per distinct student_id on the 0-100 marks scale."
+      - "Expanded _MemCol (delete_one, aggregate, _id tracking, $ne matching) and added AdminCrudAndGuardsTests in panels/test_admin.py (261 lines, 0 comments) covering admin self-action guards, UI row action omission, Rule 18 support ticket boundary, JSON/CSV backup exports, and admin CRUD views."
+      - "Added test_batch_rank_aggregates_distinct_students_on_marks_scale in panels/test_teacher_student.py (219 lines, 0 comments) verifying multi-course distinct-student ranking."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py test analytics panels --verbosity=2: 28/28 tests PASSED in 3.880s (full manage.py test: 28/28 PASSED)."
+  - "manage.py test analytics panels --verbosity=2: 32/32 tests PASSED in 3.958s (full manage.py test: 32/32 PASSED in 3.899s)."
   - "node --check static/js/app.js, static/js/nav.js, static/js/charts.js: PASSED."
-  - "Zero comments and line-count limits verified: panels/tests.py (205/215), panels/test_admin.py (164/185), panels/test_teacher_student.py (203/210); .agents/rules/edupredict-rules.md (11899 bytes)."
+  - "Zero comments and line-count limits verified: panels/student_services.py (388/392), panels/test_admin.py (261/265), panels/test_teacher_student.py (219/225); .agents/rules/edupredict-rules.md (11899 bytes); .env tracked in Git."
 
 active_routes_and_files:
-  - "panels/tests.py (205 lines), panels/test_admin.py (164 lines), panels/test_teacher_student.py (203 lines)"
-  - "/admin-panel/logs/ -> panels:admin_logs, /admin-panel/settings/ -> panels:admin_settings"
+  - "panels/student_services.py (388 lines), panels/test_admin.py (261 lines), panels/test_teacher_student.py (219 lines)"
+  - "/admin-panel/ -> panels:admin_dashboard, /admin-panel/users/ -> panels:admin_users, /admin-panel/courses/ -> panels:admin_courses, /admin-panel/tickets/ -> panels:admin_tickets, /admin-panel/backup/ -> panels:admin_backup_export, /admin-panel/logs/ -> panels:admin_logs, /admin-panel/settings/ -> panels:admin_settings"
+  - "/support/submit/ -> panels:submit_support_ticket"
   - "/teacher-panel/ -> panels:teacher_dashboard, /teacher-panel/students/ -> panels:teacher_students, /teacher-panel/alerts/ -> panels:teacher_alerts, /teacher-panel/ingest/ -> panels:teacher_ingest"
   - "/student-panel/ -> panels:student_dashboard, /student-panel/report/ -> panels:student_report, /student-panel/tips/ -> panels:student_tips, /student-panel/notifications/ -> panels:student_notifications"
   - "/analyst-panel/ -> panels:analyst_dashboard, /analyst-panel/accuracy/ -> panels:analyst_accuracy"
 
 pending_modules_in_order:
-  - "All Phase 1-13 implementation and test coverage suites complete; ready for full-stack UAT or next user-requested feature."
+  - "All Phase 1-14 implementation and test coverage suites complete; ready for full-stack UAT or next user-requested feature."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
