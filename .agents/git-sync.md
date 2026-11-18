@@ -61,25 +61,27 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Analyst Cache, ML Evaluation & Navigation Integrator"
-active_branch_merged_to_main: "feature/ml-evaluation -> main"
-project_phase: "Phase 7 & ML Evaluation Tasks 1-3 Complete"
+last_updated_by_agent: "Workspace Rules, .agents Enforcement & Git Sync Coordinator"
+active_branch_merged_to_main: "feature/agent-rules-sync -> main"
+project_phase: "Phase 7, ML Evaluation Tasks 1-3 & .agents/ Always-On Rule Sync Complete"
 
 completed_modules:
   - "Phase 1-5: Core Shell, Auth/RBAC, Admin/Teacher Panels & Rule 20 Sidebar Isolation"
   - "Phase 6 & 7: Student Panel (Dashboard, Report Card, Study Tips, Alerts & Support), Teacher Risk Alerts & Analyst Model Health"
-  - "ML Evaluation Tasks 1-3 (analytics/preprocessing.py, analytics/evaluation.py, analytics/ml_engine.py, analytics/data_pipeline.py, analytics/views.py, panels/views_analyst.py, templates/panels/analyst_evaluation_section.html, static/js/analyst_evaluation.js, analytics/tests.py, panels/tests.py):"
-      - "Leakage-free sklearn Pipelines (MedianFallbackImputer + StandardScaler) and train/test split evaluation for Dropout Classifier and GPA Regressor."
-      - "Integrated ML Performance & Validation section into analyst_dashboard.html with shared 'analyst:evaluation:default' TTL caching, ?refresh=1 support, and AI Accuracy sidebar navigation."
+  - "ML Evaluation Tasks 1-3: Leakage-free sklearn Pipelines, analyst_evaluation_section, TTL caching, and origin/feature/ml-evaluation branch push"
+  - ".agents/ Always-On Enforcement & Git Sync:"
+      - "Replaced conflicting Astryx/React block in AGENTS.md and GEMINI.md with mandatory .agents/ pre-flight, 20-rule, and git-sync.md directives."
+      - "Aligned .agents/rules/edupredict-rules.md (11,899 bytes < 24 KB) and .agents/skills/edupredict-workflow/SKILL.md (20 rules + manage.py test checklist)."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py test analytics panels --verbosity=2: 19/19 tests PASSED."
-  - "Zero comments and <= 350-400 line caps verified across all modified files."
+  - "manage.py test analytics panels --verbosity=1: 19/19 tests PASSED."
+  - "node --check static/js/app.js & static/js/nav.js: PASSED."
 
 active_routes_and_files:
+  - "AGENTS.md, GEMINI.md, .agents/rules/edupredict-rules.md, .agents/skills/edupredict-workflow/SKILL.md, .agents/git-sync.md"
   - "/analyst-panel/ -> panels:analyst_dashboard (includes #ml-evaluation-section)"
-  - "/analyst-panel/evaluation/ -> analytics:model_evaluation (cached default + custom params + refresh=1)"
+  - "/analyst-panel/evaluation/ -> analytics:model_evaluation"
   - "/analyst-panel/accuracy/ -> panels:analyst_accuracy"
   - "/teacher-panel/alerts/ -> panels:teacher_alerts"
   - "/student-panel/* -> panels:student_dashboard, student_report, student_tips, student_notifications"
@@ -88,6 +90,7 @@ pending_modules_in_order:
   - "Phase 8 (optional hardening): Admin Activity Logs & Settings pages"
 
 important_notes_for_next_agent:
+  - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
   - "Keep role navigation strictly isolated across all panels per Rule 20; preserve get_cached TTL keys and invalidate_cache on mutations."
   - "Always track .env and .agents/* in Git."
 ```

@@ -5,7 +5,7 @@ description: Mandatory EduPredict project rules, stack lock, UI/DB contracts, vi
 
 # EduPredict Always-On Engineering & UI/UX Rules
 
-> **Pre-Flight Mandate:** Before writing or editing ANY code, read `.agents/prd.md`, `.agents/srd.md`, `.agents/trd.md`, `.agents/design.md`, `.agents/project-rules.md`, and `.agents/git-sync.md` (especially Section 4 Active Handover State).
+> **Pre-Flight Mandate (Every Task):** Before writing or editing ANY code on any task, read `.agents/prd.md`, `.agents/srd.md`, `.agents/trd.md`, `.agents/design.md`, `.agents/project-rules.md`, and `.agents/git-sync.md` (especially Section 4 Active Handover State), follow `.agents/skills/edupredict-workflow/SKILL.md`, and execute the mandatory pre-task/post-task Git pull/push routine in `.agents/git-sync.md`.
 
 ## 1. Technology Stack Lock & Latest Packages Policy
 - **Pure Django Only (MERN Strictly Prohibited):** Built 100% on Python 3.11+ Django (MVT) + MongoDB Atlas (`pymongo`, `core/db.py`) + Tailwind CSS + Vanilla JS (`static/js/app.js`, `static/js/charts.js`) + FontAwesome + Chart.js v4+.
@@ -13,7 +13,7 @@ description: Mandatory EduPredict project rules, stack lock, UI/DB contracts, vi
 - **Latest Stable Packages:** Whenever installing or updating any Python dependency, always install the latest stable release (`pip install --upgrade <package>`) and freeze into `requirements.txt`.
 
 ## 2. Active Tooling & Environment Hygiene
-- Use native search, file inspection, `python manage.py check`, and verification before finishing any task, regardless of how brief the user prompt is.
+- Use native search, file inspection, `python manage.py check`, `python manage.py test`, and full `.agents/skills/edupredict-workflow/SKILL.md` verification before finishing any task, regardless of how brief the user prompt is.
 - Keep `.agents/` clean of unauthorized or unrelated skills/clutter (such as `'Ponytail Skill'`).
 
 ## 3. Strict One-Feature-At-A-Time Execution Lock (MANDATORY)

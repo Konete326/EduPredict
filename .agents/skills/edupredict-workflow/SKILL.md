@@ -18,7 +18,7 @@ Before inspecting code or editing files, read all six project specification docu
 2. [srd.md](../../srd.md) — Architecture, RBAC, data pipeline, ML & NFR specs
 3. [trd.md](../../trd.md) — Stack, directory layout, MongoDB schemas, URL map, component contracts
 4. [design.md](../../design.md) — Theme tokens, app-shell-3, z-index stack, viewport-fit & mobile card-list rules
-5. [project-rules.md](../../project-rules.md) — All 19 mandatory engineering, UI/UX, role, caching, and communication rules
+5. [project-rules.md](../../project-rules.md) — All 20 mandatory engineering, UI/UX, role, caching, and communication rules
 6. [git-sync.md](../../git-sync.md) — Git automation, module isolation, and Section 4 Active Handover State
 
 ## 2. Pre-Task Git Routine
@@ -66,11 +66,12 @@ Verify every rule below while coding (see [project-rules.md](../../project-rules
 
 Run and confirm every check after your final edit:
 
-1. Run Django system check:
+1. Run Django system check and unit tests:
    ```bash
    python manage.py check
+   python manage.py test
    ```
-   (On Windows with project venv: `.\.venv\Scripts\python.exe manage.py check`)
+   (On Windows with project venv: `.\.venv\Scripts\python.exe manage.py check` and `.\.venv\Scripts\python.exe manage.py test`)
 2. Confirm zero comments in every modified/created `.py`, `.html`, `.css`, and `.js` file, and run `node --check static/js/app.js` and `node --check static/js/nav.js`.
 3. Confirm line counts stay within `<= 350–400` lines (`<= 250` lines for view files) and `.agents/rules/edupredict-rules.md` remains `< 24,000` bytes.
 4. Confirm Light & Dark mode tokens, desktop viewport-fit (5-row pagination, `h-44`/`h-48` charts), mobile card-lists (`md:hidden`), collapsible sidebar & nav groups, simple everyday English, zero duplicate `+` icons, zero dead routes, and named `{% url %}` routes work cleanly.
