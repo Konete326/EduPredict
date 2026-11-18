@@ -40,15 +40,13 @@
           <i class="fa-solid fa-life-ring w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Help Tickets</span>
         </a>
-        <a href="#" data-coming-soon="true" data-coming-title="Activity Logs" data-coming-panel="Admin" data-coming-desc="See who signed in and what changes were made." data-coming-features="Login history and role updates|Track added, edited, and deleted items|Downloadable activity report" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <a href="{% url 'panels:admin_logs' %}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_logs' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-clock-rotate-left w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Activity Logs</span>
-          <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
         </a>
-        <a href="#" data-coming-soon="true" data-coming-title="Settings" data-coming-panel="Admin" data-coming-desc="Change school terms, grade limits, and alert rules." data-coming-features="Set term dates and grade scale|Choose warning limits for dropout risk|Control how alerts are sent" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <a href="{% url 'panels:admin_settings' %}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_settings' %}bg-[var(--accent-soft)] text-[var(--accent-primary)] font-medium{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-sliders w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Settings</span>
-          <span class="ml-auto shrink-0 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-primary)]">Soon</span>
         </a>
       </div>
     </div>

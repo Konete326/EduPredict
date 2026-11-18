@@ -61,33 +61,33 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Workspace Rules, .agents Enforcement & Git Sync Coordinator"
-active_branch_merged_to_main: "feature/agent-rules-sync -> main"
-project_phase: "Phase 7, ML Evaluation Tasks 1-3 & .agents/ Always-On Rule Sync Complete"
+last_updated_by_agent: "Phase 8 Admin Activity Logs & Portal Settings Swarm"
+active_branch_merged_to_main: "feature/admin-logs-settings -> main"
+project_phase: "Phase 8 Complete: Admin Activity Logs & Portal Settings"
 
 completed_modules:
   - "Phase 1-5: Core Shell, Auth/RBAC, Admin/Teacher Panels & Rule 20 Sidebar Isolation"
   - "Phase 6 & 7: Student Panel (Dashboard, Report Card, Study Tips, Alerts & Support), Teacher Risk Alerts & Analyst Model Health"
-  - "ML Evaluation Tasks 1-3: Leakage-free sklearn Pipelines, analyst_evaluation_section, TTL caching, and origin/feature/ml-evaluation branch push"
-  - ".agents/ Always-On Enforcement & Git Sync:"
-      - "Replaced conflicting Astryx/React block in AGENTS.md and GEMINI.md with mandatory .agents/ pre-flight, 20-rule, and git-sync.md directives."
-      - "Aligned .agents/rules/edupredict-rules.md (11,899 bytes < 24 KB) and .agents/skills/edupredict-workflow/SKILL.md (20 rules + manage.py test checklist)."
+  - "ML Evaluation Tasks 1-3: Leakage-free sklearn Pipelines, analyst_evaluation_section, TTL caching"
+  - "Phase 8: Admin Activity Logs & Portal Settings:"
+      - "Created panels/admin_audit_services.py (activity_logs & system_settings MongoDB collections, TTL cache admin:logs:<cat> & admin:settings, CSV export, manual log notes, settings update & reset)."
+      - "Updated panels/admin_seed.py, panels/views_admin.py (admin_logs & admin_settings), and panels/urls.py (panels:admin_logs, panels:admin_settings)."
+      - "Created templates/panels/admin_logs.html & templates/panels/admin_settings.html (CSS tokens, 4 KPI cards, 5-row data_table, mobile cards, modals) and wired live sidebar links in templates/components/sidebar.html."
+      - "Added AdminLogsAndSettingsTests in panels/tests.py."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py test analytics panels --verbosity=1: 19/19 tests PASSED."
+  - "manage.py test analytics panels --verbosity=2: 23/23 tests PASSED."
   - "node --check static/js/app.js & static/js/nav.js: PASSED."
+  - "Zero comments and line-count limits verified across all 8 modified/created files."
 
 active_routes_and_files:
-  - "AGENTS.md, GEMINI.md, .agents/rules/edupredict-rules.md, .agents/skills/edupredict-workflow/SKILL.md, .agents/git-sync.md"
-  - "/analyst-panel/ -> panels:analyst_dashboard (includes #ml-evaluation-section)"
-  - "/analyst-panel/evaluation/ -> analytics:model_evaluation"
-  - "/analyst-panel/accuracy/ -> panels:analyst_accuracy"
-  - "/teacher-panel/alerts/ -> panels:teacher_alerts"
-  - "/student-panel/* -> panels:student_dashboard, student_report, student_tips, student_notifications"
+  - "/admin-panel/logs/ -> panels:admin_logs (panels/views_admin.py, panels/admin_audit_services.py, templates/panels/admin_logs.html)"
+  - "/admin-panel/settings/ -> panels:admin_settings (panels/views_admin.py, panels/admin_audit_services.py, templates/panels/admin_settings.html)"
+  - "templates/components/sidebar.html, panels/admin_seed.py, panels/urls.py, panels/tests.py"
 
 pending_modules_in_order:
-  - "Phase 8 (optional hardening): Admin Activity Logs & Settings pages"
+  - "All Phase 1-8 core and optional Admin modules completed; ready for user acceptance testing or new feature requests."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

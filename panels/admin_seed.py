@@ -159,11 +159,8 @@ def _load_admin_overview_context():
         created_str = _format_dt(doc.get("created_at"))
         recent_tickets.append({**dict(doc), "created_at_str": created_str})
         recent_ticket_rows.append([
-            str(doc.get("ticket_id") or ""),
-            str(doc.get("user_name") or "User"),
-            str(doc.get("subject") or ""),
-            {"text": status_val, "status": "success" if status_val == "RESOLVED" else "warning"},
-            created_str,
+            str(doc.get("ticket_id") or ""), str(doc.get("user_name") or "User"), str(doc.get("subject") or ""),
+            {"text": status_val, "status": "success" if status_val == "RESOLVED" else "warning"}, created_str,
         ])
 
     low_risk = p_col.count_documents({"risk_level": "LOW"})
@@ -194,6 +191,24 @@ def _load_admin_overview_context():
         "recent_tickets": recent_tickets,
         "recent_ticket_headers": ["Ticket ID", "User", "Subject", "Status", "Date"],
         "recent_ticket_rows": recent_ticket_rows,
+    }
+
+
+def get_default_admin_overview_context():
+    return {
+        "kpis": {
+            "total_students": 0, "student_accounts": 0, "active_teachers": 0, "high_risk_count": 0,
+            "total_predictions": 0, "total_users": 0, "active_users": 0, "open_tickets": 0,
+            "total_tickets": 0, "total_courses": 0, "active_courses": 0, "datasets_count": 0,
+            "unread_alerts": 0, "avg_attendance": 0.0, "system_status": "Offline",
+        },
+        "chart_data": {
+            "departments": {"labels": [], "enrolled": [], "capacity": []},
+            "risk_breakdown": {"labels": ["Low Risk", "Medium Risk", "High Risk"], "counts": [0, 0, 0]},
+        },
+        "recent_tickets": [],
+        "recent_ticket_headers": ["Ticket ID", "User", "Subject", "Status", "Date"],
+        "recent_ticket_rows": [],
     }
 
 
