@@ -321,6 +321,15 @@ class StaticFilesAndProductionConfigTests(TestCase):
             if "rss_mb" in data["memory"]:
                 self.assertGreater(data["memory"]["rss_mb"], 0)
 
+    def test_content_security_policy_header_present(self):
+        resp = self.client.get("/auth/")
+        self.assertIn("Content-Security-Policy", resp)
+        csp = resp["Content-Security-Policy"]
+        self.assertIn("default-src 'self'", csp)
+        self.assertIn("cdn.tailwindcss.com", csp)
+        self.assertIn("cdn.jsdelivr.net", csp)
+
+
 
 
 class ProductionDocumentationTests(TestCase):
