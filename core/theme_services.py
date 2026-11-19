@@ -1,4 +1,9 @@
-from core.db import invalidate_cache, users_col
+from django.contrib.auth.hashers import make_password
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from pymongo.errors import DuplicateKeyError
+from core.db import invalidate_cache, student_records_col, users_col
+from panels.admin_audit_services import record_audit_log
 
 APPEARANCE_MODES = (
     {"slug": "light", "label": "Light Mode"},
@@ -8,17 +13,9 @@ APPEARANCE_MODES = (
 
 def _shell(slug, label, dot_color, p_side, p_top, accent_sync, s_light, t_light, s_dark, t_dark, force_dark=False):
     return {
-        "slug": slug,
-        "label": label,
-        "dot_color": dot_color,
-        "preview_sidebar": p_side,
-        "preview_topbar": p_top,
-        "accent_sync": accent_sync,
-        "sidebar_bg_light": s_light,
-        "topbar_bg_light": t_light,
-        "sidebar_bg_dark": s_dark,
-        "topbar_bg_dark": t_dark,
-        "force_dark_chrome": force_dark,
+        "slug": slug, "label": label, "dot_color": dot_color, "preview_sidebar": p_side, "preview_topbar": p_top,
+        "accent_sync": accent_sync, "sidebar_bg_light": s_light, "topbar_bg_light": t_light,
+        "sidebar_bg_dark": s_dark, "topbar_bg_dark": t_dark, "force_dark_chrome": force_dark,
     }
 
 
@@ -69,16 +66,10 @@ _PREF_KEYS = ("mode", "shell_theme", "accent", "preset", "density", "sync_shell"
 def _parse_bool(value, default=True):
     if value is None:
         return default
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, (int, float)):
+    if isinstance(value, (bool, int, float)):
         return bool(value)
     cleaned = str(value).strip().lower()
-    if cleaned in ("true", "1", "yes", "on"):
-        return True
-    if cleaned in ("false", "0", "no", "off"):
-        return False
-    return default
+    return True if cleaned in ("true", "1", "yes", "on") else (False if cleaned in ("false", "0", "no", "off") else default)
 
 
 def _pick(source, key, allowed, default):
@@ -140,15 +131,8 @@ def normalize_theme_prefs(raw, role="PORTAL", user_id="guest"):
         "force_dark_chrome": bool(shell_cfg["force_dark_chrome"]),
     }
     return {
-        "role": clean_role,
-        "user_id": clean_uid,
-        "mode": mode,
-        "shell_theme": shell_theme,
-        "accent": accent,
-        "preset": preset,
-        "density": density,
-        "sync_shell": sync_shell,
-        "tokens": tokens,
+        "role": clean_role, "user_id": clean_uid, "mode": mode, "shell_theme": shell_theme,
+        "accent": accent, "preset": preset, "density": density, "sync_shell": sync_shell, "tokens": tokens,
     }
 
 
@@ -171,6 +155,25 @@ def get_user_theme_prefs(request):
     return normalize_theme_prefs(_read_session_role_prefs(request, role), role=role, user_id=uid)
 
 
+def _persist_role_theme(uid, role, prefs):
+    if uid and uid != "guest":
+        try:
+            users_col().update_one({"user_id": uid}, {"$set": {f"theme_prefs.{role}": prefs}})
+            invalidate_cache()
+        except Exception:
+            pass
+
+
+def _sync_session_user_themes(session, updates_by_role):
+    user = session.get("user")
+    if isinstance(user, dict) and user:
+        updated_user = dict(user)
+        user_tp = dict(updated_user.get("theme_prefs") or {}) if isinstance(updated_user.get("theme_prefs"), dict) else {}
+        user_tp.update({k: v for k, v in updates_by_role.items() if k != "PORTAL" and isinstance(v, dict)})
+        updated_user["theme_prefs"] = user_tp
+        session["user"] = updated_user
+
+
 def save_user_theme_prefs(request, data):
     role, uid = _resolve_theme_scope(request)
     payload = data if isinstance(data, dict) else {}
@@ -187,18 +190,86 @@ def save_user_theme_prefs(request, data):
         by_role = dict(session.get("theme_prefs_by_role") or {}) if isinstance(session.get("theme_prefs_by_role"), dict) else {}
         by_role[role] = normalized
         session["theme_prefs_by_role"] = by_role
-        user = session.get("user")
-        if isinstance(user, dict) and user:
-            updated_user = dict(user)
-            user_tp = dict(updated_user.get("theme_prefs") or {}) if isinstance(updated_user.get("theme_prefs"), dict) else {}
-            user_tp[role] = normalized
-            updated_user["theme_prefs"] = user_tp
-            session["user"] = updated_user
+        _sync_session_user_themes(session, {role: normalized})
         session.modified = True
-    if uid and uid != "guest":
+    _persist_role_theme(uid, role, normalized)
+    return normalized
+
+
+def sync_theme_prefs_on_login(request, user_doc):
+    session = getattr(request, "session", None)
+    if session is None or not isinstance(user_doc, dict):
+        return {}
+    role = str(user_doc.get("role") or "").strip().upper()
+    uid = str(user_doc.get("user_id") or "").strip()
+    db_prefs = dict(user_doc["theme_prefs"]) if isinstance(user_doc.get("theme_prefs"), dict) else {}
+    raw_sess = session.get("theme_prefs_by_role")
+    session_by_role = dict(raw_sess) if isinstance(raw_sess, dict) else {}
+    for db_role, prefs_val in db_prefs.items():
+        clean_role = str(db_role or "").strip().upper()
+        if clean_role in _VALID_ROLES and isinstance(prefs_val, dict):
+            session_by_role[clean_role] = normalize_theme_prefs(prefs_val, role=clean_role, user_id=uid or "guest")
+    portal_prefs = session_by_role.get("PORTAL")
+    has_db_role = role in db_prefs and isinstance(db_prefs.get(role), dict) and bool(db_prefs.get(role))
+    if role in _VALID_ROLES and role != "PORTAL" and isinstance(portal_prefs, dict) and portal_prefs and not has_db_role:
+        existing_role = session_by_role.get(role) if isinstance(session_by_role.get(role), dict) else {}
+        merged = normalize_theme_prefs({**existing_role, **portal_prefs}, role=role, user_id=uid or "guest")
+        session_by_role[role] = merged
+        _persist_role_theme(uid, role, merged)
+    _sync_session_user_themes(session, session_by_role)
+    session["theme_prefs_by_role"] = session_by_role
+    session.modified = True
+    return session_by_role
+
+
+def update_user_profile_data(request, post_data):
+    session = getattr(request, "session", None)
+    raw_user = session.get("user") if session is not None else None
+    session_user = dict(raw_user) if isinstance(raw_user, dict) else {}
+    uid = str(session_user.get("user_id") or "").strip()
+    if not uid:
+        return None, "Please sign in to update your profile."
+    data = post_data or {}
+    full_name, email = str(data.get("full_name") or "").strip(), str(data.get("email") or "").strip().lower()
+    if not full_name:
+        return None, "Full name is required."
+    try:
+        validate_email(email)
+    except ValidationError:
+        return None, "Please enter a valid email address."
+    department = str(data.get("department") or "").strip() or str(session_user.get("department") or "").strip() or "General"
+    batch = str(data.get("batch") or "").strip() or str(session_user.get("batch") or "").strip() or "ALL"
+    phone, bio = str(data.get("phone") or "").strip(), str(data.get("bio") or "").strip()
+    new_pwd, confirm_pwd = str(data.get("new_password") or ""), str(data.get("confirm_password") or "")
+    if new_pwd or confirm_pwd:
+        if len(new_pwd) < 6:
+            return None, "New password must be at least 6 characters long."
+        if new_pwd != confirm_pwd:
+            return None, "New passwords do not match."
+    col = users_col()
+    if col.find_one({"email": email, "user_id": {"$ne": uid}}, {"_id": 1}) is not None:
+        return None, "Another user already uses this email address."
+    updates = {"full_name": full_name, "email": email, "department": department, "batch": batch, "phone": phone, "bio": bio}
+    if new_pwd:
+        updates["password_hash"] = make_password(new_pwd)
+    try:
+        col.update_one({"user_id": uid}, {"$set": updates})
+    except DuplicateKeyError:
+        return None, "Another user already uses this email address."
+    student_id = str(session_user.get("student_id") or "").strip()
+    if student_id:
         try:
-            users_col().update_one({"user_id": uid}, {"$set": {f"theme_prefs.{role}": normalized}})
-            invalidate_cache()
+            sr_col = student_records_col()
+            (sr_col.update_many if hasattr(sr_col, "update_many") else sr_col.update_one)({"student_id": student_id}, {"$set": {"full_name": full_name}})
         except Exception:
             pass
-    return normalized
+    updated_user = {**session_user, "full_name": full_name, "email": email, "department": department, "batch": batch, "phone": phone, "bio": bio}
+    if session is not None:
+        session["user"] = updated_user
+        session.modified = True
+    try:
+        record_audit_log(full_name, str(session_user.get("role") or "USER").strip().upper() or "USER", "USERS", "UPDATE_PROFILE", f"Updated profile for {full_name} ({uid}).", severity="INFO", source="USER")
+    except Exception:
+        pass
+    invalidate_cache()
+    return updated_user, None

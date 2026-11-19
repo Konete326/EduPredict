@@ -10,6 +10,7 @@ from accounts.services import (
 )
 from core.db import get_cached, predictions_col
 from core.decorators import get_dashboard_route
+from core.theme_services import sync_theme_prefs_on_login
 
 
 def root_redirect(request):
@@ -68,6 +69,7 @@ def _handle_login(request):
 
     session_user = serialize_session_user(user_doc)
     request.session["user"] = session_user
+    sync_theme_prefs_on_login(request, user_doc)
     display_name = session_user["full_name"] or session_user["email"]
     messages.success(request, f"Welcome back, {display_name}!")
     return redirect(get_dashboard_route(session_user["role"]))
@@ -131,6 +133,7 @@ def _handle_register(request):
 
     session_user = serialize_session_user(user_doc)
     request.session["user"] = session_user
+    sync_theme_prefs_on_login(request, user_doc)
     display_name = session_user["full_name"] or session_user["email"]
     messages.success(request, f"Account created! Welcome, {display_name}.")
     return redirect(get_dashboard_route(session_user["role"]))

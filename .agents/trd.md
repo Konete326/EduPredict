@@ -17,108 +17,132 @@ Every agent MUST follow this exact directory structure. Creating random folders 
 ```text
 edupredict/
 ├── .agents/                        # MANDATORY AI Agent Docs (Read First)
-│   ├── PRD.md
-│   ├── SRD.md
-│   ├── TRD.md
+│   ├── prd.md
+│   ├── srd.md
+│   ├── trd.md
 │   ├── design.md
 │   ├── project-rules.md
-│   └── git-sync.md
+│   ├── git-sync.md
+│   └── rules/edupredict-rules.md
 ├── config/                         # Django Project Configuration
 │   ├── settings.py
 │   ├── urls.py
 │   └── wsgi.py
-├── core/                           # Global Shared Utilities & DB Connection
-│   ├── db.py                       # MongoDB Atlas Singleton Connection & Helpers
-│   ├── decorators.py               # @role_required & auth guards
-│   └── context_processors.py       # Global notifications & user role context
-├── accounts/                       # Auth & User Management App
+├── core/                           # Global Shared Utilities, DB & Theme Services
+│   ├── db.py                       # MongoDB Atlas Singleton, TTL Cache & Helpers
+│   ├── decorators.py               # @role_required & @login_required_custom guards
+│   ├── context_processors.py       # Global notifications, role & theme context
+│   └── theme_services.py           # Per-user/per-panel theme, login sync & profile updates
+├── accounts/                       # Auth & User Session App
+│   ├── services.py                 # Auth, registration, session serialization
 │   ├── views.py
 │   └── urls.py
-├── panels/                         # Role-Based Dashboards App (Modular Views)
-│   ├── views_admin.py              # Admin Panel Views (< 250 lines)
-│   ├── views_teacher.py            # Teacher Panel Views (< 250 lines)
-│   ├── views_student.py            # Student Panel Views (< 250 lines)
-│   ├── views_analyst.py            # Analyst Panel Views (< 250 lines)
-│   └── urls.py                     # Connected routes for all 4 panels
+├── panels/                         # Role-Based Dashboards App (Modular Views & Services)
+│   ├── admin_audit_services.py     # Activity logs & portal settings services
+│   ├── admin_seed.py               # Process-once admin seed & backup payload
+│   ├── admin_services.py           # Admin CRUD, self-action guards & table builders
+│   ├── teacher_services.py         # Teacher roster, manual entry & alert services
+│   ├── teacher_alert_services.py   # Teacher alert formatting & persistence
+│   ├── student_services.py         # Student metrics, report card & tips services
+│   ├── student_alert_services.py   # Student alert helpers
+│   ├── views_admin.py              # Admin Panel Views (<= 250 lines)
+│   ├── views_teacher.py            # Teacher Panel Views (<= 250 lines)
+│   ├── views_student.py            # Student Panel Views (<= 250 lines)
+│   ├── views_analyst.py            # Analyst Panel Views (<= 250 lines)
+│   ├── views_theme.py              # Theme Preferences API & My Profile Views (<= 115 lines)
+│   ├── tests.py, test_admin.py, test_teacher_student.py
+│   └── urls.py                     # Connected routes for all 4 panels + profile/theme
 ├── analytics/                      # Big Data Ingestion & ML Engine App
 │   ├── data_pipeline.py            # CSV/Excel ingestion & missing data cleaning
+│   ├── preprocessing.py            # Feature normalization & schema mapping
 │   ├── ml_engine.py                # Dropout, Grade, Anomaly & Course Demand ML
-│   └── views.py                    # Endpoints for triggering upload/predictions
+│   ├── evaluation.py               # Leakage-free train/test ML evaluation
+│   ├── model_health.py             # Model diagnostics & label coverage
+│   ├── tests.py, test_pipeline.py
+│   ├── views.py                    # Endpoints for upload, ML trigger & evaluation JSON
+│   └── urls.py
 ├── templates/                      # Global & Panel HTML Templates
 │   ├── base.html                   # Master App-Shell-3 Layout (Sidebar + Header)
+│   ├── 404.html                    # Theme-aware custom 404 page
 │   ├── components/                 # MANDATORY Reusable Global UI Components
-│   │   ├── sidebar.html            # Role-aware App-Shell-3 Sidebar
-│   │   ├── topbar.html             # Header with Theme Toggle, Search & Bell
+│   │   ├── sidebar.html            # Role-isolated sidebar + Settings & Theme dropdown
+│   │   ├── topbar.html             # Header with Theme Toggle, Bell, Search & Profile pill
 │   │   ├── metric_card.html        # Global KPI Stat Card
-│   │   ├── confirm_modal.html      # Global Custom Confirm/Alert Modal
+│   │   ├── confirm_modal.html      # Global Custom Confirm & Coming Soon Modals
 │   │   ├── form_modal.html         # Global Reusable Add/Edit Modal
-│   │   ├── data_table.html         # Global Responsive Table Wrapper
+│   │   ├── theme_studio_modal.html # Theme & Appearance Live Studio Modal
+│   │   ├── data_table.html         # Global Desktop Table + Mobile Stacked Cards
 │   │   └── toast.html              # Global Non-Intrusive Toast Notification
 │   ├── accounts/
-│   │   └── auth.html               # Unified Sign-In / Sign-Up Page
+│   │   └── auth.html               # Unified Sign-In / Sign-Up + Eye Toggles + Theme Hydration
 │   └── panels/
-│       ├── admin_dashboard.html
-│       ├── teacher_dashboard.html
-│       ├── student_dashboard.html
-│       └── analyst_dashboard.html
+│       ├── user_profile.html       # Shared My Profile & Settings Page (All Roles)
+│       ├── admin_dashboard.html, admin_users.html, admin_courses.html, admin_tickets.html, admin_logs.html, admin_settings.html
+│       ├── teacher_dashboard.html, teacher_students.html, teacher_ingest.html, teacher_alerts.html
+│       ├── student_dashboard.html, student_report.html, student_tips.html, student_notifications.html
+│       ├── analyst_dashboard.html, analyst_evaluation_section.html, analyst_accuracy.html
+│       └── coming_soon_panel.html
 ├── static/
 │   ├── css/
-│   │   └── global.css              # Design tokens (Light/Dark CSS Variables)
+│   │   └── global.css              # Design tokens, dark shell chrome & modern baseline CSS
 │   └── js/
-│       ├── app.js                  # Sidebar toggle, Dark mode, Custom Modals
-│       └── charts.js               # Theme-aware Chart.js helper functions
+│       ├── app.js                  # Sidebar, Modals, Password Toggle, Pagination & Sorting
+│       ├── nav.js                  # SPA navigation cache & collapsible nav groups
+│       ├── theme_studio.js         # Live Theme Studio & 1.2s Cancelable Auto-Upload
+│       ├── charts.js               # Theme-aware Chart.js helper functions
+│       └── analyst_evaluation.js   # Evaluation chart & diagnostics renderer
 ├── .env.example                    # Template for MONGODB_URI & SECRET_KEY
 ├── requirements.txt                # Pinned latest stable packages
 └── manage.py
-3. MongoDB Atlas Collections Schema (core/db.py)
-All collections reside in the edupredict_db database on MongoDB Atlas:
+```
+## 3. MongoDB Atlas Collections Schema (`core/db.py` & `panels/admin_audit_services.py`)
+All collections reside in the `edupredict_db` database on MongoDB Atlas:
 
-users:{ "_id": ObjectId, "user_id": "USR-1001", "full_name": str, "email": str, "password_hash": str, "role": "ADMIN|TEACHER|STUDENT|ANALYST", "department": str, "batch": str, "is_active": bool, "created_at": datetime }
+- `users`: `{ "_id": ObjectId, "user_id": "USR-1001", "student_id": str (optional), "full_name": str, "email": str, "password_hash": str, "role": "ADMIN|TEACHER|STUDENT|ANALYST", "department": str, "batch": str, "phone": str, "bio": str, "theme_prefs": dict (keyed by role), "is_active": bool, "created_at": datetime }`
+- `courses`: `{ "_id": ObjectId, "course_code": "CS-101", "title": str, "department": str, "batch": str, "instructor": str, "credits": int, "capacity": int, "status": "ACTIVE|ARCHIVED", "created_at": datetime }`
+- `student_records` (Indexed by `student_id` and `batch`): `{ "_id": ObjectId, "student_id": "STD-2026-01", "full_name": str, "batch": str, "course_code": str, "attendance_pct": float, "internal_marks": float, "assignment_score": float, "lms_hours_weekly": float, "previous_gpa": float, "updated_at": datetime }`
+- `predictions`: `{ "_id": ObjectId, "student_id": "STD-2026-01", "predicted_gpa": float, "dropout_risk_score": float, "risk_level": "LOW|MEDIUM|HIGH", "is_anomaly": bool, "anomaly_reason": str, "recommendation": str, "model_version": str, "generated_at": datetime }`
+- `datasets_log`: `{ "_id": ObjectId, "filename": str, "uploaded_by": str, "rows_processed": int, "missing_values_fixed": int, "status": "COMPLETED|FAILED", "uploaded_at": datetime }`
+- `notifications`: `{ "_id": ObjectId, "target_role": str, "target_user_id": str, "title": str, "message": str, "severity": "INFO|WARNING|DANGER", "is_read": bool, "created_at": datetime }`
+- `support_tickets`: `{ "_id": ObjectId, "ticket_id": "TKT-1001", "user_id": str, "user_name": str, "role": str, "subject": str, "message": str, "status": "OPEN|RESOLVED", "created_at": datetime }`
+- `activity_logs`: `{ "_id": ObjectId, "log_id": str, "actor": str, "role": str, "category": "USERS|COURSES|TICKETS|DATA|SYSTEM", "action": str, "summary": str, "severity": str, "source": str, "created_at": datetime }`
+- `system_settings`: `{ "_id": ObjectId, "key": "portal_settings", "institution_name": str, "current_term": str, "default_batch": str, "passing_gpa": float, "min_attendance_pct": int, "high_risk_threshold": int, "medium_risk_threshold": int, "anomaly_drop_pct": int, "auto_student_alerts": bool, "auto_teacher_alerts": bool, "updated_by": str, "updated_at": datetime }`
 
-student_records (Partitioned/Indexed by student_id and batch):{ "_id": ObjectId, "student_id": "STD-2026-01", "full_name": str, "batch": str, "course_code": str, "attendance_pct": float, "internal_marks": float, "assignment_score": float, "lms_hours_weekly": float, "previous_gpa": float, "updated_at": datetime }
+## 4. Complete Named URL Routing Map (`config/urls.py`, `accounts/urls.py`, `panels/urls.py`, `analytics/urls.py`)
+Every route must be cleanly named so templates only use `{% url 'route_name' %}` (never hardcode URLs):
 
-predictions:{ "_id": ObjectId, "student_id": "STD-2026-01", "predicted_gpa": float, "dropout_risk_score": float, "risk_level": "LOW|MEDIUM|HIGH", "is_anomaly": bool, "anomaly_reason": str, "recommendation": str, "model_version": str, "generated_at": datetime }
+- `/` -> `root` (Redirects to `/auth/` or active role dashboard)
+- `/auth/` -> `accounts:auth_view` (Login / Register with guest `PORTAL` theme sync)
+- `/auth/logout/` -> `accounts:logout_view` (Triggered via Global Confirm Modal)
+- `/profile/` -> `panels:user_profile` (Shared `My Profile & Settings` page for all logged-in roles)
+- `/theme/preferences/` -> `panels:theme_preferences` (GET/POST per-user & per-panel Theme Studio persistence + reset)
+- `/support/submit/` -> `panels:submit_support_ticket` (Non-Admin support submission)
+- `/notifications/mark-read/` -> `panels:mark_notifications_read`
+- `/admin-panel/` -> `panels:admin_dashboard`
+- `/admin-panel/users/` -> `panels:admin_users`
+- `/admin-panel/courses/` -> `panels:admin_courses`
+- `/admin-panel/tickets/` -> `panels:admin_tickets`
+- `/admin-panel/logs/` -> `panels:admin_logs`
+- `/admin-panel/settings/` -> `panels:admin_settings`
+- `/admin-panel/backup/` -> `panels:admin_backup_export`
+- `/teacher-panel/` -> `panels:teacher_dashboard`
+- `/teacher-panel/students/` -> `panels:teacher_students`
+- `/teacher-panel/ingest/` -> `panels:teacher_ingest`
+- `/teacher-panel/alerts/` -> `panels:teacher_alerts`
+- `/student-panel/` -> `panels:student_dashboard`
+- `/student-panel/report/` -> `panels:student_report`
+- `/student-panel/report/download/` -> `panels:student_report_download`
+- `/student-panel/tips/` -> `panels:student_tips`
+- `/student-panel/notifications/` -> `panels:student_notifications`
+- `/analyst-panel/` -> `panels:analyst_dashboard`
+- `/analyst-panel/accuracy/` -> `panels:analyst_accuracy`
+- `/analyst-panel/upload/` -> `analytics:upload_dataset`
+- `/analyst-panel/run-ml/` -> `analytics:run_predictions`
+- `/analyst-panel/evaluation/` -> `analytics:model_evaluation`
 
-datasets_log:{ "_id": ObjectId, "filename": str, "uploaded_by": str, "rows_processed": int, "missing_values_fixed": int, "status": "COMPLETED|FAILED", "uploaded_at": datetime }
-
-notifications:{ "_id": ObjectId, "target_role": str, "target_user_id": str, "title": str, "message": str, "severity": "INFO|WARNING|DANGER", "is_read": bool, "created_at": datetime }
-
-support_tickets:{ "_id": ObjectId, "user_id": str, "user_name": str, "role": str, "subject": str, "message": str, "status": "OPEN|RESOLVED", "created_at": datetime }
-
-4. URL Routing Map (panels/urls.py & config/urls.py)
-Every route must be cleanly named so templates only use {% url 'route_name' %} (never hardcode URLs):
-
-/ -> Redirects to /auth/ or active role dashboard
-
-/auth/ -> accounts:auth_view (Login / Register)
-
-/auth/logout/ -> accounts:logout_view (Triggered via Global Confirm Modal)
-
-/admin-panel/ -> panels:admin_dashboard
-
-/admin-panel/users/ -> panels:admin_users
-
-/admin-panel/courses/ -> panels:admin_courses
-
-/admin-panel/tickets/ -> panels:admin_tickets
-
-/teacher-panel/ -> panels:teacher_dashboard
-
-/teacher-panel/students/ -> panels:teacher_students
-
-/teacher-panel/ingest/ -> panels:teacher_ingest
-
-/student-panel/ -> panels:student_dashboard
-
-/student-panel/report/ -> panels:student_report
-
-/analyst-panel/ -> panels:analyst_dashboard
-
-/analyst-panel/upload/ -> analytics:upload_dataset
-
-/analyst-panel/run-ml/ -> analytics:run_predictions
-
-5. Global Component Connectivity Contract
-No Duplicate UI Code: If an agent needs a KPI card on the Student Panel, it MUST use {% include 'components/metric_card.html' with title="Attendance" value="91%" badge="+3% this month" status="success" icon="fa-solid fa-calendar-check" %}.
-
-No Native Browser Popups: window.alert(), window.confirm(), and window.prompt() are strictly banned. Every confirmation (Delete User, Logout, Reset Data) MUST call openConfirmModal({ title, message, onConfirmUrl }) defined in templates/components/confirm_modal.html.
+## 5. Global Component Connectivity & UX Contracts
+- **No Duplicate UI Code:** Always `{% include %}` from `templates/components/` (`metric_card.html`, `data_table.html`, `confirm_modal.html`, `form_modal.html`, `theme_studio_modal.html`, `toast.html`).
+- **No Native Browser Popups:** `window.alert()`, `window.confirm()`, and `window.prompt()` are strictly banned. Use `openConfirmModal`, `openFormModal`, `openThemeStudioModal`, `openComingSoonModal`, or `showToast`.
+- **Unified Password Toggles:** `static/js/app.js` wraps `type="password"` modal fields in `<div class="relative">` + `pr-9` + `[data-password-toggle]` eye buttons and handles delegated click toggling across `/profile/` and `form_modal.html` (while `auth.html` uses `togglePasswordVisibility`).
+- **1.2s Cancelable Auto-Upload:** `static/js/theme_studio.js` (`bindSmartFileUploads()`) gives `input[type="file"][data-auto-submit="true"]` a 1200ms cancelable toast window (`window.eduPredictCancelUpload` cleared on SPA swaps via `reinitEduPredictUI()`).
+- **Theme Studio Contract:** `get_user_theme_prefs(request)` MUST stay strictly session-only on GET (never query `users_col()`); guest `PORTAL` prefs merge on login via `sync_theme_prefs_on_login`; sidebar stays fixed on the left (no LTR/RTL flip).

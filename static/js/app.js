@@ -2,12 +2,7 @@
   const THEME_KEY = 'edupredict_theme', SIDEBAR_KEY = 'edupredict_sidebar_collapsed';
   const MODAL_IDS = ['confirm-modal', 'form-modal', 'coming-soon-modal', 'theme-studio-modal'];
   const FIELD_CLS = 'w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none';
-  const TOAST_STYLES = {
-    success: { border: 'var(--status-success)', icon: 'fa-solid fa-circle-check', color: 'var(--status-success)' },
-    warning: { border: 'var(--status-warning)', icon: 'fa-solid fa-triangle-exclamation', color: 'var(--status-warning)' },
-    danger: { border: 'var(--status-danger)', icon: 'fa-solid fa-circle-exclamation', color: 'var(--status-danger)' },
-    info: { border: 'var(--accent-primary)', icon: 'fa-solid fa-circle-info', color: 'var(--accent-primary)' }
-  };
+  const TOAST_STYLES = { success: { border: 'var(--status-success)', icon: 'fa-solid fa-circle-check', color: 'var(--status-success)' }, warning: { border: 'var(--status-warning)', icon: 'fa-solid fa-triangle-exclamation', color: 'var(--status-warning)' }, danger: { border: 'var(--status-danger)', icon: 'fa-solid fa-circle-exclamation', color: 'var(--status-danger)' }, info: { border: 'var(--accent-primary)', icon: 'fa-solid fa-circle-info', color: 'var(--accent-primary)' } };
   let activeSubmitHandler = null, globalsBound = false, pointerDownTarget = null;
   const paginatedControllers = [];
   const byId = (id) => document.getElementById(id);
@@ -55,11 +50,7 @@
     let items = Array.isArray(opts.features) ? opts.features : (typeof opts.features === 'string' && opts.features.trim() ? opts.features.split('|').map((s) => s.trim()).filter(Boolean) : []);
     if (!items.length) items = ['Live numbers from MongoDB', 'Easy charts and 5-row tables', 'Quick alerts and CSV downloads'];
     listEl.innerHTML = '';
-    items.forEach((text) => {
-      const li = mk('li', 'flex items-start gap-2');
-      li.append(mk('i', 'fa-solid fa-check mt-0.5 text-[11px] text-[var(--accent-primary)] shrink-0', undefined, { 'aria-hidden': 'true' }), mk('span', '', text));
-      listEl.appendChild(li);
-    });
+    items.forEach((text) => { const li = mk('li', 'flex items-start gap-2'); li.append(mk('i', 'fa-solid fa-check mt-0.5 text-[11px] text-[var(--accent-primary)] shrink-0', undefined, { 'aria-hidden': 'true' }), mk('span', '', text)); listEl.appendChild(li); });
     setModalOpen(modal, true);
   }
   const closeComingSoonModal = () => setModalOpen(byId('coming-soon-modal'), false);
@@ -81,7 +72,13 @@
     ['name', 'placeholder', 'min', 'max', 'step'].forEach((k) => { if (field[k] !== undefined) el[k] = field[k]; });
     if (field.required) el.required = true;
     if (field.readonly) el.readOnly = true;
-    wrapper.append(label, el);
+    if (tag === 'input' && el.type === 'password') {
+      el.classList.add('pr-9');
+      const box = mk('div', 'relative'), toggleBtn = mk('button', 'absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-muted)] hover:text-[var(--text-primary)]', undefined, { type: 'button', 'data-password-toggle': 'true', 'aria-label': 'Show or hide password' });
+      toggleBtn.innerHTML = '<i class="fa-regular fa-eye text-xs" aria-hidden="true"></i>';
+      box.append(el, toggleBtn);
+      wrapper.append(label, box);
+    } else wrapper.append(label, el);
     return wrapper;
   }
   function openFormModal(options) {
@@ -267,11 +264,8 @@
     });
   }
   function closeModalById(id) {
-    if (id === 'confirm-modal') closeConfirmModal();
-    else if (id === 'form-modal') closeFormModal();
-    else if (id === 'coming-soon-modal') closeComingSoonModal();
-    else if (id === 'theme-studio-modal' && typeof window.closeThemeStudioModal === 'function') window.closeThemeStudioModal();
-    else setModalOpen(byId(id), false);
+    if (id === 'confirm-modal') closeConfirmModal(); else if (id === 'form-modal') closeFormModal(); else if (id === 'coming-soon-modal') closeComingSoonModal();
+    else if (id === 'theme-studio-modal' && typeof window.closeThemeStudioModal === 'function') window.closeThemeStudioModal(); else setModalOpen(byId(id), false);
   }
   const closeAllModals = () => MODAL_IDS.forEach(closeModalById);
   function bindModalBackdrops() {
@@ -312,6 +306,12 @@
     document.addEventListener('click', (e) => {
       const dropdown = byId('notification-dropdown'), bell = byId('notification-bell-btn');
       if (dropdown && bell && !dropdown.contains(e.target) && !bell.contains(e.target)) closeNotificationDropdown();
+      const passBtn = e.target.closest('[data-password-toggle]');
+      if (passBtn) {
+        const container = passBtn.closest('.relative') || passBtn.parentElement, input = container ? container.querySelector('input') : null, icon = passBtn.querySelector('i');
+        if (input) { const show = input.type === 'password'; input.type = show ? 'text' : 'password'; if (icon) { icon.classList.toggle('fa-eye', !show); icon.classList.toggle('fa-eye-slash', show); } }
+        return;
+      }
       const comingTrigger = e.target.closest('[data-coming-soon]');
       if (comingTrigger) {
         e.preventDefault(); if (!isDesktop()) closeMobileSidebar();
@@ -331,7 +331,7 @@
       syncSidebarToggleA11y();
     });
   }
-  function reinitEduPredictUI() { closeAllModals(); closeNotificationDropdown(); bindDynamicControls(); if (typeof window.initSmartAutomation === 'function') window.initSmartAutomation(); }
+  function reinitEduPredictUI() { closeAllModals(); closeNotificationDropdown(); if (typeof window.eduPredictCancelUpload === 'function') window.eduPredictCancelUpload(true); bindDynamicControls(); if (typeof window.initSmartAutomation === 'function') window.initSmartAutomation(); }
   function initShellBindings() { bindDocumentGlobalsOnce(); bindDynamicControls(); }
 
   restoreSidebarState();

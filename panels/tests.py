@@ -1,12 +1,14 @@
 import json
 from unittest.mock import MagicMock, patch
+from django.contrib.auth.hashers import check_password
 from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
 from accounts.services import serialize_session_user
 from analytics.data_pipeline import generate_sample_dataset_df
 from analytics.tests import _build_genuine_labelled_records
 from core.db import invalidate_cache
-from core.theme_services import get_theme_studio_catalog, get_user_theme_prefs
+from core.theme_services import get_theme_studio_catalog, get_user_theme_prefs, sync_theme_prefs_on_login
+from panels.admin_services import build_user_table_data
 
 
 class AnalystDashboardEvaluationTests(TestCase):
@@ -279,3 +281,54 @@ class ThemePreferencesTests(TestCase):
         reset_prefs = reset_resp.json()["theme_prefs"]
         self.assertEqual((reset_prefs["role"], reset_prefs["mode"], reset_prefs["shell_theme"], reset_prefs["accent"], reset_prefs["preset"], reset_prefs["density"]), ("TEACHER", "light", "white", "indigo", "neutral", "comfortable"))
         self.assertEqual(client.session["theme_prefs_by_role"]["ADMIN"]["shell_theme"], "red")
+
+    @patch("core.theme_services.invalidate_cache")
+    @patch("core.theme_services.record_audit_log")
+    @patch("core.theme_services.student_records_col")
+    @patch("core.theme_services.users_col")
+    @patch("panels.views_theme.users_col")
+    @patch("core.context_processors.notifications_col")
+    @patch("core.db.MongoDBClient.check_health", return_value={"connected": True, "error": None})
+    def test_profile_get_and_post_updates_fields_while_preserving_role(self, mock_health, mock_notifs, mock_view_users, mock_svc_users, mock_sr, mock_audit, mock_inv):
+        self.assertEqual(Client().get(reverse("panels:user_profile")).status_code, 302)
+        mock_notifs.return_value = MagicMock(**{"count_documents.return_value": 0, "find.return_value.sort.return_value.limit.return_value": []})
+        client = Client()
+        s = client.session
+        s["user"] = {"user_id": "USR-1003", "student_id": "STD-2026-001", "role": "STUDENT", "email": "zainab@edupredict.edu", "full_name": "Zainab Raza", "is_active": True}
+        s.save()
+        mock_view_users.return_value.find_one.return_value = {"user_id": "USR-1003", "student_id": "STD-2026-001", "full_name": "Zainab Raza", "email": "zainab@edupredict.edu", "role": "STUDENT", "department": "CS", "batch": "2026-A", "phone": "0300-111", "bio": "CS Scholar", "is_active": True}
+        get_resp = client.get(reverse("panels:user_profile"))
+        self.assertEqual(get_resp.status_code, 200)
+        html = get_resp.content.decode("utf-8")
+        for marker in ('name="full_name"', 'name="phone"', 'name="bio"', 'name="new_password"', "0300-111", "CS Scholar"):
+            self.assertIn(marker, html)
+        mock_svc_users.return_value.find_one.return_value = None
+        bad_resp = client.post(reverse("panels:user_profile"), {"full_name": "Zainab", "email": "z@e.edu", "new_password": "secret1", "confirm_password": "diff"})
+        self.assertRedirects(bad_resp, reverse("panels:user_profile"), fetch_redirect_response=False)
+        mock_svc_users.return_value.update_one.assert_not_called()
+        post_resp = client.post(reverse("panels:user_profile"), {"full_name": "Zainab Updated", "email": "zainab.new@edupredict.edu", "department": "AI", "batch": "2027-A", "phone": "0321-999", "bio": "AI Track", "new_password": "newpass123", "confirm_password": "newpass123", "role": "ADMIN", "is_active": "false"})
+        self.assertRedirects(post_resp, reverse("panels:user_profile"), fetch_redirect_response=False)
+        updates = mock_svc_users.return_value.update_one.call_args[0][1]["$set"]
+        self.assertEqual((updates["full_name"], updates["email"], updates["phone"], updates["bio"]), ("Zainab Updated", "zainab.new@edupredict.edu", "0321-999", "AI Track"))
+        self.assertTrue(check_password("newpass123", updates["password_hash"]) and "role" not in updates and "is_active" not in updates)
+        mock_sr.return_value.update_many.assert_called_once_with({"student_id": "STD-2026-001"}, {"$set": {"full_name": "Zainab Updated"}})
+        self.assertEqual((client.session["user"]["role"], client.session["user"]["full_name"], client.session["user"]["phone"]), ("STUDENT", "Zainab Updated", "0321-999"))
+        ser = serialize_session_user({"user_id": "USR-1", "role": "ADMIN", "email": "a@e.edu", "phone": "123", "bio": "Lead"})
+        self.assertEqual((ser["phone"], ser["bio"]), ("123", "Lead"))
+        _, rows = build_user_table_data([{"user_id": "USR-1", "full_name": "Root Admin", "email": "a@e.edu", "role": "ADMIN", "department": "Admin", "batch": "ALL", "is_active": True}], "ALL", "USR-1", "a@e.edu")
+        self.assertEqual((rows[0][1], rows[0][6]["actions"][0]["attrs"].get("data-is-self")), ("Root Admin (You)", "true"))
+
+    @patch("core.theme_services.users_col")
+    def test_sync_theme_prefs_on_login_merges_portal_and_hydrates_db_roles(self, mock_users_col):
+        client = Client()
+        client.post(reverse("panels:theme_preferences"), data=json.dumps({"mode": "dark", "shell_theme": "blue", "accent": "ocean"}), content_type="application/json")
+        req = RequestFactory().get("/")
+        req.session = client.session
+        synced = sync_theme_prefs_on_login(req, {"user_id": "USR-T9", "role": "TEACHER", "theme_prefs": {"ADMIN": {"mode": "dark", "accent": "crimson"}}})
+        self.assertEqual((synced["TEACHER"]["mode"], synced["TEACHER"]["accent"], synced["TEACHER"]["user_id"]), ("dark", "ocean", "USR-T9"))
+        self.assertEqual((synced["ADMIN"]["mode"], synced["ADMIN"]["accent"]), ("dark", "crimson"))
+        mock_users_col.return_value.update_one.assert_called_once_with({"user_id": "USR-T9"}, {"$set": {"theme_prefs.TEACHER": synced["TEACHER"]}})
+        mock_users_col.return_value.update_one.reset_mock()
+        synced_keep = sync_theme_prefs_on_login(req, {"user_id": "USR-T9", "role": "TEACHER", "theme_prefs": {"TEACHER": {"mode": "light", "accent": "emerald"}}})
+        self.assertEqual((synced_keep["TEACHER"]["mode"], synced_keep["TEACHER"]["accent"]), ("light", "emerald"))
+        mock_users_col.return_value.update_one.assert_not_called()

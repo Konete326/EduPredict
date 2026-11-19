@@ -301,14 +301,18 @@ def build_user_table_data(users, filter_role, actor_user_id, actor_email=""):
     for u in users:
         uid = u["user_id"]
         is_self = (actor_user_id and uid == actor_user_id) or (clean_actor_email and u["email"].strip().lower() == clean_actor_email)
-        actions = [_action("Edit", "fa-solid fa-pen-to-square", "openEditUserModal(this)", f"Edit {u['full_name']}", {"data-user-id": uid, "data-full-name": u["full_name"], "data-email": u["email"], "data-role": u["role"], "data-department": u["department"], "data-batch": u["batch"], "data-filter-role": filter_role})]
+        edit_attrs = {"data-user-id": uid, "data-full-name": u["full_name"], "data-email": u["email"], "data-role": u["role"], "data-department": u["department"], "data-batch": u["batch"], "data-filter-role": filter_role}
+        if is_self:
+            edit_attrs["data-is-self"] = "true"
+        actions = [_action("Edit", "fa-solid fa-pen-to-square", "openEditUserModal(this)", f"Edit {u['full_name']}", edit_attrs)]
         if not is_self:
             lbl, ico = ("Deactivate", "fa-solid fa-user-slash") if u["is_active"] else ("Activate", "fa-solid fa-user-check")
             actions.extend([
                 _action(lbl, ico, "openToggleUserModal(this)", f"{lbl} {u['full_name']}", {"data-user-id": uid, "data-full-name": u["full_name"], "data-is-active": "true" if u["is_active"] else "false", "data-filter-role": filter_role}),
                 _action("Delete", "fa-solid fa-trash", "openDeleteUserModal(this)", f"Delete {u['full_name']}", {"data-user-id": uid, "data-full-name": u["full_name"], "data-filter-role": filter_role}, variant="danger"),
             ])
-        rows.append([uid, u["full_name"], u["email"], {"text": u["role"], "status": role_status_map.get(u["role"], "info")}, u["department"], {"text": "Active" if u["is_active"] else "Inactive", "status": "success" if u["is_active"] else "danger"}, {"actions": actions}])
+        display_name = f"{u['full_name']} (You)" if is_self else u["full_name"]
+        rows.append([uid, display_name, u["email"], {"text": u["role"], "status": role_status_map.get(u["role"], "info")}, u["department"], {"text": "Active" if u["is_active"] else "Inactive", "status": "success" if u["is_active"] else "danger"}, {"actions": actions}])
     return headers, rows
 
 

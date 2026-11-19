@@ -107,7 +107,16 @@
           </div>
 
           {% if model.metrics.confusion_matrix %}
-          <div tabindex="0" role="region" aria-label="{{ model.model_name }} confusion matrix" class="overflow-x-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+          <div class="sm:hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-2.5 space-y-2">
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Confusion Matrix</p>
+            <div class="sm:hidden grid grid-cols-2 gap-2 tabular-nums">
+              <div class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5"><p class="text-[10px] text-[var(--text-muted)]">TN (Actual 0 / Pred 0)</p><p class="mt-0.5 font-mono text-sm font-semibold text-[var(--status-success)]">{{ model.metrics.confusion_matrix.tn }}</p></div>
+              <div class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5"><p class="text-[10px] text-[var(--text-muted)]">FP (Actual 0 / Pred 1)</p><p class="mt-0.5 font-mono text-sm font-semibold text-[var(--status-warning)]">{{ model.metrics.confusion_matrix.fp }}</p></div>
+              <div class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5"><p class="text-[10px] text-[var(--text-muted)]">FN (Actual 1 / Pred 0)</p><p class="mt-0.5 font-mono text-sm font-semibold text-[var(--status-danger)]">{{ model.metrics.confusion_matrix.fn }}</p></div>
+              <div class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5"><p class="text-[10px] text-[var(--text-muted)]">TP (Actual 1 / Pred 1)</p><p class="mt-0.5 font-mono text-sm font-semibold text-[var(--status-success)]">{{ model.metrics.confusion_matrix.tp }}</p></div>
+            </div>
+          </div>
+          <div tabindex="0" role="region" aria-label="{{ model.model_name }} confusion matrix" class="hidden sm:block overflow-x-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
             <table class="w-full border-collapse text-center text-xs tabular-nums">
               <caption class="border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Confusion Matrix</caption>
               <thead>

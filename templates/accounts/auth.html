@@ -1,17 +1,29 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-user-id="{{ current_user.user_id|default:'guest' }}" data-active-role="{{ active_role|default:'PORTAL' }}" data-shell-theme="{{ theme_prefs.shell_theme|default:'white' }}" class="{% if theme_prefs.mode == 'dark' %}dark{% endif %}{% if theme_prefs.density == 'compact' %} density-compact{% endif %}"{% if theme_prefs.tokens %} style="--bg-canvas:{{ theme_prefs.tokens.bg_canvas }};--bg-surface:{{ theme_prefs.tokens.bg_surface }};--bg-elevated:{{ theme_prefs.tokens.bg_elevated }};--bg-overlay:{{ theme_prefs.tokens.bg_overlay }};--text-primary:{{ theme_prefs.tokens.text_primary }};--text-secondary:{{ theme_prefs.tokens.text_secondary }};--text-muted:{{ theme_prefs.tokens.text_muted }};--border-subtle:{{ theme_prefs.tokens.border_subtle }};--accent-primary:{{ theme_prefs.tokens.accent_primary }};--accent-hover:{{ theme_prefs.tokens.accent_hover }};--accent-soft:{{ theme_prefs.tokens.accent_soft }};--shell-sidebar-bg:{{ theme_prefs.tokens.shell_sidebar_bg }};--shell-topbar-bg:{{ theme_prefs.tokens.shell_topbar_bg }};"{% endif %}>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
   <title>Sign In | EduPredict</title>
   <script>
     (function () {
       try {
-        if (localStorage.getItem('edupredict_theme') === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
+        const doc = document.documentElement;
+        const raw = localStorage.getItem('ep_theme_prefs:guest:PORTAL');
+        if (raw) {
+          const p = JSON.parse(raw);
+          if (p && typeof p === 'object') {
+            doc.classList.toggle('dark', p.mode === 'dark');
+            doc.classList.toggle('density-compact', p.density === 'compact');
+            if (p.shell_theme) doc.setAttribute('data-shell-theme', p.shell_theme);
+            if (p.tokens && typeof p.tokens === 'object') {
+              const m = { bg_canvas: '--bg-canvas', bg_surface: '--bg-surface', bg_elevated: '--bg-elevated', bg_overlay: '--bg-overlay', text_primary: '--text-primary', text_secondary: '--text-secondary', text_muted: '--text-muted', border_subtle: '--border-subtle', accent_primary: '--accent-primary', accent_hover: '--accent-hover', accent_soft: '--accent-soft', shell_sidebar_bg: '--shell-sidebar-bg', shell_topbar_bg: '--shell-topbar-bg' };
+              Object.keys(m).forEach(function (k) { if (p.tokens[k]) doc.style.setProperty(m[k], p.tokens[k]); });
+            }
+          }
+        } else if (!doc.classList.contains('dark') && localStorage.getItem('edupredict_theme') === 'dark') {
+          doc.classList.add('dark');
         }
       } catch (e) {}
     })();
@@ -35,7 +47,7 @@
     };
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=6">
+  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=8">
 </head>
 <body class="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased">
   <div class="min-h-screen grid grid-cols-1 lg:grid-cols-12">
@@ -219,7 +231,12 @@
               </div>
               <div class="space-y-1">
                 <label for="reg-confirm-password" class="block text-xs font-medium text-[var(--text-secondary)]">Confirm</label>
-                <input id="reg-confirm-password" name="confirm_password" type="password" minlength="6" required placeholder="Repeat password" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+                <div class="relative">
+                  <input id="reg-confirm-password" name="confirm_password" type="password" minlength="6" required placeholder="Repeat password" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] py-1.5 pl-3 pr-9 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+                  <button type="button" onclick="togglePasswordVisibility('reg-confirm-password', this)" aria-label="Toggle password visibility" class="absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                    <i class="fa-regular fa-eye text-xs" aria-hidden="true"></i>
+                  </button>
+                </div>
               </div>
             </div>
             <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
@@ -238,7 +255,10 @@
   </div>
 
   {% include 'components/toast.html' %}
-  <script src="{% static 'js/app.js' %}?v=6"></script>
+  {{ theme_prefs|json_script:"ep-theme-prefs-data" }}
+  {{ theme_catalog|json_script:"ep-theme-catalog-data" }}
+  <script src="{% static 'js/app.js' %}?v=8"></script>
+  <script src="{% static 'js/theme_studio.js' %}?v=8"></script>
   <script>
     function switchAuthTab(tab) {
       const isRegister = tab === 'register';

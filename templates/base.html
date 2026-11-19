@@ -61,7 +61,7 @@
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=7">
+  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=8">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased">
@@ -167,10 +167,10 @@
 
   {{ theme_prefs|json_script:"ep-theme-prefs-data" }}
   {{ theme_catalog|json_script:"ep-theme-catalog-data" }}
-  <script src="{% static 'js/app.js' %}?v=7"></script>
-  <script src="{% static 'js/charts.js' %}?v=7"></script>
-  <script src="{% static 'js/nav.js' %}?v=7"></script>
-  <script src="{% static 'js/theme_studio.js' %}?v=7"></script>
+  <script src="{% static 'js/app.js' %}?v=8"></script>
+  <script src="{% static 'js/charts.js' %}?v=8"></script>
+  <script src="{% static 'js/nav.js' %}?v=8"></script>
+  <script src="{% static 'js/theme_studio.js' %}?v=8"></script>
   <div id="page-extra-js">{% block extra_js %}{% endblock %}</div>
 </body>
 </html>

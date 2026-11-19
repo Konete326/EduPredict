@@ -68,11 +68,11 @@
       </div>
     </div>
 
-    <button id="theme-studio-open-btn" type="button" onclick="openThemeStudioModal()" aria-label="Open Theme and Appearance Studio" title="Customize theme colors &amp; layout" class="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
-      <span id="theme-studio-topbar-dot" class="h-2.5 w-2.5 shrink-0 rounded-full border border-[var(--border-subtle)]" style="background-color: var(--accent-primary);" aria-hidden="true"></span>
-      <i class="fa-solid fa-palette text-xs text-[var(--accent-primary)]" aria-hidden="true"></i>
-      <span class="hidden sm:inline text-xs font-medium">Theme</span>
-    </button>
+    <a href="{% url 'panels:user_profile' %}" title="My Profile &amp; Settings" aria-label="My Profile" class="hidden sm:inline-flex h-9 items-center gap-2 rounded-xl border pl-1.5 pr-2.5 text-xs font-medium transition-colors {% if request.resolver_match.view_name == 'panels:user_profile' %}border-[var(--accent-primary)] bg-[var(--accent-soft)] text-[var(--accent-primary)]{% else %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[10px] font-bold text-[var(--accent-primary)]">{{ current_user.full_name|default:"EP"|slice:":2"|upper }}</span>
+      <span class="max-w-[6.5rem] truncate text-xs font-semibold text-[var(--text-primary)]">{{ current_user.full_name|default:"My Profile" }}</span>
+      <span class="hidden lg:inline rounded bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">{{ active_role|default:"User" }}</span>
+    </a>
 
     <button id="theme-toggle-btn" type="button" aria-label="Switch Light or Dark theme" title="Switch Light or Dark theme" class="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
       <i id="theme-icon-sun" class="fa-regular fa-sun text-sm text-[var(--status-warning)] hidden"></i>

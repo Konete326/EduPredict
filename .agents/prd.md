@@ -14,41 +14,45 @@
 ## 3. User Roles & Dedicated Panels
 
 ### 3.1. Administrator Panel (`/admin-panel/`)
-- **Overview Dashboard:** 4 KPI metric cards (Total Students, Active Teachers, High Dropout Risk Count, System Uptime Status) + 2 Chart.js charts (Department-wise Enrolment & Monthly Attendance Trend).
-- **User Management:** View, Add, Edit, and Deactivate users (Admin, Teacher, Student, Analyst) using a global searchable table and global Confirmation Modal.
-- **Course & Batch Management:** Simple CRUD for courses, subjects, and academic batches.
-- **System Logs & Backups:** 1-click "Export MongoDB Backup (JSON/CSV)" and automated system health status indicator.
-- **Support Ticket Resolution:** View user feedback/issues and change status (`Open` -> `Resolved`) with 1 click.
+- **Overview Dashboard (`/admin-panel/`):** 4 KPI metric cards (Total Students, Active Teachers, High Dropout Risk Count, System Uptime Status) + 2 Chart.js charts (Department-wise Enrolment & Monthly Attendance Trend).
+- **User Management (`/admin-panel/users/`):** View, Add, Edit, Toggle Active Status, and Delete users (`Admin`, `Teacher`, `Student`, `Analyst`) with smart defaults, strict self-protection lock (`data-is-self="true"` preventing self-delete, self-deactivation, and self-role-downgrade), and global searchable/paginated views.
+- **Course & Batch Management (`/admin-panel/courses/`):** CRUD for courses, subjects, and academic batches with smart Course Code suggestions and prefix-based Department inference.
+- **Support Ticket Resolution (`/admin-panel/tickets/`):** View user feedback/issues and resolve/delete tickets in 1 click (Admins manage incoming tickets and do not submit tickets to themselves).
+- **Activity Logs & Backups (`/admin-panel/logs/`, `/admin-panel/backup/`):** Filterable audit trail (`USERS`, `COURSES`, `TICKETS`, `DATA`, `SYSTEM`), manual audit notes, CSV log export, and 1-click MongoDB Backup export (`JSON`/`CSV`).
+- **Portal Settings (`/admin-panel/settings/`):** Dynamic institution metadata, passing GPA, attendance minimum, ML risk thresholds, and automated alert toggles + 1-click Theme & Appearance Live Studio launch.
 
 ### 3.2. Teacher Panel (`/teacher-panel/`)
-- **Class Overview Dashboard:** Summary of assigned classes, average class score, and automated list of "At-Risk Students" requiring attention.
-- **1-Click Data Ingestion (CSV/Excel Upload & Quick Entry):**
-  - Upload attendance or marks sheet (CSV/Excel) which automatically validates, cleans missing values, and saves to MongoDB Atlas.
-  - Simple inline table for manual attendance or marks update.
-- **Student Performance Tracker:** Filter students by batch/subject and view automatically generated performance badges (`Excellent`, `Stable`, `Needs Help`, `High Dropout Risk`).
-- **Send Alert:** 1-click button to send an automated warning notification to a struggling student.
+- **Class Overview Dashboard (`/teacher-panel/`):** Summary of assigned classes, average class score, and automated list of "At-Risk Students" requiring attention.
+- **1-Click Data Ingestion (`/teacher-panel/ingest/`):**
+  - Frictionless CSV/Excel upload with a 1.2s cancelable auto-upload toast grace window, automatic validation, missing-value cleaning, and sample CSV template download.
+  - Quick Student Entry with smart ID suggestion, datalist autocomplete, and automatic field pre-fill.
+- **Student Performance Tracker (`/teacher-panel/students/`):** Auto-filtering dropdowns (batch, course, status), performance badges (`Excellent`, `Stable`, `Needs Help`, `High Dropout Risk`), and quick inline/modal marks editing.
+- **Risk Alerts (`/teacher-panel/alerts/`):** Dedicated alert feed and 1-click personalized notification delivery to struggling students.
 
 ### 3.3. Student Panel (`/student-panel/`)
-- **Personal Learning Dashboard:** Clean summary of current Attendance %, GPA/Grade Prediction, Earned Credits, and Upcoming Deadlines.
-- **AI Performance & Risk Insight Card:** Automated, encouraging plain-language insight showing predicted final score and simple actionable tips (e.g., "Attend next 4 lectures to boost attendance above 85%").
-- **Subject-wise Progress & Visuals:** Radar/Bar chart comparing student's marks with class average, plus downloadable report card.
-- **Notifications & Support Center:** View alerts from teachers/system and submit a quick support/feedback form.
+- **Personal Learning Dashboard (`/student-panel/`):** Clean summary of current Attendance %, GPA/Grade Prediction, Earned Credits, and class batch rank.
+- **Report Card & CSV Download (`/student-panel/report/`, `/student-panel/report/download/`):** Subject-wise progress charts comparing student marks with class average plus downloadable report summary.
+- **AI Study Tips (`/student-panel/tips/`):** Plain-language automated recommendations and weekly improvement targets.
+- **Notifications & Support Center (`/student-panel/notifications/`):** View alerts from teachers/system and submit quick support tickets.
 
 ### 3.4. Data Analyst Panel (`/analyst-panel/`)
-- **Big Data & Ingestion Hub:** Upload historical or real-time educational datasets (demographics, LMS logs, academic records, attendance). Automatic missing-data imputation and schema validation report.
-- **Automated ML Prediction Engine:**
-  - **Dropout Risk Model:** Predicts probability (`Low`, `Medium`, `High`) of student dropout.
-  - **Grade/Performance Forecaster:** Predicts next semester GPA based on historical trends.
-  - **Course Demand Predictor:** Forecasts upcoming semester course enrollments.
-  - **Anomaly Detection:** Automatically flags unusual attendance drops or grade spikes.
-- **Interactive Visual Explorer:** Filterable Chart.js visualizations (Correlation Scatter Plot, Dropout Distribution Doughnut, Trend Line Graph) with 1-click CSV report export.
+- **Big Data & ML Hub (`/analyst-panel/`, `/analyst-panel/upload/`, `/analyst-panel/run-ml/`, `/analyst-panel/evaluation/`):** Upload historical or real-time datasets with 1.2s cancelable auto-upload, automatic missing-data imputation, auto-filterable predictions explorer, CSV export, and leakage-free ML evaluation (`RandomForestClassifier`, `Ridge`, `IsolationForest`).
+- **Model Health & Thresholds (`/analyst-panel/accuracy/`):** Dataset health diagnostics, label coverage status, and live portal threshold visibility.
 
 ## 4. Global Features (Shared Across All Panels)
-1. **Authentication & Role Routing (`/auth/`):** Single clean Sign-In / Sign-Up page. Upon login, Django automatically redirects the user to their respective role dashboard (`/admin-panel/`, `/teacher-panel/`, `/student-panel/`, or `/analyst-panel/`).
-2. **Real-Time Notification Bell:** Topbar notification dropdown displaying unread alerts with a "Mark all as read" button.
-3. **Light / Dark Theme Toggle:** Persistent theme switcher in the Topbar that updates the entire UI, tables, modals, and Chart.js graphs smoothly without any broken overlays.
-4. **Feedback & Support Drawer/Modal:** Accessible from the sidebar footer across all roles to submit queries or bug reports.
+1. **Authentication & Role Routing (`/auth/`, `/auth/logout/`):** Unified Sign-In / Sign-Up page with Show/Hide password eye toggles on every password field, Caps Lock warnings, guest `PORTAL` theme persistence synced on login, and automatic role routing.
+2. **My Profile & Settings (`/profile/`):** Shared across all logged-in roles (`Admin`, `Teacher`, `Student`, `Analyst`) to update full name, email, optional department/batch/phone/bio, and optional password (with Show/Hide eye toggles), while keeping account `role` read-only and protected.
+3. **Theme & Appearance Live Studio (`/theme/preferences/`):** Per-user & per-panel customizable Light/OLED Dark mode, 6 Header/Sidebar Chrome Themes, 13 Brand Accent Swatches, 6 Surface Presets, Comfortable/Compact density (sidebar fixed on the left — no LTR/RTL flip), Accent Auto-Sync, and instant scoped persistence (`localStorage` + MongoDB).
+4. **Organized Sidebar & Deduplicated Topbar:** Strict Role Sidebar Isolation (`Admin Core` + `Support & Logs` for Admin; dedicated single group for Teacher/Student/Analyst) plus a unified `Settings & Theme` dropdown for every logged-in role; topbar holds a single Light/Dark button, Notification Bell, Quick Search, and `My Profile` pill without duplicate Theme buttons.
+5. **Password Toggles, Mobile Cards & Smart Automation:** Global `[data-password-toggle]` eye buttons in `form_modal.html`, `/profile/`, and `/auth/`; crisp mobile stacked cards (`md:hidden`) and Confusion Matrix cards (`sm:hidden`); 1.2s cancelable auto-upload grace window.
 
 ## 5. Strict Scope & Anti-Bloat Rules
 - **Reject MERN/React Completely:** No React, Vite, Next.js, or JSX files. Everything is Pure Django + HTML5 Templates + Tailwind CSS + Vanilla JS.
 - **One Feature Per Execution:** Coding agents must implement only the single feature/module requested by the user, test it, sync with Git, and ask before starting the next feature.
+
+## 6. Current Status & Optional Next Roadmap Phases
+- **Built & Verified Core Scope (Phases 1–21):** All 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme & Appearance Live Studio (per-user/per-panel), My Profile (`/profile/`), Password Eye Toggles, Admin Self-Lock, 1.2s Cancelable Auto-Upload, and Mobile Card-Lists are complete.
+- **Optional Future Roadmap Phases:**
+  1. **Live End-to-End UAT & Atlas Integration Verification:** Browser walkthrough across all 4 roles against live MongoDB Atlas data.
+  2. **PDF Report Cards & Academic Transcripts:** Printable/downloadable styled PDF report exports for Students and Teachers.
+  3. **Production Deployment & CI/CD Polish:** WSGI/Gunicorn production readiness, automated GitHub Actions test checks, and monitoring polish.

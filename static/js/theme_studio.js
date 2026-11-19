@@ -1,22 +1,11 @@
 (function () {
-  const TOKEN_TO_CSS = {
-    bg_canvas: '--bg-canvas', bg_surface: '--bg-surface', bg_elevated: '--bg-elevated', bg_overlay: '--bg-overlay',
-    text_primary: '--text-primary', text_secondary: '--text-secondary', text_muted: '--text-muted', border_subtle: '--border-subtle',
-    accent_primary: '--accent-primary', accent_hover: '--accent-hover', accent_soft: '--accent-soft',
-    shell_sidebar_bg: '--shell-sidebar-bg', shell_topbar_bg: '--shell-topbar-bg'
-  };
+  const TOKEN_TO_CSS = { bg_canvas: '--bg-canvas', bg_surface: '--bg-surface', bg_elevated: '--bg-elevated', bg_overlay: '--bg-overlay', text_primary: '--text-primary', text_secondary: '--text-secondary', text_muted: '--text-muted', border_subtle: '--border-subtle', accent_primary: '--accent-primary', accent_hover: '--accent-hover', accent_soft: '--accent-soft', shell_sidebar_bg: '--shell-sidebar-bg', shell_topbar_bg: '--shell-topbar-bg' };
   const DEFAULTS = { mode: 'light', shell_theme: 'white', accent: 'indigo', preset: 'neutral', density: 'comfortable', sync_shell: true };
-  const STUDIO_CONTROLS = [
-    ['[data-theme-mode]', 'data-theme-mode', 'mode'],
-    ['[data-shell-theme-btn]', 'data-shell-theme-btn', 'shell_theme'],
-    ['[data-accent-swatch]', 'data-accent-swatch', 'accent'],
-    ['[data-surface-preset]', 'data-surface-preset', 'preset'],
-    ['[data-theme-density]', 'data-theme-density', 'density']
-  ];
+  const STUDIO_CONTROLS = [['[data-theme-mode]', 'data-theme-mode', 'mode'], ['[data-shell-theme-btn]', 'data-shell-theme-btn', 'shell_theme'], ['[data-accent-swatch]', 'data-accent-swatch', 'accent'], ['[data-surface-preset]', 'data-surface-preset', 'preset'], ['[data-theme-density]', 'data-theme-density', 'density']];
 
   let catalog = { modes: [], shell_themes: [], swatches: [], presets: [], save_url: '/theme/preferences/' };
   let shellMap = {}, swatchMap = {}, presetMap = {};
-  let currentPrefs = null, saveTimer = null, transitionTimer = null;
+  let currentPrefs = null, saveTimer = null, transitionTimer = null, activeUploadState = null;
 
   const byId = (id) => document.getElementById(id);
   const readJsonScript = (id) => { const el = byId(id); if (!el) return null; try { return JSON.parse(el.textContent || '{}'); } catch (e) { return null; } };
@@ -29,27 +18,13 @@
     else if (list && typeof list === 'object') Object.entries(list).forEach(([k, v]) => { if (v) out[v.slug || k] = v; });
     return out;
   };
-
   function computeTokens(prefs) {
-    const isDark = prefs.mode === 'dark';
-    const shell = shellMap[prefs.shell_theme] || shellMap.white || {};
-    const swatch = swatchMap[prefs.accent] || swatchMap.indigo || {};
-    const preset = presetMap[prefs.preset] || presetMap.neutral || {};
+    const isDark = prefs.mode === 'dark', shell = shellMap[prefs.shell_theme] || shellMap.white || {}, swatch = swatchMap[prefs.accent] || swatchMap.indigo || {}, preset = presetMap[prefs.preset] || presetMap.neutral || {};
     return {
-      bg_canvas: isDark ? (preset.canvas_dark || '#090d16') : (preset.canvas_light || '#f8fafc'),
-      bg_surface: isDark ? (preset.surface_dark || '#111827') : (preset.surface_light || '#ffffff'),
-      bg_elevated: isDark ? (preset.elevated_dark || '#1e293b') : (preset.elevated_light || '#f1f5f9'),
-      bg_overlay: isDark ? 'rgba(2, 6, 23, 0.78)' : 'rgba(15, 23, 42, 0.55)',
-      text_primary: isDark ? '#f8fafc' : '#0f172a',
-      text_secondary: isDark ? '#cbd5e1' : '#475569',
-      text_muted: isDark ? '#94a3b8' : '#64748b',
-      border_subtle: isDark ? '#1e293b' : '#e2e8f0',
-      accent_primary: swatch.hex || (isDark ? '#6366f1' : '#4f46e5'),
-      accent_hover: swatch.hover || (isDark ? '#818cf8' : '#4338ca'),
-      accent_soft: isDark ? (swatch.soft_dark || 'rgba(99, 102, 241, 0.14)') : (swatch.soft_light || '#eef2ff'),
-      shell_sidebar_bg: isDark ? (shell.sidebar_bg_dark || '#111827') : (shell.sidebar_bg_light || '#ffffff'),
-      shell_topbar_bg: isDark ? (shell.topbar_bg_dark || '#111827') : (shell.topbar_bg_light || '#ffffff'),
-      force_dark_chrome: Boolean(shell.force_dark_chrome)
+      bg_canvas: isDark ? (preset.canvas_dark || '#090d16') : (preset.canvas_light || '#f8fafc'), bg_surface: isDark ? (preset.surface_dark || '#111827') : (preset.surface_light || '#ffffff'), bg_elevated: isDark ? (preset.elevated_dark || '#1e293b') : (preset.elevated_light || '#f1f5f9'),
+      bg_overlay: isDark ? 'rgba(2, 6, 23, 0.78)' : 'rgba(15, 23, 42, 0.55)', text_primary: isDark ? '#f8fafc' : '#0f172a', text_secondary: isDark ? '#cbd5e1' : '#475569', text_muted: isDark ? '#94a3b8' : '#64748b', border_subtle: isDark ? '#1e293b' : '#e2e8f0',
+      accent_primary: swatch.hex || (isDark ? '#6366f1' : '#4f46e5'), accent_hover: swatch.hover || (isDark ? '#818cf8' : '#4338ca'), accent_soft: isDark ? (swatch.soft_dark || 'rgba(99, 102, 241, 0.14)') : (swatch.soft_light || '#eef2ff'),
+      shell_sidebar_bg: isDark ? (shell.sidebar_bg_dark || '#111827') : (shell.sidebar_bg_light || '#ffffff'), shell_topbar_bg: isDark ? (shell.topbar_bg_dark || '#111827') : (shell.topbar_bg_light || '#ffffff'), force_dark_chrome: Boolean(shell.force_dark_chrome)
     };
   }
 
@@ -85,13 +60,7 @@
     }
     if (byId('theme-studio-topbar-dot')) byId('theme-studio-topbar-dot').style.backgroundColor = prefs.tokens.accent_primary;
     const swatchObj = swatchMap[prefs.accent] || {}, shellObj = shellMap[prefs.shell_theme] || {};
-    const textTargets = [
-      ['theme-preview-swatch-name', swatchObj.label || prefs.accent],
-      ['theme-preview-scope-text', prefs.role],
-      ['theme-preview-mode-text', prefs.mode === 'dark' ? 'OLED Dark' : 'Light Mode'],
-      ['theme-preview-shell-text', shellObj.label || prefs.shell_theme],
-      ['theme-preview-hex-text', prefs.tokens.accent_primary]
-    ];
+    const textTargets = [['theme-preview-swatch-name', swatchObj.label || prefs.accent], ['theme-preview-scope-text', prefs.role], ['theme-preview-mode-text', prefs.mode === 'dark' ? 'OLED Dark' : 'Light Mode'], ['theme-preview-shell-text', shellObj.label || prefs.shell_theme], ['theme-preview-hex-text', prefs.tokens.accent_primary]];
     textTargets.forEach(([id, val]) => { if (byId(id)) byId(id).textContent = val; });
   }
 
@@ -196,22 +165,78 @@
     return 'STD-2026-' + String(maxNum + 1).padStart(3, '0');
   }
 
-  function initSmartAutomation() {
+  function setBtnUploading(btn, label, disabled, spinning) {
+    if (!btn) return;
+    btn.disabled = Boolean(disabled);
+    if (btn.tagName === 'BUTTON') btn.innerHTML = '<i class="' + (spinning ? 'fa-solid fa-spinner fa-spin text-xs' : 'fa-solid fa-clock text-xs') + '"></i><span>' + label + '</span>';
+    else btn.value = label;
+  }
+  function clearActiveUpload(resetInput, notify) {
+    if (!activeUploadState) return;
+    const st = activeUploadState;
+    activeUploadState = null;
+    window.eduPredictCancelUpload = null;
+    clearTimeout(st.timer);
+    if (st.toast && st.toast.parentNode) st.toast.parentNode.removeChild(st.toast);
+    if (resetInput) {
+      if (st.input) st.input.value = '';
+      if (st.nameEl) { st.nameEl.textContent = st.defaultNameText; st.nameEl.className = st.defaultNameClass; }
+      if (st.btn) { st.btn.disabled = false; if (st.btn.tagName === 'BUTTON') st.btn.innerHTML = st.defaultBtnHtml; else st.btn.value = st.defaultBtnVal; }
+      if (notify && typeof window.showToast === 'function') window.showToast('Auto-upload cancelled.', 'info');
+    }
+  }
+  function renderUploadToast(filename, onCancel) {
+    const container = byId('toast-container');
+    if (!container) return null;
+    const toast = document.createElement('div');
+    toast.className = 'toast-enter pointer-events-auto flex items-center gap-3 rounded-xl border border-[var(--border-subtle)] border-l-4 bg-[var(--bg-surface)] px-4 py-3 shadow-lg';
+    toast.style.borderLeftColor = 'var(--accent-primary)';
+    toast.setAttribute('role', 'status'); toast.setAttribute('data-upload-toast', 'true');
+    const icon = document.createElement('i'); icon.className = 'fa-solid fa-cloud-arrow-up text-sm text-[var(--accent-primary)] shrink-0'; icon.setAttribute('aria-hidden', 'true');
+    const msg = document.createElement('p'); msg.className = 'flex-1 min-w-0 truncate text-xs sm:text-sm font-medium text-[var(--text-primary)]'; msg.textContent = 'Auto-uploading ' + filename + ' in 1.2s...';
+    const cancelBtn = document.createElement('button'); cancelBtn.type = 'button'; cancelBtn.textContent = 'Cancel';
+    cancelBtn.className = 'shrink-0 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-1 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-canvas)] transition-colors';
+    cancelBtn.addEventListener('click', onCancel);
+    toast.append(icon, msg, cancelBtn);
+    container.appendChild(toast);
+    return toast;
+  }
+
+  function bindSmartFileUploads() {
     document.querySelectorAll('input[type="file"][data-auto-submit="true"]').forEach((input) => {
       if (input.dataset.autoSubmitBound === '1') return;
       input.dataset.autoSubmitBound = '1';
+      const form = input.closest('form'), nameEl = (form && form.querySelector('[data-file-name]')) || byId('teacher-file-name');
+      const btn = form ? form.querySelector('button[type="submit"], input[type="submit"]') : null;
+      const defaultNameText = nameEl ? nameEl.textContent : '', defaultNameClass = nameEl ? nameEl.className : '';
+      const defaultBtnHtml = btn && btn.tagName === 'BUTTON' ? btn.innerHTML : '', defaultBtnVal = btn && btn.tagName !== 'BUTTON' ? btn.value : '';
+      if (form && form.dataset.uploadSubmitBound !== '1') {
+        form.dataset.uploadSubmitBound = '1';
+        form.addEventListener('submit', () => { clearActiveUpload(false, false); setBtnUploading(btn, 'Uploading & Predicting...', true, true); });
+      }
       input.addEventListener('change', () => {
+        const sameInput = activeUploadState && activeUploadState.input === input;
+        clearActiveUpload(!sameInput, false);
         const file = input.files && input.files[0];
         if (!file) return;
-        const form = input.closest('form');
-        const nameEl = (form && form.querySelector('[data-file-name]')) || byId('teacher-file-name');
         if (nameEl) { nameEl.textContent = 'Selected: ' + file.name; nameEl.classList.remove('hidden'); nameEl.classList.add('text-[var(--accent-primary)]', 'font-semibold'); }
-        const btn = form ? form.querySelector('button[type="submit"], input[type="submit"]') : null;
-        if (btn && btn.tagName === 'BUTTON') { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i><span>Uploading &amp; Predicting...</span>'; }
-        else if (btn) { btn.disabled = true; btn.value = 'Uploading & Predicting...'; }
-        submitForm(form);
+        setBtnUploading(btn, 'Uploading in 1.2s...', false, false);
+        const cancelAction = (silent) => clearActiveUpload(true, !silent);
+        const toast = renderUploadToast(file.name, () => cancelAction(false));
+        const timer = setTimeout(() => {
+          clearActiveUpload(false, false);
+          setBtnUploading(btn, 'Uploading & Predicting...', true, true);
+          submitForm(form);
+        }, 1200);
+        activeUploadState = { input, form, nameEl, btn, defaultNameText, defaultNameClass, defaultBtnHtml, defaultBtnVal, toast, timer };
+        window.eduPredictCancelUpload = cancelAction;
       });
     });
+  }
+
+  function initSmartAutomation() {
+    if (activeUploadState && activeUploadState.form && !activeUploadState.form.isConnected) clearActiveUpload(true, false);
+    bindSmartFileUploads();
 
     document.querySelectorAll('select[data-auto-filter="true"]').forEach((sel) => {
       if (sel.dataset.autoFilterBound === '1') return;

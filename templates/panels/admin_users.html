@@ -110,6 +110,13 @@
 
     window.openEditUserModal = function (btn) {
       const d = btn ? btn.dataset : {};
+      const isSelf = d.isSelf === 'true';
+      const roleFields = isSelf
+        ? [
+            { type: 'hidden', name: 'role', value: 'ADMIN' },
+            { name: 'role_display', label: 'Role (Protected)', type: 'text', value: 'ADMIN (Active Self Account — Protected)', readonly: true }
+          ]
+        : [{ name: 'role', label: 'Role', type: 'select', options: roleOptions, value: d.role || 'STUDENT', required: true }];
       window.openFormModal({
         title: 'Edit User (' + (d.userId || '') + ')',
         actionUrl: adminUsersUrl,
@@ -119,7 +126,7 @@
           { type: 'hidden', name: 'filter_role', value: d.filterRole || selectedRole },
           { name: 'full_name', label: 'Full Name', type: 'text', value: d.fullName || '', required: true },
           { name: 'email', label: 'Email', type: 'email', value: d.email || '', required: true },
-          { name: 'role', label: 'Role', type: 'select', options: roleOptions, value: d.role || 'STUDENT', required: true },
+          ...roleFields,
           { name: 'department', label: 'Department', type: 'text', value: d.department || 'General' },
           { name: 'batch', label: 'Batch', type: 'text', value: d.batch || 'ALL' },
           { name: 'password', label: 'New Password (optional)', type: 'password', placeholder: 'Leave blank to keep current password' }
