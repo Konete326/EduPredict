@@ -61,9 +61,9 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 24 Swarm Coordinator & UAT Automation Team"
-active_branch_merged_to_main: "feature/e2e-uat-health -> main"
-project_phase: "Phase 24 Complete: Live End-to-End UAT Automation Suite & /health/ System Monitoring"
+last_updated_by_agent: "EduPredict Core Notification & Cache Sync Team"
+active_branch_merged_to_main: "feature/alert-cache-invalidation-and-topbar-sync -> main"
+project_phase: "Phase 25 Complete: Real-Time Alert Cache Invalidation & Topbar Bell Live Sync"
 
 completed_modules:
   - "Phase 1-22: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards & Rosters."
@@ -76,22 +76,28 @@ completed_modules:
       - "Updated config/urls.py (14 lines): Registered /health/ route (system_health)."
       - "Added core/management/commands/verify_uat.py (205 lines): Complete multi-role simulator testing Health, Auth/RBAC, Admin self-lock, Teacher marks & PDF roster, Analyst ML, Student overview & PDF report card, and Support ticket workflow (7/7 checks PASS)."
       - "Added panels/test_uat.py (75 lines): 6 comprehensive unit tests covering /health/ endpoint response and verify_uat command execution."
+  - "Phase 25: Real-Time Alert Cache Invalidation & Topbar Bell Live Sync:"
+      - "Updated panels/views_admin.py (243 lines, 0 comments): Cleanly unpacked user_payload dictionary containing user_id, student_id, and role in mark_notifications_read_view to ensure student_id-targeted notifications are marked as read when clicked from the topbar bell on any panel."
+      - "Updated analytics/ml_engine.py (350 lines, 0 comments): In run_prediction_pipeline, changed invalidate_cache(\"analyst:\") to full invalidate_cache() so generated dropout and anomaly alert notifications immediately invalidate notifs:*, student:*, and teacher:* in-memory cache."
+      - "Updated panels/test_admin.py (276 lines, 0 comments): Added test_mark_notifications_read_view_unpacks_payload_and_handles_rbac verifying GET dashboard redirects, POST mark_notifications_read invocation with user_id, student_id, and role, and JSON response."
+      - "Updated analytics/test_pipeline.py (110 lines, 0 comments): Added assertion verifying invalidate_cache() is invoked without prefix on pipeline execution with student alerts enabled."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED in 12.31s."
-  - "manage.py test: 57/57 tests PASSED in 19.48s."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED in 9.45s."
+  - "manage.py test: 58/58 tests PASSED in 16.93s."
   - "node --check: all JS scripts passed with 0 errors."
   - "Zero comments audit: 0 comments across all modified and newly created files."
-  - "Line caps: All files strictly within limits (views <= 250, commands <= 350)."
+  - "Line caps: All files strictly within limits (views <= 250, services/tests <= 350)."
 
 active_routes_and_files:
-  - "core/views_health.py (77 lines), core/management/commands/verify_uat.py (205 lines), panels/test_uat.py (75 lines)"
+  - "panels/views_admin.py (243 lines), analytics/ml_engine.py (350 lines), panels/test_admin.py (276 lines), analytics/test_pipeline.py (110 lines)"
+  - "/notifications/mark-read/ -> panels:mark_notifications_read"
   - "/health/ -> system_health"
   - "python manage.py verify_uat -> End-to-end multi-role UAT verification"
 
 pending_modules_in_order:
-  - "Phase 25: Production Deployment & CI/CD Pipeline Polish (.github/workflows/django.yml, Gunicorn WSGI readiness)."
+  - "Phase 26: Production Deployment & CI/CD Pipeline Polish (.github/workflows/django.yml, Gunicorn WSGI readiness)."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

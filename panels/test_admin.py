@@ -113,10 +113,13 @@ class _AdminTestBase(TestCase):
             p.start()
             self.addCleanup(p.stop)
 
-    def _login_as(self, role, user_id="USR-ADM-1"):
+    def _login_as(self, role, user_id="USR-ADM-1", student_id=None):
         client = Client()
         session = client.session
-        session["user"] = {"user_id": user_id, "role": role, "email": f"{role.lower()}@edupredict.edu", "full_name": f"Test {role.title()}"}
+        user = {"user_id": user_id, "role": role, "email": f"{role.lower()}@edupredict.edu", "full_name": f"Test {role.title()}"}
+        if student_id:
+            user["student_id"] = student_id
+        session["user"] = user
         session.save()
         return client
 
@@ -259,3 +262,15 @@ class AdminCrudAndGuardsTests(_AdminTestBase):
         self.assertRedirects(admin_client.post(reverse("panels:admin_users"), {"action": "delete", "user_id": "USR-1001"}), reverse("panels:admin_users"), fetch_redirect_response=False)
         self.assertIsNone(self.cols["users"].find_one({"user_id": "USR-1001"}))
         self.assertEqual(self.cols["users"].delete_one({"user_id": "MISSING"}).deleted_count, 0)
+
+    @patch("panels.views_admin.mark_notifications_read", return_value=3)
+    def test_mark_notifications_read_view_unpacks_payload_and_handles_rbac(self, mock_mark):
+        client = self._login_as("STUDENT", user_id="USR-STU-1", student_id="STD-999")
+        get_resp = client.get(reverse("panels:mark_notifications_read"))
+        self.assertRedirects(get_resp, reverse("panels:student_dashboard"), fetch_redirect_response=False)
+        post_resp = client.post(reverse("panels:mark_notifications_read"))
+        self.assertEqual(post_resp.status_code, 200)
+        data = json.loads(post_resp.content.decode("utf-8"))
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["updated"], 3)
+        mock_mark.assert_called_once_with({"user_id": "USR-STU-1", "student_id": "STD-999", "role": "STUDENT"})

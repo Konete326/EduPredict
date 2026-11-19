@@ -229,9 +229,15 @@ def submit_support_ticket(request):
 
 @login_required_custom
 def mark_notifications_read_view(request):
+    user = request.session.get("user") or {}
     if request.method != "POST":
-        return redirect(get_dashboard_route((request.session.get("user") or {}).get("role")))
+        return redirect(get_dashboard_route(user.get("role")))
     try:
-        return JsonResponse({"ok": True, "updated": mark_notifications_read(request.session.get("user") or {})})
+        user_payload = {
+            "user_id": str(user.get("user_id") or "").strip(),
+            "student_id": str(user.get("student_id") or "").strip(),
+            "role": str(user.get("role") or "").strip().upper(),
+        }
+        return JsonResponse({"ok": True, "updated": mark_notifications_read(user_payload)})
     except Exception as exc:
         return JsonResponse({"ok": False, "error": str(exc)}, status=500)

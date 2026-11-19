@@ -66,13 +66,14 @@ class PredictionPipelineAndDataPipelineTests(SimpleTestCase):
         self.assertEqual(_build_recommendation("MEDIUM", False, 80.0, 75.0, 75.0, 10.0, min_att=85.0), "Attend the next 4 consecutive lectures to lift attendance above 90%.")
 
         risky = [{"student_id": "STD-RISK-1", "full_name": "Risk Student", "course_code": "CS-101", "attendance_pct": 35.0, "internal_marks": 25.0, "assignment_score": 30.0, "lms_hours_weekly": 1.0, "previous_gpa": 1.2}]
-        with patch("analytics.ml_engine.predictions_col") as mock_preds, patch("analytics.ml_engine.notifications_col") as mock_notifs:
+        with patch("analytics.ml_engine.predictions_col") as mock_preds, patch("analytics.ml_engine.notifications_col") as mock_notifs, patch("analytics.ml_engine.invalidate_cache") as mock_inval:
             run_prediction_pipeline(
                 records=risky, persist=True,
                 portal_settings={"high_risk_threshold": 60, "medium_risk_threshold": 30, "anomaly_drop_pct": 20, "auto_student_alerts": True, "auto_teacher_alerts": False},
             )
             mock_preds.return_value.bulk_write.assert_called_once()
             mock_notifs.return_value.bulk_write.assert_called_once()
+            mock_inval.assert_called_once_with()
             ops = mock_notifs.return_value.bulk_write.call_args[0][0]
             roles = [op._filter["target_role"] for op in ops]
             self.assertEqual(roles, ["STUDENT"])

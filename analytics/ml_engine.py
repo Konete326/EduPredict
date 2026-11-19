@@ -332,7 +332,7 @@ def run_prediction_pipeline(records=None, persist=True, test_size=DEFAULT_TEST_S
             notifs_col = notifications_col()
             for start in range(0, len(notif_ops), 500):
                 notifs_col.bulk_write(notif_ops[start:start + 500], ordered=False)
-        invalidate_cache("analyst:")
+        invalidate_cache()
 
     result = {
         "status": "COMPLETED", "model_version": MODEL_VERSION, "predictions_generated": len(pred_docs),
