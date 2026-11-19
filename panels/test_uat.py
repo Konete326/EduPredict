@@ -195,6 +195,7 @@ class StaticFilesAndProductionConfigTests(TestCase):
             target_csv = Path(out_csv)
             self.assertTrue(target_csv.exists())
             self.assertGreater(target_csv.stat().st_size, 0)
+            self.assertEqual(len(list(Path(tmp_dir).glob("*.tmp*"))), 0)
 
     def test_export_backup_command_invalid_format_raises_error(self):
         with self.assertRaises(CommandError):

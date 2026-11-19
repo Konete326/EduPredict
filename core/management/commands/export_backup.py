@@ -51,11 +51,23 @@ class Command(BaseCommand):
             raise CommandError(f"Backup payload generation failed: {exc}") from exc
 
         target_name = custom_name if custom_name else default_name
+        output_dir.mkdir(parents=True, exist_ok=True)
+        target_path = output_dir / target_name
+        temp_path = output_dir / f"{target_name}.tmp.{int(time.time())}"
+
         try:
-            output_dir.mkdir(parents=True, exist_ok=True)
-            target_path = output_dir / target_name
-            target_path.write_text(content, encoding="utf-8")
-        except OSError as exc:
+            temp_path.write_text(content, encoding="utf-8")
+            if temp_path.stat().st_size == 0 and len(content) > 0:
+                raise CommandError("Backup file write resulted in 0 bytes.")
+            temp_path.replace(target_path)
+        except Exception as exc:
+            if temp_path.exists():
+                try:
+                    temp_path.unlink()
+                except OSError:
+                    pass
+            if isinstance(exc, CommandError):
+                raise
             raise CommandError(f"Failed to write backup to {output_dir}: {exc}") from exc
 
         if not quiet:
