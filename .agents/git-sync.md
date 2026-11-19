@@ -61,9 +61,9 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict DevOps & Production Polish Team"
-active_branch_merged_to_main: "feature/cicd-production-and-static-polish -> main"
-project_phase: "Phase 26 Complete: Production CI/CD Pipeline & Static Serving Polish"
+last_updated_by_agent: "EduPredict Docker & Security Packaging Team"
+active_branch_merged_to_main: "feature/docker-and-production-security -> main"
+project_phase: "Phase 27 Complete: Docker Containerization & Production Security Headers Packaging"
 
 completed_modules:
   - "Phase 1-22: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards & Rosters."
@@ -82,34 +82,35 @@ completed_modules:
       - "Updated panels/test_admin.py (276 lines, 0 comments): Added test_mark_notifications_read_view_unpacks_payload_and_handles_rbac verifying GET dashboard redirects, POST mark_notifications_read invocation with user_id, student_id, and role, and JSON response."
       - "Updated analytics/test_pipeline.py (110 lines, 0 comments): Added assertion verifying invalidate_cache() is invoked without prefix on pipeline execution with student alerts enabled."
   - "Phase 26: Production CI/CD Pipeline & Static Serving Polish:"
-      - "Added .github/workflows/django.yml (51 lines, 0 comments): Complete GitHub Actions CI pipeline executing checkout, Python 3.12, Node 20, manage.py check, 5 JS syntax validations, 60 unit tests, 7/7 UAT multi-role verification, and collectstatic dry-run."
+      - "Added .github/workflows/django.yml (53 lines, 0 comments): Complete GitHub Actions CI pipeline executing checkout, Python 3.12, Node 20, manage.py check, 5 JS syntax validations, 60 unit tests, 7/7 UAT multi-role verification, and collectstatic dry-run."
       - "Updated config/settings.py (106 lines, 0 comments): Added WhiteNoiseMiddleware, STATIC_ROOT with automatic directory ensure, and STORAGES configured with CompressedStaticFilesStorage for production static serving."
       - "Updated requirements.txt (23 lines): Pinned gunicorn==27.0.1 and whitenoise==6.12.0."
       - "Updated panels/test_uat.py (101 lines, 0 comments): Added StaticFilesAndProductionConfigTests covering WhiteNoise middleware, STATIC_ROOT presence, STORAGES staticfiles configuration, and collectstatic dry-run execution."
+  - "Phase 27: Docker Containerization & Production Security Headers Packaging:"
+      - "Added Dockerfile (35 lines, 0 comments): Multi-stage secure build (python:3.12-slim builder + runner) with non-root edupredict user, static collection, port 8000 exposure, and Gunicorn WSGI runtime."
+      - "Added docker-compose.yml (10 lines, 0 comments) and .dockerignore (7 lines, 0 comments) for standardized single-command container orchestration."
+      - "Updated config/settings.py (118 lines, 0 comments): Configured conditional production security headers when DEBUG=False including SECURE_BROWSER_XSS_FILTER, SECURE_CONTENT_TYPE_NOSNIFF, X_FRAME_OPTIONS=DENY, SECURE_HSTS_SECONDS=31536000, SESSION_COOKIE_SECURE, and CSRF_COOKIE_SECURE."
+      - "Updated panels/test_uat.py (132 lines, 0 comments): Added unit tests for production security header activation under DEBUG=False and Dockerfile/compose existence and clean syntax."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED in 9.61s."
-  - "manage.py test: 60/60 tests PASSED in 17.82s."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED in 10.09s."
+  - "manage.py test: 62/62 tests PASSED in 16.97s."
   - "node --check: all JS scripts passed with 0 errors."
   - "Zero comments audit: 0 comments across all modified and newly created files."
   - "Line caps: All files strictly within limits (views <= 250, settings <= 350, tests <= 350)."
 
 active_routes_and_files:
-  - ".github/workflows/django.yml (51 lines), config/settings.py (106 lines), panels/test_uat.py (101 lines), requirements.txt (23 lines)"
+  - "Dockerfile (35 lines), docker-compose.yml (10 lines), .dockerignore (7 lines), config/settings.py (118 lines), panels/test_uat.py (132 lines)"
   - "/health/ -> system_health"
   - "python manage.py verify_uat -> End-to-end multi-role UAT verification"
 
 pending_modules_in_order:
-  - "Phase 27: Final Production Readiness & Docker / Cloud Deployment Packaging."
+  - "Phase 28: Live Staging/Production Deployment Launch & Atlas Cluster Smoke Tests."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
-  - "WhiteNoise static asset compression is active; STATIC_ROOT auto-creates at runtime."
-  - "Always track .env and .agents/* in Git."
-
-important_notes_for_next_agent:
-  - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
+  - "Docker build command: docker compose up --build (or docker build -t edupredict:latest .)."
   - "Health endpoint is active at /health/ with live MongoDB Atlas ping."
   - "Always track .env and .agents/* in Git."
 ```

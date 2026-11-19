@@ -99,3 +99,34 @@ class StaticFilesAndProductionConfigTests(TestCase):
         out = StringIO()
         call_command("collectstatic", dry_run=True, interactive=False, stdout=out)
         self.assertIn("static files copied", out.getvalue())
+
+    def test_production_security_headers_enabled_when_debug_false(self):
+        import importlib
+        from config import settings as cfg_settings
+        self.assertTrue(hasattr(cfg_settings, "STATIC_ROOT"))
+        with patch.dict("os.environ", {"DEBUG": "False", "SECURE_SSL_REDIRECT": "True", "SESSION_COOKIE_SECURE": "True", "CSRF_COOKIE_SECURE": "True"}):
+            prod_settings = importlib.reload(cfg_settings)
+            self.assertFalse(prod_settings.DEBUG)
+            self.assertTrue(prod_settings.SECURE_BROWSER_XSS_FILTER)
+            self.assertTrue(prod_settings.SECURE_CONTENT_TYPE_NOSNIFF)
+            self.assertEqual(prod_settings.X_FRAME_OPTIONS, "DENY")
+            self.assertEqual(prod_settings.SECURE_HSTS_SECONDS, 31536000)
+            self.assertTrue(prod_settings.SECURE_SSL_REDIRECT)
+            self.assertTrue(prod_settings.SESSION_COOKIE_SECURE)
+            self.assertTrue(prod_settings.CSRF_COOKIE_SECURE)
+        importlib.reload(cfg_settings)
+
+    def test_docker_and_compose_files_exist_and_clean(self):
+        from pathlib import Path
+        base = Path(__file__).resolve().parent.parent
+        dockerfile = base / "Dockerfile"
+        compose = base / "docker-compose.yml"
+        self.assertTrue(dockerfile.exists())
+        self.assertTrue(compose.exists())
+        df_content = dockerfile.read_text(encoding="utf-8")
+        self.assertIn("gunicorn", df_content)
+        self.assertIn("edupredict", df_content)
+        self.assertNotIn("#", df_content)
+        compose_content = compose.read_text(encoding="utf-8")
+        self.assertIn("8000:8000", compose_content)
+        self.assertNotIn("#", compose_content)

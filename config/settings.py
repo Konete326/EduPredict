@@ -104,3 +104,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MONGODB_URI = os.getenv('MONGODB_URI', '')
 MONGODB_DB_NAME = os.getenv('MONGODB_DB_NAME', 'edupredict_db')
+
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'True').strip().lower() in ('true', '1', 'yes')
+    CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'True').strip().lower() in ('true', '1', 'yes')
+    if os.getenv('SECURE_SSL_REDIRECT', 'False').strip().lower() in ('true', '1', 'yes'):
+        SECURE_SSL_REDIRECT = True
