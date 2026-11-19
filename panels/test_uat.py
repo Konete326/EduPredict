@@ -1,4 +1,5 @@
 from io import StringIO
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -22,6 +23,19 @@ class SystemHealthEndpointTests(TestCase):
         self.assertIn("student_records", data["counts"])
         self.assertIn("cache", data)
         self.assertIn("memory", data)
+
+    def test_health_check_counts_cached_and_fresh_parameter(self):
+        from core.db import _MEMORY_CACHE, invalidate_cache
+        invalidate_cache()
+        self.assertNotIn("health:collection_counts", _MEMORY_CACHE)
+        resp1 = self.client.get(reverse("system_health"))
+        self.assertEqual(resp1.status_code, 200)
+        self.assertIn("health:collection_counts", _MEMORY_CACHE)
+        resp2 = self.client.get(reverse("system_health"))
+        self.assertEqual(resp2.status_code, 200)
+        resp3 = self.client.get(reverse("system_health") + "?fresh=1")
+        self.assertEqual(resp3.status_code, 200)
+        self.assertIn("health:collection_counts", _MEMORY_CACHE)
 
     @patch("core.views_health.get_client")
     def test_health_check_db_ping_failure(self, mock_get_client):
@@ -362,26 +376,19 @@ class StaticFilesAndProductionConfigTests(TestCase):
         self.assertIn("geolocation=()", pp)
 
 
-
-
 class ProductionDocumentationTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.readme_path = Path(__file__).resolve().parent.parent / "README.md"
+        cls.content = cls.readme_path.read_text(encoding="utf-8") if cls.readme_path.exists() else ""
+
     def test_readme_exists_and_not_empty(self):
-        from pathlib import Path
-        base = Path(__file__).resolve().parent.parent
-        readme_path = base / "README.md"
-        self.assertTrue(readme_path.exists())
-        content = readme_path.read_text(encoding="utf-8")
-        lines = content.splitlines()
-        self.assertGreater(len(lines), 50)
+        self.assertTrue(self.readme_path.exists())
+        self.assertGreater(len(self.content.splitlines()), 50)
 
     def test_readme_essential_sections_present(self):
-        from pathlib import Path
-        base = Path(__file__).resolve().parent.parent
-        readme_path = base / "README.md"
-        content_lower = readme_path.read_text(encoding="utf-8").lower()
-        self.assertIn("quickstart", content_lower)
-        self.assertIn("architecture", content_lower)
-        self.assertTrue("role" in content_lower or "roles" in content_lower)
-        self.assertIn("docker", content_lower)
-        self.assertIn("operations", content_lower)
-        self.assertIn("runbook", content_lower)
+        text = self.content.lower()
+        for sec in ("quickstart", "architecture", "docker", "operations", "runbook"):
+            self.assertIn(sec, text)
+        self.assertTrue("role" in text or "roles" in text)

@@ -6,7 +6,9 @@ from core.decorators import rate_limit
 from core.db import (
     _MEMORY_CACHE,
     courses_col,
+    get_cached,
     get_client,
+    invalidate_cache,
     notifications_col,
     predictions_col,
     student_records_col,
@@ -79,6 +81,40 @@ def _json_no_cache(data, status=200):
     return response
 
 
+def _fetch_collection_counts():
+    collectors = [
+        ("users", users_col),
+        ("student_records", student_records_col),
+        ("predictions", predictions_col),
+        ("courses", courses_col),
+        ("notifications", notifications_col),
+        ("support_tickets", support_tickets_col),
+    ]
+    counts = {}
+    for name, getter in collectors:
+        try:
+            col = getter()
+            if col is not None:
+                if hasattr(col, "estimated_document_count"):
+                    try:
+                        counts[name] = col.estimated_document_count()
+                    except Exception:
+                        counts[name] = col.count_documents({})
+                else:
+                    counts[name] = col.count_documents({})
+            else:
+                counts[name] = 0
+        except Exception:
+            counts[name] = 0
+    return counts
+
+
+def _get_collection_counts(force_refresh=False):
+    if force_refresh:
+        invalidate_cache("health:collection_counts")
+    return get_cached("health:collection_counts", _fetch_collection_counts, ttl=30.0)
+
+
 @rate_limit(max_requests=120, window_seconds=60)
 def health_check(request):
     started_at = time.monotonic()
@@ -116,22 +152,8 @@ def health_check(request):
             status=503,
         )
 
-    counts = {}
-    collectors = [
-        ("users", users_col),
-        ("student_records", student_records_col),
-        ("predictions", predictions_col),
-        ("courses", courses_col),
-        ("notifications", notifications_col),
-        ("support_tickets", support_tickets_col),
-    ]
-
-    for name, getter in collectors:
-        try:
-            col = getter()
-            counts[name] = col.count_documents({})
-        except Exception:
-            counts[name] = 0
+    force_refresh = request.GET.get("fresh") in ("1", "true")
+    counts = _get_collection_counts(force_refresh=force_refresh)
 
     return _json_no_cache(
         {

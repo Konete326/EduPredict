@@ -61,9 +61,9 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Production Observability & Telemetry Team"
-active_branch_merged_to_main: "feature/sentry-env-and-uat-latency -> main"
-project_phase: "Phase 48 Complete: Sentry Environment Tagging & UAT Latency Telemetry"
+last_updated_by_agent: "EduPredict Production Observability & Performance Team"
+active_branch_merged_to_main: "feature/health-counts-ttl-optimization -> main"
+project_phase: "Phase 49 Complete: Health Check Estimated Document Count & TTL Optimization"
 
 completed_modules:
   - "Phase 1-35: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards, UAT Suite, Real-Time Health, CI/CD Pipeline, WhiteNoise Static Serving, Docker Containers, Atlas Connection Pooling, Theme-Aware 500 Error Page, Operations Runbook, Automated Backup CLI with Sentry, Backup Retention Purging, Endpoint Rate Limiting, WhiteNoise Immutable Cache, Robots.txt Policy, Reverse Proxy SSL Transparency, Favicon SVG Route, and Auth Timing Defense."
@@ -79,23 +79,22 @@ completed_modules:
   - "Phase 45: Backup CLI Partial Failure Cleanup & Disk Safety Hardening (atomic replace, unlink on error)."
   - "Phase 46: Production Sentry Before-Send Sanitization & Error Tagging (sentry_before_send masking & mongodb tagging)."
   - "Phase 47: WhiteNoise Manifest Strict Setting & Static Fault-Tolerance Hardening (WHITENOISE_MANIFEST_STRICT = False)."
-  - "Phase 48: Sentry Environment Tagging & UAT Latency Telemetry:"
-      - "Updated config/settings.py (160 lines, 0 comments): Configured environment=os.getenv('ENVIRONMENT', 'production') on Sentry initialization to properly isolate staging vs production alert telemetry."
-      - "Updated core/management/commands/verify_uat.py (227 lines, 0 comments): Enhanced Step 1 health diagnostics to flag [HIGH LATENCY] whenever database ping latency exceeds 1500ms."
-      - "Updated panels/test_uat.py (387 lines, 0 comments): Verified Sentry environment parameter in test suite (80/80 tests PASS)."
+  - "Phase 48: Sentry Environment Tagging & UAT Latency Telemetry (environment=os.getenv('ENVIRONMENT', 'production'), [HIGH LATENCY] tag when > 1500ms)."
+  - "Phase 49: Health Check Estimated Document Count & TTL Optimization:"
+      - "Updated core/views_health.py (200 lines, 0 comments): Refactored collection count aggregation to utilize fast O(1) metadata via col.estimated_document_count() with automatic fallback to count_documents({}), cached in-memory with a 30s TTL via get_cached, and added ?fresh=1 query param to force-refresh on demand."
+      - "Updated panels/test_uat.py (394 lines, 0 comments): Added test_health_check_counts_cached_and_fresh_parameter verifying cache persistence and ?fresh=1 invalidation, streamlined documentation assertions (81/81 tests PASS)."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED in 10.27s."
-  - "manage.py test: 80/80 tests PASSED in 22.77s."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED in 10.03s."
+  - "manage.py test: 81/81 tests PASSED in 22.34s."
   - "node --check: all 5 JS scripts passed with 0 errors."
   - "Zero comments audit: 0 comments across all modified and newly created files."
-  - "Line caps: All files strictly within limits (settings.py 160, verify_uat.py 227, test_uat.py 387 <= 350-400)."
+  - "Line caps: All files strictly within limits (views_health.py 200 <= 250, test_uat.py 394 <= 350-400)."
 
 active_routes_and_files:
-  - "config/settings.py (160 lines) -> Sentry environment configuration"
-  - "core/management/commands/verify_uat.py (227 lines) -> UAT health latency threshold"
-  - "panels/test_uat.py (387 lines) -> 28 UAT/ops/doc tests (80 unit tests in test suite)"
+  - "core/views_health.py (200 lines) -> Health check with O(1) metadata count and 30s TTL cache"
+  - "panels/test_uat.py (394 lines) -> 29 UAT/ops/doc tests (81 unit tests in test suite)"
 
 pending_modules_in_order:
   - "EduPredict Core Architecture, 4 Role Panels, Evaluation Engine, PDF Reports, and Production Operations/Packaging are 100% complete, hardened, and verified."
