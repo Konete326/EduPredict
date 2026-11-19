@@ -128,7 +128,7 @@ curl http://localhost:8000/health/
 
 ## Automated Verification & Testing
 
-### 1. Unit & Integration Test Suite (65+ Tests)
+### 1. Unit & Integration Test Suite (70+ Tests)
 ```bash
 python manage.py test
 ```
@@ -185,9 +185,9 @@ Tunable via environment variables:
 * `MONGODB_SOCKET_TIMEOUT_MS`: Query execution timeout (default: 10000 ms).
 
 ### 3. Automated Database Backup Command (`export_backup`)
-Export the entire database state into JSON or CSV for offsite backup or cron scheduling:
+Export the entire database state into JSON or CSV for offsite backup or cron scheduling, with automatic old backup retention pruning:
 ```bash
-python manage.py export_backup --format json --output-dir backups/
+python manage.py export_backup --format json --output-dir backups/ --retention-days 30
 python manage.py export_backup --format csv --output-dir backups/ --quiet
 ```
 Alternatively, administrators can trigger downloads from the UI at `/admin-panel/backup/?format=json` or `/admin-panel/backup/?format=csv`.
