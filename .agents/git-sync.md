@@ -61,36 +61,33 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 22 Swarm Coordinator & PDF Reporting Team"
-active_branch_merged_to_main: "feature/pdf-report-cards -> main"
-project_phase: "Phase 22 Complete: PDF Report Cards & Academic Transcripts Export for Students and Teachers"
+last_updated_by_agent: "EduPredict Core Notification & Alert Team"
+active_branch_merged_to_main: "feature/topbar-student-notifs-and-clean-alert-targets -> main"
+project_phase: "Phase 23 Complete: Topbar Bell Student ID Query & Clean Alert Target Builders"
 
 completed_modules:
-  - "Phase 1-21: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Dynamic Thresholds, Live Theme & Appearance Studio, Per-Panel Theme Isolation, My Profile, Password Toggles & 1.2s Auto-Upload."
-  - "Phase 22: PDF Report Cards & Academic Transcripts:"
-      - "Added panels/pdf_services.py (181 lines): ReportLab-powered generate_student_report_card_pdf and generate_teacher_roster_pdf with institution header, student metrics, subject comparisons, AI recommendations, and official sign-off block."
-      - "Updated panels/views_student.py (205 lines): Added student_report_pdf route returning application/pdf attachment edupredict_report_card.pdf."
-      - "Updated panels/views_teacher.py (205 lines): Added teacher_roster_pdf route returning application/pdf attachment edupredict_class_roster.pdf."
-      - "Updated panels/urls.py (29 lines): Registered student_report_pdf and teacher_roster_pdf routes."
-      - "Updated templates/panels/student_report.html and teacher_students.html with Download PDF / Export PDF buttons."
-      - "Added panels/test_pdf.py (271 lines): 14 new comprehensive unit tests covering PDF generation, content validation, RBAC security guards, and error resilience."
-      - "Updated requirements.txt with reportlab==5.1.0, pillow==13.0.0, charset-normalizer==3.5.2."
+  - "Phase 1-22: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Dynamic Thresholds, Live Theme & Appearance Studio, Per-Panel Theme Isolation, My Profile, Password Toggles, 1.2s Auto-Upload, and PDF Report Cards & Transcripts."
+  - "Phase 23: Topbar Bell Student ID Query & Clean Alert Target Builders:"
+      - "Updated core/context_processors.py (74 lines, 0 comments) so _build_notification_query and _fetch_unread_notifications accept and include student_id alongside user_id and active_role, partitioning unread cache by notifs:{user_id}:{student_id}:{role_key}."
+      - "Updated panels/student_alert_services.py (69 lines, 0 comments) so _alert_targets uses dict.fromkeys to safely omit empty target_user_id entries when student_id or user_id is empty."
+      - "Updated panels/test_teacher_student.py (294 lines, 0 comments) with unit tests for clean alert targets without empty-string user IDs, topbar notification query construction with/without student_id, and unread notification retrieval including student_id."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py test: 51/51 tests PASSED in 7.2s."
-  - "node --check: all JS scripts passed."
-  - "Zero comments audit: 0 comments across all modified and newly created files."
-  - "Line caps: All files strictly within limits (views <= 250, services <= 350)."
+  - "manage.py test: 51/51 tests PASSED in 7.5s."
+  - "node --check static/js/app.js, static/js/nav.js, static/js/charts.js, static/js/theme_studio.js: all PASSED."
+  - "Zero comments audit: 0 comments across all modified files."
+  - "Line caps: All files strictly within limits (context_processors: 74, student_alert_services: 69, test_teacher_student: 294)."
+  - ".env tracked in Git: verified via git ls-files .env."
 
 active_routes_and_files:
-  - "panels/pdf_services.py (181 lines), panels/views_student.py (205 lines), panels/views_teacher.py (205 lines), panels/test_pdf.py (271 lines)"
-  - "/student-panel/report/download-pdf/ -> panels:student_report_pdf"
-  - "/teacher-panel/students/export-pdf/ -> panels:teacher_roster_pdf"
+  - "core/context_processors.py (74 lines), panels/student_alert_services.py (69 lines), panels/test_teacher_student.py (294 lines)"
+  - "/student-panel/notifications/ -> panels:student_notifications"
+  - "/admin-panel/notifications/mark-read/ -> panels:mark_notifications_read"
 
 pending_modules_in_order:
-  - "Phase 23: Live End-to-End Browser UAT & MongoDB Atlas Integration Verification."
-  - "Phase 24: Production Deployment & CI/CD Pipeline Polish."
+  - "Phase 24: Live End-to-End Browser UAT & MongoDB Atlas Integration Verification."
+  - "Phase 25: Production Deployment & CI/CD Pipeline Polish."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

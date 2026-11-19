@@ -3,27 +3,24 @@ from core.db import check_db_health, get_cached, notifications_col
 from core.theme_services import get_theme_studio_catalog, get_user_theme_prefs
 
 
-def _build_notification_query(user_id, active_role):
-    targets = []
-    if user_id:
-        targets.append({"target_user_id": user_id})
-    if active_role:
-        targets.append({"target_role": active_role, "target_user_id": {"$in": [None, ""]}})
-        targets.append({"target_role": active_role, "target_user_id": {"$exists": False}})
-    targets.append({"target_role": "ALL", "target_user_id": {"$in": [None, ""]}})
-    targets.append({"target_role": "ALL", "target_user_id": {"$exists": False}})
+def _build_notification_query(user_id, active_role, student_id=None):
+    targets = [{"target_user_id": tid} for tid in dict.fromkeys(x for x in (user_id, student_id) if x)]
+    for target_role in dict.fromkeys(r for r in (active_role, "ALL") if r):
+        targets.append({"target_role": target_role, "target_user_id": {"$in": [None, ""]}})
+        targets.append({"target_role": target_role, "target_user_id": {"$exists": False}})
     return {"is_read": False, "$or": targets}
 
 
 def _fetch_unread_notifications(current_user, active_role):
     user_id = str(current_user.get("user_id") or "").strip()
+    student_id = str(current_user.get("student_id") or "").strip()
     role_key = str(active_role or "").strip().upper()
-    if not user_id and not role_key:
+    if not user_id and not student_id and not role_key:
         return [], 0
 
     def _loader():
         col = notifications_col()
-        query = _build_notification_query(user_id, role_key)
+        query = _build_notification_query(user_id, role_key, student_id=student_id)
         total_count = int(col.count_documents(query))
         cursor = col.find(query).sort("created_at", DESCENDING).limit(5)
 
@@ -36,7 +33,7 @@ def _fetch_unread_notifications(current_user, active_role):
             items.append(item)
         return items, total_count
 
-    return get_cached(f"notifs:{user_id}:{role_key}", 20.0, _loader)
+    return get_cached(f"notifs:{user_id}:{student_id}:{role_key}", 20.0, _loader)
 
 
 def global_context(request):

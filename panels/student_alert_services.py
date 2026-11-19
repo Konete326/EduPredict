@@ -21,7 +21,7 @@ def _format_alert_doc(doc):
 
 
 def _alert_targets(student_id, user_id, role):
-    targets = [{"target_user_id": student_id}, {"target_user_id": user_id}]
+    targets = [{"target_user_id": tid} for tid in dict.fromkeys(x for x in (student_id, user_id) if x)]
     for target_role in dict.fromkeys(r for r in (role, "ALL") if r):
         targets.append({"target_role": target_role, "target_user_id": {"$in": [None, ""]}})
         targets.append({"target_role": target_role, "target_user_id": {"$exists": False}})

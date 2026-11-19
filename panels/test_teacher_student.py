@@ -1,6 +1,7 @@
 from unittest.mock import DEFAULT, MagicMock, patch
 from django.test import Client, TestCase
 from django.urls import reverse
+from core.context_processors import _build_notification_query, _fetch_unread_notifications
 from core.db import invalidate_cache
 from panels.admin_services import mark_notifications_read
 import panels.student_alert_services as student_alert_svc
@@ -272,3 +273,22 @@ class StudentPanelTests(TestCase):
         student_records_col.return_value.find.return_value = empty_cur
         _load_student_overview("STD-EMPTY", "USR-EMPTY", "STUDENT")
         self.assertEqual(student_records_col.return_value.find.call_count, 1)
+        clean_targets = student_alert_svc._alert_targets("", "USR-1", "STUDENT")
+        self.assertNotIn({"target_user_id": ""}, clean_targets)
+        self.assertIn({"target_user_id": "USR-1"}, clean_targets)
+        q1 = _build_notification_query("USR-1", "STUDENT", student_id="STD-1")
+        self.assertTrue({"target_user_id": "USR-1"} in q1["$or"] and {"target_user_id": "STD-1"} in q1["$or"])
+        q2 = _build_notification_query("USR-1", "ADMIN", student_id="")
+        self.assertNotIn({"target_user_id": ""}, q2["$or"])
+        with patch("core.context_processors.notifications_col") as mock_topbar_notifs:
+            mock_cur = MagicMock()
+            mock_cur.sort.return_value.limit.return_value = [{"_id": "n1", "title": "Alert 1"}]
+            mock_topbar_notifs.return_value.find.return_value = mock_cur
+            mock_topbar_notifs.return_value.count_documents.return_value = 1
+            invalidate_cache()
+            items, count = _fetch_unread_notifications({"user_id": "USR-1", "student_id": "STD-1"}, "STUDENT")
+            self.assertEqual(count, 1)
+            self.assertEqual(items[0]["id"], "n1")
+            topbar_or = mock_topbar_notifs.return_value.find.call_args[0][0]["$or"]
+            self.assertIn({"target_user_id": "STD-1"}, topbar_or)
+            self.assertNotIn({"target_user_id": ""}, topbar_or)
