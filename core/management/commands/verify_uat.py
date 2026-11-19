@@ -32,14 +32,21 @@ class Command(BaseCommand):
 
     def _run_step_1_health(self, client):
         t0 = time.monotonic()
-        resp = client.get("/health/")
-        if resp.status_code != 200:
-            raise CommandError(f"Health check failed with HTTP {resp.status_code}")
-        data = resp.json()
-        if data.get("status") != "healthy":
-            raise CommandError(f"Health status is not healthy: {data.get('status')}")
-        latency = data.get("latency_ms", 0.0)
-        return self._format_pass(1, "Health & System Diagnostics", f"status=healthy, latency={latency}ms", time.monotonic() - t0)
+        last_err = ""
+        for attempt in range(3):
+            try:
+                resp = client.get("/health/")
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data.get("status") == "healthy":
+                        latency = data.get("latency_ms", 0.0)
+                        return self._format_pass(1, "Health & System Diagnostics", f"status=healthy, latency={latency}ms", time.monotonic() - t0)
+                last_err = f"HTTP {resp.status_code}"
+            except Exception as exc:
+                last_err = str(exc)
+            if attempt < 2:
+                time.sleep(0.5)
+        raise CommandError(f"Health check failed after 3 attempts: {last_err}")
 
     def _run_step_2_auth(self, client):
         t0 = time.monotonic()

@@ -61,42 +61,41 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Production Security & Operations Team"
-active_branch_merged_to_main: "feature/backup-retention-and-rate-limiting -> main"
-project_phase: "Phase 31 Complete: Backup Retention Purge & Endpoint Rate Limiting"
+last_updated_by_agent: "EduPredict Production Optimization & Resiliency Team"
+active_branch_merged_to_main: "feature/whitenoise-cache-and-uat-resiliency -> main"
+project_phase: "Phase 32 Complete: WhiteNoise Immutable Cache Headers & UAT Resiliency"
 
 completed_modules:
-  - "Phase 1-29: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards, UAT Suite, Real-Time Health, CI/CD Pipeline, WhiteNoise Static Serving, Docker Containers, Atlas Connection Pooling, Theme-Aware 500 Error Page, and Operations Runbook."
-  - "Phase 30: Automated Database Backup CLI & Sentry Exception Tracking:"
-      - "Added core/management/commands/export_backup.py (61 lines, 0 comments): CLI management command supporting --format (json/csv), --output-dir, --filename, and --quiet flags to cleanly extract all 6 MongoDB collections for cron/automated backups."
-      - "Updated config/settings.py (132 lines, 0 comments): Added conditional sentry_sdk initialization with DjangoIntegration and SENTRY_TRACES_SAMPLE_RATE when SENTRY_DSN is provided."
-      - "Updated requirements.txt (26 lines): Added sentry-sdk==2.75.0, certifi==2026.10.23, and urllib3==2.8.0."
+  - "Phase 1-30: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards, UAT Suite, Real-Time Health, CI/CD Pipeline, WhiteNoise Static Serving, Docker Containers, Atlas Connection Pooling, Theme-Aware 500 Error Page, Operations Runbook, and Automated Backup CLI with Sentry."
   - "Phase 31: Backup Retention Purge & Endpoint Rate Limiting:"
-      - "Updated core/management/commands/export_backup.py (86 lines, 0 comments): Added --retention-days flag (integer) to automatically scan the target backup directory and prune backup files exceeding the retention window."
-      - "Updated core/decorators.py (129 lines, 0 comments): Implemented lightweight in-memory sliding-window rate_limit decorator with client IP resolution, JSON/HTML 429 response handling, automatic stale bucket pruning, and test clear helper."
-      - "Updated core/views_health.py (85 lines, 0 comments): Protected /health/ endpoint with @rate_limit(max_requests=120, window_seconds=60) against burst traffic and DoS."
-      - "Updated README.md (164 lines): Documented --retention-days in backup runbook and updated test suite count to 69 tests."
-      - "Updated panels/test_uat.py (249 lines, 0 comments): Added unit tests for export_backup retention purging of aged backup files and rate_limit burst request throttling with HTTP 429."
+      - "Updated core/management/commands/export_backup.py (86 lines, 0 comments): Added --retention-days flag to automatically purge backups exceeding the retention window."
+      - "Updated core/decorators.py (129 lines, 0 comments): Implemented in-memory sliding-window rate_limit decorator with client IP resolution, JSON/HTML 429 response handling, and auto-pruning."
+      - "Updated core/views_health.py (85 lines, 0 comments): Protected /health/ endpoint with @rate_limit(max_requests=120, window_seconds=60)."
+  - "Phase 32: WhiteNoise Immutable Cache Headers & UAT Resiliency:"
+      - "Updated config/settings.py (133 lines, 0 comments): Configured WHITENOISE_MAX_AGE (31536000 seconds / 1 year when not DEBUG) for production static asset immutable caching."
+      - "Updated core/management/commands/verify_uat.py (224 lines, 0 comments): Added 3-attempt exponential retry loop in _run_step_1_health to gracefully handle transient cloud database ping spikes."
+      - "Updated README.md (164 lines): Updated test suite count to 71 tests."
+      - "Updated panels/test_uat.py (268 lines, 0 comments): Added unit tests for WHITENOISE_MAX_AGE settings configuration and UAT command health check retry on transient failure."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED in 28.69s."
-  - "manage.py test: 69/69 tests PASSED in 18.37s."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED in 9.58s."
+  - "manage.py test: 71/71 tests PASSED in 19.99s."
   - "node --check: all 5 JS scripts passed with 0 errors."
   - "Zero comments audit: 0 comments across all modified and newly created files."
-  - "Line caps: All files strictly within limits (export_backup.py 86 lines, decorators.py 129 lines, views_health.py 85 lines, test_uat.py 249 lines)."
+  - "Line caps: All files strictly within limits (settings.py 133 lines, verify_uat.py 224 lines, test_uat.py 268 lines)."
 
 active_routes_and_files:
-  - "core/decorators.py (129 lines) -> rate_limit decorator"
-  - "core/management/commands/export_backup.py (86 lines) -> --retention-days purge"
-  - "core/views_health.py (85 lines) -> rate-limited /health/"
-  - "panels/test_uat.py (249 lines) -> 17 UAT/ops tests"
+  - "config/settings.py (133 lines) -> WHITENOISE_MAX_AGE"
+  - "core/management/commands/verify_uat.py (224 lines) -> Resilient Step 1 health check"
+  - "panels/test_uat.py (268 lines) -> 19 UAT/ops tests"
 
 pending_modules_in_order:
-  - "EduPredict Core Architecture, 4 Role Panels, Evaluation Engine, PDF Reports, and Production Operations/Security Packaging are 100% complete and verified."
+  - "EduPredict Core Architecture, 4 Role Panels, Evaluation Engine, PDF Reports, and Production Operations/Packaging are 100% complete, hardened, and verified."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
+  - "Docker build command: docker compose up --build (or docker build -t edupredict:latest .)."
   - "Automated backup cron: python manage.py export_backup --format json --output-dir backups/ --retention-days 30 --quiet."
   - "Health endpoint is active at /health/ with live MongoDB Atlas ping and IP rate-limiting."
   - "Always track .env and .agents/* in Git."

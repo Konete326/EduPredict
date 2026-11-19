@@ -247,3 +247,22 @@ class StaticFilesAndProductionConfigTests(TestCase):
         resp3 = sample_view(req3)
         self.assertEqual(resp3.status_code, 429)
         _clear_rate_limit_buckets()
+
+    def test_whitenoise_cache_control_settings_present(self):
+        from django.conf import settings
+        self.assertTrue(hasattr(settings, "WHITENOISE_MAX_AGE"))
+        self.assertIsInstance(settings.WHITENOISE_MAX_AGE, int)
+
+    def test_uat_command_health_retry_on_transient_failure(self):
+        from core.management.commands.verify_uat import Command as UATCommand
+        cmd = UATCommand()
+        mock_client = MagicMock()
+        resp_fail = MagicMock()
+        resp_fail.status_code = 503
+        resp_success = MagicMock()
+        resp_success.status_code = 200
+        resp_success.json.return_value = {"status": "healthy", "latency_ms": 12.5}
+        mock_client.get.side_effect = [resp_fail, resp_success]
+        result = cmd._run_step_1_health(mock_client)
+        self.assertIn("[PASS] Step 1: Health & System Diagnostics", result)
+        self.assertEqual(mock_client.get.call_count, 2)
