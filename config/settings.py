@@ -120,6 +120,7 @@ if SENTRY_DSN:
             traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.1')),
             send_default_pii=False,
             before_send=sentry_before_send,
+            environment=os.getenv('ENVIRONMENT', 'production'),
         )
     except Exception:
         pass

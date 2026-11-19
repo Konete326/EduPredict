@@ -40,7 +40,10 @@ class Command(BaseCommand):
                     data = resp.json()
                     if data.get("status") == "healthy":
                         latency = data.get("latency_ms", 0.0)
-                        return self._format_pass(1, "Health & System Diagnostics", f"status=healthy, latency={latency}ms", time.monotonic() - t0)
+                        tag = f"status=healthy, latency={latency}ms"
+                        if latency > 1500.0:
+                            tag += " [HIGH LATENCY]"
+                        return self._format_pass(1, "Health & System Diagnostics", tag, time.monotonic() - t0)
                 last_err = f"HTTP {resp.status_code}"
             except Exception as exc:
                 last_err = str(exc)

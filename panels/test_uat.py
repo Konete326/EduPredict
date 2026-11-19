@@ -215,8 +215,10 @@ class StaticFilesAndProductionConfigTests(TestCase):
                     integrations=[DjangoIntegration()],
                     traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
                     send_default_pii=False,
+                    environment=os.getenv("ENVIRONMENT", "production"),
                 )
             mock_sentry_init.assert_called_once()
+            self.assertEqual(mock_sentry_init.call_args.kwargs.get("environment"), "production")
 
     def test_sentry_before_send_sanitization_and_tagging(self):
         from core.middleware import sentry_before_send
