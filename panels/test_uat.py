@@ -278,6 +278,8 @@ class StaticFilesAndProductionConfigTests(TestCase):
         from django.conf import settings
         self.assertTrue(hasattr(settings, "WHITENOISE_MAX_AGE"))
         self.assertIsInstance(settings.WHITENOISE_MAX_AGE, int)
+        self.assertTrue(hasattr(settings, "WHITENOISE_MANIFEST_STRICT"))
+        self.assertFalse(settings.WHITENOISE_MANIFEST_STRICT)
 
     def test_uat_command_health_retry_on_transient_failure(self):
         from core.management.commands.verify_uat import Command as UATCommand
