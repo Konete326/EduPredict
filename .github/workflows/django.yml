@@ -1,0 +1,53 @@
+name: Django CI & UAT Suite
+
+on:
+  push:
+    branches: [ "main", "feature/**" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Django System Check
+      run: |
+        python manage.py check
+
+    - name: JavaScript Syntax Validation
+      run: |
+        node --check static/js/app.js
+        node --check static/js/nav.js
+        node --check static/js/charts.js
+        node --check static/js/theme_studio.js
+        node --check static/js/analyst_evaluation.js
+
+    - name: Run Django Tests
+      run: |
+        python manage.py test
+
+    - name: Run End-to-End Multi-Role UAT
+      run: |
+        python manage.py verify_uat
+
+    - name: Validate Static Asset Collection
+      run: |
+        python manage.py collectstatic --noinput --dry-run

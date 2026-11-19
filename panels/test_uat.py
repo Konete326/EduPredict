@@ -86,3 +86,16 @@ class VerifyUATManagementCommandTests(TestCase):
         with self.assertRaises(CommandError) as ctx:
             call_command("verify_uat", stdout=out)
         self.assertIn("Admin login failed", str(ctx.exception))
+
+
+class StaticFilesAndProductionConfigTests(TestCase):
+    def test_whitenoise_middleware_configured(self):
+        from django.conf import settings
+        self.assertIn("whitenoise.middleware.WhiteNoiseMiddleware", settings.MIDDLEWARE)
+        self.assertTrue(hasattr(settings, "STATIC_ROOT"))
+        self.assertIn("staticfiles", settings.STORAGES)
+
+    def test_static_asset_serving_or_dry_run(self):
+        out = StringIO()
+        call_command("collectstatic", dry_run=True, interactive=False, stdout=out)
+        self.assertIn("static files copied", out.getvalue())
