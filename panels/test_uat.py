@@ -310,6 +310,17 @@ class StaticFilesAndProductionConfigTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn("Invalid email or password.", resp.content.decode("utf-8"))
 
+    def test_health_endpoint_reports_process_memory(self):
+        resp = self.client.get("/health/")
+        if resp.status_code == 200:
+            data = resp.json()
+            self.assertIn("memory", data)
+            self.assertIn("status", data["memory"])
+            self.assertIn("cache_entries", data["memory"])
+            if "rss_mb" in data["memory"]:
+                self.assertGreater(data["memory"]["rss_mb"], 0)
+
+
 
 class ProductionDocumentationTests(TestCase):
     def test_readme_exists_and_not_empty(self):

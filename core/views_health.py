@@ -1,3 +1,5 @@
+import os
+import sys
 import time
 from django.http import HttpResponse, JsonResponse
 from core.decorators import rate_limit
@@ -11,6 +13,62 @@ from core.db import (
     support_tickets_col,
     users_col,
 )
+
+
+def _get_process_memory_mb():
+    try:
+        if sys.platform == "win32":
+            import ctypes
+            from ctypes import wintypes
+            class PROCESS_MEMORY_COUNTERS_EX(ctypes.Structure):
+                _fields_ = [
+                    ("cb", wintypes.DWORD),
+                    ("PageFaultCount", wintypes.DWORD),
+                    ("PeakWorkingSetSize", ctypes.c_size_t),
+                    ("WorkingSetSize", ctypes.c_size_t),
+                    ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                    ("PagefileUsage", ctypes.c_size_t),
+                    ("PeakPagefileUsage", ctypes.c_size_t),
+                    ("PrivateUsage", ctypes.c_size_t),
+                ]
+            counters = PROCESS_MEMORY_COUNTERS_EX()
+            counters.cb = ctypes.sizeof(PROCESS_MEMORY_COUNTERS_EX)
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            psapi = ctypes.WinDLL("psapi", use_last_error=True)
+            psapi.GetProcessMemoryInfo.argtypes = [wintypes.HANDLE, ctypes.POINTER(PROCESS_MEMORY_COUNTERS_EX), wintypes.DWORD]
+            psapi.GetProcessMemoryInfo.restype = wintypes.BOOL
+            if psapi.GetProcessMemoryInfo(kernel32.GetCurrentProcess(), ctypes.byref(counters), counters.cb):
+                return round(counters.WorkingSetSize / (1024 * 1024), 2)
+        else:
+            if os.path.exists("/proc/self/status"):
+                with open("/proc/self/status", "r", encoding="utf-8") as f:
+                    for line in f:
+                        if line.startswith("VmRSS:"):
+                            parts = line.split()
+                            if len(parts) >= 2:
+                                return round(float(parts[1]) / 1024, 2)
+            import resource
+            usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            if sys.platform == "darwin":
+                return round(usage / (1024 * 1024), 2)
+            return round(usage / 1024, 2)
+    except Exception:
+        return None
+    return None
+
+
+def _build_memory_payload():
+    payload = {
+        "status": "healthy",
+        "cache_entries": len(_MEMORY_CACHE),
+    }
+    rss_mb = _get_process_memory_mb()
+    if rss_mb is not None:
+        payload["rss_mb"] = rss_mb
+    return payload
 
 
 @rate_limit(max_requests=120, window_seconds=60)
@@ -27,6 +85,7 @@ def health_check(request):
                     "entries": len(_MEMORY_CACHE),
                     "status": "active",
                 },
+                "memory": _build_memory_payload(),
             },
             status=503,
         )
@@ -44,6 +103,7 @@ def health_check(request):
                     "entries": len(_MEMORY_CACHE),
                     "status": "active",
                 },
+                "memory": _build_memory_payload(),
             },
             status=503,
         )
@@ -76,10 +136,7 @@ def health_check(request):
                 "entries": len(_MEMORY_CACHE),
                 "status": "active",
             },
-            "memory": {
-                "status": "healthy",
-                "cache_entries": len(_MEMORY_CACHE),
-            },
+            "memory": _build_memory_payload(),
         },
         status=200,
     )
