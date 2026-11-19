@@ -1,10 +1,12 @@
 from django.contrib import admin
 from django.urls import include, path, re_path
 from accounts.views import error_404, root_redirect
+from core.views_health import health_check
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', root_redirect, name='root'),
+    path('health/', health_check, name='system_health'),
     path('', include('accounts.urls')),
     path('', include('panels.urls')),
     path('', include('analytics.urls')),
