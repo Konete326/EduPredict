@@ -156,3 +156,18 @@ class StaticFilesAndProductionConfigTests(TestCase):
                 serverSelectionTimeoutMS=4000,
                 connectTimeoutMS=4000,
             )
+
+    def test_theme_aware_500_error_page_renders_cleanly(self):
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+        from django.views.defaults import server_error
+        content = render_to_string("500.html")
+        self.assertIn("Error 500", content)
+        self.assertIn("Internal Server Issue", content)
+        self.assertIn("/health/", content)
+        self.assertNotIn("<!--", content)
+        rf = RequestFactory()
+        req = rf.get("/some-broken-path/")
+        resp = server_error(req)
+        self.assertEqual(resp.status_code, 500)
+        self.assertIn(b"Error 500", resp.content)

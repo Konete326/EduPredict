@@ -61,9 +61,9 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Database & Container Health Team"
-active_branch_merged_to_main: "feature/mongo-pooling-and-docker-healthcheck -> main"
-project_phase: "Phase 28 Complete: MongoDB Atlas Connection Pooling & Docker Healthcheck Integration"
+last_updated_by_agent: "EduPredict Production Operations & Documentation Team"
+active_branch_merged_to_main: "feature/500-error-page-and-readme-runbook -> main"
+project_phase: "Phase 29 Complete: Production Theme-Aware 500 Error Page & README Operations Runbook"
 
 completed_modules:
   - "Phase 1-22: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards & Rosters."
@@ -96,22 +96,32 @@ completed_modules:
       - "Updated Dockerfile (42 lines, 0 comments): Added curl in runner stage and registered native HEALTHCHECK directive against http://localhost:8000/health/."
       - "Updated docker-compose.yml (16 lines, 0 comments): Added healthcheck configuration for web service."
       - "Updated panels/test_uat.py (158 lines, 0 comments): Added unit tests for connection pooling option parsing and Docker healthcheck directive validation."
+  - "Phase 29: Production Theme-Aware 500 Error Page & README Operations Runbook:"
+      - "Added templates/500.html (99 lines, 0 comments): Resilient standalone server error template matching EduPredict design tokens, dark mode, FontAwesome icons, with Reload, Portal Home, and /health/ diagnostic status links."
+      - "Updated README.md: Comprehensive production operations runbook, architecture overview, Docker container commands, 4-role credentials matrix, and test verification guide."
+      - "Updated panels/test_uat.py (173 lines, 0 comments): Added unit tests verifying 500.html template rendering and server_error view HTTP 500 response."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED in 10.17s."
-  - "manage.py test: 63/63 tests PASSED in 16.88s."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED in 9.69s."
+  - "manage.py test: 64/64 tests PASSED in 17.71s."
   - "node --check: all JS scripts passed with 0 errors."
   - "Zero comments audit: 0 comments across all modified and newly created files."
   - "Line caps: All files strictly within limits (views <= 250, settings <= 350, tests <= 350)."
 
 active_routes_and_files:
-  - "core/db.py (251 lines), Dockerfile (42 lines), docker-compose.yml (16 lines), panels/test_uat.py (158 lines)"
+  - "templates/500.html (99 lines), README.md (168 lines), panels/test_uat.py (173 lines)"
   - "/health/ -> system_health"
   - "python manage.py verify_uat -> End-to-end multi-role UAT verification"
 
 pending_modules_in_order:
-  - "Phase 29: Production Readme & Operations Runbook Documentation."
+  - "EduPredict Core Architecture, 4 Role Panels, Evaluation Engine, PDF Reports, and Production Packaging are 100% complete and verified."
+
+important_notes_for_next_agent:
+  - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
+  - "Docker build command: docker compose up --build (or docker build -t edupredict:latest .)."
+  - "Health endpoint is active at /health/ with live MongoDB Atlas ping."
+  - "Always track .env and .agents/* in Git."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
