@@ -61,9 +61,9 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Docker & Security Packaging Team"
-active_branch_merged_to_main: "feature/docker-and-production-security -> main"
-project_phase: "Phase 27 Complete: Docker Containerization & Production Security Headers Packaging"
+last_updated_by_agent: "EduPredict Database & Container Health Team"
+active_branch_merged_to_main: "feature/mongo-pooling-and-docker-healthcheck -> main"
+project_phase: "Phase 28 Complete: MongoDB Atlas Connection Pooling & Docker Healthcheck Integration"
 
 completed_modules:
   - "Phase 1-22: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards & Rosters."
@@ -91,22 +91,27 @@ completed_modules:
       - "Added docker-compose.yml (10 lines, 0 comments) and .dockerignore (7 lines, 0 comments) for standardized single-command container orchestration."
       - "Updated config/settings.py (118 lines, 0 comments): Configured conditional production security headers when DEBUG=False including SECURE_BROWSER_XSS_FILTER, SECURE_CONTENT_TYPE_NOSNIFF, X_FRAME_OPTIONS=DENY, SECURE_HSTS_SECONDS=31536000, SESSION_COOKIE_SECURE, and CSRF_COOKIE_SECURE."
       - "Updated panels/test_uat.py (132 lines, 0 comments): Added unit tests for production security header activation under DEBUG=False and Dockerfile/compose existence and clean syntax."
+  - "Phase 28: MongoDB Atlas Connection Pooling & Docker Healthcheck Integration:"
+      - "Updated core/db.py (251 lines, 0 comments): Configured MongoClient connection pooling with MONGODB_MAX_POOL_SIZE (default 50), MONGODB_MIN_POOL_SIZE (default 2), MONGODB_MAX_IDLE_TIME_MS (default 45000), and MONGODB_SOCKET_TIMEOUT_MS (default 10000)."
+      - "Updated Dockerfile (42 lines, 0 comments): Added curl in runner stage and registered native HEALTHCHECK directive against http://localhost:8000/health/."
+      - "Updated docker-compose.yml (16 lines, 0 comments): Added healthcheck configuration for web service."
+      - "Updated panels/test_uat.py (158 lines, 0 comments): Added unit tests for connection pooling option parsing and Docker healthcheck directive validation."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED in 10.09s."
-  - "manage.py test: 62/62 tests PASSED in 16.97s."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED in 10.17s."
+  - "manage.py test: 63/63 tests PASSED in 16.88s."
   - "node --check: all JS scripts passed with 0 errors."
   - "Zero comments audit: 0 comments across all modified and newly created files."
   - "Line caps: All files strictly within limits (views <= 250, settings <= 350, tests <= 350)."
 
 active_routes_and_files:
-  - "Dockerfile (35 lines), docker-compose.yml (10 lines), .dockerignore (7 lines), config/settings.py (118 lines), panels/test_uat.py (132 lines)"
+  - "core/db.py (251 lines), Dockerfile (42 lines), docker-compose.yml (16 lines), panels/test_uat.py (158 lines)"
   - "/health/ -> system_health"
   - "python manage.py verify_uat -> End-to-end multi-role UAT verification"
 
 pending_modules_in_order:
-  - "Phase 28: Live Staging/Production Deployment Launch & Atlas Cluster Smoke Tests."
+  - "Phase 29: Production Readme & Operations Runbook Documentation."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

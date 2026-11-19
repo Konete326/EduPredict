@@ -75,10 +75,20 @@ class MongoDBClient:
         return cls()
 
     def _build_client(self, uri):
+        max_pool = int(os.getenv("MONGODB_MAX_POOL_SIZE", "50"))
+        min_pool = int(os.getenv("MONGODB_MIN_POOL_SIZE", "2"))
+        idle_time = int(os.getenv("MONGODB_MAX_IDLE_TIME_MS", "45000"))
+        socket_timeout = int(os.getenv("MONGODB_SOCKET_TIMEOUT_MS", "10000"))
+        selection_timeout = int(os.getenv("MONGODB_SERVER_SELECTION_TIMEOUT_MS", "3000"))
+        connect_timeout = int(os.getenv("MONGODB_CONNECT_TIMEOUT_MS", "3000"))
         return MongoClient(
             uri,
-            serverSelectionTimeoutMS=3000,
-            connectTimeoutMS=3000,
+            maxPoolSize=max_pool,
+            minPoolSize=min_pool,
+            maxIdleTimeMS=idle_time,
+            socketTimeoutMS=socket_timeout,
+            serverSelectionTimeoutMS=selection_timeout,
+            connectTimeoutMS=connect_timeout,
         )
 
     def get_client(self):

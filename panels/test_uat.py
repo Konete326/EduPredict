@@ -126,7 +126,33 @@ class StaticFilesAndProductionConfigTests(TestCase):
         df_content = dockerfile.read_text(encoding="utf-8")
         self.assertIn("gunicorn", df_content)
         self.assertIn("edupredict", df_content)
+        self.assertIn("HEALTHCHECK", df_content)
+        self.assertIn("http://localhost:8000/health/", df_content)
         self.assertNotIn("#", df_content)
         compose_content = compose.read_text(encoding="utf-8")
         self.assertIn("8000:8000", compose_content)
+        self.assertIn("healthcheck:", compose_content)
         self.assertNotIn("#", compose_content)
+
+    @patch("core.db.MongoClient")
+    def test_mongodb_client_connection_pooling_options(self, mock_mongo_client):
+        from core.db import MongoDBClient
+        client_inst = MongoDBClient()
+        with patch.dict("os.environ", {
+            "MONGODB_MAX_POOL_SIZE": "75",
+            "MONGODB_MIN_POOL_SIZE": "10",
+            "MONGODB_MAX_IDLE_TIME_MS": "30000",
+            "MONGODB_SOCKET_TIMEOUT_MS": "15000",
+            "MONGODB_SERVER_SELECTION_TIMEOUT_MS": "4000",
+            "MONGODB_CONNECT_TIMEOUT_MS": "4000",
+        }):
+            client_inst._build_client("mongodb://test-uri:27017")
+            mock_mongo_client.assert_called_with(
+                "mongodb://test-uri:27017",
+                maxPoolSize=75,
+                minPoolSize=10,
+                maxIdleTimeMS=30000,
+                socketTimeoutMS=15000,
+                serverSelectionTimeoutMS=4000,
+                connectTimeoutMS=4000,
+            )
