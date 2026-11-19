@@ -1,3 +1,4 @@
+import time
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -60,10 +61,12 @@ def _handle_login(request):
     try:
         user_doc, error = authenticate_user(email, password)
     except Exception:
+        time.sleep(0.05)
         messages.error(request, "Unable to connect to the database. Please try again.")
         return _render_auth(request, active_tab="login", login_email=email)
 
     if error or user_doc is None:
+        time.sleep(0.05)
         messages.error(request, error or "Invalid email or password.")
         return _render_auth(request, active_tab="login", login_email=email)
 

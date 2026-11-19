@@ -98,3 +98,14 @@ def robots_txt(request):
         "Allow: /$",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain; charset=utf-8")
+
+
+def favicon_view(request):
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+        '<rect width="32" height="32" rx="8" fill="#2563eb"/>'
+        '<path d="M16 7L6 12l10 5 10-5-10-5zM8 16.5l8 4 8-4M10 20l6 3 6-3" '
+        'fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+        '</svg>'
+    )
+    return HttpResponse(svg, content_type="image/svg+xml")

@@ -289,6 +289,20 @@ class StaticFilesAndProductionConfigTests(TestCase):
         self.assertEqual(settings.SESSION_COOKIE_AGE, 86400)
         self.assertTrue(settings.SESSION_SAVE_EVERY_REQUEST)
 
+    def test_favicon_endpoint_renders_svg_icon(self):
+        resp = self.client.get("/favicon.ico")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Type"], "image/svg+xml")
+        self.assertIn(b"<svg", resp.content)
+
+    def test_auth_login_failure_handles_gracefully_with_message(self):
+        resp = self.client.post(
+            reverse("accounts:auth_view"),
+            {"action": "login", "email": "nonexistent@test.com", "password": "wrongpassword123"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Invalid email or password.", resp.content.decode("utf-8"))
+
 
 class ProductionDocumentationTests(TestCase):
     def test_readme_exists_and_not_empty(self):
