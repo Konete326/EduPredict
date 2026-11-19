@@ -114,6 +114,8 @@ class StaticFilesAndProductionConfigTests(TestCase):
             self.assertTrue(prod_settings.SECURE_SSL_REDIRECT)
             self.assertTrue(prod_settings.SESSION_COOKIE_SECURE)
             self.assertTrue(prod_settings.CSRF_COOKIE_SECURE)
+            self.assertEqual(prod_settings.SECURE_PROXY_SSL_HEADER, ("HTTP_X_FORWARDED_PROTO", "https"))
+            self.assertTrue(prod_settings.USE_X_FORWARDED_HOST)
         importlib.reload(cfg_settings)
 
     def test_docker_and_compose_files_exist_and_clean(self):
@@ -126,6 +128,7 @@ class StaticFilesAndProductionConfigTests(TestCase):
         df_content = dockerfile.read_text(encoding="utf-8")
         self.assertIn("gunicorn", df_content)
         self.assertIn("edupredict", df_content)
+        self.assertIn("compileall", df_content)
         self.assertIn("HEALTHCHECK", df_content)
         self.assertIn("http://localhost:8000/health/", df_content)
         self.assertNotIn("#", df_content)

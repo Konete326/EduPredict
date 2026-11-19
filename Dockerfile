@@ -30,6 +30,8 @@ RUN addgroup --system edupredict && adduser --system --ingroup edupredict edupre
 
 COPY . .
 
+RUN python -m compileall -q .
+
 RUN chown -R edupredict:edupredict /app
 
 USER edupredict

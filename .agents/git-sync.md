@@ -61,45 +61,36 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Production Security & Crawl Policy Team"
-active_branch_merged_to_main: "feature/robots-txt-and-session-timeout -> main"
-project_phase: "Phase 33 Complete: Robots.txt Crawl Policy & Production Session Timeout"
+last_updated_by_agent: "EduPredict Production Optimization & Container Performance Team"
+active_branch_merged_to_main: "feature/proxy-ssl-and-bytecode-optimization -> main"
+project_phase: "Phase 34 Complete: Reverse Proxy SSL Headers & Docker Bytecode Precompilation"
 
 completed_modules:
-  - "Phase 1-31: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards, UAT Suite, Real-Time Health, CI/CD Pipeline, WhiteNoise Static Serving, Docker Containers, Atlas Connection Pooling, Theme-Aware 500 Error Page, Operations Runbook, Automated Backup CLI with Sentry, Backup Retention Purging, and Endpoint Rate Limiting."
-  - "Phase 32: WhiteNoise Immutable Cache Headers & UAT Resiliency:"
-      - "Updated config/settings.py (133 lines, 0 comments): Configured WHITENOISE_MAX_AGE (31536000 seconds / 1 year when not DEBUG) for production static asset immutable caching."
-      - "Updated core/management/commands/verify_uat.py (224 lines, 0 comments): Added 3-attempt exponential retry loop in _run_step_1_health to gracefully handle transient cloud database ping spikes."
+  - "Phase 1-32: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards, UAT Suite, Real-Time Health, CI/CD Pipeline, WhiteNoise Static Serving, Docker Containers, Atlas Connection Pooling, Theme-Aware 500 Error Page, Operations Runbook, Automated Backup CLI with Sentry, Backup Retention Purging, Endpoint Rate Limiting, and WhiteNoise Immutable Cache."
   - "Phase 33: Robots.txt Crawl Policy & Production Session Timeout:"
       - "Updated config/settings.py (137 lines, 0 comments): Configured SESSION_COOKIE_AGE (86400s / 24 hours), SESSION_SAVE_EVERY_REQUEST (True), and configurable SESSION_EXPIRE_AT_BROWSER_CLOSE."
-      - "Updated core/views_health.py (100 lines, 0 comments): Added robots_txt view delivering text/plain crawl directive disallowing private panel routes (/admin/, /admin-panel/, /teacher-panel/, /student-panel/, /analyst-panel/) while allowing /auth/, /health/, and /."
+      - "Updated core/views_health.py (100 lines, 0 comments): Added robots_txt view delivering crawl directives disallowing private panel routes while allowing /auth/, /health/, and /."
       - "Updated config/urls.py (17 lines, 0 comments): Registered /robots.txt route before catch-all 404 handler."
-      - "Updated README.md (226 lines): Updated test suite count to 75 tests."
-      - "Updated panels/test_uat.py (310 lines, 0 comments): Added unit tests for /robots.txt endpoint response and session timeout configuration (75/75 tests PASS)."
+  - "Phase 34: Reverse Proxy SSL Headers & Docker Bytecode Precompilation:"
+      - "Updated config/settings.py (139 lines, 0 comments): Configured SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') and USE_X_FORWARDED_HOST = True under DEBUG=False for reverse-proxy (Nginx, Traefik, AWS ALB) scheme transparency."
+      - "Updated Dockerfile (44 lines, 0 comments): Added RUN python -m compileall -q . in runner stage before ownership handover to ensure all Python bytecode is compiled during build layer, eliminating runtime JIT compilation latency."
+      - "Updated panels/test_uat.py (313 lines, 0 comments): Added unit tests for SECURE_PROXY_SSL_HEADER, USE_X_FORWARDED_HOST, and Dockerfile compileall directive (75/75 tests PASS)."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED in 9.52s."
-  - "manage.py test: 75/75 tests PASSED in 19.76s."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED in 10.00s."
+  - "manage.py test: 75/75 tests PASSED in 20.72s."
   - "node --check: all 5 JS scripts passed with 0 errors."
   - "Zero comments audit: 0 comments across all modified and newly created files."
-  - "Line caps: All files strictly within limits (settings.py 137, urls.py 17, views_health.py 100, test_uat.py 310 <= 350)."
+  - "Line caps: All files strictly within limits (settings.py 139, Dockerfile 44, test_uat.py 313 <= 350)."
 
 active_routes_and_files:
-  - "/robots.txt -> core.views_health.robots_txt"
-  - "config/settings.py (137 lines) -> SESSION_COOKIE_AGE"
-  - "panels/test_uat.py (310 lines) -> 23 UAT/ops/doc tests"
+  - "config/settings.py (139 lines) -> SECURE_PROXY_SSL_HEADER & USE_X_FORWARDED_HOST"
+  - "Dockerfile (44 lines) -> compileall bytecode optimization"
+  - "panels/test_uat.py (313 lines) -> 23 UAT/ops/doc tests"
 
 pending_modules_in_order:
   - "EduPredict Core Architecture, 4 Role Panels, Evaluation Engine, PDF Reports, and Production Operations/Packaging are 100% complete, hardened, and verified."
-
-important_notes_for_next_agent:
-  - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
-  - "Docker build command: docker compose up --build (or docker build -t edupredict:latest .)."
-  - "Automated backup cron: python manage.py export_backup --format json --output-dir backups/ --retention-days 30 --quiet."
-  - "Health endpoint is active at /health/ with live MongoDB Atlas ping and IP rate-limiting."
-  - "Always track .env and .agents/* in Git."
-```
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
