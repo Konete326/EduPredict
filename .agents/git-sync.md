@@ -61,36 +61,40 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Core Notification & Alert Team"
-active_branch_merged_to_main: "feature/topbar-student-notifs-and-clean-alert-targets -> main"
-project_phase: "Phase 23 Complete: Topbar Bell Student ID Query & Clean Alert Target Builders"
+last_updated_by_agent: "Phase 24 Swarm Coordinator & UAT Automation Team"
+active_branch_merged_to_main: "feature/e2e-uat-health -> main"
+project_phase: "Phase 24 Complete: Live End-to-End UAT Automation Suite & /health/ System Monitoring"
 
 completed_modules:
-  - "Phase 1-22: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Dynamic Thresholds, Live Theme & Appearance Studio, Per-Panel Theme Isolation, My Profile, Password Toggles, 1.2s Auto-Upload, and PDF Report Cards & Transcripts."
+  - "Phase 1-22: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards & Rosters."
   - "Phase 23: Topbar Bell Student ID Query & Clean Alert Target Builders:"
       - "Updated core/context_processors.py (74 lines, 0 comments) so _build_notification_query and _fetch_unread_notifications accept and include student_id alongside user_id and active_role, partitioning unread cache by notifs:{user_id}:{student_id}:{role_key}."
       - "Updated panels/student_alert_services.py (69 lines, 0 comments) so _alert_targets uses dict.fromkeys to safely omit empty target_user_id entries when student_id or user_id is empty."
       - "Updated panels/test_teacher_student.py (294 lines, 0 comments) with unit tests for clean alert targets without empty-string user IDs, topbar notification query construction with/without student_id, and unread notification retrieval including student_id."
+  - "Phase 24: Live End-to-End UAT Automation Suite & /health/ System Monitoring:"
+      - "Added core/views_health.py (77 lines): MongoDB Atlas connection ping, sub-second latency tracking, live collection counts, and memory diagnostics returning JSON HTTP 200/503."
+      - "Updated config/urls.py (14 lines): Registered /health/ route (system_health)."
+      - "Added core/management/commands/verify_uat.py (205 lines): Complete multi-role simulator testing Health, Auth/RBAC, Admin self-lock, Teacher marks & PDF roster, Analyst ML, Student overview & PDF report card, and Support ticket workflow (7/7 checks PASS)."
+      - "Added panels/test_uat.py (75 lines): 6 comprehensive unit tests covering /health/ endpoint response and verify_uat command execution."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py test: 51/51 tests PASSED in 7.5s."
-  - "node --check static/js/app.js, static/js/nav.js, static/js/charts.js, static/js/theme_studio.js: all PASSED."
-  - "Zero comments audit: 0 comments across all modified files."
-  - "Line caps: All files strictly within limits (context_processors: 74, student_alert_services: 69, test_teacher_student: 294)."
-  - ".env tracked in Git: verified via git ls-files .env."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED in 12.31s."
+  - "manage.py test: 57/57 tests PASSED in 19.48s."
+  - "node --check: all JS scripts passed with 0 errors."
+  - "Zero comments audit: 0 comments across all modified and newly created files."
+  - "Line caps: All files strictly within limits (views <= 250, commands <= 350)."
 
 active_routes_and_files:
-  - "core/context_processors.py (74 lines), panels/student_alert_services.py (69 lines), panels/test_teacher_student.py (294 lines)"
-  - "/student-panel/notifications/ -> panels:student_notifications"
-  - "/admin-panel/notifications/mark-read/ -> panels:mark_notifications_read"
+  - "core/views_health.py (77 lines), core/management/commands/verify_uat.py (205 lines), panels/test_uat.py (75 lines)"
+  - "/health/ -> system_health"
+  - "python manage.py verify_uat -> End-to-end multi-role UAT verification"
 
 pending_modules_in_order:
-  - "Phase 24: Live End-to-End Browser UAT & MongoDB Atlas Integration Verification."
-  - "Phase 25: Production Deployment & CI/CD Pipeline Polish."
+  - "Phase 25: Production Deployment & CI/CD Pipeline Polish (.github/workflows/django.yml, Gunicorn WSGI readiness)."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
-  - "ReportLab 5.1 is pinned in requirements.txt. Keep PDF generators in panels/pdf_services.py."
+  - "Health endpoint is active at /health/ with live MongoDB Atlas ping."
   - "Always track .env and .agents/* in Git."
 ```

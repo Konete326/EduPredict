@@ -51,7 +51,6 @@
 - **One Feature Per Execution:** Coding agents must implement only the single feature/module requested by the user, test it, sync with Git, and ask before starting the next feature.
 
 ## 6. Current Status & Optional Next Roadmap Phases
-- **Built & Verified Core Scope (Phases 1–22):** All 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme & Appearance Live Studio (per-user/per-panel), My Profile (`/profile/`), Password Eye Toggles, Admin Self-Lock, 1.2s Cancelable Auto-Upload, Mobile Card-Lists, and ReportLab-Powered PDF Report Cards & Class Rosters (`/student-panel/report/download-pdf/`, `/teacher-panel/students/export-pdf/`) are complete.
+- **Built & Verified Core Scope (Phases 1–23):** All 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme & Appearance Live Studio (per-user/per-panel), My Profile (`/profile/`), Password Eye Toggles, Admin Self-Lock, 1.2s Cancelable Auto-Upload, Mobile Card-Lists, ReportLab-Powered PDF Report Cards & Class Rosters, Live `/health/` System Monitoring, and End-to-End Multi-Role UAT Automation (`python manage.py verify_uat`) are complete.
 - **Optional Future Roadmap Phases:**
-  1. **Phase 23: Live End-to-End UAT & Atlas Integration Verification:** Browser walkthrough across all 4 roles against live MongoDB Atlas data.
-  2. **Phase 24: Production Deployment & CI/CD Polish:** WSGI/Gunicorn production readiness, automated GitHub Actions test checks, and monitoring polish.
+  1. **Phase 24: Production Deployment & CI/CD Polish:** Automated GitHub Actions test checks (`.github/workflows/django.yml`), Gunicorn WSGI setup, and monitoring polish.
