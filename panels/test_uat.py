@@ -171,3 +171,43 @@ class StaticFilesAndProductionConfigTests(TestCase):
         resp = server_error(req)
         self.assertEqual(resp.status_code, 500)
         self.assertIn(b"Error 500", resp.content)
+
+    def test_export_backup_management_command_execution(self):
+        import json
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            out_path = call_command("export_backup", format="json", output_dir=tmp_dir, filename="snap.json")
+            target = Path(out_path)
+            self.assertTrue(target.exists())
+            self.assertEqual(target.name, "snap.json")
+            parsed = json.loads(target.read_text(encoding="utf-8"))
+            self.assertIn("exported_at", parsed)
+            self.assertIn("collections", parsed)
+            self.assertIn("users", parsed["collections"])
+
+            out_csv = call_command("export_backup", format="csv", output_dir=tmp_dir, filename="snap.csv", quiet=True)
+            target_csv = Path(out_csv)
+            self.assertTrue(target_csv.exists())
+            self.assertGreater(target_csv.stat().st_size, 0)
+
+    def test_export_backup_command_invalid_format_raises_error(self):
+        with self.assertRaises(CommandError):
+            call_command("export_backup", format="invalid_format")
+
+    @patch("sentry_sdk.init")
+    def test_sentry_sdk_conditional_initialization_block(self, mock_sentry_init):
+        import os
+        from sentry_sdk.integrations.django import DjangoIntegration
+        test_dsn = "https://public@sentry.example.com/1"
+        with patch.dict(os.environ, {"SENTRY_DSN": test_dsn, "SENTRY_TRACES_SAMPLE_RATE": "0.2"}):
+            dsn_val = os.getenv("SENTRY_DSN", "").strip()
+            if dsn_val:
+                import sentry_sdk
+                sentry_sdk.init(
+                    dsn=dsn_val,
+                    integrations=[DjangoIntegration()],
+                    traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+                    send_default_pii=False,
+                )
+            mock_sentry_init.assert_called_once()

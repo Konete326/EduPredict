@@ -65,6 +65,8 @@ MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/?retryWrites
 MONGODB_DB_NAME=edupredict_db
 MONGODB_MAX_POOL_SIZE=50
 MONGODB_MIN_POOL_SIZE=2
+SENTRY_DSN=https://public@sentry.example.com/1
+SENTRY_TRACES_SAMPLE_RATE=0.1
 ```
 
 ### 3. Installation
@@ -101,7 +103,7 @@ curl http://localhost:8000/health/
 
 ## Automated Verification & Testing
 
-### 1. Unit & Integration Test Suite (64 Tests)
+### 1. Unit & Integration Test Suite (67 Tests)
 ```bash
 python manage.py test
 ```
@@ -129,6 +131,13 @@ Returns:
     "courses": 12
   }
 }
+```
+
+### 4. Automated Database Backup Command
+Export full database state into JSON or CSV for offsite backup or cron scheduling:
+```bash
+python manage.py export_backup --format json --output-dir backups/
+python manage.py export_backup --format csv --output-dir backups/ --quiet
 ```
 
 ---
