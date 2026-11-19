@@ -211,3 +211,25 @@ class StaticFilesAndProductionConfigTests(TestCase):
                     send_default_pii=False,
                 )
             mock_sentry_init.assert_called_once()
+
+class ProductionDocumentationTests(TestCase):
+    def test_readme_exists_and_not_empty(self):
+        from pathlib import Path
+        base = Path(__file__).resolve().parent.parent
+        readme_path = base / "README.md"
+        self.assertTrue(readme_path.exists())
+        content = readme_path.read_text(encoding="utf-8")
+        lines = content.splitlines()
+        self.assertGreater(len(lines), 50)
+
+    def test_readme_essential_sections_present(self):
+        from pathlib import Path
+        base = Path(__file__).resolve().parent.parent
+        readme_path = base / "README.md"
+        content_lower = readme_path.read_text(encoding="utf-8").lower()
+        self.assertIn("quickstart", content_lower)
+        self.assertIn("architecture", content_lower)
+        self.assertTrue("role" in content_lower or "roles" in content_lower)
+        self.assertIn("docker", content_lower)
+        self.assertIn("operations", content_lower)
+        self.assertIn("runbook", content_lower)
