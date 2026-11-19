@@ -71,12 +71,20 @@ def _build_memory_payload():
     return payload
 
 
+def _json_no_cache(data, status=200):
+    response = JsonResponse(data, status=status)
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
+    return response
+
+
 @rate_limit(max_requests=120, window_seconds=60)
 def health_check(request):
     started_at = time.monotonic()
     client = get_client()
     if client is None:
-        return JsonResponse(
+        return _json_no_cache(
             {
                 "status": "unhealthy",
                 "database": "disconnected",
@@ -94,7 +102,7 @@ def health_check(request):
         client.admin.command("ping", maxTimeMS=2000)
         latency_ms = round((time.monotonic() - started_at) * 1000, 2)
     except Exception as exc:
-        return JsonResponse(
+        return _json_no_cache(
             {
                 "status": "unhealthy",
                 "database": "disconnected",
@@ -125,7 +133,7 @@ def health_check(request):
         except Exception:
             counts[name] = 0
 
-    return JsonResponse(
+    return _json_no_cache(
         {
             "status": "healthy",
             "database": "connected",

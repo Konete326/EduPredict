@@ -313,6 +313,8 @@ class StaticFilesAndProductionConfigTests(TestCase):
 
     def test_health_endpoint_reports_process_memory(self):
         resp = self.client.get("/health/")
+        self.assertIn("Cache-Control", resp)
+        self.assertIn("no-store", resp["Cache-Control"])
         if resp.status_code == 200:
             data = resp.json()
             self.assertIn("memory", data)
