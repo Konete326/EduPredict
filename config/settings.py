@@ -134,6 +134,10 @@ SECURE_CONTENT_SECURITY_POLICY = os.getenv(
     'SECURE_CONTENT_SECURITY_POLICY',
     "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
 )
+SECURE_PERMISSIONS_POLICY = os.getenv(
+    'SECURE_PERMISSIONS_POLICY',
+    'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
+)
 
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True

@@ -328,6 +328,11 @@ class StaticFilesAndProductionConfigTests(TestCase):
         self.assertIn("default-src 'self'", csp)
         self.assertIn("cdn.tailwindcss.com", csp)
         self.assertIn("cdn.jsdelivr.net", csp)
+        self.assertIn("Permissions-Policy", resp)
+        pp = resp["Permissions-Policy"]
+        self.assertIn("camera=()", pp)
+        self.assertIn("microphone=()", pp)
+        self.assertIn("geolocation=()", pp)
 
 
 

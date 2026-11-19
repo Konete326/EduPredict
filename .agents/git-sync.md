@@ -61,9 +61,9 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Production Security & CSP Hardening Team"
-active_branch_merged_to_main: "feature/content-security-policy-hardening -> main"
-project_phase: "Phase 41 Complete: Production Content-Security-Policy (CSP) Headers Hardening"
+last_updated_by_agent: "EduPredict Production Security & Permissions Policy Team"
+active_branch_merged_to_main: "feature/permissions-policy-hardening -> main"
+project_phase: "Phase 42 Complete: Permissions-Policy Security Headers Hardening"
 
 completed_modules:
   - "Phase 1-35: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards, UAT Suite, Real-Time Health, CI/CD Pipeline, WhiteNoise Static Serving, Docker Containers, Atlas Connection Pooling, Theme-Aware 500 Error Page, Operations Runbook, Automated Backup CLI with Sentry, Backup Retention Purging, Endpoint Rate Limiting, WhiteNoise Immutable Cache, Robots.txt Policy, Reverse Proxy SSL Transparency, Favicon SVG Route, and Auth Timing Defense."
@@ -72,23 +72,24 @@ completed_modules:
   - "Phase 38: Sensitive Post Parameters Masking & Cookie HttpOnly Hardening (SESSION_COOKIE_HTTPONLY, SESSION_COOKIE_SAMESITE, CSRF_COOKIE_SAMESITE, @sensitive_post_parameters)."
   - "Phase 39: Health Check Process Memory Monitoring (RSS Memory in /health/ via Windows psapi and Linux /proc/self/status)."
   - "Phase 40: Favicon Browser Caching & Health Check Ping Timeout (maxTimeMS=2000, Cache-Control: public, max-age=86400)."
-  - "Phase 41: Production Content-Security-Policy (CSP) Headers Hardening:"
-      - "Created core/middleware.py (13 lines, 0 comments): Implemented SecurityHeadersMiddleware attaching Content-Security-Policy header to HTTP responses to protect against XSS, unauthorized external script injection, clickjacking frame embedding, and malicious form destinations."
-      - "Updated config/settings.py (152 lines, 0 comments): Registered core.middleware.SecurityHeadersMiddleware and configured SECURE_CONTENT_SECURITY_POLICY supporting self, Tailwind CDN, Chart.js CDN, Google Fonts, and FontAwesome."
-      - "Updated panels/test_uat.py (355 lines, 0 comments): Added unit test test_content_security_policy_header_present verifying presence and directives of Content-Security-Policy header on views (79/79 tests PASS)."
+  - "Phase 41: Production Content-Security-Policy (CSP) Headers Hardening (SecurityHeadersMiddleware, SECURE_CONTENT_SECURITY_POLICY)."
+  - "Phase 42: Permissions-Policy Security Headers Hardening:"
+      - "Updated core/middleware.py (16 lines, 0 comments): Enhanced SecurityHeadersMiddleware to attach Permissions-Policy header ensuring camera, microphone, geolocation, payment, and usb browser sensors are globally disabled."
+      - "Updated config/settings.py (156 lines, 0 comments): Configured SECURE_PERMISSIONS_POLICY = 'camera=(), microphone=(), geolocation=(), payment=(), usb=()'."
+      - "Updated panels/test_uat.py (360 lines, 0 comments): Verified Permissions-Policy header presence and sensor restriction directives (79/79 tests PASS)."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED in 9.94s."
-  - "manage.py test: 79/79 tests PASSED in 21.14s."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED in 16.31s."
+  - "manage.py test: 79/79 tests PASSED in 21.91s."
   - "node --check: all 5 JS scripts passed with 0 errors."
   - "Zero comments audit: 0 comments across all modified and newly created files."
-  - "Line caps: All files strictly within limits (middleware.py 13, settings.py 152, test_uat.py 355 <= 350-400)."
+  - "Line caps: All files strictly within limits (middleware.py 16, settings.py 156, test_uat.py 360 <= 350-400)."
 
 active_routes_and_files:
-  - "core/middleware.py (13 lines) -> SecurityHeadersMiddleware"
-  - "config/settings.py (152 lines) -> SECURE_CONTENT_SECURITY_POLICY & SecurityHeadersMiddleware"
-  - "panels/test_uat.py (355 lines) -> 27 UAT/ops/doc tests (79 unit tests in test suite)"
+  - "core/middleware.py (16 lines) -> SecurityHeadersMiddleware (CSP & Permissions-Policy)"
+  - "config/settings.py (156 lines) -> SECURE_PERMISSIONS_POLICY & SECURE_CONTENT_SECURITY_POLICY"
+  - "panels/test_uat.py (360 lines) -> 27 UAT/ops/doc tests (79 unit tests in test suite)"
 
 pending_modules_in_order:
   - "EduPredict Core Architecture, 4 Role Panels, Evaluation Engine, PDF Reports, and Production Operations/Packaging are 100% complete, hardened, and verified."
