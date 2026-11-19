@@ -290,6 +290,8 @@ class StaticFilesAndProductionConfigTests(TestCase):
         self.assertTrue(hasattr(settings, "SESSION_COOKIE_AGE"))
         self.assertEqual(settings.SESSION_COOKIE_AGE, 86400)
         self.assertTrue(settings.SESSION_SAVE_EVERY_REQUEST)
+        self.assertEqual(settings.DATA_UPLOAD_MAX_MEMORY_SIZE, 5242880)
+        self.assertEqual(settings.FILE_UPLOAD_MAX_MEMORY_SIZE, 5242880)
 
     def test_favicon_endpoint_renders_svg_icon(self):
         resp = self.client.get("/favicon.ico")

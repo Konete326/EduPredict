@@ -61,34 +61,40 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Production Security & Headers Hardening Team"
-active_branch_merged_to_main: "feature/referrer-policy-and-security-hardening -> main"
-project_phase: "Phase 36 Complete: Strict Referrer Policy & Cross-Origin Opener Hardening"
+last_updated_by_agent: "EduPredict Production Upload Security & Memory Defense Team"
+active_branch_merged_to_main: "feature/upload-limits-and-static-security -> main"
+project_phase: "Phase 37 Complete: Upload Memory Caps & Form Field Protection"
 
 completed_modules:
-  - "Phase 1-34: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards, UAT Suite, Real-Time Health, CI/CD Pipeline, WhiteNoise Static Serving, Docker Containers, Atlas Connection Pooling, Theme-Aware 500 Error Page, Operations Runbook, Automated Backup CLI with Sentry, Backup Retention Purging, Endpoint Rate Limiting, WhiteNoise Immutable Cache, Robots.txt Policy, and Reverse Proxy SSL Transparency."
-  - "Phase 35: Favicon Static SVG Route & Auth Timing Attack Defense:"
-      - "Updated core/views_health.py (111 lines, 0 comments): Added favicon_view returning inline SVG graduation cap icon (image/svg+xml) with zero disk I/O."
-      - "Updated config/urls.py (18 lines, 0 comments): Registered /favicon.ico route before catch-all 404 handler."
-      - "Updated accounts/views.py (182 lines, 0 comments): Added 50ms constant-time delay on failed login authentication attempts to prevent email enumeration timing attacks."
+  - "Phase 1-35: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards, UAT Suite, Real-Time Health, CI/CD Pipeline, WhiteNoise Static Serving, Docker Containers, Atlas Connection Pooling, Theme-Aware 500 Error Page, Operations Runbook, Automated Backup CLI with Sentry, Backup Retention Purging, Endpoint Rate Limiting, WhiteNoise Immutable Cache, Robots.txt Policy, Reverse Proxy SSL Transparency, Favicon SVG Route, and Auth Timing Defense."
   - "Phase 36: Strict Referrer Policy & Cross-Origin Opener Hardening:"
-      - "Updated config/settings.py (141 lines, 0 comments): Configured SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin' and SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups' under DEBUG=False to shield credentials and prevent cross-origin leaks."
-      - "Updated panels/test_uat.py (329 lines, 0 comments): Added unit tests verifying SECURE_REFERRER_POLICY and SECURE_CROSS_ORIGIN_OPENER_POLICY configurations (77/77 tests PASS)."
+      - "Updated config/settings.py (141 lines, 0 comments): Configured SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin' and SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups' under DEBUG=False."
+  - "Phase 37: Upload Memory Caps & Form Field Protection:"
+      - "Updated config/settings.py (144 lines, 0 comments): Configured DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880 (5MB), FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880 (5MB), and DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000 to defend against server memory exhaustion and multipart payload abuse."
+      - "Updated panels/test_uat.py (331 lines, 0 comments): Added unit tests verifying upload memory limits and max fields configuration (77/77 tests PASS)."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED in 10.38s."
-  - "manage.py test: 77/77 tests PASSED in 21.79s."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED in 11.23s."
+  - "manage.py test: 77/77 tests PASSED in 24.99s."
   - "node --check: all 5 JS scripts passed with 0 errors."
   - "Zero comments audit: 0 comments across all modified and newly created files."
-  - "Line caps: All files strictly within limits (settings.py 141, test_uat.py 329 <= 350)."
+  - "Line caps: All files strictly within limits (settings.py 144, test_uat.py 331 <= 350)."
 
 active_routes_and_files:
-  - "config/settings.py (141 lines) -> Referrer & Opener policies"
-  - "panels/test_uat.py (329 lines) -> 25 UAT/ops/doc tests"
+  - "config/settings.py (144 lines) -> DATA_UPLOAD_MAX_MEMORY_SIZE & FILE_UPLOAD_MAX_MEMORY_SIZE"
+  - "panels/test_uat.py (331 lines) -> 25 UAT/ops/doc tests"
 
 pending_modules_in_order:
   - "EduPredict Core Architecture, 4 Role Panels, Evaluation Engine, PDF Reports, and Production Operations/Packaging are 100% complete, hardened, and verified."
+
+important_notes_for_next_agent:
+  - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
+  - "Docker build command: docker compose up --build (or docker build -t edupredict:latest .)."
+  - "Automated backup cron: python manage.py export_backup --format json --output-dir backups/ --retention-days 30 --quiet."
+  - "Health endpoint is active at /health/ with live MongoDB Atlas ping and IP rate-limiting."
+  - "Always track .env and .agents/* in Git."
+```
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
