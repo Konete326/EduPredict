@@ -1,9 +1,10 @@
 from django.urls import path
-from panels import views_admin, views_analyst, views_student, views_teacher
+from panels import views_admin, views_analyst, views_student, views_teacher, views_theme
 
 app_name = 'panels'
 
 urlpatterns = [
+    path('theme/preferences/', views_theme.theme_preferences_view, name='theme_preferences'),
     path('admin-panel/', views_admin.admin_dashboard, name='admin_dashboard'),
     path('admin-panel/users/', views_admin.admin_users, name='admin_users'),
     path('admin-panel/courses/', views_admin.admin_courses, name='admin_courses'),

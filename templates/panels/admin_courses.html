@@ -51,24 +51,68 @@
       { value: 'ACTIVE', label: 'Active' },
       { value: 'ARCHIVED', label: 'Archived' }
     ];
+    const deptPrefixMap = {
+      CS: 'Computer Science',
+      AI: 'Data Science',
+      DS: 'Data Science',
+      EE: 'Electrical Engineering',
+      BBA: 'Business'
+    };
+
+    function inferDepartmentFromCode(code) {
+      const m = String(code || '').trim().toUpperCase().match(/^([A-Z]+)/);
+      return m && deptPrefixMap[m[1]] ? deptPrefixMap[m[1]] : '';
+    }
+
+    function suggestNextCourseCode() {
+      const deptPrefix = selectedDept === 'Data Science' ? 'DS' : (selectedDept === 'Electrical Engineering' ? 'EE' : (selectedDept === 'Business' ? 'BBA' : 'CS'));
+      let maxNum = 0;
+      document.querySelectorAll('#admin-courses-table tbody tr td:first-child, #admin-courses-table [data-course-code]').forEach(function (el) {
+        const raw = (el.getAttribute('data-course-code') || el.textContent || '').trim().toUpperCase();
+        const m = raw.match(/^([A-Z]+)-(\d+)$/);
+        if (m && m[1] === deptPrefix) maxNum = Math.max(maxNum, parseInt(m[2], 10) || 0);
+      });
+      if (maxNum > 0) return deptPrefix + '-' + (maxNum + 1);
+      return deptPrefix === 'CS' ? 'CS-306' : deptPrefix + '-301';
+    }
 
     window.openCreateCourseModal = function () {
+      const suggestedCode = suggestNextCourseCode();
+      const defaultDept = selectedDept !== 'ALL' ? selectedDept : (inferDepartmentFromCode(suggestedCode) || 'Computer Science');
       window.openFormModal({
         title: 'Add Course',
         actionUrl: adminCoursesUrl,
         fields: [
           { type: 'hidden', name: 'action', value: 'create' },
           { type: 'hidden', name: 'filter_dept', value: selectedDept },
-          { name: 'course_code', label: 'Course Code', type: 'text', placeholder: 'CS-305', required: true },
+          { name: 'course_code', label: 'Course Code', type: 'text', value: suggestedCode, placeholder: 'CS-306', required: true },
           { name: 'title', label: 'Course Name', type: 'text', placeholder: 'Cloud Systems', required: true },
-          { name: 'department', label: 'Department', type: 'text', value: selectedDept !== 'ALL' ? selectedDept : 'Computer Science', required: true },
+          { name: 'department', label: 'Department', type: 'text', value: defaultDept, required: true },
           { name: 'batch', label: 'Batch', type: 'text', value: '2026-A', required: true },
-          { name: 'instructor', label: 'Teacher', type: 'text', placeholder: 'Dr. Ayesha Khan', required: true },
+          { name: 'instructor', label: 'Teacher', type: 'text', value: 'Dr. Ayesha Khan', placeholder: 'Dr. Ayesha Khan', required: true },
           { name: 'credits', label: 'Credits', type: 'number', value: '3', required: true },
           { name: 'capacity', label: 'Total Seats', type: 'number', value: '60', required: true },
           { name: 'status', label: 'Status', type: 'select', options: courseStatusOptions, value: 'ACTIVE' }
         ]
       });
+      const form = document.getElementById('form-modal-element');
+      if (!form) return;
+      const codeInput = form.querySelector('[name="course_code"]');
+      const deptInput = form.querySelector('[name="department"]');
+      let deptEdited = false;
+      if (deptInput) {
+        deptInput.addEventListener('input', function (e) {
+          if (e.isComposing || e.keyCode === 229) return;
+          deptEdited = Boolean(deptInput.value.trim());
+        });
+      }
+      if (codeInput && deptInput) {
+        codeInput.addEventListener('input', function (e) {
+          if (e.isComposing || e.keyCode === 229 || deptEdited) return;
+          const inferred = inferDepartmentFromCode(codeInput.value);
+          if (inferred) deptInput.value = inferred;
+        });
+      }
     };
 
     window.openEditCourseModal = function (btn) {

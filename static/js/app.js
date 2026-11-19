@@ -1,6 +1,6 @@
 (function () {
   const THEME_KEY = 'edupredict_theme', SIDEBAR_KEY = 'edupredict_sidebar_collapsed';
-  const MODAL_IDS = ['confirm-modal', 'form-modal', 'coming-soon-modal'];
+  const MODAL_IDS = ['confirm-modal', 'form-modal', 'coming-soon-modal', 'theme-studio-modal'];
   const FIELD_CLS = 'w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none';
   const TOAST_STYLES = {
     success: { border: 'var(--status-success)', icon: 'fa-solid fa-circle-check', color: 'var(--status-success)' },
@@ -8,22 +8,13 @@
     danger: { border: 'var(--status-danger)', icon: 'fa-solid fa-circle-exclamation', color: 'var(--status-danger)' },
     info: { border: 'var(--accent-primary)', icon: 'fa-solid fa-circle-info', color: 'var(--accent-primary)' }
   };
-  let activeSubmitHandler = null, globalsBound = false;
+  let activeSubmitHandler = null, globalsBound = false, pointerDownTarget = null;
   const paginatedControllers = [];
   const byId = (id) => document.getElementById(id);
   const isDesktop = () => window.innerWidth >= 1024;
   const bindOnce = (el, ev, fn) => { if (el && el.dataset['bound_' + ev] !== '1') { el.dataset['bound_' + ev] = '1'; el.addEventListener(ev, fn); } };
-  const mk = (tag, cls, text, attrs) => {
-    const n = document.createElement(tag);
-    if (cls) n.className = cls;
-    if (text !== undefined) n.textContent = String(text);
-    if (attrs) Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v));
-    return n;
-  };
-  const getCsrfToken = () => {
-    const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
-    return m ? decodeURIComponent(m[1]) : (document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '');
-  };
+  const mk = (tag, cls, text, attrs) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = String(text); if (attrs) Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v)); return n; };
+  const getCsrfToken = () => { const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/); return m ? decodeURIComponent(m[1]) : (document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || ''); };
 
   function syncBodyScrollLock() {
     if (!document.body) return;
@@ -159,17 +150,10 @@
     const drawer = byId('mobile-sidebar-drawer'), backdrop = byId('mobile-sidebar-backdrop');
     if (drawer) { drawer.classList.toggle('-translate-x-full', !open); drawer.classList.toggle('translate-x-0', open); }
     if (backdrop) backdrop.classList.toggle('hidden', !open);
-    syncBodyScrollLock();
-    syncSidebarToggleA11y();
+    syncBodyScrollLock(); syncSidebarToggleA11y();
   }
-  const openMobileSidebar = () => setMobileSidebar(true);
-  const closeMobileSidebar = () => setMobileSidebar(false);
-  function setDesktopCollapsed(collapsed) {
-    applyDesktopSidebarClasses(collapsed);
-    try { localStorage.setItem(SIDEBAR_KEY, collapsed ? 'true' : 'false'); } catch (e) {}
-    syncSidebarToggleA11y();
-    setTimeout(() => window.dispatchEvent(new Event('resize')), 220);
-  }
+  const openMobileSidebar = () => setMobileSidebar(true), closeMobileSidebar = () => setMobileSidebar(false);
+  function setDesktopCollapsed(collapsed) { applyDesktopSidebarClasses(collapsed); try { localStorage.setItem(SIDEBAR_KEY, collapsed ? 'true' : 'false'); } catch (e) {} syncSidebarToggleA11y(); setTimeout(() => window.dispatchEvent(new Event('resize')), 220); }
   function toggleSidebar() {
     if (isDesktop()) { setDesktopCollapsed(!(document.documentElement.classList.contains('sidebar-collapsed') || (document.body && document.body.classList.contains('sidebar-collapsed')))); return; }
     setMobileSidebar(!(byId('mobile-sidebar-drawer') && !byId('mobile-sidebar-drawer').classList.contains('-translate-x-full')));
@@ -183,19 +167,16 @@
     if (byId('theme-toggle-label')) byId('theme-toggle-label').textContent = isDark ? 'Light' : 'Dark';
   }
   function toggleTheme() {
-    const doc = document.documentElement;
+    const doc = document.documentElement, nextTheme = doc.classList.contains('dark') ? 'light' : 'dark';
+    if (typeof window.applyEduPredictThemePrefs === 'function') { window.applyEduPredictThemePrefs({ mode: nextTheme }); return; }
     doc.classList.add('theme-transitioning');
-    const nextTheme = doc.classList.contains('dark') ? 'light' : 'dark';
     doc.classList.toggle('dark', nextTheme === 'dark');
     try { localStorage.setItem(THEME_KEY, nextTheme); } catch (e) {}
     syncThemeButton();
     window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: nextTheme } }));
     setTimeout(() => doc.classList.remove('theme-transitioning'), 260);
   }
-  function closeNotificationDropdown() {
-    if (byId('notification-dropdown')) byId('notification-dropdown').classList.add('hidden');
-    if (byId('notification-bell-btn')) byId('notification-bell-btn').setAttribute('aria-expanded', 'false');
-  }
+  function closeNotificationDropdown() { if (byId('notification-dropdown')) byId('notification-dropdown').classList.add('hidden'); if (byId('notification-bell-btn')) byId('notification-bell-btn').setAttribute('aria-expanded', 'false'); }
   function compareCells(rowA, rowB, colIdx, dir) {
     const rawA = ((rowA?.children[colIdx]?.textContent) || '').trim(), rawB = ((rowB?.children[colIdx]?.textContent) || '').trim();
     const numA = rawA.replace(/,/g, '').replace(/%$/, ''), numB = rawB.replace(/,/g, '').replace(/%$/, '');
@@ -271,7 +252,8 @@
   }
   function bindTableSearch() {
     document.querySelectorAll('input[data-table-search]').forEach((input) => {
-      bindOnce(input, 'input', () => {
+      bindOnce(input, 'input', (e) => {
+        if (e.isComposing || e.keyCode === 229) return;
         const q = input.value.trim().toLowerCase(), targetEl = byId(input.getAttribute('data-table-search'));
         if (targetEl) {
           const container = targetEl.hasAttribute('data-paginated-container') ? targetEl : targetEl.closest('[data-paginated-container]');
@@ -283,6 +265,20 @@
         document.querySelectorAll('table[data-searchable-table], main table').forEach((t) => { if (!t.closest('[data-paginated-container]')) filterPlainTable(t, q); });
       });
     });
+  }
+  function closeModalById(id) {
+    if (id === 'confirm-modal') closeConfirmModal();
+    else if (id === 'form-modal') closeFormModal();
+    else if (id === 'coming-soon-modal') closeComingSoonModal();
+    else if (id === 'theme-studio-modal' && typeof window.closeThemeStudioModal === 'function') window.closeThemeStudioModal();
+    else setModalOpen(byId(id), false);
+  }
+  const closeAllModals = () => MODAL_IDS.forEach(closeModalById);
+  function bindModalBackdrops() {
+    MODAL_IDS.forEach((id) => bindOnce(byId(id), 'click', (e) => {
+      const modal = byId(id);
+      if (modal && pointerDownTarget === e.target && (e.target === modal || e.target.hasAttribute('data-modal-backdrop'))) closeModalById(id);
+    }));
   }
   function bindDynamicControls() {
     restoreSidebarState(); syncThemeButton();
@@ -304,13 +300,15 @@
       if (byId('notification-list')) byId('notification-list').innerHTML = '<div class="px-4 py-6 text-center text-xs text-[var(--text-muted)]">No new alerts.</div>';
       closeNotificationDropdown(); showToast('All alerts marked as read.', 'info');
     });
-    initPaginatedContainers(); initSortableTables(); bindTableSearch();
+    initPaginatedContainers(); initSortableTables(); bindTableSearch(); bindModalBackdrops();
     const toastContainer = byId('toast-container');
     if (toastContainer) toastContainer.querySelectorAll('[data-toast]').forEach((node) => setTimeout(() => removeToastNode(node), 5000));
   }
   function bindDocumentGlobalsOnce() {
     if (globalsBound) return;
     globalsBound = true;
+    document.addEventListener('pointerdown', (e) => { pointerDownTarget = e.target; });
+    window.addEventListener('themeChanged', syncThemeButton);
     document.addEventListener('click', (e) => {
       const dropdown = byId('notification-dropdown'), bell = byId('notification-bell-btn');
       if (dropdown && bell && !dropdown.contains(e.target) && !bell.contains(e.target)) closeNotificationDropdown();
@@ -322,8 +320,7 @@
       }
       if (e.target.closest('#mobile-sidebar-drawer a[href]') && !isDesktop()) closeMobileSidebar();
     });
-    MODAL_IDS.forEach((id) => bindOnce(byId(id), 'click', (e) => { if (e.target === byId(id)) setModalOpen(byId(id), false); }));
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeConfirmModal(); closeFormModal(); closeComingSoonModal(); closeMobileSidebar(); closeNotificationDropdown(); } });
+    document.addEventListener('keydown', (e) => { if (!e.isComposing && e.keyCode !== 229 && e.key === 'Escape') { closeAllModals(); closeMobileSidebar(); closeNotificationDropdown(); } });
     window.addEventListener('resize', () => {
       if (isDesktop()) {
         if (byId('mobile-sidebar-backdrop')) byId('mobile-sidebar-backdrop').classList.add('hidden');
@@ -334,11 +331,11 @@
       syncSidebarToggleA11y();
     });
   }
-  function reinitEduPredictUI() { closeConfirmModal(); closeFormModal(); closeComingSoonModal(); closeNotificationDropdown(); bindDynamicControls(); }
+  function reinitEduPredictUI() { closeAllModals(); closeNotificationDropdown(); bindDynamicControls(); if (typeof window.initSmartAutomation === 'function') window.initSmartAutomation(); }
   function initShellBindings() { bindDocumentGlobalsOnce(); bindDynamicControls(); }
 
   restoreSidebarState();
-  Object.assign(window, { openConfirmModal, closeConfirmModal, openFormModal, closeFormModal, openComingSoonModal, closeComingSoonModal, showToast, toggleTheme, openMobileSidebar, closeMobileSidebar, toggleSidebar, closeSidebarAny, reinitEduPredictUI });
+  Object.assign(window, { openConfirmModal, closeConfirmModal, openFormModal, closeFormModal, openComingSoonModal, closeComingSoonModal, showToast, toggleTheme, openMobileSidebar, closeMobileSidebar, toggleSidebar, closeSidebarAny, syncBodyScrollLock, reinitEduPredictUI });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initShellBindings);
   else initShellBindings();
 })();

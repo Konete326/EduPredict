@@ -1,24 +1,41 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-user-id="{{ current_user.user_id|default:'guest' }}" data-active-role="{{ active_role|default:'PORTAL' }}" data-shell-theme="{{ theme_prefs.shell_theme|default:'white' }}" class="{% if theme_prefs.mode == 'dark' %}dark{% endif %}{% if theme_prefs.density == 'compact' %} density-compact{% endif %}"{% if theme_prefs.tokens %} style="--bg-canvas:{{ theme_prefs.tokens.bg_canvas }};--bg-surface:{{ theme_prefs.tokens.bg_surface }};--bg-elevated:{{ theme_prefs.tokens.bg_elevated }};--bg-overlay:{{ theme_prefs.tokens.bg_overlay }};--text-primary:{{ theme_prefs.tokens.text_primary }};--text-secondary:{{ theme_prefs.tokens.text_secondary }};--text-muted:{{ theme_prefs.tokens.text_muted }};--border-subtle:{{ theme_prefs.tokens.border_subtle }};--accent-primary:{{ theme_prefs.tokens.accent_primary }};--accent-hover:{{ theme_prefs.tokens.accent_hover }};--accent-soft:{{ theme_prefs.tokens.accent_soft }};--shell-sidebar-bg:{{ theme_prefs.tokens.shell_sidebar_bg }};--shell-topbar-bg:{{ theme_prefs.tokens.shell_topbar_bg }};"{% endif %}>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
   <title>{% block title %}{{ page_title|default:"EduPredict" }} | EduPredict{% endblock %}</title>
   <script>
     (function () {
       try {
-        if (localStorage.getItem('edupredict_theme') === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
+        const doc = document.documentElement;
+        const uid = doc.getAttribute('data-user-id') || 'guest';
+        const role = doc.getAttribute('data-active-role') || 'PORTAL';
+        let raw = localStorage.getItem('ep_theme_prefs:' + uid + ':' + role);
+        if (!raw) {
+          const fb = localStorage.getItem('ep_theme_prefs');
+          if (fb) {
+            const c = JSON.parse(fb);
+            if (c && (!c.user_id || c.user_id === uid) && (!c.role || c.role === role)) raw = fb;
+          }
+        }
+        if (raw) {
+          const p = JSON.parse(raw);
+          if (p && typeof p === 'object') {
+            doc.classList.toggle('dark', p.mode === 'dark');
+            doc.classList.toggle('density-compact', p.density === 'compact');
+            if (p.shell_theme) doc.setAttribute('data-shell-theme', p.shell_theme);
+            if (p.tokens && typeof p.tokens === 'object') {
+              const m = { bg_canvas: '--bg-canvas', bg_surface: '--bg-surface', bg_elevated: '--bg-elevated', bg_overlay: '--bg-overlay', text_primary: '--text-primary', text_secondary: '--text-secondary', text_muted: '--text-muted', border_subtle: '--border-subtle', accent_primary: '--accent-primary', accent_hover: '--accent-hover', accent_soft: '--accent-soft', shell_sidebar_bg: '--shell-sidebar-bg', shell_topbar_bg: '--shell-topbar-bg' };
+              Object.keys(m).forEach(function (k) { if (p.tokens[k]) doc.style.setProperty(m[k], p.tokens[k]); });
+            }
+          }
+        } else if (!doc.classList.contains('dark') && localStorage.getItem('edupredict_theme') === 'dark') {
+          doc.classList.add('dark');
         }
         const savedSidebar = localStorage.getItem('edupredict_sidebar_collapsed');
-        if (savedSidebar === 'true' || savedSidebar === '1') {
-          document.documentElement.classList.add('sidebar-collapsed');
-        } else {
-          document.documentElement.classList.remove('sidebar-collapsed');
-        }
+        doc.classList.toggle('sidebar-collapsed', savedSidebar === 'true' || savedSidebar === '1');
       } catch (e) {}
     })();
   </script>
@@ -44,7 +61,7 @@
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=6">
+  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=7">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased">
@@ -145,11 +162,15 @@
 
   {% include 'components/confirm_modal.html' %}
   {% include 'components/form_modal.html' %}
+  {% include 'components/theme_studio_modal.html' %}
   {% include 'components/toast.html' %}
 
-  <script src="{% static 'js/app.js' %}?v=6"></script>
-  <script src="{% static 'js/charts.js' %}?v=6"></script>
-  <script src="{% static 'js/nav.js' %}?v=6"></script>
+  {{ theme_prefs|json_script:"ep-theme-prefs-data" }}
+  {{ theme_catalog|json_script:"ep-theme-catalog-data" }}
+  <script src="{% static 'js/app.js' %}?v=7"></script>
+  <script src="{% static 'js/charts.js' %}?v=7"></script>
+  <script src="{% static 'js/nav.js' %}?v=7"></script>
+  <script src="{% static 'js/theme_studio.js' %}?v=7"></script>
   <div id="page-extra-js">{% block extra_js %}{% endblock %}</div>
 </body>
 </html>

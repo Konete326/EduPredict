@@ -49,9 +49,9 @@
           <i class="fa-solid fa-file-excel mx-auto text-2xl text-[var(--accent-primary)]"></i>
           <label for="teacher-dataset-file" class="mt-2 block cursor-pointer text-xs font-medium text-[var(--text-primary)]">
             <span>Choose a spreadsheet file</span>
-            <input id="teacher-dataset-file" name="dataset_file" type="file" accept=".csv,.xlsx" required class="sr-only">
+            <input id="teacher-dataset-file" name="dataset_file" type="file" accept=".csv,.xlsx" required data-auto-submit="true" class="sr-only">
           </label>
-          <p id="teacher-file-name" class="mt-1 text-[11px] text-[var(--text-muted)]">.csv or .xlsx up to 25 MB</p>
+          <p id="teacher-file-name" data-file-name="true" class="mt-1 text-[11px] text-[var(--text-muted)]">.csv or .xlsx up to 25 MB</p>
         </div>
         <button type="submit" title="Upload spreadsheet and auto-update predictions" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
           <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
@@ -118,55 +118,58 @@
     </div>
   </div>
 </section>
+{{ students_picker|json_script:"teacher-students-picker-data" }}
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  const TEACHER_INGEST_URL = "{% url 'panels:teacher_ingest' %}";
+  (function () {
+    const TEACHER_INGEST_URL = "{% url 'panels:teacher_ingest' %}";
 
-  const fileInput = document.getElementById('teacher-dataset-file');
-  const fileNameDisplay = document.getElementById('teacher-file-name');
-  if (fileInput && fileNameDisplay) {
-    fileInput.addEventListener('change', function () {
-      if (this.files && this.files[0]) {
-        fileNameDisplay.textContent = 'Selected: ' + this.files[0].name;
-        fileNameDisplay.classList.add('text-[var(--accent-primary)]', 'font-semibold');
-      }
-    });
-  }
+    const fileInput = document.getElementById('teacher-dataset-file');
+    const fileNameDisplay = document.getElementById('teacher-file-name');
+    if (fileInput && fileNameDisplay) {
+      fileInput.addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+          fileNameDisplay.textContent = 'Selected: ' + this.files[0].name;
+          fileNameDisplay.classList.add('text-[var(--accent-primary)]', 'font-semibold');
+        }
+      });
+    }
 
-  function openUpdateMarksModal(btn) {
-    const d = btn ? btn.dataset : {};
-    window.openFormModal({
-      title: 'Update Marks (' + (d.studentId || '') + ')',
-      actionUrl: TEACHER_INGEST_URL,
-      fields: [
-        { type: 'hidden', name: 'action', value: 'update_student' },
-        { type: 'hidden', name: 'student_id', value: d.studentId || '' },
-        { type: 'hidden', name: 'batch', value: d.batch || '2026-A' },
-        { type: 'hidden', name: 'assignment_score', value: d.assignmentScore || d.internalMarks || '75' },
-        { type: 'hidden', name: 'lms_hours_weekly', value: d.lmsHoursWeekly || '8' },
-        { type: 'hidden', name: 'previous_gpa', value: d.previousGpa || '3.0' },
-        { name: 'full_name', label: 'Student Name', type: 'text', value: d.fullName || '', required: true },
-        { name: 'course_code', label: 'Course Code', type: 'text', value: d.courseCode || 'CS-101', required: true },
-        { name: 'internal_marks', label: 'Marks (0-100)', type: 'number', value: d.internalMarks || '75', required: true },
-        { name: 'attendance_pct', label: 'Attendance (%)', type: 'number', value: d.attendancePct || '85', required: true }
-      ]
-    });
-  }
+    window.openUpdateMarksModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      window.openFormModal({
+        title: 'Update Marks (' + (d.studentId || '') + ')',
+        actionUrl: TEACHER_INGEST_URL,
+        fields: [
+          { type: 'hidden', name: 'action', value: 'update_student' },
+          { type: 'hidden', name: 'student_id', value: d.studentId || '' },
+          { type: 'hidden', name: 'batch', value: d.batch || '2026-A' },
+          { type: 'hidden', name: 'assignment_score', value: d.assignmentScore || d.internalMarks || '75' },
+          { type: 'hidden', name: 'lms_hours_weekly', value: d.lmsHoursWeekly || '8' },
+          { type: 'hidden', name: 'previous_gpa', value: d.previousGpa || '3.0' },
+          { name: 'full_name', label: 'Student Name', type: 'text', value: d.fullName || '', required: true },
+          { name: 'course_code', label: 'Course Code', type: 'text', value: d.courseCode || 'CS-101', required: true },
+          { name: 'internal_marks', label: 'Marks (0-100)', type: 'number', value: d.internalMarks || '75', required: true },
+          { name: 'attendance_pct', label: 'Attendance (%)', type: 'number', value: d.attendancePct || '85', required: true }
+        ]
+      });
+    };
 
-  function openDeleteStudentModal(btn) {
-    const d = btn ? btn.dataset : {};
-    window.openConfirmModal({
-      title: 'Remove Student Record',
-      message: 'Remove ' + (d.fullName || d.studentId || 'this student') + ' from the class list?',
-      confirmText: 'Remove Student',
-      onConfirmUrl: TEACHER_INGEST_URL,
-      fields: {
-        action: 'delete_student',
-        student_id: d.studentId || ''
-      }
-    });
-  }
+    window.openDeleteStudentModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      window.openConfirmModal({
+        title: 'Remove Student Record',
+        message: 'Remove ' + (d.fullName || d.studentId || 'this student') + ' from the class list?',
+        confirmText: 'Remove Student',
+        onConfirmUrl: TEACHER_INGEST_URL,
+        fields: {
+          action: 'delete_student',
+          student_id: d.studentId || ''
+        }
+      });
+    };
+  })();
 </script>
 {% endblock %}

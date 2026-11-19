@@ -1,6 +1,6 @@
 <div id="mobile-sidebar-backdrop" class="fixed inset-0 z-40 hidden bg-[var(--bg-overlay)] backdrop-blur-sm lg:hidden" aria-hidden="true"></div>
 
-<aside id="mobile-sidebar-drawer" class="fixed inset-y-0 left-0 z-40 lg:z-30 flex w-64 -translate-x-full lg:translate-x-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-transform duration-200 ease-out" aria-label="Sidebar Menu">
+<aside id="mobile-sidebar-drawer" class="fixed inset-y-0 left-0 z-40 lg:z-30 flex w-64 -translate-x-full lg:translate-x-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--shell-sidebar-bg)] transition-transform duration-200 ease-out" aria-label="Sidebar Menu">
   <div class="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4">
     <a href="/" class="flex items-center gap-2.5 min-w-0">
       <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-primary)] text-white shadow-sm">
@@ -148,6 +148,13 @@
         <p class="truncate text-[11px] text-[var(--text-muted)]">{{ current_user.email|default:"portal@edupredict.edu" }}</p>
       </div>
     </div>
+    <button type="button" onclick="openThemeStudioModal()" title="Customize theme colors &amp; layout" class="flex w-full items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
+      <span class="inline-flex items-center gap-2">
+        <i class="fa-solid fa-palette text-xs text-[var(--accent-primary)]" aria-hidden="true"></i>
+        <span>Theme Studio</span>
+      </span>
+      <span class="h-2.5 w-2.5 rounded-full border border-[var(--border-subtle)]" style="background-color: var(--accent-primary);" aria-hidden="true"></span>
+    </button>
     <div class="grid {% if active_role == 'ADMIN' %}grid-cols-1{% else %}grid-cols-2{% endif %} gap-2">
       {% if active_role != 'ADMIN' %}
       <button type="button" onclick="openFormModal({ title: 'Need Help', actionUrl: '{% url 'panels:submit_support_ticket' %}', fields: [{ name: 'subject', label: 'Subject', type: 'text', placeholder: 'Short title', required: true }, { name: 'message', label: 'Message', type: 'textarea', placeholder: 'Write your question or issue...', required: true }] })" title="Ask for help or report a problem" class="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">

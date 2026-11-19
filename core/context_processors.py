@@ -1,5 +1,6 @@
 from pymongo import DESCENDING
 from core.db import check_db_health, get_cached, notifications_col
+from core.theme_services import get_theme_studio_catalog, get_user_theme_prefs
 
 
 def _build_notification_query(user_id, active_role):
@@ -71,4 +72,6 @@ def global_context(request):
         "unread_notifications": unread_notifications,
         "unread_notifications_count": unread_notifications_count,
         "db_connected": db_connected,
+        "theme_prefs": get_user_theme_prefs(request),
+        "theme_catalog": get_theme_studio_catalog(),
     }

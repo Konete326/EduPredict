@@ -42,10 +42,13 @@
 
 {% block extra_js %}
 <script>
-  function openSendAlertModal(btn) {
+  window.openSendAlertModal = function (btn) {
     const d = btn ? btn.dataset : {};
+    const studentName = d.fullName || d.studentId || 'Student';
+    const courseCode = d.courseCode || 'your course';
+    const defaultMsg = 'Hi ' + studentName + ', your recent attendance or marks in ' + courseCode + ' need attention. Please join extra support hours this week.';
     window.openFormModal({
-      title: 'Send Help Message to ' + (d.fullName || d.studentId || 'Student'),
+      title: 'Send Help Message to ' + studentName,
       actionUrl: "{% url 'panels:teacher_alerts' %}",
       fields: [
         { type: 'hidden', name: 'action', value: 'send_alert' },
@@ -53,9 +56,9 @@
         { type: 'hidden', name: 'full_name', value: d.fullName || '' },
         { type: 'hidden', name: 'course_code', value: d.courseCode || '' },
         { name: 'severity', label: 'Message Level', type: 'select', options: [{ value: 'WARNING', label: 'Needs Attention (Warning)' }, { value: 'DANGER', label: 'Urgent Help Needed' }, { value: 'INFO', label: 'Friendly Reminder' }], value: 'WARNING' },
-        { name: 'message', label: 'Message to Student', type: 'textarea', placeholder: 'Please attend extra help hours and submit missing work this week.', required: true }
+        { name: 'message', label: 'Message to Student', type: 'textarea', value: defaultMsg, placeholder: 'Please attend extra help hours and submit missing work this week.', required: true }
       ]
     });
-  }
+  };
 </script>
 {% endblock %}

@@ -65,16 +65,17 @@
         <input type="hidden" name="mode" value="upload">
         <div class="space-y-1">
           <label for="dataset-file-input" class="block text-xs font-medium text-[var(--text-secondary)]">File (.csv or .xlsx)</label>
-          <input id="dataset-file-input" name="dataset_file" type="file" accept=".csv,.xlsx" required class="block w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--accent-soft)] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[var(--accent-primary)]">
+          <input id="dataset-file-input" name="dataset_file" type="file" accept=".csv,.xlsx" required data-auto-submit="true" class="block w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--accent-soft)] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[var(--accent-primary)]">
+          <p id="analyst-file-name" data-file-name="true" class="hidden text-[11px] font-medium text-[var(--accent-primary)]"></p>
         </div>
-        <div class="space-y-1">
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Needed Columns</p>
-          <div class="flex flex-wrap gap-1.5">
+        <details class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2">
+          <summary class="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Needed Columns ({{ required_columns|length }})</summary>
+          <div class="mt-2 flex flex-wrap gap-1.5">
             {% for col in required_columns %}
             <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">{{ col }}</span>
             {% endfor %}
           </div>
-        </div>
+        </details>
         <button type="submit" title="Upload file, clean blank cells, and run predictions" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
           <i class="fa-solid fa-cloud-arrow-up"></i>
           <span>Upload &amp; Predict</span>
@@ -123,7 +124,7 @@
   <form method="get" action="{% url 'panels:analyst_dashboard' %}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 items-end">
     <div class="space-y-1">
       <label for="filter-batch" class="block text-xs font-medium text-[var(--text-secondary)]">Batch</label>
-      <select id="filter-batch" name="batch" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+      <select id="filter-batch" name="batch" data-auto-filter="true" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
         <option value="ALL" {% if selected_filters.batch == 'ALL' %}selected{% endif %}>All Batches</option>
         {% for b in filter_options.batches %}
         <option value="{{ b }}" {% if selected_filters.batch == b %}selected{% endif %}>{{ b }}</option>
@@ -132,7 +133,7 @@
     </div>
     <div class="space-y-1">
       <label for="filter-course" class="block text-xs font-medium text-[var(--text-secondary)]">Course</label>
-      <select id="filter-course" name="course_code" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+      <select id="filter-course" name="course_code" data-auto-filter="true" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
         <option value="ALL" {% if selected_filters.course_code == 'ALL' %}selected{% endif %}>All Courses</option>
         {% for c in filter_options.courses %}
         <option value="{{ c }}" {% if selected_filters.course_code == c %}selected{% endif %}>{{ c }}</option>
@@ -141,7 +142,7 @@
     </div>
     <div class="space-y-1">
       <label for="filter-risk" class="block text-xs font-medium text-[var(--text-secondary)]">Risk Level</label>
-      <select id="filter-risk" name="risk_level" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+      <select id="filter-risk" name="risk_level" data-auto-filter="true" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
         <option value="ALL" {% if selected_filters.risk_level == 'ALL' %}selected{% endif %}>All Levels</option>
         <option value="HIGH" {% if selected_filters.risk_level == 'HIGH' %}selected{% endif %}>High Risk</option>
         <option value="MEDIUM" {% if selected_filters.risk_level == 'MEDIUM' %}selected{% endif %}>Medium Risk</option>

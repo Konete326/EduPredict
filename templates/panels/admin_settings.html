@@ -18,6 +18,25 @@
   </button>
 </section>
 
+<section class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3 shadow-sm">
+  <div class="flex items-center gap-3 min-w-0">
+    <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--accent-soft)] text-[var(--accent-primary)]">
+      <i class="fa-solid fa-palette text-sm"></i>
+    </span>
+    <div class="min-w-0">
+      <div class="flex flex-wrap items-center gap-2">
+        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Theme &amp; Appearance Live Studio</h3>
+        <span class="inline-flex items-center rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-primary)]">Live Studio</span>
+      </div>
+      <p class="text-xs text-[var(--text-muted)]">Customize Light or OLED Dark mode, sidebar shell colors, brand accent, and spacing for this panel.</p>
+    </div>
+  </div>
+  <button type="button" onclick="openThemeStudioModal()" title="Open Theme & Appearance Live Studio" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+    <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+    <span>Open Live Studio</span>
+  </button>
+</section>
+
 {% if db_error %}
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
   <i class="fa-solid fa-circle-exclamation mr-2"></i>Database message: {{ db_error }}

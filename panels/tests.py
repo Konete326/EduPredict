@@ -1,9 +1,12 @@
+import json
 from unittest.mock import MagicMock, patch
-from django.test import Client, TestCase
+from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
+from accounts.services import serialize_session_user
 from analytics.data_pipeline import generate_sample_dataset_df
 from analytics.tests import _build_genuine_labelled_records
 from core.db import invalidate_cache
+from core.theme_services import get_theme_studio_catalog, get_user_theme_prefs
 
 
 class AnalystDashboardEvaluationTests(TestCase):
@@ -203,3 +206,76 @@ class AnalystDashboardEvaluationTests(TestCase):
             reverse("panels:teacher_dashboard"),
             fetch_redirect_response=False,
         )
+
+
+class ThemePreferencesTests(TestCase):
+    def setUp(self):
+        invalidate_cache()
+
+    def _set_user(self, client, role, user_id):
+        session = client.session
+        session["user"] = {"user_id": user_id, "role": role, "email": f"{role.lower()}@edupredict.edu", "full_name": f"Test {role.title()}"}
+        session.save()
+
+    @patch("core.theme_services.users_col")
+    def test_get_theme_preferences_defaults_and_path_fallback(self, mock_users_col):
+        catalog = get_theme_studio_catalog()
+        self.assertEqual((len(catalog["modes"]), len(catalog["shell_themes"]), len(catalog["swatches"]), len(catalog["presets"])), (2, 6, 13, 6))
+        self.assertEqual(catalog["save_url"], "/theme/preferences/")
+
+        resp = Client().get(reverse("panels:theme_preferences"))
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertTrue(data["ok"])
+        prefs = data["theme_prefs"]
+        self.assertEqual((prefs["role"], prefs["user_id"], prefs["mode"], prefs["shell_theme"], prefs["accent"], prefs["preset"], prefs["density"]), ("PORTAL", "guest", "light", "white", "indigo", "neutral", "comfortable"))
+        self.assertTrue(prefs["sync_shell"])
+        self.assertEqual(prefs["tokens"]["accent_primary"], "#4f46e5")
+        self.assertEqual(mock_users_col.call_count, 0)
+
+        req = RequestFactory().get("/teacher-panel/")
+        self.assertEqual(get_user_theme_prefs(req)["role"], "TEACHER")
+        self.assertEqual(serialize_session_user({"user_id": "USR-T1", "role": "TEACHER", "email": "t@e.edu", "theme_prefs": {"TEACHER": {"mode": "dark"}}})["theme_prefs"]["TEACHER"]["mode"], "dark")
+
+    @patch("core.theme_services.invalidate_cache")
+    @patch("core.theme_services.users_col")
+    def test_post_theme_preferences_persists_resets_and_isolates_roles(self, mock_users_col, mock_invalidate):
+        client = Client()
+        self._set_user(client, "TEACHER", "USR-T1")
+
+        post_resp = client.post(
+            reverse("panels:theme_preferences"),
+            data=json.dumps({"mode": "dark", "shell_theme": "blue", "accent": "ocean", "preset": "matcha", "density": "compact", "sync_shell": True}),
+            content_type="application/json",
+        )
+        self.assertEqual(post_resp.status_code, 200)
+        t_prefs = post_resp.json()["theme_prefs"]
+        self.assertEqual((t_prefs["role"], t_prefs["mode"], t_prefs["shell_theme"], t_prefs["accent"], t_prefs["preset"], t_prefs["density"]), ("TEACHER", "dark", "blue", "ocean", "matcha", "compact"))
+        self.assertEqual(t_prefs["tokens"]["accent_primary"], "#2563eb")
+        mock_users_col.return_value.update_one.assert_called_with({"user_id": "USR-T1"}, {"$set": {"theme_prefs.TEACHER": t_prefs}})
+        self.assertGreaterEqual(mock_invalidate.call_count, 1)
+
+        merge_resp = client.post(reverse("panels:theme_preferences"), {"mode": "light"}, HTTP_X_REQUESTED_WITH="EduPredict-Theme")
+        self.assertEqual(merge_resp.status_code, 200)
+        self.assertEqual((merge_resp.json()["theme_prefs"]["mode"], merge_resp.json()["theme_prefs"]["shell_theme"], merge_resp.json()["theme_prefs"]["preset"]), ("light", "blue", "matcha"))
+
+        form_resp = client.post(reverse("panels:theme_preferences"), {"density": "comfortable"}, HTTP_REFERER="/teacher-panel/")
+        self.assertRedirects(form_resp, "/teacher-panel/", fetch_redirect_response=False)
+
+        self._set_user(client, "ADMIN", "USR-T1")
+        admin_get = client.get(reverse("panels:theme_preferences")).json()["theme_prefs"]
+        self.assertEqual((admin_get["role"], admin_get["mode"], admin_get["shell_theme"], admin_get["accent"], admin_get["preset"]), ("ADMIN", "light", "white", "indigo", "neutral"))
+
+        admin_post = client.post(
+            reverse("panels:theme_preferences"),
+            data=json.dumps({"mode": "dark", "shell_theme": "red", "accent": "crimson", "preset": "gothic", "sync_shell": False}),
+            content_type="application/json",
+        ).json()["theme_prefs"]
+        self.assertEqual((admin_post["role"], admin_post["shell_theme"], admin_post["accent"], admin_post["preset"], admin_post["sync_shell"]), ("ADMIN", "red", "crimson", "gothic", False))
+
+        self._set_user(client, "TEACHER", "USR-T1")
+        reset_resp = client.post(reverse("panels:theme_preferences"), data=json.dumps({"action": "reset"}), content_type="application/json")
+        self.assertEqual(reset_resp.status_code, 200)
+        reset_prefs = reset_resp.json()["theme_prefs"]
+        self.assertEqual((reset_prefs["role"], reset_prefs["mode"], reset_prefs["shell_theme"], reset_prefs["accent"], reset_prefs["preset"], reset_prefs["density"]), ("TEACHER", "light", "white", "indigo", "neutral", "comfortable"))
+        self.assertEqual(client.session["theme_prefs_by_role"]["ADMIN"]["shell_theme"], "red")

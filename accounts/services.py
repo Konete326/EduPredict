@@ -87,6 +87,7 @@ def serialize_session_user(user_doc):
         "department": str(user_doc.get("department") or ""),
         "batch": str(user_doc.get("batch") or ""),
         "is_active": bool(user_doc.get("is_active", True)),
+        "theme_prefs": dict(user_doc.get("theme_prefs")) if isinstance(user_doc.get("theme_prefs"), dict) else {},
     }
     student_id = user_doc.get("student_id")
     if role == "STUDENT":
