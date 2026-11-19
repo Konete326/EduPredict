@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from panels.admin_seed import build_backup_payload
@@ -24,6 +25,12 @@ class Command(BaseCommand):
             help="Custom filename for the exported backup.",
         )
         parser.add_argument(
+            "--retention-days",
+            type=int,
+            default=0,
+            help="Purge backup files older than specified days (0 to disable).",
+        )
+        parser.add_argument(
             "--quiet",
             action="store_true",
             help="Suppress informational stdout output.",
@@ -36,6 +43,7 @@ class Command(BaseCommand):
         output_dir = Path(str(options.get("output_dir") or "backups").strip())
         custom_name = str(options.get("filename") or "").strip()
         quiet = bool(options.get("quiet"))
+        retention_days = int(options.get("retention_days") or 0)
 
         try:
             content, mime_type, default_name = build_backup_payload(fmt=fmt)
@@ -57,5 +65,22 @@ class Command(BaseCommand):
                     f"Successfully generated {fmt.upper()} backup ({byte_size} bytes): {target_path.resolve()}"
                 )
             )
+
+        purged_count = 0
+        if retention_days > 0 and output_dir.exists():
+            cutoff_ts = time.time() - (retention_days * 86400)
+            for file_item in output_dir.glob("edupredict_backup_*"):
+                try:
+                    if file_item.is_file() and file_item.stat().st_mtime < cutoff_ts:
+                        file_item.unlink()
+                        purged_count += 1
+                except OSError:
+                    pass
+            if not quiet and purged_count > 0:
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"Purged {purged_count} backup file(s) exceeding {retention_days} days retention."
+                    )
+                )
 
         return str(target_path.resolve())

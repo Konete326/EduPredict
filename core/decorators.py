@@ -1,7 +1,61 @@
+import time
 from functools import wraps
 from django.contrib import messages
 from django.contrib.messages.api import MessageFailure
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
+
+_RATE_LIMIT_BUCKETS = {}
+
+
+def _clear_rate_limit_buckets():
+    _RATE_LIMIT_BUCKETS.clear()
+
+
+def rate_limit(max_requests=60, window_seconds=60):
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapper(request, *args, **kwargs):
+            forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
+            client_ip = forwarded.split(",")[0].strip() if forwarded else request.META.get("REMOTE_ADDR", "unknown")
+            view_name = view_func.__name__
+            key = f"{view_name}:{client_ip}"
+            now = time.monotonic()
+
+            bucket = _RATE_LIMIT_BUCKETS.get(key)
+            if bucket is None:
+                bucket = []
+                _RATE_LIMIT_BUCKETS[key] = bucket
+
+            cutoff = now - window_seconds
+            _RATE_LIMIT_BUCKETS[key] = [t for t in bucket if t > cutoff]
+
+            if len(_RATE_LIMIT_BUCKETS[key]) >= max_requests:
+                accept_header = request.headers.get("accept", "")
+                if accept_header.startswith("application/json") or request.path.startswith("/health/"):
+                    return JsonResponse(
+                        {"error": "Too many requests. Please slow down and try again."},
+                        status=429,
+                    )
+                _queue_message(
+                    messages.error,
+                    request,
+                    "Too many requests. Please slow down and try again.",
+                )
+                return HttpResponse("Too Many Requests", status=429)
+
+            _RATE_LIMIT_BUCKETS[key].append(now)
+
+            if len(_RATE_LIMIT_BUCKETS) > 1000:
+                stale_keys = [k for k, timestamps in _RATE_LIMIT_BUCKETS.items() if not timestamps or timestamps[-1] <= cutoff]
+                for k in stale_keys:
+                    _RATE_LIMIT_BUCKETS.pop(k, None)
+
+            return view_func(request, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 ROLE_DASHBOARD_MAP = {
     "ADMIN": "panels:admin_dashboard",

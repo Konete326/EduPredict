@@ -211,3 +211,39 @@ class StaticFilesAndProductionConfigTests(TestCase):
                     send_default_pii=False,
                 )
             mock_sentry_init.assert_called_once()
+
+    def test_export_backup_retention_days_purges_old_backups(self):
+        import os
+        import tempfile
+        import time
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            old_backup = Path(tmp_dir) / "edupredict_backup_old.json"
+            old_backup.write_text("{}", encoding="utf-8")
+            old_ts = time.time() - (45 * 86400)
+            os.utime(str(old_backup), (old_ts, old_ts))
+            self.assertTrue(old_backup.exists())
+
+            call_command("export_backup", format="json", output_dir=tmp_dir, retention_days=30, quiet=True)
+            self.assertFalse(old_backup.exists())
+
+    def test_rate_limit_decorator_blocks_burst_traffic(self):
+        from django.test import RequestFactory
+        from core.decorators import _clear_rate_limit_buckets, rate_limit
+        _clear_rate_limit_buckets()
+        rf = RequestFactory()
+
+        @rate_limit(max_requests=2, window_seconds=60)
+        def sample_view(request):
+            from django.http import JsonResponse
+            return JsonResponse({"ok": True})
+
+        req1 = rf.get("/test/", HTTP_ACCEPT="application/json")
+        req2 = rf.get("/test/", HTTP_ACCEPT="application/json")
+        req3 = rf.get("/test/", HTTP_ACCEPT="application/json")
+
+        self.assertEqual(sample_view(req1).status_code, 200)
+        self.assertEqual(sample_view(req2).status_code, 200)
+        resp3 = sample_view(req3)
+        self.assertEqual(resp3.status_code, 429)
+        _clear_rate_limit_buckets()

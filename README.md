@@ -103,7 +103,7 @@ curl http://localhost:8000/health/
 
 ## Automated Verification & Testing
 
-### 1. Unit & Integration Test Suite (67 Tests)
+### 1. Unit & Integration Test Suite (69 Tests)
 ```bash
 python manage.py test
 ```
@@ -134,9 +134,9 @@ Returns:
 ```
 
 ### 4. Automated Database Backup Command
-Export full database state into JSON or CSV for offsite backup or cron scheduling:
+Export full database state into JSON or CSV for offsite backup or cron scheduling, with automatic old backup retention pruning:
 ```bash
-python manage.py export_backup --format json --output-dir backups/
+python manage.py export_backup --format json --output-dir backups/ --retention-days 30
 python manage.py export_backup --format csv --output-dir backups/ --quiet
 ```
 

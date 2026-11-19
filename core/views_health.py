@@ -1,5 +1,6 @@
 import time
 from django.http import JsonResponse
+from core.decorators import rate_limit
 from core.db import (
     _MEMORY_CACHE,
     courses_col,
@@ -12,6 +13,7 @@ from core.db import (
 )
 
 
+@rate_limit(max_requests=120, window_seconds=60)
 def health_check(request):
     started_at = time.monotonic()
     client = get_client()
