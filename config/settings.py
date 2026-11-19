@@ -99,6 +99,7 @@ STORAGES = {
         'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
     },
 }
+WHITENOISE_MAX_AGE = int(os.getenv('WHITENOISE_MAX_AGE', '31536000')) if not DEBUG else 0
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
