@@ -61,9 +61,9 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Production Database & Storage Safety Team"
-active_branch_merged_to_main: "feature/backup-cleanup-safety -> main"
-project_phase: "Phase 45 Complete: Backup CLI Partial Failure Cleanup & Disk Safety Hardening"
+last_updated_by_agent: "EduPredict Production Observability & Sentry Team"
+active_branch_merged_to_main: "feature/sentry-before-send-sanitization -> main"
+project_phase: "Phase 46 Complete: Production Sentry Before-Send Sanitization & Error Tagging"
 
 completed_modules:
   - "Phase 1-35: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards, UAT Suite, Real-Time Health, CI/CD Pipeline, WhiteNoise Static Serving, Docker Containers, Atlas Connection Pooling, Theme-Aware 500 Error Page, Operations Runbook, Automated Backup CLI with Sentry, Backup Retention Purging, Endpoint Rate Limiting, WhiteNoise Immutable Cache, Robots.txt Policy, Reverse Proxy SSL Transparency, Favicon SVG Route, and Auth Timing Defense."
@@ -76,21 +76,24 @@ completed_modules:
   - "Phase 42: Permissions-Policy Security Headers Hardening (camera=(), microphone=(), geolocation=(), payment=(), usb=())."
   - "Phase 43: Health Check No-Cache Header & Diagnostics Hardening (_json_no_cache on /health/)."
   - "Phase 44: Rate Limiter Retry-After Header & 429 Telemetry (Retry-After header, retry_after_seconds)."
-  - "Phase 45: Backup CLI Partial Failure Cleanup & Disk Safety Hardening:"
-      - "Updated core/management/commands/export_backup.py (98 lines, 0 comments): Enforced atomic backup writing via temporary files (temp_path) followed by atomic Path.replace(), and guaranteed automatic unlinking/cleanup of partial corrupt files on any write or size error to prevent disk clutter."
-      - "Updated panels/test_uat.py (366 lines, 0 comments): Added assertions verifying zero lingering .tmp files in backup directories (79/79 tests PASS)."
+  - "Phase 45: Backup CLI Partial Failure Cleanup & Disk Safety Hardening (atomic replace, unlink on error)."
+  - "Phase 46: Production Sentry Before-Send Sanitization & Error Tagging:"
+      - "Updated core/middleware.py (37 lines, 0 comments): Implemented sentry_before_send hook sanitizing sensitive query strings (passwords, tokens, keys) and auth headers (Authorization, Cookie, Set-Cookie, X-Csrftoken) to [FILTERED], and tagging MongoDB infrastructure exceptions."
+      - "Updated config/settings.py (158 lines, 0 comments): Wired before_send=sentry_before_send into Sentry SDK initialization."
+      - "Updated panels/test_uat.py (383 lines, 0 comments): Added unit test test_sentry_before_send_sanitization_and_tagging verifying header/query masking and mongodb tagging (80/80 tests PASS)."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED in 10.34s."
-  - "manage.py test: 79/79 tests PASSED in 22.35s."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED in 17.95s."
+  - "manage.py test: 80/80 tests PASSED in 23.45s."
   - "node --check: all 5 JS scripts passed with 0 errors."
   - "Zero comments audit: 0 comments across all modified and newly created files."
-  - "Line caps: All files strictly within limits (export_backup.py 98, test_uat.py 366 <= 350-400)."
+  - "Line caps: All files strictly within limits (middleware.py 37, settings.py 158, test_uat.py 383 <= 350-400)."
 
 active_routes_and_files:
-  - "core/management/commands/export_backup.py (98 lines) -> atomic backup write & error cleanup"
-  - "panels/test_uat.py (366 lines) -> 27 UAT/ops/doc tests (79 unit tests in test suite)"
+  - "core/middleware.py (37 lines) -> sentry_before_send sanitization & tagging"
+  - "config/settings.py (158 lines) -> Sentry before_send integration"
+  - "panels/test_uat.py (383 lines) -> 28 UAT/ops/doc tests (80 unit tests in test suite)"
 
 pending_modules_in_order:
   - "EduPredict Core Architecture, 4 Role Panels, Evaluation Engine, PDF Reports, and Production Operations/Packaging are 100% complete, hardened, and verified."

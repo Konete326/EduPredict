@@ -218,6 +218,23 @@ class StaticFilesAndProductionConfigTests(TestCase):
                 )
             mock_sentry_init.assert_called_once()
 
+    def test_sentry_before_send_sanitization_and_tagging(self):
+        from core.middleware import sentry_before_send
+        class MockMongoError(Exception):
+            pass
+        event = {
+            "request": {
+                "query_string": "token=secret123&user=admin",
+                "headers": {"Authorization": "Bearer 123", "Cookie": "session=abc"},
+            }
+        }
+        hint = {"exc_info": (MockMongoError, MockMongoError("connection timeout"), None)}
+        processed = sentry_before_send(event, hint)
+        self.assertEqual(processed["request"]["query_string"], "[FILTERED]")
+        self.assertEqual(processed["request"]["headers"]["Authorization"], "[FILTERED]")
+        self.assertEqual(processed["request"]["headers"]["Cookie"], "[FILTERED]")
+        self.assertEqual(processed["tags"]["infrastructure"], "mongodb")
+
     def test_export_backup_retention_days_purges_old_backups(self):
         import os
         import tempfile

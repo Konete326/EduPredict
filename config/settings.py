@@ -112,11 +112,13 @@ if SENTRY_DSN:
     try:
         import sentry_sdk
         from sentry_sdk.integrations.django import DjangoIntegration
+        from core.middleware import sentry_before_send
         sentry_sdk.init(
             dsn=SENTRY_DSN,
             integrations=[DjangoIntegration()],
             traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.1')),
             send_default_pii=False,
+            before_send=sentry_before_send,
         )
     except Exception:
         pass
