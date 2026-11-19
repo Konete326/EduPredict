@@ -300,6 +300,7 @@ class StaticFilesAndProductionConfigTests(TestCase):
         resp = self.client.get("/favicon.ico")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Type"], "image/svg+xml")
+        self.assertEqual(resp["Cache-Control"], "public, max-age=86400")
         self.assertIn(b"<svg", resp.content)
 
     def test_auth_login_failure_handles_gracefully_with_message(self):

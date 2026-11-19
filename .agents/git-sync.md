@@ -61,30 +61,31 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Production Health & Memory Monitoring Team"
-active_branch_merged_to_main: "feature/health-memory-monitoring -> main"
-project_phase: "Phase 39 Complete: Health Check Process Memory Monitoring (RSS Memory in /health/)"
+last_updated_by_agent: "EduPredict Production Caching & Health Performance Team"
+active_branch_merged_to_main: "feature/favicon-cache-and-ping-timeout -> main"
+project_phase: "Phase 40 Complete: Favicon Browser Caching & Health Check Ping Timeout (maxTimeMS)"
 
 completed_modules:
   - "Phase 1-35: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards, UAT Suite, Real-Time Health, CI/CD Pipeline, WhiteNoise Static Serving, Docker Containers, Atlas Connection Pooling, Theme-Aware 500 Error Page, Operations Runbook, Automated Backup CLI with Sentry, Backup Retention Purging, Endpoint Rate Limiting, WhiteNoise Immutable Cache, Robots.txt Policy, Reverse Proxy SSL Transparency, Favicon SVG Route, and Auth Timing Defense."
   - "Phase 36: Strict Referrer Policy & Cross-Origin Opener Hardening (SECURE_REFERRER_POLICY & SECURE_CROSS_ORIGIN_OPENER_POLICY)."
   - "Phase 37: Upload Memory Caps & Form Field Protection (DATA_UPLOAD_MAX_MEMORY_SIZE = 5MB, FILE_UPLOAD_MAX_MEMORY_SIZE = 5MB, DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000)."
   - "Phase 38: Sensitive Post Parameters Masking & Cookie HttpOnly Hardening (SESSION_COOKIE_HTTPONLY, SESSION_COOKIE_SAMESITE, CSRF_COOKIE_SAMESITE, @sensitive_post_parameters)."
-  - "Phase 39: Health Check Process Memory Monitoring (RSS Memory in /health/):"
-      - "Updated core/views_health.py (168 lines, 0 comments): Implemented cross-platform _get_process_memory_mb() using Windows Win32/psapi ctypes on Windows, /proc/self/status VmRSS on Linux containers, and resource.getrusage fallback on POSIX/macOS to monitor active process RSS memory (rss_mb) in real-time."
-      - "Updated panels/test_uat.py (345 lines, 0 comments): Added unit test test_health_endpoint_reports_process_memory asserting status, cache_entries, and positive rss_mb (78/78 tests PASS)."
+  - "Phase 39: Health Check Process Memory Monitoring (RSS Memory in /health/ via Windows psapi and Linux /proc/self/status)."
+  - "Phase 40: Favicon Browser Caching & Health Check Ping Timeout (maxTimeMS):"
+      - "Updated core/views_health.py (170 lines, 0 comments): Configured client.admin.command('ping', maxTimeMS=2000) for fast failure handling during MongoDB network degradation, and added Cache-Control: public, max-age=86400 on favicon_view (/favicon.ico) response."
+      - "Updated panels/test_uat.py (346 lines, 0 comments): Added unit test assertions verifying Cache-Control: public, max-age=86400 on favicon response (78/78 tests PASS)."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED in 9.77s."
-  - "manage.py test: 78/78 tests PASSED in 22.39s."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED in 9.64s."
+  - "manage.py test: 78/78 tests PASSED in 21.61s."
   - "node --check: all 5 JS scripts passed with 0 errors."
   - "Zero comments audit: 0 comments across all modified and newly created files."
-  - "Line caps: All files strictly within limits (views_health.py 168 <= 250, test_uat.py 345 <= 350-400)."
+  - "Line caps: All files strictly within limits (views_health.py 170 <= 250, test_uat.py 346 <= 350-400)."
 
 active_routes_and_files:
-  - "core/views_health.py (168 lines) -> /health/ enriched with memory.rss_mb and cache_entries"
-  - "panels/test_uat.py (345 lines) -> 26 UAT/ops/doc tests (78 unit tests in test suite)"
+  - "core/views_health.py (170 lines) -> maxTimeMS=2000 ping & Cache-Control: public, max-age=86400 favicon"
+  - "panels/test_uat.py (346 lines) -> 26 UAT/ops/doc tests (78 unit tests in test suite)"
 
 pending_modules_in_order:
   - "EduPredict Core Architecture, 4 Role Panels, Evaluation Engine, PDF Reports, and Production Operations/Packaging are 100% complete, hardened, and verified."

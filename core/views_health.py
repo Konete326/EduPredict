@@ -91,7 +91,7 @@ def health_check(request):
         )
 
     try:
-        client.admin.command("ping")
+        client.admin.command("ping", maxTimeMS=2000)
         latency_ms = round((time.monotonic() - started_at) * 1000, 2)
     except Exception as exc:
         return JsonResponse(
@@ -165,4 +165,6 @@ def favicon_view(request):
         'fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
         '</svg>'
     )
-    return HttpResponse(svg, content_type="image/svg+xml")
+    response = HttpResponse(svg, content_type="image/svg+xml")
+    response["Cache-Control"] = "public, max-age=86400"
+    return response
