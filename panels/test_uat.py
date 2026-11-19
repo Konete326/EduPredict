@@ -251,6 +251,9 @@ class StaticFilesAndProductionConfigTests(TestCase):
         self.assertEqual(sample_view(req2).status_code, 200)
         resp3 = sample_view(req3)
         self.assertEqual(resp3.status_code, 429)
+        self.assertIn("Retry-After", resp3)
+        self.assertTrue(int(resp3["Retry-After"]) >= 1)
+        self.assertIn(b"retry_after_seconds", resp3.content)
         _clear_rate_limit_buckets()
 
     def test_whitenoise_cache_control_settings_present(self):

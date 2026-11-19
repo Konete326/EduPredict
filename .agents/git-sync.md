@@ -61,9 +61,9 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Production Health & Diagnostics Team"
-active_branch_merged_to_main: "feature/health-nocache-diagnostics -> main"
-project_phase: "Phase 43 Complete: Health Check No-Cache Header & Diagnostics Hardening"
+last_updated_by_agent: "EduPredict Production Rate Limiting & Telemetry Team"
+active_branch_merged_to_main: "feature/rate-limiter-retry-after -> main"
+project_phase: "Phase 44 Complete: Rate Limiter Retry-After Header & 429 Telemetry"
 
 completed_modules:
   - "Phase 1-35: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards, UAT Suite, Real-Time Health, CI/CD Pipeline, WhiteNoise Static Serving, Docker Containers, Atlas Connection Pooling, Theme-Aware 500 Error Page, Operations Runbook, Automated Backup CLI with Sentry, Backup Retention Purging, Endpoint Rate Limiting, WhiteNoise Immutable Cache, Robots.txt Policy, Reverse Proxy SSL Transparency, Favicon SVG Route, and Auth Timing Defense."
@@ -74,21 +74,22 @@ completed_modules:
   - "Phase 40: Favicon Browser Caching & Health Check Ping Timeout (maxTimeMS=2000, Cache-Control: public, max-age=86400)."
   - "Phase 41: Production Content-Security-Policy (CSP) Headers Hardening (SecurityHeadersMiddleware, SECURE_CONTENT_SECURITY_POLICY)."
   - "Phase 42: Permissions-Policy Security Headers Hardening (camera=(), microphone=(), geolocation=(), payment=(), usb=())."
-  - "Phase 43: Health Check No-Cache Header & Diagnostics Hardening:"
-      - "Updated core/views_health.py (178 lines, 0 comments): Implemented _json_no_cache helper setting Cache-Control: no-cache, no-store, must-revalidate, Pragma: no-cache, and Expires: 0 on all /health/ responses so monitoring probes, CDNs, and reverse proxies never cache transient health checks."
-      - "Updated panels/test_uat.py (362 lines, 0 comments): Added unit test assertions verifying Cache-Control contains no-store on /health/ (79/79 tests PASS)."
+  - "Phase 43: Health Check No-Cache Header & Diagnostics Hardening (_json_no_cache on /health/)."
+  - "Phase 44: Rate Limiter Retry-After Header & 429 Telemetry:"
+      - "Updated core/decorators.py (138 lines, 0 comments): Enhanced @rate_limit to calculate exact window expiration and emit standard Retry-After: <seconds> HTTP header on both JSON and text 429 responses, including retry_after_seconds in JSON payloads."
+      - "Updated panels/test_uat.py (365 lines, 0 comments): Verified Retry-After header presence, positive integer value, and retry_after_seconds body assertion on 429 responses (79/79 tests PASS)."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED in 10.06s."
-  - "manage.py test: 79/79 tests PASSED in 25.48s."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED in 11.50s."
+  - "manage.py test: 79/79 tests PASSED in 28.42s."
   - "node --check: all 5 JS scripts passed with 0 errors."
   - "Zero comments audit: 0 comments across all modified and newly created files."
-  - "Line caps: All files strictly within limits (views_health.py 178 <= 250, test_uat.py 362 <= 350-400)."
+  - "Line caps: All files strictly within limits (decorators.py 138, test_uat.py 365 <= 350-400)."
 
 active_routes_and_files:
-  - "core/views_health.py (178 lines) -> /health/ with _json_no_cache headers"
-  - "panels/test_uat.py (362 lines) -> 27 UAT/ops/doc tests (79 unit tests in test suite)"
+  - "core/decorators.py (138 lines) -> @rate_limit with Retry-After header"
+  - "panels/test_uat.py (365 lines) -> 27 UAT/ops/doc tests (79 unit tests in test suite)"
 
 pending_modules_in_order:
   - "EduPredict Core Architecture, 4 Role Panels, Evaluation Engine, PDF Reports, and Production Operations/Packaging are 100% complete, hardened, and verified."

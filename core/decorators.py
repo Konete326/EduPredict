@@ -31,18 +31,27 @@ def rate_limit(max_requests=60, window_seconds=60):
             _RATE_LIMIT_BUCKETS[key] = [t for t in bucket if t > cutoff]
 
             if len(_RATE_LIMIT_BUCKETS[key]) >= max_requests:
+                oldest_timestamp = _RATE_LIMIT_BUCKETS[key][0]
+                wait_seconds = max(1, int(window_seconds - (now - oldest_timestamp)) + 1)
                 accept_header = request.headers.get("accept", "")
                 if accept_header.startswith("application/json") or request.path.startswith("/health/"):
-                    return JsonResponse(
-                        {"error": "Too many requests. Please slow down and try again."},
+                    response = JsonResponse(
+                        {
+                            "error": "Too many requests. Please slow down and try again.",
+                            "retry_after_seconds": wait_seconds,
+                        },
                         status=429,
                     )
+                    response["Retry-After"] = str(wait_seconds)
+                    return response
                 _queue_message(
                     messages.error,
                     request,
                     "Too many requests. Please slow down and try again.",
                 )
-                return HttpResponse("Too Many Requests", status=429)
+                response = HttpResponse("Too Many Requests", status=429)
+                response["Retry-After"] = str(wait_seconds)
+                return response
 
             _RATE_LIMIT_BUCKETS[key].append(now)
 
