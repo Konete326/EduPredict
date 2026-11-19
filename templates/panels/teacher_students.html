@@ -13,6 +13,10 @@
     <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Search students, update internal test scores, dispatch alerts, and export roster.</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
+    <a href="{% url 'panels:teacher_roster_pdf' %}?batch={{ selected_filters.batch|default:'ALL'|urlencode }}&course_code={{ selected_filters.course_code|default:'ALL'|urlencode }}&status={{ selected_filters.status|default:'ALL'|urlencode }}" title="Export printable class roster as PDF" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <i class="fa-solid fa-file-pdf text-[var(--accent-primary)]"></i>
+      <span>Export PDF Roster</span>
+    </a>
     <a href="{% url 'panels:teacher_students' %}?export=csv" title="Save student list as CSV" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
       <i class="fa-solid fa-file-csv text-[var(--status-success)]"></i>
       <span>Export CSV</span>
@@ -66,6 +70,10 @@
       </button>
       <a href="{% url 'panels:teacher_students' %}" title="Clear all filters" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <span>Reset</span>
+      </a>
+      <a href="{% url 'panels:teacher_roster_pdf' %}?batch={{ selected_filters.batch|default:'ALL'|urlencode }}&course_code={{ selected_filters.course_code|default:'ALL'|urlencode }}&status={{ selected_filters.status|default:'ALL'|urlencode }}" title="Export printable class roster as PDF" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+        <i class="fa-solid fa-file-pdf text-[var(--accent-primary)]"></i>
+        <span>Export PDF</span>
       </a>
       <a href="{% url 'panels:teacher_students' %}?batch={{ selected_filters.batch|default:'ALL'|urlencode }}&course_code={{ selected_filters.course_code|default:'ALL'|urlencode }}&status={{ selected_filters.status|default:'ALL'|urlencode }}&export=csv" title="Download student list as CSV" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
         <i class="fa-solid fa-file-csv text-[var(--status-success)]"></i>

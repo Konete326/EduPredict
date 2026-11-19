@@ -5,6 +5,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from core.decorators import role_required
 from panels.admin_services import mark_notifications_read
+from panels.pdf_services import generate_student_report_card_pdf
 from panels.student_services import (
     build_report_export_rows,
     get_student_alerts_context,
@@ -150,6 +151,19 @@ def student_report_download(request):
     writer.writerow(["full_name", "student_id", "batch", "course_code", "my_marks", "class_avg_marks", "my_attendance", "class_avg_attendance", "predicted_gpa", "risk_level", "status"])
     for row in build_report_export_rows(data["record"], data["subject_rows"]):
         writer.writerow(row)
+    return response
+
+
+@role_required(["STUDENT", "ADMIN"])
+def student_report_pdf(request):
+    student_id, user_id, role, user = _student_identity(request)
+    data, db_error = _safe_context(get_student_overview_context, student_id, user_id, role)
+    if db_error:
+        messages.error(request, f"Report PDF generation failed: {db_error}")
+        return redirect("panels:student_report")
+    pdf_bytes = generate_student_report_card_pdf(data)
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="edupredict_report_card.pdf"'
     return response
 
 

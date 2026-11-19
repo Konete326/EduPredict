@@ -61,42 +61,39 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 21 Profile, Organized Sidebar & UX Automation QA Team"
-active_branch_merged_to_main: "feature/profile-ux-automation -> main"
-project_phase: "Phase 21 Complete: My Profile (/profile/), Organized Sidebar, Topbar Deduplication, Universal Password Toggles, Admin Self-Lock & 1.2s Cancelable Auto-Upload"
+last_updated_by_agent: "Phase 22 Swarm Coordinator & PDF Reporting Team"
+active_branch_merged_to_main: "feature/pdf-report-cards -> main"
+project_phase: "Phase 22 Complete: PDF Report Cards & Academic Transcripts Export for Students and Teachers"
 
 completed_modules:
-  - "Phase 1-20: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Dynamic Thresholds, Live Theme & Appearance Studio, Per-Panel Theme Isolation & Smart Defaults."
-  - "Phase 21: Profile, Organized Sidebar, Password Toggles & Cancelable Auto-Upload:"
-      - "Added /profile/ (panels:user_profile) across all 4 roles: update_user_profile_data in core/theme_services.py (275 lines), user_profile_view in panels/views_theme.py (97 lines), panels/urls.py (29 lines), and templates/panels/user_profile.html (160 lines) with protected read-only role, optional Department/Batch/Phone/Bio, optional password update, and student_records full_name sync."
-      - "Added sync_theme_prefs_on_login in core/theme_services.py and wired in accounts/views.py (179 lines) + accounts/services.py (192 lines) to hydrate saved DB theme_prefs and merge guest PORTAL customization on login/register."
-      - "Organized templates/components/sidebar.html (196 lines) with Admin Core (admin) + Support & Logs (admin_ops), preserved teacher/student/analyst isolation, added collapsible Settings & Theme dropdown (My Profile, ADMIN-only Portal Settings, Theme & Colors) for every active role, and removed duplicate footer Theme Studio button."
-      - "Deduplicated templates/components/topbar.html (83 lines) by removing #theme-studio-open-btn and adding a My Profile pill; upgraded mobile card-lists in templates/components/data_table.html (134 lines) and sm:hidden Confusion Matrix cards in templates/panels/analyst_evaluation_section.html (201 lines); bumped ?v=8 in templates/base.html (176 lines) and templates/accounts/auth.html (330 lines)."
-      - "Added universal [data-password-toggle] Show/Hide eye buttons in static/js/app.js (341 lines), user_profile.html, and auth.html (#reg-confirm-password + guest PORTAL pre-paint hydration); enforced 1.2s cancelable auto-upload toast grace window in static/js/theme_studio.js (300 lines); added data-is-self='true' self-edit role lock in panels/admin_services.py (342 lines) and templates/panels/admin_users.html (169 lines)."
-      - "Updated .agents/prd.md, .agents/trd.md, .agents/design.md, .agents/project-rules.md, and .agents/rules/edupredict-rules.md (13,016 bytes < 24,000); expanded panels/tests.py (334 lines)."
+  - "Phase 1-21: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Dynamic Thresholds, Live Theme & Appearance Studio, Per-Panel Theme Isolation, My Profile, Password Toggles & 1.2s Auto-Upload."
+  - "Phase 22: PDF Report Cards & Academic Transcripts:"
+      - "Added panels/pdf_services.py (181 lines): ReportLab-powered generate_student_report_card_pdf and generate_teacher_roster_pdf with institution header, student metrics, subject comparisons, AI recommendations, and official sign-off block."
+      - "Updated panels/views_student.py (205 lines): Added student_report_pdf route returning application/pdf attachment edupredict_report_card.pdf."
+      - "Updated panels/views_teacher.py (205 lines): Added teacher_roster_pdf route returning application/pdf attachment edupredict_class_roster.pdf."
+      - "Updated panels/urls.py (29 lines): Registered student_report_pdf and teacher_roster_pdf routes."
+      - "Updated templates/panels/student_report.html and teacher_students.html with Download PDF / Export PDF buttons."
+      - "Added panels/test_pdf.py (271 lines): 14 new comprehensive unit tests covering PDF generation, content validation, RBAC security guards, and error resilience."
+      - "Updated requirements.txt with reportlab==5.1.0, pillow==13.0.0, charset-normalizer==3.5.2."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py test analytics panels --verbosity=2: 37/37 tests PASSED (19.112s); full manage.py test --verbosity=2: 37/37 PASSED (19.955s)."
-  - "node --check static/js/app.js, static/js/nav.js, static/js/charts.js, static/js/theme_studio.js: all exited 0."
-  - "Static audit (20 files): 0 comments, 0 triple-quotes, all files within line caps (views <= 250, others <= 350); .agents/rules/edupredict-rules.md (13,016 bytes < 24,000); .env and 8 .agents/* files tracked."
-  - "Live MongoDB Atlas Django Client() smoke checks: HTTP 200 on /auth/, /profile/ (GET & POST with role/is_active preservation + password hash check), /admin-panel/users/ (with data-is-self='true' & mobile cards), /teacher-panel/ingest/, /student-panel/, /analyst-panel/, and /theme/preferences/ (GET/POST/reset); verified Rule 20 sidebar isolation & zero duplicate theme buttons across all 4 roles."
+  - "manage.py test: 51/51 tests PASSED in 7.2s."
+  - "node --check: all JS scripts passed."
+  - "Zero comments audit: 0 comments across all modified and newly created files."
+  - "Line caps: All files strictly within limits (views <= 250, services <= 350)."
 
 active_routes_and_files:
-  - "core/theme_services.py (275 lines), panels/views_theme.py (97 lines), templates/panels/user_profile.html (160 lines), static/js/theme_studio.js (300 lines), static/js/app.js (341 lines)"
-  - "/profile/ -> panels:user_profile, /theme/preferences/ -> panels:theme_preferences"
-  - "/auth/ -> accounts:auth_view, /auth/logout/ -> accounts:logout_view"
-  - "/admin-panel/ -> panels:admin_dashboard, /admin-panel/users/ -> panels:admin_users, /admin-panel/courses/ -> panels:admin_courses, /admin-panel/tickets/ -> panels:admin_tickets, /admin-panel/logs/ -> panels:admin_logs, /admin-panel/settings/ -> panels:admin_settings, /admin-panel/backup/ -> panels:admin_backup_export"
-  - "/support/submit/ -> panels:submit_support_ticket, /notifications/mark-read/ -> panels:mark_notifications_read"
-  - "/teacher-panel/ -> panels:teacher_dashboard, /teacher-panel/students/ -> panels:teacher_students, /teacher-panel/ingest/ -> panels:teacher_ingest, /teacher-panel/alerts/ -> panels:teacher_alerts"
-  - "/student-panel/ -> panels:student_dashboard, /student-panel/report/ -> panels:student_report, /student-panel/report/download/ -> panels:student_report_download, /student-panel/tips/ -> panels:student_tips, /student-panel/notifications/ -> panels:student_notifications"
-  - "/analyst-panel/ -> panels:analyst_dashboard, /analyst-panel/accuracy/ -> panels:analyst_accuracy, /analyst-panel/upload/ -> analytics:upload_dataset, /analyst-panel/run-ml/ -> analytics:run_predictions, /analyst-panel/evaluation/ -> analytics:model_evaluation"
+  - "panels/pdf_services.py (181 lines), panels/views_student.py (205 lines), panels/views_teacher.py (205 lines), panels/test_pdf.py (271 lines)"
+  - "/student-panel/report/download-pdf/ -> panels:student_report_pdf"
+  - "/teacher-panel/students/export-pdf/ -> panels:teacher_roster_pdf"
 
 pending_modules_in_order:
-  - "Core Phases 1-21 complete; optional next phases: Live End-to-End Browser UAT, PDF Report Cards/Transcripts, and Production Deployment & CI/CD Polish."
+  - "Phase 23: Live End-to-End Browser UAT & MongoDB Atlas Integration Verification."
+  - "Phase 24: Production Deployment & CI/CD Pipeline Polish."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
-  - "Keep role navigation strictly isolated across all panels per Rule 20; preserve get_cached TTL keys, invalidate_cache on mutations, and scoped ep_theme_prefs:<user_id>:<role> isolation."
+  - "ReportLab 5.1 is pinned in requirements.txt. Keep PDF generators in panels/pdf_services.py."
   - "Always track .env and .agents/* in Git."
 ```

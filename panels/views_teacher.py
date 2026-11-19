@@ -8,6 +8,7 @@ from analytics.data_pipeline import REQUIRED_COLUMNS, ingest_dataset
 from analytics.ml_engine import run_prediction_pipeline
 from core.db import invalidate_cache
 from core.decorators import role_required
+from panels.pdf_services import generate_teacher_roster_pdf
 from panels.teacher_alert_services import get_teacher_alerts_context
 from panels.teacher_services import (
     delete_student_record,
@@ -130,6 +131,22 @@ def teacher_students(request):
         "student_rows": data["student_rows"],
         "db_error": db_error,
     })
+
+
+@role_required(["TEACHER", "ADMIN"])
+def teacher_roster_pdf(request):
+    batch_f = _param(request, "batch", "ALL") or "ALL"
+    course_f = _param(request, "course_code") or _param(request, "course") or "ALL"
+    status_f = _param(request, "status", "ALL") or "ALL"
+    try:
+        data = get_teacher_students_context(batch_f, course_f, status_f)
+    except Exception as exc:
+        messages.error(request, f"Roster PDF generation failed: {exc}")
+        return redirect("panels:teacher_students")
+    pdf_bytes = generate_teacher_roster_pdf(data)
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="edupredict_class_roster.pdf"'
+    return response
 
 
 @role_required(["TEACHER", "ADMIN"])
