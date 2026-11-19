@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.shortcuts import redirect, render
+from django.views.decorators.debug import sensitive_post_parameters
 from accounts.services import (
     VALID_ROLES,
     authenticate_user,
@@ -142,6 +143,7 @@ def _handle_register(request):
     return redirect(get_dashboard_route(session_user["role"]))
 
 
+@sensitive_post_parameters("password", "confirm_password")
 def auth_view(request):
     user = request.session.get("user")
     if request.method == "GET" and isinstance(user, dict):
