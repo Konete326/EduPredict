@@ -267,6 +267,25 @@ class StaticFilesAndProductionConfigTests(TestCase):
         self.assertIn("[PASS] Step 1: Health & System Diagnostics", result)
         self.assertEqual(mock_client.get.call_count, 2)
 
+    def test_robots_txt_endpoint_renders_and_disallows_private_panels(self):
+        resp = self.client.get("/robots.txt")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("text/plain", resp["Content-Type"])
+        content = resp.content.decode("utf-8")
+        self.assertIn("User-agent: *", content)
+        self.assertIn("Disallow: /admin-panel/", content)
+        self.assertIn("Disallow: /teacher-panel/", content)
+        self.assertIn("Disallow: /student-panel/", content)
+        self.assertIn("Disallow: /analyst-panel/", content)
+        self.assertIn("Allow: /auth/", content)
+        self.assertIn("Allow: /health/", content)
+
+    def test_session_timeout_settings_present(self):
+        from django.conf import settings
+        self.assertTrue(hasattr(settings, "SESSION_COOKIE_AGE"))
+        self.assertEqual(settings.SESSION_COOKIE_AGE, 86400)
+        self.assertTrue(settings.SESSION_SAVE_EVERY_REQUEST)
+
 
 class ProductionDocumentationTests(TestCase):
     def test_readme_exists_and_not_empty(self):

@@ -1,5 +1,5 @@
 import time
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from core.decorators import rate_limit
 from core.db import (
     _MEMORY_CACHE,
@@ -83,3 +83,18 @@ def health_check(request):
         },
         status=200,
     )
+
+
+def robots_txt(request):
+    lines = [
+        "User-agent: *",
+        "Disallow: /admin/",
+        "Disallow: /admin-panel/",
+        "Disallow: /teacher-panel/",
+        "Disallow: /student-panel/",
+        "Disallow: /analyst-panel/",
+        "Allow: /auth/",
+        "Allow: /health/",
+        "Allow: /$",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain; charset=utf-8")
