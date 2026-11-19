@@ -135,5 +135,7 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'True').strip().lower() in ('true', '1', 'yes')
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     USE_X_FORWARDED_HOST = True
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
     if os.getenv('SECURE_SSL_REDIRECT', 'False').strip().lower() in ('true', '1', 'yes'):
         SECURE_SSL_REDIRECT = True

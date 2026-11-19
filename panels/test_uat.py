@@ -116,6 +116,8 @@ class StaticFilesAndProductionConfigTests(TestCase):
             self.assertTrue(prod_settings.CSRF_COOKIE_SECURE)
             self.assertEqual(prod_settings.SECURE_PROXY_SSL_HEADER, ("HTTP_X_FORWARDED_PROTO", "https"))
             self.assertTrue(prod_settings.USE_X_FORWARDED_HOST)
+            self.assertEqual(prod_settings.SECURE_REFERRER_POLICY, "strict-origin-when-cross-origin")
+            self.assertEqual(prod_settings.SECURE_CROSS_ORIGIN_OPENER_POLICY, "same-origin-allow-popups")
         importlib.reload(cfg_settings)
 
     def test_docker_and_compose_files_exist_and_clean(self):
