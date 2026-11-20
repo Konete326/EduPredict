@@ -61,9 +61,9 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Documentation & Operations Team"
-active_branch_merged_to_main: "feature/rate-limit-docs-note -> main"
-project_phase: "Phase 56 Complete: Rate Limit Per-Worker Documentation Note"
+last_updated_by_agent: "EduPredict Documentation Accuracy Team"
+active_branch_merged_to_main: "feature/readme-health-sample-sync -> main"
+project_phase: "Phase 57 Complete: README Health Sample Sync"
 
 completed_modules:
   - "Phase 1-25: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/, Ocean Blue Default, Cloudinary Avatars, Change Password Modal, Global Loading Lock, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Typewriter Page Guide Wizard Modal, Card-Grid User/Student/Teacher Directories, Modalized Upload/Quick Entry, Dot-Graph KPI Cards, Stepper Signup Wizard, Teacher Approval Guard & Official Student PDF Transcript."
@@ -76,6 +76,7 @@ completed_modules:
   - "Phase 54: Ops Tests Split: created core/test_ops.py (111 lines) with OperationsToolingTests (backup, rate-limit, cgroup tests moved); panels/tests.py now 345 lines, panels/test_uat.py now 332 lines; still 97/97 tests PASS, UAT 7/7."
   - "Phase 55: verify_backup Command: core/management/commands/verify_backup.py (39 lines) validates a backup against its .sha256 sidecar (match, mismatch, missing file/manifest, malformed manifest raise CommandError); core/test_ops.py (125 lines) adds coverage (98/98 tests PASS, UAT 7/7)."
   - "Phase 56: Rate Limit Docs: README.md (236 lines) adds Rate Limiting (Per-Worker Limits) section with X-RateLimit headers and workers x max_requests caveat, verify_backup usage, test count 98; panels/test_uat.py (339 lines) adds README docs test (99/99 tests PASS, UAT 7/7)."
+  - "Phase 57: README Health Sample Sync: README.md /health/ sample now matches live response (collections, cache.entries/status, memory with rss_mb and container fields, 30s count cache and ?fresh=1 note); panels/test_uat.py (350 lines) adds sample-vs-live key test (100/100 tests PASS, UAT 7/7)."
 
 verification_results:
   - "manage.py check: 0 issues reported (exit 0)."

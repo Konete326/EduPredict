@@ -171,11 +171,28 @@ Sample JSON Response:
     "notifications": 45,
     "support_tickets": 8
   },
+  "collections": {
+    "users": 28,
+    "student_records": 150,
+    "predictions": 150,
+    "courses": 12,
+    "notifications": 45,
+    "support_tickets": 8
+  },
   "cache": {
-    "keys_in_memory": 14
+    "entries": 14,
+    "status": "active"
+  },
+  "memory": {
+    "status": "healthy",
+    "cache_entries": 14,
+    "rss_mb": 142.5,
+    "container_limit_mb": 512.0,
+    "container_usage_pct": 27.83
   }
 }
 ```
+Collection counts are cached for 30 seconds; append `?fresh=1` to force a live refresh. `container_limit_mb` and `container_usage_pct` appear only when a Linux cgroup memory limit is set. On failure the endpoint returns HTTP 503 with `"status": "unhealthy"`.
 
 ### 2. MongoDB Atlas Connection Pooling Configuration
 Tunable via environment variables:

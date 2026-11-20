@@ -337,3 +337,14 @@ class ProductionDocumentationTests(TestCase):
         self.assertIn("x-ratelimit-remaining", text)
         self.assertIn("verify_backup", text)
         self.assertIn("workers x max_requests", text)
+
+    def test_readme_health_sample_matches_live_response_keys(self):
+        resp = self.client.get("/health/")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        for key in ("status", "database", "latency_ms", "counts", "collections", "cache", "memory"):
+            self.assertIn(f'"{key}"', self.content)
+            self.assertIn(key, data)
+        for key in ("entries", "rss_mb", "cache_entries"):
+            self.assertIn(f'"{key}"', self.content)
+        self.assertNotIn("keys_in_memory", self.content)
