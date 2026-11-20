@@ -190,36 +190,6 @@ class StaticFilesAndProductionConfigTests(TestCase):
         self.assertEqual(resp.status_code, 500)
         self.assertIn(b"Error 500", resp.content)
 
-    def test_export_backup_management_command_execution(self):
-        import json
-        import tempfile
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            out_path = call_command("export_backup", format="json", output_dir=tmp_dir, filename="snap.json")
-            target = Path(out_path)
-            self.assertTrue(target.exists())
-            self.assertEqual(target.name, "snap.json")
-            parsed = json.loads(target.read_text(encoding="utf-8"))
-            self.assertIn("exported_at", parsed)
-            self.assertIn("collections", parsed)
-            self.assertIn("users", parsed["collections"])
-
-            out_csv = call_command("export_backup", format="csv", output_dir=tmp_dir, filename="snap.csv", quiet=True)
-            target_csv = Path(out_csv)
-            self.assertTrue(target_csv.exists())
-            self.assertGreater(target_csv.stat().st_size, 0)
-            self.assertEqual(len(list(Path(tmp_dir).glob("*.tmp*"))), 0)
-
-    def test_export_backup_command_invalid_format_raises_error(self):
-        with self.assertRaises(CommandError):
-            call_command("export_backup", format="invalid_format")
-
-    @patch("core.management.commands.export_backup.shutil.disk_usage")
-    def test_export_backup_insufficient_disk_space_raises_error(self, mock_disk_usage):
-        import tempfile
-        mock_disk_usage.return_value = MagicMock(total=1000000, used=999000, free=1024)
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            with self.assertRaisesMessage(CommandError, "Insufficient disk space"):
-                call_command("export_backup", format="json", output_dir=tmp_dir, quiet=True)
 
     @patch("sentry_sdk.init")
     def test_sentry_sdk_conditional_initialization_block(self, mock_sentry_init):
@@ -257,43 +227,6 @@ class StaticFilesAndProductionConfigTests(TestCase):
         self.assertEqual(processed["request"]["headers"]["Cookie"], "[FILTERED]")
         self.assertEqual(processed["tags"]["infrastructure"], "mongodb")
 
-    def test_export_backup_retention_days_purges_old_backups(self):
-        import os
-        import tempfile
-        import time
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            old_backup = Path(tmp_dir) / "edupredict_backup_old.json"
-            old_backup.write_text("{}", encoding="utf-8")
-            old_ts = time.time() - (45 * 86400)
-            os.utime(str(old_backup), (old_ts, old_ts))
-            self.assertTrue(old_backup.exists())
-
-            call_command("export_backup", format="json", output_dir=tmp_dir, retention_days=30, quiet=True)
-            self.assertFalse(old_backup.exists())
-
-    def test_rate_limit_decorator_blocks_burst_traffic(self):
-        from django.test import RequestFactory
-        from core.decorators import _clear_rate_limit_buckets, rate_limit
-        _clear_rate_limit_buckets()
-        rf = RequestFactory()
-
-        @rate_limit(max_requests=2, window_seconds=60)
-        def sample_view(request):
-            from django.http import JsonResponse
-            return JsonResponse({"ok": True})
-
-        req1 = rf.get("/test/", HTTP_ACCEPT="application/json")
-        req2 = rf.get("/test/", HTTP_ACCEPT="application/json")
-        req3 = rf.get("/test/", HTTP_ACCEPT="application/json")
-
-        self.assertEqual(sample_view(req1).status_code, 200)
-        self.assertEqual(sample_view(req2).status_code, 200)
-        resp3 = sample_view(req3)
-        self.assertEqual(resp3.status_code, 429)
-        self.assertIn("Retry-After", resp3)
-        self.assertTrue(int(resp3["Retry-After"]) >= 1)
-        self.assertIn(b"retry_after_seconds", resp3.content)
-        _clear_rate_limit_buckets()
 
     def test_whitenoise_cache_control_settings_present(self):
         from django.conf import settings

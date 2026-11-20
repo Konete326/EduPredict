@@ -61,9 +61,9 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict API Hardening Team"
-active_branch_merged_to_main: "feature/rate-limit-remaining-headers -> main"
-project_phase: "Phase 53 Complete: Rate Limit Remaining Headers"
+last_updated_by_agent: "EduPredict Test Architecture Team"
+active_branch_merged_to_main: "feature/ops-tests-split -> main"
+project_phase: "Phase 54 Complete: Ops Tests Split Into core/test_ops.py"
 
 completed_modules:
   - "Phase 1-25: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/, Ocean Blue Default, Cloudinary Avatars, Change Password Modal, Global Loading Lock, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Typewriter Page Guide Wizard Modal, Card-Grid User/Student/Teacher Directories, Modalized Upload/Quick Entry, Dot-Graph KPI Cards, Stepper Signup Wizard, Teacher Approval Guard & Official Student PDF Transcript."
@@ -73,6 +73,7 @@ completed_modules:
       - "Updated panels/tests.py (359 lines, 0 comments): Added test_health_cgroup_container_memory_telemetry verifying cgroups v2 numeric parsing, container_usage_pct calculation, and 'max' unlimited handling (95/95 tests PASS)."
   - "Phase 52: Backup CLI SHA-256 Integrity Checksum Manifest: export_backup.py (127 lines) writes <backup>.sha256 sidecar (hash + filename) after atomic write and prints digest; panels/tests.py (371 lines) adds test_export_backup_writes_sha256_checksum_manifest (96/96 tests PASS, UAT 7/7)."
   - "Phase 53: Rate Limit Remaining Headers: core/decorators.py (152 lines) adds X-RateLimit-Limit and X-RateLimit-Remaining to success and 429 responses; panels/tests.py (389 lines) adds header test (97/97 tests PASS, UAT 7/7)."
+  - "Phase 54: Ops Tests Split: created core/test_ops.py (111 lines) with OperationsToolingTests (backup, rate-limit, cgroup tests moved); panels/tests.py now 345 lines, panels/test_uat.py now 332 lines; still 97/97 tests PASS, UAT 7/7."
 
 verification_results:
   - "manage.py check: 0 issues reported (exit 0)."
