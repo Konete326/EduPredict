@@ -344,6 +344,18 @@ class ThemePreferencesTests(TestCase):
         self.assertEqual((synced_keep["TEACHER"]["mode"], synced_keep["TEACHER"]["accent"]), ("light", "emerald"))
         mock_users_col.return_value.update_one.assert_not_called()
 
+    def test_export_backup_writes_sha256_checksum_manifest(self):
+        import hashlib
+        import tempfile
+        from pathlib import Path
+        from django.core.management import call_command
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            out_path = Path(call_command("export_backup", format="json", output_dir=tmp_dir, filename="snap.json", quiet=True))
+            manifest = Path(tmp_dir) / "snap.json.sha256"
+            self.assertTrue(manifest.exists())
+            expected = hashlib.sha256(out_path.read_bytes()).hexdigest()
+            self.assertEqual(manifest.read_text(encoding="utf-8").strip(), f"{expected}  snap.json")
+
     def test_health_cgroup_container_memory_telemetry(self):
         from unittest.mock import mock_open
         from core.views_health import _build_memory_payload, _get_cgroup_memory_limit_mb

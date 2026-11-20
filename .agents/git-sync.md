@@ -61,9 +61,9 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Production Observability & Container Telemetry Team"
-active_branch_merged_to_main: "feature/cgroup-memory-telemetry -> main"
-project_phase: "Phase 51 Complete: Linux Cgroup Container Memory Limit Telemetry"
+last_updated_by_agent: "EduPredict Production Backup Integrity Team"
+active_branch_merged_to_main: "feature/backup-sha256-manifest -> main"
+project_phase: "Phase 52 Complete: Backup CLI SHA-256 Integrity Checksum Manifest"
 
 completed_modules:
   - "Phase 1-25: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/, Ocean Blue Default, Cloudinary Avatars, Change Password Modal, Global Loading Lock, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Typewriter Page Guide Wizard Modal, Card-Grid User/Student/Teacher Directories, Modalized Upload/Quick Entry, Dot-Graph KPI Cards, Stepper Signup Wizard, Teacher Approval Guard & Official Student PDF Transcript."
@@ -71,6 +71,7 @@ completed_modules:
   - "Phase 51: Linux Cgroup Container Memory Limit Telemetry:"
       - "Updated core/views_health.py (226 lines, 0 comments): Added _get_cgroup_memory_limit_mb() inspecting cgroups v2 (/sys/fs/cgroup/memory.max) and cgroups v1 (/sys/fs/cgroup/memory/memory.limit_in_bytes) while ignoring unlimited/max thresholds; updated _build_memory_payload() to report container_limit_mb and container_usage_pct alongside rss_mb."
       - "Updated panels/tests.py (359 lines, 0 comments): Added test_health_cgroup_container_memory_telemetry verifying cgroups v2 numeric parsing, container_usage_pct calculation, and 'max' unlimited handling (95/95 tests PASS)."
+  - "Phase 52: Backup CLI SHA-256 Integrity Checksum Manifest: export_backup.py (127 lines) writes <backup>.sha256 sidecar (hash + filename) after atomic write and prints digest; panels/tests.py (371 lines) adds test_export_backup_writes_sha256_checksum_manifest (96/96 tests PASS, UAT 7/7)."
 
 verification_results:
   - "manage.py check: 0 issues reported (exit 0)."

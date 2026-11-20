@@ -1,3 +1,4 @@
+import hashlib
 import shutil
 import time
 from pathlib import Path
@@ -90,6 +91,13 @@ class Command(BaseCommand):
                 raise
             raise CommandError(f"Failed to write backup to {output_dir}: {exc}") from exc
 
+        digest = hashlib.sha256(target_path.read_bytes()).hexdigest()
+        checksum_path = output_dir / f"{target_name}.sha256"
+        try:
+            checksum_path.write_text(f"{digest}  {target_name}\n", encoding="utf-8")
+        except OSError as exc:
+            raise CommandError(f"Failed to write checksum manifest {checksum_path}: {exc}") from exc
+
         if not quiet:
             byte_size = target_path.stat().st_size
             self.stdout.write(
@@ -97,6 +105,7 @@ class Command(BaseCommand):
                     f"Successfully generated {fmt.upper()} backup ({byte_size} bytes): {target_path.resolve()}"
                 )
             )
+            self.stdout.write(self.style.SUCCESS(f"SHA-256: {digest} ({checksum_path.name})"))
 
         purged_count = 0
         if retention_days > 0 and output_dir.exists():
