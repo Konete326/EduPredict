@@ -61,9 +61,9 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Test Architecture Team"
-active_branch_merged_to_main: "feature/ops-tests-split -> main"
-project_phase: "Phase 54 Complete: Ops Tests Split Into core/test_ops.py"
+last_updated_by_agent: "EduPredict Backup Integrity Team"
+active_branch_merged_to_main: "feature/verify-backup-command -> main"
+project_phase: "Phase 55 Complete: verify_backup Management Command"
 
 completed_modules:
   - "Phase 1-25: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/, Ocean Blue Default, Cloudinary Avatars, Change Password Modal, Global Loading Lock, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Typewriter Page Guide Wizard Modal, Card-Grid User/Student/Teacher Directories, Modalized Upload/Quick Entry, Dot-Graph KPI Cards, Stepper Signup Wizard, Teacher Approval Guard & Official Student PDF Transcript."
@@ -74,6 +74,7 @@ completed_modules:
   - "Phase 52: Backup CLI SHA-256 Integrity Checksum Manifest: export_backup.py (127 lines) writes <backup>.sha256 sidecar (hash + filename) after atomic write and prints digest; panels/tests.py (371 lines) adds test_export_backup_writes_sha256_checksum_manifest (96/96 tests PASS, UAT 7/7)."
   - "Phase 53: Rate Limit Remaining Headers: core/decorators.py (152 lines) adds X-RateLimit-Limit and X-RateLimit-Remaining to success and 429 responses; panels/tests.py (389 lines) adds header test (97/97 tests PASS, UAT 7/7)."
   - "Phase 54: Ops Tests Split: created core/test_ops.py (111 lines) with OperationsToolingTests (backup, rate-limit, cgroup tests moved); panels/tests.py now 345 lines, panels/test_uat.py now 332 lines; still 97/97 tests PASS, UAT 7/7."
+  - "Phase 55: verify_backup Command: core/management/commands/verify_backup.py (39 lines) validates a backup against its .sha256 sidecar (match, mismatch, missing file/manifest, malformed manifest raise CommandError); core/test_ops.py (125 lines) adds coverage (98/98 tests PASS, UAT 7/7)."
 
 verification_results:
   - "manage.py check: 0 issues reported (exit 0)."

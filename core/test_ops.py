@@ -98,6 +98,20 @@ class OperationsToolingTests(TestCase):
             expected = hashlib.sha256(out_path.read_bytes()).hexdigest()
             self.assertEqual(manifest.read_text(encoding="utf-8").strip(), f"{expected}  snap.json")
 
+    def test_verify_backup_command_detects_match_tamper_and_missing_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            out_path = Path(call_command("export_backup", format="json", output_dir=tmp_dir, filename="snap.json", quiet=True))
+            digest = call_command("verify_backup", str(out_path), quiet=True)
+            self.assertEqual(len(digest), 64)
+            out_path.write_text(out_path.read_text(encoding="utf-8") + " ", encoding="utf-8")
+            with self.assertRaisesMessage(CommandError, "Checksum mismatch"):
+                call_command("verify_backup", str(out_path), quiet=True)
+            (Path(tmp_dir) / "snap.json.sha256").unlink()
+            with self.assertRaisesMessage(CommandError, "Checksum manifest not found"):
+                call_command("verify_backup", str(out_path), quiet=True)
+            with self.assertRaisesMessage(CommandError, "Backup file not found"):
+                call_command("verify_backup", str(Path(tmp_dir) / "missing.json"), quiet=True)
+
     def test_health_cgroup_container_memory_telemetry(self):
         with patch("core.views_health.os.path.exists", side_effect=lambda p: p == "/sys/fs/cgroup/memory.max"):
             with patch("builtins.open", mock_open(read_data="536870912\n")):
