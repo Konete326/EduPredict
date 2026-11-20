@@ -233,3 +233,43 @@ th[data-sortable][data-sort-dir="desc"]::after { content: " \2193"; font-size: 0
   padding: 0.125rem 0.45rem; font-size: 10px; font-weight: 600; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); transition: opacity 0.15s ease; z-index: 10;
 }
 .ep-dot-tooltip.is-visible { opacity: 1; }
+.ep-step-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: 1.5px solid var(--border-subtle);
+  background: var(--bg-canvas);
+  color: var(--text-muted);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+}
+.ep-step-indicator[data-state="current"] {
+  border-color: var(--accent-primary);
+  background: var(--accent-soft);
+  color: var(--accent-primary);
+}
+.ep-step-indicator[data-state="complete"] {
+  border-color: var(--accent-primary);
+  background: var(--accent-primary);
+  color: var(--bg-surface);
+}
+.ep-step-indicator[data-state="upcoming"] {
+  border-color: var(--border-subtle);
+  background: var(--bg-canvas);
+  color: var(--text-muted);
+}
+.ep-step-line {
+  height: 2px;
+  flex: 1 1 0%;
+  border-radius: 9999px;
+  background: var(--border-subtle);
+  transition: background-color 0.2s ease;
+}
+.ep-step-line[data-complete="true"] {
+  background: var(--accent-primary);
+}

@@ -48,7 +48,7 @@
     };
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=11">
+  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=12">
 </head>
 <body class="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased">
   <div class="min-h-screen grid grid-cols-1 lg:grid-cols-12">
@@ -182,68 +182,116 @@
             </div>
           </form>
 
-          <form id="panel-register" method="post" action="{% url 'accounts:auth_view' %}" class="space-y-3.5 {% if current_tab != 'register' %}hidden{% endif %}">
+          <form id="panel-register" method="post" action="{% url 'accounts:auth_view' %}" data-auth-stepper class="space-y-4 {% if current_tab != 'register' %}hidden{% endif %}">
             {% csrf_token %}
             <input type="hidden" name="action" value="register">
-            <div class="space-y-1">
-              <label for="reg-full-name" class="block text-xs font-medium text-[var(--text-secondary)]">Full Name</label>
-              <input id="reg-full-name" name="full_name" type="text" required value="{{ register_data.full_name|default:'' }}" placeholder="Ayesha Khan" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-            </div>
-            <div class="space-y-1">
-              <label for="reg-email" class="block text-xs font-medium text-[var(--text-secondary)]">Email Address</label>
-              <input id="reg-email" name="email" type="email" required value="{{ register_data.email|default:'' }}" placeholder="ayesha@edupredict.edu" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-            </div>
-            <div class="space-y-1">
-              <label for="reg-role" class="block text-xs font-medium text-[var(--text-secondary)]">Role</label>
-              {% with selected_role=register_data.role|default:"STUDENT"|upper %}
-              <select id="reg-role" name="role" required class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
-                <option value="STUDENT" {% if selected_role == 'STUDENT' %}selected{% endif %}>Student</option>
-                <option value="TEACHER" {% if selected_role == 'TEACHER' %}selected{% endif %}>Teacher</option>
-                <option value="ANALYST" {% if selected_role == 'ANALYST' %}selected{% endif %}>Data Analyst</option>
-                <option value="ADMIN" {% if selected_role == 'ADMIN' %}selected{% endif %}>Administrator</option>
-              </select>
-              {% endwith %}
-            </div>
-            <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            <nav aria-label="Registration steps" class="flex items-center gap-2 pb-1">
+              <button type="button" data-step-trigger="0" aria-current="step" class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-primary)] shrink-0">
+                <span class="ep-step-indicator" data-state="current">1</span>
+                <span>1. Account</span>
+              </button>
+              <div class="ep-step-line" data-complete="false"></div>
+              <button type="button" data-step-trigger="1" class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-secondary)] shrink-0">
+                <span class="ep-step-indicator" data-state="upcoming">2</span>
+                <span>2. Profile</span>
+              </button>
+              <div class="ep-step-line" data-complete="false"></div>
+              <button type="button" data-step-trigger="2" class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-secondary)] shrink-0">
+                <span class="ep-step-indicator" data-state="upcoming">3</span>
+                <span>3. Security</span>
+              </button>
+            </nav>
+
+            <div data-wizard-step="0" class="space-y-3">
               <div class="space-y-1">
-                <label for="reg-department" class="block text-xs font-medium text-[var(--text-secondary)]">Department</label>
-                <input id="reg-department" name="department" type="text" required value="{{ register_data.department|default:'' }}" placeholder="Computer Science" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+                <label for="reg-full-name" class="block text-xs font-medium text-[var(--text-secondary)]">Full Name</label>
+                <input id="reg-full-name" name="full_name" type="text" required value="{{ register_data.full_name|default:'' }}" placeholder="Ayesha Khan" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
               </div>
               <div class="space-y-1">
-                <label for="reg-batch" class="block text-xs font-medium text-[var(--text-secondary)]">Batch / Term</label>
-                <input id="reg-batch" name="batch" type="text" required value="{{ register_data.batch|default:'' }}" placeholder="2026-A" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+                <label for="reg-email" class="block text-xs font-medium text-[var(--text-secondary)]">Email Address</label>
+                <input id="reg-email" name="email" type="email" required value="{{ register_data.email|default:'' }}" placeholder="ayesha@edupredict.edu" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+              </div>
+              <div class="space-y-1">
+                <label for="reg-role" class="block text-xs font-medium text-[var(--text-secondary)]">Role</label>
+                {% with selected_role=register_data.role|default:"STUDENT"|upper %}
+                <select id="reg-role" name="role" required class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+                  <option value="STUDENT" {% if selected_role == 'STUDENT' %}selected{% endif %}>Student</option>
+                  <option value="TEACHER" {% if selected_role == 'TEACHER' %}selected{% endif %}>Teacher</option>
+                  <option value="ANALYST" {% if selected_role == 'ANALYST' %}selected{% endif %}>Data Analyst</option>
+                </select>
+                {% endwith %}
+              </div>
+              <div id="teacher-approval-notice" class="hidden rounded-lg border border-[var(--status-warning)] bg-[var(--bg-elevated)] px-3 py-2 text-[11px] text-[var(--text-secondary)]">
+                <i class="fa-solid fa-circle-info mr-1 text-[var(--status-warning)]"></i>
+                <span>Teacher accounts require Admin approval before first sign-in.</span>
               </div>
             </div>
-            <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+
+            <div data-wizard-step="1" class="hidden space-y-3">
+              <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                <div class="space-y-1">
+                  <label for="reg-department" class="block text-xs font-medium text-[var(--text-secondary)]">Department</label>
+                  <input id="reg-department" name="department" type="text" required value="{{ register_data.department|default:'' }}" placeholder="Computer Science" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+                </div>
+                <div class="space-y-1">
+                  <label for="reg-batch" class="block text-xs font-medium text-[var(--text-secondary)]">Batch / Term</label>
+                  <input id="reg-batch" name="batch" type="text" required value="{{ register_data.batch|default:'' }}" placeholder="2026-A" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+                </div>
+              </div>
               <div class="space-y-1">
-                <label for="reg-password" class="block text-xs font-medium text-[var(--text-secondary)]">Password</label>
-                <div class="relative">
-                  <input id="reg-password" name="password" type="password" minlength="6" required placeholder="Min 6 chars" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] py-1.5 pl-3 pr-20 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-                  <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 gap-2">
-                    <span id="reg-caps-warn" title="Caps Lock is ON" class="hidden inline-flex items-center gap-0.5 rounded bg-[var(--status-warning)]/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[var(--status-warning)]">
-                      <i class="fa-solid fa-arrow-up text-[9px]"></i>
-                      <span>Caps</span>
-                    </span>
-                    <button type="button" onclick="togglePasswordVisibility('reg-password', this)" aria-label="Toggle password visibility" class="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-                      <i class="fa-regular fa-eye text-xs"></i>
+                <label for="reg-phone" class="block text-xs font-medium text-[var(--text-secondary)]">Phone (Optional)</label>
+                <input id="reg-phone" name="phone" type="tel" value="{{ register_data.phone|default:'' }}" placeholder="+92 300 0000000" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+              </div>
+              <div class="space-y-1">
+                <label for="reg-bio" class="block text-xs font-medium text-[var(--text-secondary)]">Bio (Optional)</label>
+                <textarea id="reg-bio" name="bio" rows="2" placeholder="Short academic note or focus area" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">{{ register_data.bio|default:'' }}</textarea>
+              </div>
+            </div>
+
+            <div data-wizard-step="2" class="hidden space-y-3">
+              <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                <div class="space-y-1">
+                  <label for="reg-password" class="block text-xs font-medium text-[var(--text-secondary)]">Password</label>
+                  <div class="relative">
+                    <input id="reg-password" name="password" type="password" minlength="6" required placeholder="Min 6 chars" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] py-1.5 pl-3 pr-20 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 gap-2">
+                      <span id="reg-caps-warn" title="Caps Lock is ON" class="hidden inline-flex items-center gap-0.5 rounded bg-[var(--status-warning)]/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[var(--status-warning)]">
+                        <i class="fa-solid fa-arrow-up text-[9px]"></i>
+                        <span>Caps</span>
+                      </span>
+                      <button type="button" onclick="togglePasswordVisibility('reg-password', this)" aria-label="Toggle password visibility" class="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                        <i class="fa-regular fa-eye text-xs"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="space-y-1">
+                  <label for="reg-confirm-password" class="block text-xs font-medium text-[var(--text-secondary)]">Confirm</label>
+                  <div class="relative">
+                    <input id="reg-confirm-password" name="confirm_password" type="password" minlength="6" required placeholder="Repeat password" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] py-1.5 pl-3 pr-9 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+                    <button type="button" onclick="togglePasswordVisibility('reg-confirm-password', this)" aria-label="Toggle password visibility" class="absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                      <i class="fa-regular fa-eye text-xs" aria-hidden="true"></i>
                     </button>
                   </div>
                 </div>
               </div>
-              <div class="space-y-1">
-                <label for="reg-confirm-password" class="block text-xs font-medium text-[var(--text-secondary)]">Confirm</label>
-                <div class="relative">
-                  <input id="reg-confirm-password" name="confirm_password" type="password" minlength="6" required placeholder="Repeat password" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] py-1.5 pl-3 pr-9 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-                  <button type="button" onclick="togglePasswordVisibility('reg-confirm-password', this)" aria-label="Toggle password visibility" class="absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-                    <i class="fa-regular fa-eye text-xs" aria-hidden="true"></i>
-                  </button>
-                </div>
-              </div>
+              <div id="wizard-review-summary" class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3"></div>
             </div>
-            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
-              <i class="fa-solid fa-user-plus text-xs"></i>
-              <span>Create Account</span>
-            </button>
+
+            <div class="flex items-center justify-between gap-2 pt-1">
+              <button type="button" data-wizard-prev class="hidden inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                <span>Back</span>
+              </button>
+              <button type="button" data-wizard-next class="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
+                <span>Continue</span>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </button>
+              <button type="submit" data-wizard-submit class="hidden ml-auto inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
+                <i class="fa-solid fa-user-plus text-xs"></i>
+                <span>Create Account</span>
+              </button>
+            </div>
           </form>
         </div>
         {% endwith %}
@@ -258,74 +306,8 @@
   {% include 'components/toast.html' %}
   {{ theme_prefs|json_script:"ep-theme-prefs-data" }}
   {{ theme_catalog|json_script:"ep-theme-catalog-data" }}
-  <script src="{% static 'js/app.js' %}?v=11"></script>
-  <script src="{% static 'js/theme_studio.js' %}?v=11"></script>
-  <script>
-    function switchAuthTab(tab) {
-      const isRegister = tab === 'register';
-      const loginPanel = document.getElementById('panel-login');
-      const registerPanel = document.getElementById('panel-register');
-      const loginBtn = document.getElementById('tab-login-btn');
-      const registerBtn = document.getElementById('tab-register-btn');
-      const activeCls = ['bg-[var(--bg-surface)]', 'text-[var(--accent-primary)]', 'shadow-sm', 'border-[var(--border-subtle)]'];
-      const inactiveCls = ['text-[var(--text-secondary)]', 'border-transparent'];
-
-      if (loginPanel) loginPanel.classList.toggle('hidden', isRegister);
-      if (registerPanel) registerPanel.classList.toggle('hidden', !isRegister);
-      if (loginBtn) {
-        loginBtn.setAttribute('aria-selected', String(!isRegister));
-        activeCls.forEach(function (c) { loginBtn.classList.toggle(c, !isRegister); });
-        inactiveCls.forEach(function (c) { loginBtn.classList.toggle(c, isRegister); });
-      }
-      if (registerBtn) {
-        registerBtn.setAttribute('aria-selected', String(isRegister));
-        activeCls.forEach(function (c) { registerBtn.classList.toggle(c, isRegister); });
-        inactiveCls.forEach(function (c) { registerBtn.classList.toggle(c, !isRegister); });
-      }
-    }
-
-    function togglePasswordVisibility(inputId, btn) {
-      const input = document.getElementById(inputId);
-      if (!input) return;
-      const show = input.type === 'password';
-      input.type = show ? 'text' : 'password';
-      const icon = btn ? btn.querySelector('i') : null;
-      if (icon) {
-        icon.classList.toggle('fa-eye', !show);
-        icon.classList.toggle('fa-eye-slash', show);
-      }
-    }
-
-    function fillDefaultAdmin() {
-      switchAuthTab('login');
-      const emailEl = document.getElementById('login-email');
-      const passEl = document.getElementById('login-password');
-      if (emailEl) emailEl.value = 'admin@gmail.com';
-      if (passEl) passEl.value = 'admin123';
-      if (typeof showToast === 'function') {
-        showToast('Default admin credentials filled.', 'info');
-      }
-    }
-
-    function initCapsLockListeners() {
-      function bindCaps(inputId, warnId) {
-        const inp = document.getElementById(inputId);
-        const wrn = document.getElementById(warnId);
-        if (!inp || !wrn) return;
-        function update(e) {
-          if (typeof e.getModifierState === 'function') {
-            wrn.classList.toggle('hidden', !e.getModifierState('CapsLock'));
-          }
-        }
-        inp.addEventListener('keyup', update);
-        inp.addEventListener('keydown', update);
-        inp.addEventListener('blur', function () { wrn.classList.add('hidden'); });
-      }
-      bindCaps('login-password', 'login-caps-warn');
-      bindCaps('reg-password', 'reg-caps-warn');
-    }
-    document.addEventListener('DOMContentLoaded', initCapsLockListeners);
-    initCapsLockListeners();
-  </script>
+  <script src="{% static 'js/app.js' %}?v=12"></script>
+  <script src="{% static 'js/theme_studio.js' %}?v=12"></script>
+  <script src="{% static 'js/auth_wizard.js' %}?v=12"></script>
 </body>
 </html>

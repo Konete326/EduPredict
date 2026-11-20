@@ -18,11 +18,11 @@
       <i class="fa-solid fa-print text-[var(--accent-primary)]"></i>
       <span>Print</span>
     </button>
-    <a href="{% url 'panels:student_report_pdf' %}" title="Download report card as PDF" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+    <a href="{% url 'panels:student_report_pdf' %}" data-no-loading="true" title="Download report card as PDF" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
       <i class="fa-solid fa-file-pdf text-xs"></i>
-      <span>Download PDF</span>
+      <span>Download PDF Transcript</span>
     </a>
-    <a href="{% url 'panels:student_report_download' %}" title="Download report card as CSV" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs sm:text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+    <a href="{% url 'panels:student_report_download' %}" data-no-loading="true" title="Download report card as CSV" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs sm:text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
       <i class="fa-solid fa-download text-xs"></i>
       <span>Download CSV</span>
     </a>

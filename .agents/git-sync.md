@@ -61,33 +61,32 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 24 Card-Grid Directories, Modalized Upload/Quick Entry & Dot-Graph KPI Cards QA Team"
-active_branch_merged_to_main: "feature/phase24-cards-modals-dotkpi -> main"
-project_phase: "Phase 24 Complete: Card-Grid Directories, Modalized Upload/Quick Entry & Dot-Graph KPI Cards"
+last_updated_by_agent: "Phase 25 Stepper Signup Wizard, Teacher Approval Guard & Official PDF Transcript QA Team"
+active_branch_merged_to_main: "feature/phase25-stepper-approval-pdf -> main"
+project_phase: "Phase 25 Complete: Stepper Signup Wizard, Teacher Approval Guard & Student PDF Transcript (Phases 1-25 Complete)"
 
 completed_modules:
-  - "Phase 1-23: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/, Ocean Blue Default, Cloudinary Avatars, Change Password Modal, Global Loading Lock, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Typewriter Page Guide Wizard Modal."
-  - "Phase 24: Card-Grid User/Student/Teacher Directories + Modalized Upload/Quick Entry + Dot-Graph KPI Cards:"
-      - "Directory Card Services & Views: Created panels/directory_card_services.py (162 lines) with build_admin_user_cards (self-protection guard, avatar_url, role_badge, actions) and build_teacher_student_cards (single users_col() avatar lookup + 9-col/8-col fallback_rows parser); updated panels/teacher_services.py (334 lines), panels/views_admin.py (249 lines), and panels/views_teacher.py (238 lines) to inject user_cards, student_cards, and roster_cards."
-      - "Card-Grid & Modalized Upload/Quick Entry UI: Created templates/components/directory_cards.html (99 lines) supporting [data-paginated-container], [data-table-search], avatar_url/initials, status badge, 2-col meta grid, and [data-pagination-bar]; updated templates/panels/admin_users.html (169 lines), templates/panels/teacher_students.html (169 lines), templates/panels/teacher_ingest.html (176 lines, #teacher-upload-modal + openQuickEntryModal), and templates/panels/analyst_dashboard.html (264 lines, #analyst-upload-modal)."
-      - "Dot-Graph KPI Cards & Modal Shell JS: Updated templates/components/metric_card.html (31 lines) with [data-dot-kpi], [data-kpi-counter], [data-dot-tooltip], and [data-dot-matrix]; updated static/css/global.css (235 lines) with .ep-dot-matrix, .ep-dot-col, .ep-dot, status color variants, @keyframes epDotPop, and prefers-reduced-motion; created static/js/dot_kpi.js (98 lines) exposing window.initDotKpiCards(); updated static/js/app.js (345 lines) with generic [data-ep-modal] handling and window.openCustomModal/closeCustomModal; bumped static assets to ?v=11 in templates/base.html (182 lines) and templates/accounts/auth.html (331 lines)."
-      - "Tests: Created panels/test_phase24.py (156 lines) covering DirectoryCardServicesUnitTests and Phase24IntegrationTests."
+  - "Phase 1-24: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/, Ocean Blue Default, Cloudinary Avatars, Change Password Modal, Global Loading Lock, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Typewriter Page Guide Wizard Modal, Card-Grid User/Student/Teacher Directories, Modalized Upload/Quick Entry & Dot-Graph KPI Cards."
+  - "Phase 25: Stepper Signup Wizard + Teacher Approval Guard + Student PDF Transcript:"
+      - "Stepper Signup Backend & Teacher Approval Guard: Updated accounts/services.py (220 lines) with SELF_REGISTER_ROLES, approval_status in serialize_session_user, PENDING check before is_active in authenticate_user, and register_user(phone, bio) storing PENDING/is_active=False + unread ADMIN notification ('Teacher Approval Needed') for TEACHER while blocking ADMIN self-signup; updated accounts/views.py (198 lines) to read phone/bio, enforce SELF_REGISTER_ROLES, and keep PENDING teachers signed out with warning flash."
+      - "Admin Approval Queue & Cards: Updated panels/admin_services.py (348 lines) with PENDING count/filter, phone/bio/approval_status, and APPROVE_USER + 'Account Approved' notification in toggle_user_status; updated panels/directory_card_services.py (172 lines) with Pending Approval warning badge, Approve primary action, and data-approval-status; updated templates/panels/admin_users.html (176 lines) with Pending Approval filter pill and openToggleUserModal() approval wording."
+      - "3-Step Auth Stepper UI: Updated templates/accounts/auth.html (313 lines) with [data-auth-stepper] 3-step wizard (Account, Profile, Security), #teacher-approval-notice, optional phone/bio, #wizard-review-summary, and ?v=12 assets; created static/js/auth_wizard.js (162 lines) with linear step validation, teacher notice/batch autofill, IME-guarded Enter navigation, and Caps Lock/password toggles; updated static/css/global.css (275 lines) with .ep-step-indicator and .ep-step-line styles."
+      - "Official Student PDF Transcript & Cache-Bust: Updated panels/pdf_services.py (243 lines) with _letter_grade(), EARNED CREDITS, CLASS STANDING, OFFICIAL ACADEMIC TRANSCRIPT & REPORT CARD heading, and 7-col GRADE table; updated templates/panels/student_dashboard.html (175 lines) and templates/panels/student_report.html (80 lines) with primary Download PDF Transcript + data-no-loading='true'; bumped ?v=12 in templates/base.html (182 lines); created panels/test_phase25.py (142 lines)."
 
 verification_results:
   - "manage.py check: 0 issues reported (exit 0)."
-  - "manage.py test analytics panels --verbosity=2: 88/88 tests PASSED (54.944s)."
-  - "node --check static/js/dot_kpi.js, ui_widgets.js, page_guides.js, app.js, nav.js, charts.js, theme_studio.js, analyst_evaluation.js: all exited 0."
-  - "Static audit (16 modified/created Phase 24 files): 0 comments, 0 triple-quotes, all files within line caps (views_*.py <= 250, others <= 350); .agents/rules/edupredict-rules.md (14,509 bytes < 24,000); .env and 8 .agents/* files tracked in Git."
-  - "Live Django Client() smoke checks: /admin-panel/, /admin-panel/users/, /teacher-panel/, /teacher-panel/students/, /teacher-panel/ingest/, /student-panel/, and /analyst-panel/ verified."
+  - "manage.py test analytics panels --verbosity=2: 93/93 tests PASSED (106.643s)."
+  - "node --check static/js/auth_wizard.js, dot_kpi.js, ui_widgets.js, page_guides.js, app.js, nav.js, charts.js, theme_studio.js, analyst_evaluation.js: all 9 exited 0."
+  - "Static audit (13 modified/created Phase 25 files): 0 comments, 0 triple-quotes, all files within line caps (views_*.py <= 250, others <= 350); .agents/rules/edupredict-rules.md (14,509 bytes < 24,000); .env and 8 .agents/* files tracked in Git."
+  - "Live Django Client() smoke checks: /auth/ (200), /admin-panel/users/?role=PENDING (200), /student-panel/ (200), /student-panel/report/ (200), and /student-panel/report/download-pdf/ (200, application/pdf, %PDF-) verified."
 
 active_routes_and_files:
-  - "panels/directory_card_services.py (162 lines), panels/teacher_services.py (334 lines), panels/views_admin.py (249 lines), panels/views_teacher.py (238 lines), panels/test_phase24.py (156 lines)"
-  - "templates/components/directory_cards.html (99 lines), templates/components/metric_card.html (31 lines), templates/base.html (182 lines), templates/accounts/auth.html (331 lines)"
-  - "templates/panels/admin_users.html (169 lines), templates/panels/teacher_students.html (169 lines), templates/panels/teacher_ingest.html (176 lines), templates/panels/analyst_dashboard.html (264 lines)"
-  - "static/css/global.css (235 lines), static/js/dot_kpi.js (98 lines), static/js/app.js (345 lines)"
+  - "accounts/services.py (220 lines), accounts/views.py (198 lines), panels/admin_services.py (348 lines), panels/directory_card_services.py (172 lines), panels/pdf_services.py (243 lines), panels/test_phase25.py (142 lines)"
+  - "templates/accounts/auth.html (313 lines), templates/base.html (182 lines), templates/panels/admin_users.html (176 lines), templates/panels/student_dashboard.html (175 lines), templates/panels/student_report.html (80 lines)"
+  - "static/js/auth_wizard.js (162 lines), static/css/global.css (275 lines)"
 
 pending_modules_in_order:
-  - "Phase 25: Stepper Signup Wizard + Teacher Approval Guard + Student PDF Transcript"
+  - "All planned Phases 1-25 Complete."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

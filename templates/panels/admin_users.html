@@ -46,6 +46,11 @@
       <span>Analysts</span>
       <span class="tabular-nums opacity-80">({{ role_counts.ANALYST|default:0 }})</span>
     </a>
+    <a href="{% url 'panels:admin_users' %}?role=PENDING" title="Show teachers awaiting approval" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'PENDING' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      {% if role_counts.PENDING %}<span class="h-2 w-2 rounded-full bg-[var(--status-warning)]"></span>{% endif %}
+      <span>Pending Approval</span>
+      <span class="tabular-nums opacity-80">({{ role_counts.PENDING|default:0 }})</span>
+    </a>
   </div>
 
   {% include 'components/directory_cards.html' with grid_id="admin-users-table" grid_title="User Directory" cards=user_cards page_size=8 empty_message="No users found for this role." %}
@@ -136,11 +141,13 @@
 
     window.openToggleUserModal = function (btn) {
       const d = btn ? btn.dataset : {};
+      const isPending = String(d.approvalStatus || '').toUpperCase() === 'PENDING';
       const isActive = String(d.isActive || '').toLowerCase() === 'true';
+      const nameLabel = d.fullName || d.userId || 'this user';
       window.openConfirmModal({
-        title: isActive ? 'Turn Off User' : 'Turn On User',
-        message: (isActive ? 'Turn off ' : 'Turn on ') + (d.fullName || d.userId || 'this user') + '?',
-        confirmText: isActive ? 'Turn Off' : 'Turn On',
+        title: isPending ? 'Approve Teacher Account' : (isActive ? 'Turn Off User' : 'Turn On User'),
+        message: isPending ? ('Approve ' + (d.fullName || d.userId || 'this teacher') + ' so they can sign in?') : ((isActive ? 'Turn off ' : 'Turn on ') + nameLabel + '?'),
+        confirmText: isPending ? 'Approve' : (isActive ? 'Turn Off' : 'Turn On'),
         onConfirmUrl: adminUsersUrl,
         fields: {
           action: 'toggle',
