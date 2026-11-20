@@ -62,8 +62,8 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
 last_updated_by_agent: "EduPredict Data Protection Team"
-active_branch_merged_to_main: "feature/backup-encryption -> main"
-project_phase: "Phase 58 Complete: Backup Encryption Option"
+active_branch_merged_to_main: "feature/decrypt-backup-command -> main"
+project_phase: "Phase 59 Complete: decrypt_backup Management Command"
 
 completed_modules:
   - "Phase 1-25: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/, Ocean Blue Default, Cloudinary Avatars, Change Password Modal, Global Loading Lock, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Typewriter Page Guide Wizard Modal, Card-Grid User/Student/Teacher Directories, Modalized Upload/Quick Entry, Dot-Graph KPI Cards, Stepper Signup Wizard, Teacher Approval Guard & Official Student PDF Transcript."
@@ -78,6 +78,7 @@ completed_modules:
   - "Phase 56: Rate Limit Docs: README.md (236 lines) adds Rate Limiting (Per-Worker Limits) section with X-RateLimit headers and workers x max_requests caveat, verify_backup usage, test count 98; panels/test_uat.py (339 lines) adds README docs test (99/99 tests PASS, UAT 7/7)."
   - "Phase 57: README Health Sample Sync: README.md /health/ sample now matches live response (collections, cache.entries/status, memory with rss_mb and container fields, 30s count cache and ?fresh=1 note); panels/test_uat.py (350 lines) adds sample-vs-live key test (100/100 tests PASS, UAT 7/7)."
   - "Phase 58: Backup Encryption: core/backup_crypto.py (26 lines, Fernet via BACKUP_ENCRYPTION_KEY); export_backup.py (141 lines) adds --encrypt writing <name>.enc plus sha256 of ciphertext and failing before any file is written if key is missing; verify_backup.py (46 lines) also checks .enc files decrypt; cryptography==50.0.2, cffi, pycparser added to requirements.txt; .env.example and README updated; core/test_ops.py (146 lines) adds roundtrip, missing-key and wrong-key tests (101/101 tests PASS, UAT 7/7)."
+  - "Phase 59: decrypt_backup Command: core/management/commands/decrypt_backup.py (55 lines) restores plain backup from .enc via BACKUP_ENCRYPTION_KEY, atomic write, refuses overwrite without --overwrite, guards missing file/non-.enc/wrong key without leaving partial output; README documents usage; core/test_ops.py (170 lines) adds coverage (102/102 tests PASS, UAT 7/7)."
 
 verification_results:
   - "manage.py check: 0 issues reported (exit 0)."

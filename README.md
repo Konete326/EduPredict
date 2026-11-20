@@ -218,6 +218,10 @@ Optional encryption (Fernet): set `BACKUP_ENCRYPTION_KEY` in `.env` (generate wi
 ```bash
 python manage.py export_backup --format json --output-dir backups/ --encrypt
 ```
+To restore a plain file from an encrypted backup (refuses to overwrite unless `--overwrite` is given):
+```bash
+python manage.py decrypt_backup backups/<file>.json.enc
+```
 
 ### 4. Automated GitHub Actions CI Pipeline (`.github/workflows/django.yml`)
 Triggers on every push to `main`, `feature/**`, and pull requests targeting `main`:

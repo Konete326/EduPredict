@@ -133,6 +133,30 @@ class OperationsToolingTests(TestCase):
                 with self.assertRaisesMessage(CommandError, "decryption failed"):
                     call_command("verify_backup", str(out_path), quiet=True)
 
+    def test_decrypt_backup_restores_plain_json_and_guards_overwrite(self):
+        key = Fernet.generate_key().decode("utf-8")
+        with tempfile.TemporaryDirectory() as tmp_dir, patch.dict(os.environ, {"BACKUP_ENCRYPTION_KEY": key}):
+            enc_path = Path(call_command("export_backup", format="json", output_dir=tmp_dir, filename="snap.json", encrypt=True, quiet=True))
+            plain_path = Path(call_command("decrypt_backup", str(enc_path), quiet=True))
+            self.assertEqual(plain_path.name, "snap.json")
+            self.assertIn("collections", json.loads(plain_path.read_text(encoding="utf-8")))
+            with self.assertRaisesMessage(CommandError, "already exists"):
+                call_command("decrypt_backup", str(enc_path), quiet=True)
+            replaced = Path(call_command("decrypt_backup", str(enc_path), overwrite=True, quiet=True))
+            self.assertEqual(replaced, plain_path.resolve())
+            with self.assertRaisesMessage(CommandError, "not found"):
+                call_command("decrypt_backup", str(Path(tmp_dir) / "none.enc"), quiet=True)
+            with self.assertRaisesMessage(CommandError, "not a .enc file"):
+                call_command("decrypt_backup", str(plain_path), quiet=True)
+            self.assertEqual(list(Path(tmp_dir).glob("*.tmp")), [])
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            with patch.dict(os.environ, {"BACKUP_ENCRYPTION_KEY": key}):
+                enc_path = Path(call_command("export_backup", format="json", output_dir=tmp_dir, filename="snap.json", encrypt=True, quiet=True))
+            with patch.dict(os.environ, {"BACKUP_ENCRYPTION_KEY": Fernet.generate_key().decode("utf-8")}):
+                with self.assertRaisesMessage(CommandError, "decryption failed"):
+                    call_command("decrypt_backup", str(enc_path), quiet=True)
+            self.assertFalse((Path(tmp_dir) / "snap.json").exists())
+
     def test_health_cgroup_container_memory_telemetry(self):
         with patch("core.views_health.os.path.exists", side_effect=lambda p: p == "/sys/fs/cgroup/memory.max"):
             with patch("builtins.open", mock_open(read_data="536870912\n")):
