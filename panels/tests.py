@@ -343,3 +343,17 @@ class ThemePreferencesTests(TestCase):
         synced_keep = sync_theme_prefs_on_login(req, {"user_id": "USR-T9", "role": "TEACHER", "theme_prefs": {"TEACHER": {"mode": "light", "accent": "emerald"}}})
         self.assertEqual((synced_keep["TEACHER"]["mode"], synced_keep["TEACHER"]["accent"]), ("light", "emerald"))
         mock_users_col.return_value.update_one.assert_not_called()
+
+    def test_health_cgroup_container_memory_telemetry(self):
+        from unittest.mock import mock_open
+        from core.views_health import _build_memory_payload, _get_cgroup_memory_limit_mb
+        with patch("core.views_health.os.path.exists", side_effect=lambda p: p == "/sys/fs/cgroup/memory.max"):
+            with patch("builtins.open", mock_open(read_data="536870912\n")):
+                self.assertEqual(_get_cgroup_memory_limit_mb(), 512.0)
+                with patch("core.views_health._get_process_memory_mb", return_value=128.0):
+                    payload = _build_memory_payload()
+                    self.assertEqual(payload["rss_mb"], 128.0)
+                    self.assertEqual(payload["container_limit_mb"], 512.0)
+                    self.assertEqual(payload["container_usage_pct"], 25.0)
+            with patch("builtins.open", mock_open(read_data="max\n")):
+                self.assertIsNone(_get_cgroup_memory_limit_mb())

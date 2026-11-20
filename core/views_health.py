@@ -62,6 +62,27 @@ def _get_process_memory_mb():
     return None
 
 
+def _get_cgroup_memory_limit_mb():
+    cgroup_paths = (
+        "/sys/fs/cgroup/memory.max",
+        "/sys/fs/cgroup/memory/memory.limit_in_bytes",
+    )
+    for path in cgroup_paths:
+        try:
+            if os.path.exists(path):
+                with open(path, "r", encoding="utf-8") as f:
+                    raw = f.read().strip().lower()
+                if not raw or raw == "max":
+                    return None
+                limit_bytes = int(raw)
+                if 0 < limit_bytes < (1 << 50):
+                    return round(limit_bytes / (1024 * 1024), 2)
+                return None
+        except Exception:
+            continue
+    return None
+
+
 def _build_memory_payload():
     payload = {
         "status": "healthy",
@@ -70,6 +91,11 @@ def _build_memory_payload():
     rss_mb = _get_process_memory_mb()
     if rss_mb is not None:
         payload["rss_mb"] = rss_mb
+    limit_mb = _get_cgroup_memory_limit_mb()
+    if limit_mb is not None:
+        payload["container_limit_mb"] = limit_mb
+        if rss_mb is not None and limit_mb > 0:
+            payload["container_usage_pct"] = round((rss_mb / limit_mb) * 100, 2)
     return payload
 
 

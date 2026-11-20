@@ -61,28 +61,28 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Production Operations & Safety Team"
-active_branch_merged_to_main: "feature/backup-disk-space-check -> main"
-project_phase: "Phase 50 Complete: Backup CLI Disk Space Pre-Flight Safety Check"
+last_updated_by_agent: "EduPredict Production Observability & Container Telemetry Team"
+active_branch_merged_to_main: "feature/cgroup-memory-telemetry -> main"
+project_phase: "Phase 51 Complete: Linux Cgroup Container Memory Limit Telemetry"
 
 completed_modules:
   - "Phase 1-25: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/, Ocean Blue Default, Cloudinary Avatars, Change Password Modal, Global Loading Lock, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Typewriter Page Guide Wizard Modal, Card-Grid User/Student/Teacher Directories, Modalized Upload/Quick Entry, Dot-Graph KPI Cards, Stepper Signup Wizard, Teacher Approval Guard & Official Student PDF Transcript."
-  - "Phase 26-49: Production Operations Runbook, Docker Containers, WhiteNoise Static Serving, Atlas Connection Pooling, Automated Backup CLI with Atomic Write & Retention Purging, Endpoint Rate Limiting with Retry-After, Production CSP & Permissions-Policy Headers, Sentry Before-Send Sanitization & Environment Tagging, Health Check Process Memory & O(1) Estimated Document Counts with 30s TTL Cache."
-  - "Phase 50: Backup CLI Disk Space Pre-Flight Safety Check:"
-      - "Updated core/management/commands/export_backup.py (118 lines, 0 comments): Added _check_disk_space() using shutil.disk_usage() to enforce a 50MB minimum free disk space threshold before backup payload generation and verify payload_bytes + 5MB safety margin before atomic disk write."
-      - "Updated panels/test_uat.py (399 lines, 0 comments): Added test_export_backup_insufficient_disk_space_raises_error mocking shutil.disk_usage to verify CommandError on low disk space, and removed redundant inner Path imports (94/94 tests PASS)."
+  - "Phase 26-50: Production Operations Runbook, Docker Containers, WhiteNoise Static Serving, Atlas Connection Pooling, Automated Backup CLI with Atomic Write, Retention Purging & Pre-Flight Disk Space Safety Check, Endpoint Rate Limiting with Retry-After, Production CSP & Permissions-Policy Headers, Sentry Before-Send Sanitization & Environment Tagging, Health Check Process Memory & O(1) Estimated Document Counts with 30s TTL Cache."
+  - "Phase 51: Linux Cgroup Container Memory Limit Telemetry:"
+      - "Updated core/views_health.py (226 lines, 0 comments): Added _get_cgroup_memory_limit_mb() inspecting cgroups v2 (/sys/fs/cgroup/memory.max) and cgroups v1 (/sys/fs/cgroup/memory/memory.limit_in_bytes) while ignoring unlimited/max thresholds; updated _build_memory_payload() to report container_limit_mb and container_usage_pct alongside rss_mb."
+      - "Updated panels/tests.py (359 lines, 0 comments): Added test_health_cgroup_container_memory_telemetry verifying cgroups v2 numeric parsing, container_usage_pct calculation, and 'max' unlimited handling (95/95 tests PASS)."
 
 verification_results:
   - "manage.py check: 0 issues reported (exit 0)."
-  - "manage.py test: 94/94 tests PASSED (46.642s)."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED (11.92s)."
+  - "manage.py test: 95/95 tests PASSED (41.595s)."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED (11.27s)."
   - "node --check: all 9 JS scripts exited 0."
   - "Zero comments audit: 0 comments across all modified files."
-  - "Line caps: export_backup.py (118 <= 350), test_uat.py (399 <= 400)."
+  - "Line caps: views_health.py (226 <= 250), tests.py (359 <= 400)."
 
 active_routes_and_files:
-  - "core/management/commands/export_backup.py (118 lines) -> Pre-flight & post-payload disk space safety guard"
-  - "panels/test_uat.py (399 lines) -> 30 UAT/ops/doc tests (94 unit tests total)"
+  - "core/views_health.py (226 lines) -> Health check with cgroup v1/v2 container memory limit & usage % telemetry"
+  - "panels/tests.py (359 lines) -> Unit tests including cgroup container memory telemetry verification"
 
 pending_modules_in_order:
   - "All planned Phases 1-25 Complete."
