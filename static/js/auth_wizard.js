@@ -1,0 +1,162 @@
+window.switchAuthTab = function (tab) {
+  const isReg = tab === 'register';
+  const loginPanel = document.getElementById('panel-login'), regPanel = document.getElementById('panel-register');
+  const loginBtn = document.getElementById('tab-login-btn'), regBtn = document.getElementById('tab-register-btn');
+  const activeCls = ['bg-[var(--bg-surface)]', 'text-[var(--accent-primary)]', 'shadow-sm', 'border-[var(--border-subtle)]'];
+  const inactiveCls = ['text-[var(--text-secondary)]', 'border-transparent'];
+  if (loginPanel) loginPanel.classList.toggle('hidden', isReg);
+  if (regPanel) regPanel.classList.toggle('hidden', !isReg);
+  [[loginBtn, !isReg], [regBtn, isReg]].forEach(function (pair) {
+    const btn = pair[0], on = pair[1];
+    if (!btn) return;
+    btn.setAttribute('aria-selected', String(on));
+    activeCls.forEach(function (c) { btn.classList.toggle(c, on); });
+    inactiveCls.forEach(function (c) { btn.classList.toggle(c, !on); });
+  });
+};
+
+window.togglePasswordVisibility = function (inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  const icon = btn ? btn.querySelector('i') : null;
+  if (icon) { icon.classList.toggle('fa-eye', !show); icon.classList.toggle('fa-eye-slash', show); }
+};
+
+window.fillDefaultAdmin = function () {
+  window.switchAuthTab('login');
+  const emailEl = document.getElementById('login-email'), passEl = document.getElementById('login-password');
+  if (emailEl) emailEl.value = 'admin@gmail.com';
+  if (passEl) passEl.value = 'admin123';
+  if (typeof showToast === 'function') showToast('Default admin credentials filled.', 'info');
+};
+
+function initCapsLockListeners() {
+  [['login-password', 'login-caps-warn'], ['reg-password', 'reg-caps-warn']].forEach(function (pair) {
+    const inp = document.getElementById(pair[0]), wrn = document.getElementById(pair[1]);
+    if (!inp || !wrn) return;
+    const upd = function (e) { if (typeof e.getModifierState === 'function') wrn.classList.toggle('hidden', !e.getModifierState('CapsLock')); };
+    inp.addEventListener('keyup', upd);
+    inp.addEventListener('keydown', upd);
+    inp.addEventListener('blur', function () { wrn.classList.add('hidden'); });
+  });
+}
+
+function initAuthStepper() {
+  const form = document.querySelector('[data-auth-stepper]');
+  if (!form) return;
+  const steps = Array.from(form.querySelectorAll('[data-wizard-step]'));
+  const triggers = Array.from(form.querySelectorAll('[data-step-trigger]'));
+  const lines = Array.from(form.querySelectorAll('.ep-step-line'));
+  const prevBtn = form.querySelector('[data-wizard-prev]');
+  const nextBtn = form.querySelector('[data-wizard-next]');
+  const submitBtn = form.querySelector('[data-wizard-submit]');
+  const roleSelect = document.getElementById('reg-role');
+  const teacherNotice = document.getElementById('teacher-approval-notice');
+  const batchInput = document.getElementById('reg-batch');
+  const summaryBox = document.getElementById('wizard-review-summary');
+  const passInput = document.getElementById('reg-password');
+  const confirmInput = document.getElementById('reg-confirm-password');
+  let currentStep = 0;
+  let batchEdited = Boolean(batchInput && batchInput.value.trim());
+
+  function syncRoleDefaults() {
+    if (!roleSelect) return;
+    if (teacherNotice) teacherNotice.classList.toggle('hidden', roleSelect.value !== 'TEACHER');
+    if (batchInput && !batchEdited) batchInput.value = roleSelect.value === 'STUDENT' ? '2026-A' : 'ALL';
+  }
+
+  function renderReviewSummary() {
+    if (!summaryBox) return;
+    summaryBox.textContent = '';
+    const title = document.createElement('p');
+    title.className = 'text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5';
+    title.textContent = 'Account Summary';
+    summaryBox.appendChild(title);
+    const grid = document.createElement('div');
+    grid.className = 'grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]';
+    const roleLabel = roleSelect && roleSelect.selectedOptions[0] ? roleSelect.selectedOptions[0].textContent : '';
+    const val = function (id) { return (document.getElementById(id) || {}).value || '-'; };
+    const items = [['Name', val('reg-full-name')], ['Email', val('reg-email')], ['Role', roleLabel || '-'], ['Department', val('reg-department')], ['Batch / Term', val('reg-batch')]];
+    const phoneVal = ((document.getElementById('reg-phone') || {}).value || '').trim();
+    if (phoneVal) items.push(['Phone', phoneVal]);
+    items.forEach(function (pair) {
+      const row = document.createElement('div');
+      row.className = 'truncate text-[var(--text-secondary)]';
+      const k = document.createElement('span'); k.className = 'text-[var(--text-muted)]'; k.textContent = pair[0] + ': ';
+      const v = document.createElement('span'); v.className = 'font-medium text-[var(--text-primary)]'; v.textContent = pair[1];
+      row.append(k, v);
+      grid.appendChild(row);
+    });
+    summaryBox.appendChild(grid);
+  }
+
+  function showStep(target) {
+    currentStep = Math.max(0, Math.min(steps.length - 1, target));
+    steps.forEach(function (el, idx) { el.classList.toggle('hidden', idx !== currentStep); });
+    triggers.forEach(function (btn, idx) {
+      const ind = btn.querySelector('.ep-step-indicator');
+      const state = idx < currentStep ? 'complete' : (idx === currentStep ? 'current' : 'upcoming');
+      if (idx === currentStep) btn.setAttribute('aria-current', 'step'); else btn.removeAttribute('aria-current');
+      if (ind) {
+        ind.setAttribute('data-state', state);
+        ind.textContent = '';
+        if (state === 'complete') { const ic = document.createElement('i'); ic.className = 'fa-solid fa-check text-[10px]'; ind.appendChild(ic); }
+        else ind.textContent = String(idx + 1);
+      }
+    });
+    lines.forEach(function (line, idx) { line.setAttribute('data-complete', idx < currentStep ? 'true' : 'false'); });
+    if (prevBtn) prevBtn.classList.toggle('hidden', currentStep === 0);
+    if (nextBtn) nextBtn.classList.toggle('hidden', currentStep === steps.length - 1);
+    if (submitBtn) submitBtn.classList.toggle('hidden', currentStep !== steps.length - 1);
+    if (currentStep === steps.length - 1) renderReviewSummary();
+  }
+
+  function validateStep(idx) {
+    const fields = steps[idx].querySelectorAll('input, select, textarea');
+    for (let i = 0; i < fields.length; i++) {
+      if (!fields[i].checkValidity()) { fields[i].reportValidity(); return false; }
+    }
+    return true;
+  }
+
+  if (nextBtn) nextBtn.addEventListener('click', function () { if (validateStep(currentStep)) showStep(currentStep + 1); });
+  if (prevBtn) prevBtn.addEventListener('click', function () { showStep(currentStep - 1); });
+  triggers.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const idx = Number(btn.getAttribute('data-step-trigger'));
+      if (idx < currentStep) showStep(idx);
+      else if (idx === currentStep + 1 && validateStep(currentStep)) showStep(idx);
+    });
+  });
+  form.addEventListener('keydown', function (e) {
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key === 'Enter' && currentStep < steps.length - 1 && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      if (validateStep(currentStep)) showStep(currentStep + 1);
+    }
+  });
+  if (batchInput) batchInput.addEventListener('input', function () { batchEdited = true; });
+  if (roleSelect) roleSelect.addEventListener('change', syncRoleDefaults);
+  if (passInput) passInput.addEventListener('input', function () { passInput.setCustomValidity(''); });
+  if (confirmInput) confirmInput.addEventListener('input', function () { confirmInput.setCustomValidity(''); });
+  form.addEventListener('submit', function (e) {
+    if (!passInput || !confirmInput) return;
+    if (passInput.value.length < 6) {
+      e.preventDefault();
+      passInput.setCustomValidity('Password must be at least 6 characters.');
+      passInput.reportValidity();
+      if (typeof showToast === 'function') showToast('Password must be at least 6 characters.', 'error');
+    } else if (passInput.value !== confirmInput.value) {
+      e.preventDefault();
+      confirmInput.setCustomValidity('Passwords do not match.');
+      confirmInput.reportValidity();
+      if (typeof showToast === 'function') showToast('Passwords do not match.', 'error');
+    }
+  });
+  syncRoleDefaults();
+  showStep(0);
+}
+
+document.addEventListener('DOMContentLoaded', function () { initCapsLockListeners(); initAuthStepper(); });

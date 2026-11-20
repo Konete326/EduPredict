@@ -5,6 +5,7 @@ from django.core.validators import validate_email
 from django.shortcuts import redirect, render
 from django.views.decorators.debug import sensitive_post_parameters
 from accounts.services import (
+    SELF_REGISTER_ROLES,
     VALID_ROLES,
     authenticate_user,
     register_user,
@@ -87,6 +88,8 @@ def _handle_register(request):
     role = (request.POST.get("role") or "").strip().upper()
     department = (request.POST.get("department") or "").strip()
     batch = (request.POST.get("batch") or "").strip()
+    phone = (request.POST.get("phone") or "").strip()
+    bio = (request.POST.get("bio") or "").strip()
 
     register_data = {
         "full_name": full_name,
@@ -94,6 +97,8 @@ def _handle_register(request):
         "role": role,
         "department": department,
         "batch": batch,
+        "phone": phone,
+        "bio": bio,
     }
 
     if not full_name:
@@ -114,8 +119,8 @@ def _handle_register(request):
         messages.error(request, "Passwords do not match.")
         return _render_auth(request, active_tab="register", register_data=register_data)
 
-    if role not in VALID_ROLES:
-        messages.error(request, "Please select a valid account role.")
+    if role not in SELF_REGISTER_ROLES:
+        messages.error(request, "Select Student, Teacher, or Data Analyst. Admin accounts are managed internally.")
         return _render_auth(request, active_tab="register", register_data=register_data)
 
     try:
@@ -126,6 +131,8 @@ def _handle_register(request):
             role=role,
             department=department,
             batch=batch,
+            phone=phone,
+            bio=bio,
         )
     except Exception:
         messages.error(request, "Unable to complete registration right now. Please try again.")
@@ -134,6 +141,13 @@ def _handle_register(request):
     if error or user_doc is None:
         messages.error(request, error or "Registration failed.")
         return _render_auth(request, active_tab="register", register_data=register_data)
+
+    if str(user_doc.get("approval_status") or "").strip().upper() == "PENDING":
+        messages.warning(
+            request,
+            "Your teacher account was created and is waiting for Admin approval. You can sign in once an administrator approves it.",
+        )
+        return _render_auth(request, active_tab="login", login_email=email)
 
     session_user = serialize_session_user(user_doc)
     request.session["user"] = session_user

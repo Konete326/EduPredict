@@ -42,14 +42,18 @@ def _is_self_target(existing, clean_uid, actor_user_id, actor_email):
 
 def _load_users(normalized):
     ensure_admin_seed_data()
-    role_counts, users = {"ALL": 0, "ADMIN": 0, "TEACHER": 0, "STUDENT": 0, "ANALYST": 0}, []
+    role_counts, users = {"ALL": 0, "ADMIN": 0, "TEACHER": 0, "STUDENT": 0, "ANALYST": 0, "PENDING": 0}, []
     for doc in users_col().find({}, {"_id": 0, "password_hash": 0}).sort("created_at", DESCENDING):
         role = str(doc.get("role") or "").strip().upper()
+        is_active = bool(doc.get("is_active", True))
+        approval_status = str(doc.get("approval_status") or ("APPROVED" if is_active else "INACTIVE")).upper()
         role_counts["ALL"] += 1
         if role in role_counts:
             role_counts[role] += 1
-        if normalized == "ALL" or role == normalized:
-            users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "is_active": bool(doc.get("is_active", True)), "student_id": str(doc.get("student_id") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at"))})
+        if approval_status == "PENDING":
+            role_counts["PENDING"] += 1
+        if normalized == "ALL" or (normalized == "PENDING" and approval_status == "PENDING") or role == normalized:
+            users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "phone": str(doc.get("phone") or ""), "bio": str(doc.get("bio") or ""), "is_active": is_active, "approval_status": approval_status, "student_id": str(doc.get("student_id") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at"))})
     return users, role_counts
 
 
@@ -135,8 +139,14 @@ def toggle_user_status(user_id, actor_user_id=None, actor_email="", actor_name="
     if existing is None:
         return None, "User record not found."
     new_state = not bool(existing.get("is_active", True))
-    col.update_one({"_id": existing["_id"]}, {"$set": {"is_active": new_state}})
-    _audit("USERS", "TOGGLE_USER", f"{'Activated' if new_state else 'Deactivated'} user {clean_uid}.", "SUCCESS" if new_state else "WARNING", actor=actor_name)
+    is_pending_approve = new_state and str(existing.get("approval_status") or "").upper() == "PENDING"
+    updates = {"is_active": True, "approval_status": "APPROVED"} if is_pending_approve else {"is_active": new_state}
+    col.update_one({"_id": existing["_id"]}, {"$set": updates})
+    if is_pending_approve:
+        _audit("USERS", "APPROVE_USER", f"Approved teacher account {clean_uid}.", "SUCCESS", actor=actor_name)
+        create_notification("Account Approved", "Your EduPredict Teacher account has been approved by Admin. You can sign in now.", severity="SUCCESS", target_user_id=clean_uid, category="APPROVAL")
+    else:
+        _audit("USERS", "TOGGLE_USER", f"{'Activated' if new_state else 'Deactivated'} user {clean_uid}.", "SUCCESS" if new_state else "WARNING", actor=actor_name)
     invalidate_cache()
     return new_state, None
 
@@ -174,15 +184,7 @@ def list_courses_with_stats(dept_filter="ALL"):
 
 def _course_fields(title, department, batch, instructor, credits, capacity, status, fallback=None):
     fb, clean_status = fallback or {}, str(status or "ACTIVE").strip().upper()
-    return {
-        "title": str(title or "").strip(),
-        "department": str(department or "").strip() or fb.get("department") or "General",
-        "batch": str(batch or "").strip() or fb.get("batch") or "2026-A",
-        "instructor": str(instructor or "").strip() or fb.get("instructor") or "TBA",
-        "credits": _safe_int(credits, 3, 1, 12), "capacity": _safe_int(capacity, 60, 1, 2000),
-        "status": clean_status if clean_status in VALID_COURSE_STATUSES else "ACTIVE",
-    }
-
+    return {"title": str(title or "").strip(), "department": str(department or "").strip() or fb.get("department") or "General", "batch": str(batch or "").strip() or fb.get("batch") or "2026-A", "instructor": str(instructor or "").strip() or fb.get("instructor") or "TBA", "credits": _safe_int(credits, 3, 1, 12), "capacity": _safe_int(capacity, 60, 1, 2000), "status": clean_status if clean_status in VALID_COURSE_STATUSES else "ACTIVE"}
 
 def create_course_record(course_code, title, department, batch, instructor, credits, capacity, status="ACTIVE", actor_name="System Admin"):
     clean_code, clean_title = str(course_code or "").strip().upper(), str(title or "").strip()
@@ -325,10 +327,7 @@ def build_course_table_data(courses, filter_dept):
     headers = ["Code", "Course Title", "Department", "Batch", "Instructor", "Enrolled", "Status", "Actions"]
     rows = []
     for c in courses:
-        actions = [
-            _action("Edit", "fa-solid fa-pen-to-square", "openEditCourseModal(this)", f"Edit {c['course_code']}", {"data-course-code": c["course_code"], "data-title": c["title"], "data-department": c["department"], "data-batch": c["batch"], "data-instructor": c["instructor"], "data-credits": str(c["credits"]), "data-capacity": str(c["capacity"]), "data-status": c["status"], "data-filter-dept": filter_dept}),
-            _action("Delete", "fa-solid fa-trash", "openDeleteCourseModal(this)", f"Delete {c['course_code']}", {"data-course-code": c["course_code"], "data-title": c["title"], "data-filter-dept": filter_dept}, variant="danger"),
-        ]
+        actions = [_action("Edit", "fa-solid fa-pen-to-square", "openEditCourseModal(this)", f"Edit {c['course_code']}", {"data-course-code": c["course_code"], "data-title": c["title"], "data-department": c["department"], "data-batch": c["batch"], "data-instructor": c["instructor"], "data-credits": str(c["credits"]), "data-capacity": str(c["capacity"]), "data-status": c["status"], "data-filter-dept": filter_dept}), _action("Delete", "fa-solid fa-trash", "openDeleteCourseModal(this)", f"Delete {c['course_code']}", {"data-course-code": c["course_code"], "data-title": c["title"], "data-filter-dept": filter_dept}, variant="danger")]
         rows.append([c["course_code"], c["title"], c["department"], c["batch"], c["instructor"], f"{c['enrolled_count']} / {c['capacity']} ({c['fill_pct']}%)", {"text": c["status"], "status": "success" if c["status"] == "ACTIVE" else "warning"}, {"actions": actions}])
     return headers, rows
 

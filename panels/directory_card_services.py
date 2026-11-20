@@ -48,17 +48,27 @@ def build_admin_user_cards(users, filter_role, actor_user_id, actor_email=""):
         dept = str(u.get("department") or "General")
         batch = str(u.get("batch") or "ALL")
         is_active = bool(u.get("is_active", True))
+        approval_status = str(u.get("approval_status") or ("APPROVED" if is_active else "INACTIVE")).upper()
+        is_pending = approval_status == "PENDING"
         is_self = (clean_actor_id and uid == clean_actor_id) or (clean_actor_email and email.strip().lower() == clean_actor_email)
         edit_attrs = {"data-user-id": uid, "data-full-name": full_name, "data-email": email, "data-role": role, "data-department": dept, "data-batch": batch, "data-filter-role": filter_role}
         if is_self:
             edit_attrs["data-is-self"] = "true"
         actions = [_action("Edit", "fa-solid fa-pen-to-square", "openEditUserModal(this)", f"Edit {full_name}", edit_attrs)]
         if not is_self:
-            lbl, ico = ("Deactivate", "fa-solid fa-user-slash") if is_active else ("Activate", "fa-solid fa-user-check")
+            if is_pending:
+                lbl, ico, toggle_variant = "Approve", "fa-solid fa-user-check", "primary"
+            else:
+                lbl, ico = ("Deactivate", "fa-solid fa-user-slash") if is_active else ("Activate", "fa-solid fa-user-check")
+                toggle_variant = "default"
+            toggle_attrs = {"data-user-id": uid, "data-full-name": full_name, "data-is-active": "true" if is_active else "false", "data-filter-role": filter_role}
+            if is_pending:
+                toggle_attrs["data-approval-status"] = approval_status
             actions.extend([
-                _action(lbl, ico, "openToggleUserModal(this)", f"{lbl} {full_name}", {"data-user-id": uid, "data-full-name": full_name, "data-is-active": "true" if is_active else "false", "data-filter-role": filter_role}),
+                _action(lbl, ico, "openToggleUserModal(this)", f"{lbl} {full_name}", toggle_attrs, variant=toggle_variant),
                 _action("Delete", "fa-solid fa-trash", "openDeleteUserModal(this)", f"Delete {full_name}", {"data-user-id": uid, "data-full-name": full_name, "data-filter-role": filter_role}, variant="danger"),
             ])
+        badge = {"text": "Pending Approval", "status": "warning"} if is_pending else {"text": "Active" if is_active else "Inactive", "status": "success" if is_active else "danger"}
         cards.append({
             "id": uid,
             "title": f"{full_name} (You)" if is_self else full_name,
@@ -66,7 +76,7 @@ def build_admin_user_cards(users, filter_role, actor_user_id, actor_email=""):
             "code": uid,
             "avatar_url": str(u.get("avatar_url") or ""),
             "initials": _initials(full_name, "U"),
-            "badge": {"text": "Active" if is_active else "Inactive", "status": "success" if is_active else "danger"},
+            "badge": badge,
             "role_badge": {"text": role, "status": role_status_map.get(role, "info")},
             "meta": [
                 {"label": "Role", "value": role},

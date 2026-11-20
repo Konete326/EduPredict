@@ -113,7 +113,11 @@
 
   <div class="xl:col-span-5 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-2.5">
     <h3 class="text-sm font-semibold text-[var(--text-primary)]">Quick Actions</h3>
-    <a href="{% url 'panels:student_report_download' %}" title="Download report card as CSV" class="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+    <a href="{% url 'panels:student_report_pdf' %}" data-no-loading="true" title="Download official PDF transcript" class="flex items-center justify-between rounded-lg bg-[var(--accent-primary)] px-3 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+      <span class="flex items-center gap-2"><i class="fa-solid fa-file-pdf"></i><span>Download PDF Transcript</span></span>
+      <i class="fa-solid fa-download text-[10px] opacity-90"></i>
+    </a>
+    <a href="{% url 'panels:student_report_download' %}" data-no-loading="true" title="Download report card as CSV" class="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
       <span class="flex items-center gap-2"><i class="fa-solid fa-file-csv text-[var(--status-success)]"></i><span>Download my report card</span></span>
       <i class="fa-solid fa-download text-[var(--text-muted)] text-[10px]"></i>
     </a>

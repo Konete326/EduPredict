@@ -4,9 +4,10 @@ import uuid
 from datetime import datetime, timezone
 from django.contrib.auth.hashers import check_password, make_password
 from pymongo.errors import DuplicateKeyError
-from core.db import ensure_indexes, invalidate_cache, student_records_col, users_col
+from core.db import ensure_indexes, invalidate_cache, notifications_col, student_records_col, users_col
 
 VALID_ROLES = ("ADMIN", "TEACHER", "STUDENT", "ANALYST")
+SELF_REGISTER_ROLES = ("STUDENT", "TEACHER", "ANALYST")
 
 _INDEXES_ENSURED = False
 _INDEX_LOCK = threading.Lock()
@@ -90,6 +91,7 @@ def serialize_session_user(user_doc):
         "bio": str(user_doc.get("bio") or ""),
         "avatar_url": str(user_doc.get("avatar_url") or ""),
         "is_active": bool(user_doc.get("is_active", True)),
+        "approval_status": str(user_doc.get("approval_status") or ("APPROVED" if user_doc.get("is_active", True) else "INACTIVE")).upper(),
         "theme_prefs": dict(user_doc.get("theme_prefs")) if isinstance(user_doc.get("theme_prefs"), dict) else {},
     }
     student_id = user_doc.get("student_id")
@@ -123,6 +125,8 @@ def authenticate_user(email, password):
     user_doc = users_col().find_one({"email": email.strip().lower()})
     if user_doc is None:
         return None, "Invalid email or password."
+    if str(user_doc.get("approval_status") or "").strip().upper() == "PENDING":
+        return None, "Your teacher account is pending Admin approval. Please wait until an administrator approves your account."
     if not user_doc.get("is_active", True):
         return None, "Your account is inactive. Please contact an administrator."
     if not check_password(password, user_doc.get("password_hash", "")):
@@ -133,17 +137,20 @@ def authenticate_user(email, password):
     return user_doc, None
 
 
-def register_user(full_name, email, password, role, department, batch):
+def register_user(full_name, email, password, role, department, batch, phone="", bio=""):
+    normalized_role = str(role or "").strip().upper()
+    if normalized_role not in SELF_REGISTER_ROLES:
+        return None, "Administrator accounts can only be created by an existing Admin."
     ensure_accounts_indexes_once()
     col = users_col()
     normalized_email = email.strip().lower()
     if col.find_one({"email": normalized_email}, {"_id": 1}) is not None:
         return None, "An account with this email already exists."
 
-    normalized_role = role.strip().upper()
     resolved_department = department.strip() or "General"
     resolved_batch = batch.strip() or ("2026" if normalized_role == "STUDENT" else "ALL")
     user_id = generate_unique_user_id(col)
+    is_pending_teacher = normalized_role == "TEACHER"
 
     user_doc = {
         "user_id": user_id,
@@ -153,7 +160,10 @@ def register_user(full_name, email, password, role, department, batch):
         "role": normalized_role,
         "department": resolved_department,
         "batch": resolved_batch,
-        "is_active": True,
+        "phone": str(phone or "").strip(),
+        "bio": str(bio or "").strip(),
+        "is_active": not is_pending_teacher,
+        "approval_status": "PENDING" if is_pending_teacher else "APPROVED",
         "created_at": datetime.now(timezone.utc),
     }
 
@@ -187,6 +197,23 @@ def register_user(full_name, email, password, role, department, batch):
             )
         invalidate_cache("analyst:")
         invalidate_cache("teacher:")
+
+    if is_pending_teacher:
+        try:
+            notifications_col().insert_one(
+                {
+                    "title": "Teacher Approval Needed",
+                    "message": f"{full_name.strip()} ({normalized_email}, {resolved_department}) registered as Teacher and is waiting for Admin approval.",
+                    "severity": "WARNING",
+                    "category": "APPROVAL",
+                    "target_role": "ADMIN",
+                    "is_read": False,
+                    "created_at": datetime.now(timezone.utc),
+                }
+            )
+            invalidate_cache("notifs:")
+        except Exception:
+            pass
 
     invalidate_cache("admin:")
     invalidate_cache("soon:")

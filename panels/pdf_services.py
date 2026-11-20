@@ -21,6 +21,25 @@ def _safe_float(val, default=0.0):
         return default
 
 
+def _letter_grade(marks):
+    score = _safe_float(marks, 0.0)
+    if score >= 85:
+        return "A"
+    if score >= 80:
+        return "A-"
+    if score >= 75:
+        return "B+"
+    if score >= 70:
+        return "B"
+    if score >= 65:
+        return "C+"
+    if score >= 60:
+        return "C"
+    if score >= 50:
+        return "D"
+    return "F"
+
+
 def _risk_colors(risk_level):
     norm = str(risk_level or "").strip().upper()
     if norm in ("HIGH", "HIGH RISK", "DANGER", "AT RISK"):
@@ -67,19 +86,25 @@ def _extract_student_data(data):
     insight_dict = data.get("insight") if isinstance(data.get("insight"), dict) else {}
     recommendation = str(rec.get("recommendation") or data.get("recommendation") or insight_dict.get("summary") or "Maintain consistent lecture attendance, engage in LMS coursework, and complete weekly milestones.")
     raw_subjects = data.get("subject_rows") or rec.get("courses") or data.get("courses") or []
+    credits = _safe_float(data.get("credits"), 0.0)
+    rank = data.get("rank")
+    rank_text = f"#{rank['rank']} of {rank['total']}" if isinstance(rank, dict) and rank.get("rank") else "N/A"
     subject_rows = []
     for s in raw_subjects:
         if isinstance(s, dict):
             status_val = s.get("status")
             status_str = status_val.get("text") if isinstance(status_val, dict) else str(status_val or "Stable")
-            subject_rows.append({"code": str(s.get("course_code") or "N/A").upper(), "marks": f"{_safe_float(s.get('my_marks', s.get('internal_marks', 0.0))):.1f}", "class_marks": f"{_safe_float(s.get('class_marks', 0.0)):.1f}", "att": f"{_safe_float(s.get('my_attendance', s.get('attendance_pct', 0.0))):.1f}%", "class_att": f"{_safe_float(s.get('class_attendance', 0.0)):.1f}%", "status": status_str})
+            marks_val = _safe_float(s.get("my_marks", s.get("internal_marks", 0.0)))
+            subject_rows.append({"code": str(s.get("course_code") or "N/A").upper(), "marks": f"{marks_val:.1f}", "class_marks": f"{_safe_float(s.get('class_marks', 0.0)):.1f}", "att": f"{_safe_float(s.get('my_attendance', s.get('attendance_pct', 0.0))):.1f}%", "class_att": f"{_safe_float(s.get('class_attendance', 0.0)):.1f}%", "grade": _letter_grade(marks_val), "status": status_str})
         elif isinstance(s, (list, tuple)) and len(s) >= 6:
             st = s[5]
             st_text = st.get("text") if isinstance(st, dict) else str(st)
-            subject_rows.append({"code": str(s[0]).upper(), "marks": str(s[1]), "class_marks": str(s[2]), "att": str(s[4] if "%" in str(s[4]) else s[3]), "class_att": str(s[3] if "%" in str(s[4]) else s[4]), "status": st_text})
+            marks_val = _safe_float(s[1])
+            subject_rows.append({"code": str(s[0]).upper(), "marks": str(s[1]), "class_marks": str(s[2]), "att": str(s[4] if "%" in str(s[4]) else s[3]), "class_att": str(s[3] if "%" in str(s[4]) else s[4]), "grade": _letter_grade(marks_val), "status": st_text})
     return {
         "full_name": full_name, "student_id": student_id, "department": department, "batch": batch,
         "attendance": att, "marks": marks, "predicted_gpa": pred_gpa, "risk_level": risk,
+        "credits": credits, "rank_text": rank_text,
         "recommendation": recommendation, "subject_rows": subject_rows, "tips": data.get("tips") if isinstance(data.get("tips"), list) else [],
     }
 
@@ -92,11 +117,16 @@ def generate_student_report_card_pdf(data):
     story = []
     now_str = datetime.now().strftime("%B %d, %Y - %H:%M")
 
-    header_table = Table([[Paragraph("EduPredict Portal", styles["portal_tag"]), Paragraph(f"Report Date: {now_str}", styles["meta_lbl"])], [Paragraph("STUDENT ACADEMIC REPORT CARD", styles["title"]), Paragraph("Official Academic Record", styles["subtitle"])]], colWidths=[380, 160])
+    header_table = Table([[Paragraph("EduPredict Portal", styles["portal_tag"]), Paragraph(f"Report Date: {now_str}", styles["meta_lbl"])], [Paragraph("OFFICIAL ACADEMIC TRANSCRIPT & REPORT CARD", styles["title"]), Paragraph("Official Academic Record", styles["subtitle"])]], colWidths=[380, 160])
     header_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("ALIGN", (1, 0), (1, -1), "RIGHT"), ("BOTTOMPADDING", (0, 0), (-1, -1), 1)]))
     story.extend([header_table, HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#2563EB"), spaceBefore=4, spaceAfter=8)])
 
-    meta_table = Table([[Paragraph("STUDENT ID", styles["meta_lbl"]), Paragraph("STUDENT NAME", styles["meta_lbl"]), Paragraph("DEPARTMENT", styles["meta_lbl"]), Paragraph("BATCH / CLASS", styles["meta_lbl"])], [Paragraph(info["student_id"], styles["meta_val"]), Paragraph(info["full_name"], styles["meta_val"]), Paragraph(info["department"], styles["meta_val"]), Paragraph(info["batch"], styles["meta_val"])]], colWidths=[110, 170, 170, 90])
+    meta_table = Table([
+        [Paragraph("STUDENT ID", styles["meta_lbl"]), Paragraph("STUDENT NAME", styles["meta_lbl"]), Paragraph("DEPARTMENT", styles["meta_lbl"]), Paragraph("BATCH / CLASS", styles["meta_lbl"])],
+        [Paragraph(info["student_id"], styles["meta_val"]), Paragraph(info["full_name"], styles["meta_val"]), Paragraph(info["department"], styles["meta_val"]), Paragraph(info["batch"], styles["meta_val"])],
+        [Paragraph("EARNED CREDITS", styles["meta_lbl"]), Paragraph("CLASS STANDING", styles["meta_lbl"]), Paragraph("ACADEMIC STATUS", styles["meta_lbl"]), Paragraph("ISSUED BY", styles["meta_lbl"])],
+        [Paragraph(f"{info['credits']:.1f}", styles["meta_val"]), Paragraph(info["rank_text"], styles["meta_val"]), Paragraph(info["risk_level"], styles["meta_val"]), Paragraph("EduPredict Registrar", styles["meta_val"])],
+    ], colWidths=[110, 170, 170, 90])
     meta_table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")), ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")), ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")), ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4)]))
     story.extend([meta_table, Spacer(1, 6)])
 
@@ -105,16 +135,16 @@ def generate_student_report_card_pdf(data):
     kpi_table.setStyle(TableStyle([("BACKGROUND", (0, 0), (2, -1), colors.HexColor("#F1F5F9")), ("BACKGROUND", (3, 0), (3, -1), risk_bg_color), ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")), ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")), ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 3)]))
     story.extend([kpi_table, Spacer(1, 8), Paragraph("Subject Breakdown & Class Comparison", styles["sec_head"]), Spacer(1, 3)])
 
-    table_rows = [[Paragraph("COURSE CODE", styles["th"]), Paragraph("STUDENT MARKS", styles["th"]), Paragraph("CLASS AVG MARKS", styles["th"]), Paragraph("STUDENT ATTENDANCE", styles["th"]), Paragraph("CLASS AVG ATT", styles["th"]), Paragraph("STATUS", styles["th"])]]
+    table_rows = [[Paragraph("COURSE CODE", styles["th"]), Paragraph("MY MARKS", styles["th"]), Paragraph("CLASS AVG", styles["th"]), Paragraph("MY ATT.", styles["th"]), Paragraph("CLASS ATT.", styles["th"]), Paragraph("GRADE", styles["th"]), Paragraph("STATUS", styles["th"])]]
     for s in info["subject_rows"]:
-        table_rows.append([Paragraph(s["code"], styles["td"]), Paragraph(s["marks"], styles["td"]), Paragraph(s["class_marks"], styles["td"]), Paragraph(s["att"], styles["td"]), Paragraph(s["class_att"], styles["td"]), Paragraph(s["status"], styles["td"])])
+        table_rows.append([Paragraph(s["code"], styles["td"]), Paragraph(s["marks"], styles["td"]), Paragraph(s["class_marks"], styles["td"]), Paragraph(s["att"], styles["td"]), Paragraph(s["class_att"], styles["td"]), Paragraph(s["grade"], styles["td"]), Paragraph(s["status"], styles["td"])])
     if len(table_rows) == 1:
-        table_rows.append([Paragraph("No course records found for this student.", styles["td_left"]), Paragraph("", styles["td"]), Paragraph("", styles["td"]), Paragraph("", styles["td"]), Paragraph("", styles["td"]), Paragraph("", styles["td"])])
+        table_rows.append([Paragraph("No course records found for this student.", styles["td_left"]), Paragraph("", styles["td"]), Paragraph("", styles["td"]), Paragraph("", styles["td"]), Paragraph("", styles["td"]), Paragraph("", styles["td"]), Paragraph("", styles["td"])])
 
     sub_styles = [("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0F172A")), ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")), ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")), ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3)]
     for idx in range(1, len(table_rows)):
         sub_styles.append(("BACKGROUND", (0, idx), (-1, idx), colors.HexColor("#F8FAFC") if idx % 2 == 0 else colors.white))
-    subject_table = Table(table_rows, colWidths=[90, 85, 95, 95, 85, 90])
+    subject_table = Table(table_rows, colWidths=[76, 76, 76, 78, 78, 56, 100])
     subject_table.setStyle(TableStyle(sub_styles))
     story.extend([subject_table, Spacer(1, 8), Paragraph("AI Recommendation Notes & Academic Advisory", styles["sec_head"]), Spacer(1, 3)])
 
