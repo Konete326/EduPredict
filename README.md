@@ -39,30 +39,30 @@ EduPredict strictly isolates four role-based dashboard panels:
 
 ```text
 [ Browser Clients: Chrome / Firefox / Safari / Edge ]
-                       │
+                       â”‚
        HTTP / HTTPS (Reverse Proxy / Nginx / Direct)
-                       ▼
+                       â–¼
       [ Gunicorn WSGI Server: 3 Workers / Port 8000 ]
-                       │
+                       â”‚
         [ Django Application Server (MVT) ]
-   ├── Authentication & RBAC Middleware (@role_required)
-   ├── Role Views (Admin, Teacher, Student, Analyst)
-   ├── Analytics Engine (Pandas, NumPy, Scikit-Learn)
-   ├── PDF Generation Engine (ReportLab)
-   ├── Live Theme Studio Service (CSS Variable Tokenization)
-   └── WhiteNoise Middleware (Compressed Static Serving)
-                       │
+   â”œâ”€â”€ Authentication & RBAC Middleware (@role_required)
+   â”œâ”€â”€ Role Views (Admin, Teacher, Student, Analyst)
+   â”œâ”€â”€ Analytics Engine (Pandas, NumPy, Scikit-Learn)
+   â”œâ”€â”€ PDF Generation Engine (ReportLab)
+   â”œâ”€â”€ Live Theme Studio Service (CSS Variable Tokenization)
+   â””â”€â”€ WhiteNoise Middleware (Compressed Static Serving)
+                       â”‚
              PyMongo Connection Pool
-                       ▼
+                       â–¼
     [ MongoDB Atlas Cloud Database: edupredict_db ]
-   ├── users (RBAC, credentials, scoped theme preferences)
-   ├── courses (catalog, department, instructor mapping)
-   ├── student_records (marks, attendance, activity logs)
-   ├── predictions (ML risk scores, anomalies, suggestions)
-   ├── notifications (targeted alerts with real-time sync)
-   ├── support_tickets (issue resolution tracking)
-   ├── activity_logs (audit trail and actor attribution)
-   └── system_settings (dynamic operational thresholds)
+   â”œâ”€â”€ users (RBAC, credentials, scoped theme preferences)
+   â”œâ”€â”€ courses (catalog, department, instructor mapping)
+   â”œâ”€â”€ student_records (marks, attendance, activity logs)
+   â”œâ”€â”€ predictions (ML risk scores, anomalies, suggestions)
+   â”œâ”€â”€ notifications (targeted alerts with real-time sync)
+   â”œâ”€â”€ support_tickets (issue resolution tracking)
+   â”œâ”€â”€ activity_logs (audit trail and actor attribution)
+   â””â”€â”€ system_settings (dynamic operational thresholds)
 ```
 
 ---
@@ -212,6 +212,11 @@ Alternatively, administrators can trigger downloads from the UI at `/admin-panel
 Each backup also gets a `<file>.sha256` sidecar manifest. Verify integrity at any time (a mismatch exits with an error):
 ```bash
 python manage.py verify_backup backups/<file>.json
+```
+
+Optional encryption (Fernet): set `BACKUP_ENCRYPTION_KEY` in `.env` (generate with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`) and add `--encrypt`. The file is saved as `<name>.enc`; `verify_backup` also confirms it decrypts with the configured key. Keep the key safe, because backups cannot be restored without it:
+```bash
+python manage.py export_backup --format json --output-dir backups/ --encrypt
 ```
 
 ### 4. Automated GitHub Actions CI Pipeline (`.github/workflows/django.yml`)

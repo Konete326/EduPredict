@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from panels.admin_seed import build_backup_payload
+from core.backup_crypto import encrypt_bytes, get_fernet
 
 MIN_BACKUP_FREE_BYTES = 50 * 1024 * 1024
 
@@ -35,6 +36,11 @@ class Command(BaseCommand):
             help="Purge backup files older than specified days (0 to disable).",
         )
         parser.add_argument(
+            "--encrypt",
+            action="store_true",
+            help="Encrypt the backup with BACKUP_ENCRYPTION_KEY and save it with a .enc extension.",
+        )
+        parser.add_argument(
             "--quiet",
             action="store_true",
             help="Suppress informational stdout output.",
@@ -58,6 +64,9 @@ class Command(BaseCommand):
         custom_name = str(options.get("filename") or "").strip()
         quiet = bool(options.get("quiet"))
         retention_days = int(options.get("retention_days") or 0)
+        encrypt = bool(options.get("encrypt"))
+        if encrypt:
+            get_fernet()
 
         free_bytes = self._check_disk_space(output_dir)
 
@@ -66,19 +75,24 @@ class Command(BaseCommand):
         except Exception as exc:
             raise CommandError(f"Backup payload generation failed: {exc}") from exc
 
-        payload_bytes = len(content.encode("utf-8"))
+        data = content.encode("utf-8")
+        if encrypt:
+            data = encrypt_bytes(data)
+        payload_bytes = len(data)
         if free_bytes < payload_bytes + (5 * 1024 * 1024):
             raise CommandError(
                 f"Insufficient disk space for {payload_bytes} byte backup in {output_dir}."
             )
 
         target_name = custom_name if custom_name else default_name
+        if encrypt and not target_name.endswith(".enc"):
+            target_name = f"{target_name}.enc"
         target_path = output_dir / target_name
         temp_path = output_dir / f"{target_name}.tmp.{int(time.time())}"
 
         try:
-            temp_path.write_text(content, encoding="utf-8")
-            if temp_path.stat().st_size == 0 and len(content) > 0:
+            temp_path.write_bytes(data)
+            if temp_path.stat().st_size == 0 and len(data) > 0:
                 raise CommandError("Backup file write resulted in 0 bytes.")
             temp_path.replace(target_path)
         except Exception as exc:
@@ -102,7 +116,7 @@ class Command(BaseCommand):
             byte_size = target_path.stat().st_size
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Successfully generated {fmt.upper()} backup ({byte_size} bytes): {target_path.resolve()}"
+                    f"Successfully generated {fmt.upper()} backup{' (encrypted)' if encrypt else ''} ({byte_size} bytes): {target_path.resolve()}"
                 )
             )
             self.stdout.write(self.style.SUCCESS(f"SHA-256: {digest} ({checksum_path.name})"))

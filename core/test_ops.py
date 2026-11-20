@@ -9,6 +9,8 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.http import JsonResponse
 from django.test import RequestFactory, TestCase
+from cryptography.fernet import Fernet
+from core.backup_crypto import decrypt_bytes
 from core.decorators import _clear_rate_limit_buckets, rate_limit
 from core.views_health import _build_memory_payload, _get_cgroup_memory_limit_mb
 
@@ -111,6 +113,25 @@ class OperationsToolingTests(TestCase):
                 call_command("verify_backup", str(out_path), quiet=True)
             with self.assertRaisesMessage(CommandError, "Backup file not found"):
                 call_command("verify_backup", str(Path(tmp_dir) / "missing.json"), quiet=True)
+
+    def test_encrypted_backup_roundtrip_and_key_failures(self):
+        key = Fernet.generate_key().decode("utf-8")
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            with patch.dict(os.environ, {"BACKUP_ENCRYPTION_KEY": ""}):
+                with self.assertRaisesMessage(CommandError, "BACKUP_ENCRYPTION_KEY is not set"):
+                    call_command("export_backup", format="json", output_dir=tmp_dir, encrypt=True, quiet=True)
+            self.assertEqual(list(Path(tmp_dir).iterdir()), [])
+            with patch.dict(os.environ, {"BACKUP_ENCRYPTION_KEY": key}):
+                out_path = Path(call_command("export_backup", format="json", output_dir=tmp_dir, filename="snap.json", encrypt=True, quiet=True))
+                self.assertEqual(out_path.name, "snap.json.enc")
+                self.assertTrue((Path(tmp_dir) / "snap.json.enc.sha256").exists())
+                raw = out_path.read_bytes()
+                self.assertNotIn(b"collections", raw)
+                self.assertIn("collections", json.loads(decrypt_bytes(raw).decode("utf-8")))
+                self.assertEqual(len(call_command("verify_backup", str(out_path), quiet=True)), 64)
+            with patch.dict(os.environ, {"BACKUP_ENCRYPTION_KEY": Fernet.generate_key().decode("utf-8")}):
+                with self.assertRaisesMessage(CommandError, "decryption failed"):
+                    call_command("verify_backup", str(out_path), quiet=True)
 
     def test_health_cgroup_container_memory_telemetry(self):
         with patch("core.views_health.os.path.exists", side_effect=lambda p: p == "/sys/fs/cgroup/memory.max"):

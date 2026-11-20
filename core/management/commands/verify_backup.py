@@ -1,6 +1,7 @@
 import hashlib
 from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
+from core.backup_crypto import decrypt_bytes
 
 
 class Command(BaseCommand):
@@ -34,6 +35,12 @@ class Command(BaseCommand):
                 f"Checksum mismatch for {backup_path.name}: expected {expected}, got {actual}."
             )
 
+        decrypted = False
+        if backup_path.suffix == ".enc":
+            decrypt_bytes(backup_path.read_bytes())
+            decrypted = True
+
         if not quiet:
-            self.stdout.write(self.style.SUCCESS(f"OK: {backup_path.name} matches SHA-256 {actual}"))
+            suffix = " and decrypts with the configured key" if decrypted else ""
+            self.stdout.write(self.style.SUCCESS(f"OK: {backup_path.name} matches SHA-256 {actual}{suffix}"))
         return actual
