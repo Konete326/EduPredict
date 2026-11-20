@@ -61,48 +61,38 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Production Observability & Performance Team"
-active_branch_merged_to_main: "feature/health-counts-ttl-optimization -> main"
-project_phase: "Phase 49 Complete: Health Check Estimated Document Count & TTL Optimization"
+last_updated_by_agent: "Phase 22 Ocean Blue Default, Cloudinary Avatars & UX Polish QA Team"
+active_branch_merged_to_main: "feature/phase22-ux-cloudinary-blue -> main"
+project_phase: "Phase 22 Complete: Ocean Blue Default Theme, Cloudinary Avatars, Change Password Modal, Global Loading Lock, Top SPA Progress Bar, Responsive Table Wrap, Gradient Uploader & FAQ-Pro"
 
 completed_modules:
-  - "Phase 1-35: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Admin Logs & Settings, Live Theme Studio, My Profile, Password Toggles, 1.2s Auto-Upload, ReportLab PDF Report Cards, UAT Suite, Real-Time Health, CI/CD Pipeline, WhiteNoise Static Serving, Docker Containers, Atlas Connection Pooling, Theme-Aware 500 Error Page, Operations Runbook, Automated Backup CLI with Sentry, Backup Retention Purging, Endpoint Rate Limiting, WhiteNoise Immutable Cache, Robots.txt Policy, Reverse Proxy SSL Transparency, Favicon SVG Route, and Auth Timing Defense."
-  - "Phase 36: Strict Referrer Policy & Cross-Origin Opener Hardening (SECURE_REFERRER_POLICY & SECURE_CROSS_ORIGIN_OPENER_POLICY)."
-  - "Phase 37: Upload Memory Caps & Form Field Protection (DATA_UPLOAD_MAX_MEMORY_SIZE = 5MB, FILE_UPLOAD_MAX_MEMORY_SIZE = 5MB, DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000)."
-  - "Phase 38: Sensitive Post Parameters Masking & Cookie HttpOnly Hardening (SESSION_COOKIE_HTTPONLY, SESSION_COOKIE_SAMESITE, CSRF_COOKIE_SAMESITE, @sensitive_post_parameters)."
-  - "Phase 39: Health Check Process Memory Monitoring (RSS Memory in /health/ via Windows psapi and Linux /proc/self/status)."
-  - "Phase 40: Favicon Browser Caching & Health Check Ping Timeout (maxTimeMS=2000, Cache-Control: public, max-age=86400)."
-  - "Phase 41: Production Content-Security-Policy (CSP) Headers Hardening (SecurityHeadersMiddleware, SECURE_CONTENT_SECURITY_POLICY)."
-  - "Phase 42: Permissions-Policy Security Headers Hardening (camera=(), microphone=(), geolocation=(), payment=(), usb=())."
-  - "Phase 43: Health Check No-Cache Header & Diagnostics Hardening (_json_no_cache on /health/)."
-  - "Phase 44: Rate Limiter Retry-After Header & 429 Telemetry (Retry-After header, retry_after_seconds)."
-  - "Phase 45: Backup CLI Partial Failure Cleanup & Disk Safety Hardening (atomic replace, unlink on error)."
-  - "Phase 46: Production Sentry Before-Send Sanitization & Error Tagging (sentry_before_send masking & mongodb tagging)."
-  - "Phase 47: WhiteNoise Manifest Strict Setting & Static Fault-Tolerance Hardening (WHITENOISE_MANIFEST_STRICT = False)."
-  - "Phase 48: Sentry Environment Tagging & UAT Latency Telemetry (environment=os.getenv('ENVIRONMENT', 'production'), [HIGH LATENCY] tag when > 1500ms)."
-  - "Phase 49: Health Check Estimated Document Count & TTL Optimization:"
-      - "Updated core/views_health.py (200 lines, 0 comments): Refactored collection count aggregation to utilize fast O(1) metadata via col.estimated_document_count() with automatic fallback to count_documents({}), cached in-memory with a 30s TTL via get_cached, and added ?fresh=1 query param to force-refresh on demand."
-      - "Updated panels/test_uat.py (394 lines, 0 comments): Added test_health_check_counts_cached_and_fresh_parameter verifying cache persistence and ?fresh=1 invalidation, streamlined documentation assertions (81/81 tests PASS)."
+  - "Phase 1-21: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Dynamic Thresholds, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/ & Cancelable Auto-Upload."
+  - "Phase 22: Ocean Blue Default, Cloudinary Avatars & UX Polish:"
+      - "Ocean Blue Default & Clean Shell: Switched default theme to shell_theme='blue' and accent='ocean' (#2563eb / #3b82f6) across core/theme_services.py (333 lines), static/css/global.css (217 lines), static/js/theme_studio.js (300 lines), static/js/charts.js (264 lines), templates/components/theme_studio_modal.html (221 lines), templates/base.html (179 lines), and templates/accounts/auth.html (331 lines); added inline Ocean Blue SVG favicon and removed 'Atlas Ready' pill from templates/components/topbar.html (75 lines)."
+      - "Cloudinary Avatar Media Pipeline: Added core/cloudinary_services.py (68 lines) with is_cloudinary_configured() and 320x320 face-cropped upload_user_avatar() (<= 5 MB), tracked CLOUDINARY_* keys in .env / .env.example, froze cloudinary== in requirements.txt, and wired avatar_url into accounts/services.py (193 lines), panels/admin_services.py (342 lines), topbar.html, and sidebar.html (196 lines)."
+      - "Change Password Modal & Profile Widgets: Updated panels/views_theme.py (139 lines) and core/theme_services.py for action='change_password', 'upload_avatar', and 'remove_avatar'; updated templates/panels/user_profile.html (165 lines) with openChangePasswordModal() (no inline password inputs), templates/components/gradient_file_uploader.html (32 lines), and templates/components/faq_pro.html (34 lines)."
+      - "Global Loading Lock, SPA Progress & Zero Horizontal Scrollbar: Added static/js/ui_widgets.js (163 lines) with window.EduPredictProgress (#ep-top-progress), double-submit guard ('Processing...' + aria-busy + 12s/pageshow reset), FaqPro search highlight, and GradientUploader; wired into static/js/nav.js (249 lines) and static/js/app.js (341 lines); enforced overflow-x: clip in global.css and break-words max-w-[18rem] in templates/components/data_table.html (134 lines)."
+      - "Docs & Tests: Updated .agents/trd.md, .agents/design.md, .agents/project-rules.md, and .agents/rules/edupredict-rules.md (14,509 bytes < 24,000); expanded panels/tests.py (345 lines)."
 
 verification_results:
   - "manage.py check: 0 issues reported."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED in 10.03s."
-  - "manage.py test: 81/81 tests PASSED in 22.34s."
-  - "node --check: all 5 JS scripts passed with 0 errors."
-  - "Zero comments audit: 0 comments across all modified and newly created files."
-  - "Line caps: All files strictly within limits (views_health.py 200 <= 250, test_uat.py 394 <= 350-400)."
+  - "manage.py test analytics panels --verbosity=2: 38/38 tests PASSED (11.602s)."
+  - "node --check static/js/ui_widgets.js, app.js, nav.js, charts.js, theme_studio.js: all exited 0."
+  - "Static audit (21 files): 0 comments, 0 triple-quotes, all files within line caps (views <= 250, others <= 350); .agents/rules/edupredict-rules.md (14,509 bytes < 24,000); .env and 8 .agents/* files tracked."
+  - "Live Django Client() smoke checks: is_cloudinary_configured()=True; GET /theme/preferences/ returns shell_theme='blue', accent='ocean', accent_primary='#2563eb'; /admin-panel/ & /auth/ include SVG favicon; /admin-panel/ excludes 'Atlas Ready' and includes #ep-top-progress; /profile/ includes openChangePasswordModal(), data-gradient-uploader, and data-faq-pro without inline new_password; data_table.html includes break-words."
 
 active_routes_and_files:
-  - "core/views_health.py (200 lines) -> Health check with O(1) metadata count and 30s TTL cache"
-  - "panels/test_uat.py (394 lines) -> 29 UAT/ops/doc tests (81 unit tests in test suite)"
+  - "core/cloudinary_services.py (68 lines), core/theme_services.py (333 lines), panels/views_theme.py (139 lines), static/js/ui_widgets.js (163 lines), static/css/global.css (217 lines)"
+  - "templates/components/gradient_file_uploader.html (32 lines), templates/components/faq_pro.html (34 lines), templates/panels/user_profile.html (165 lines)"
+  - "/profile/ -> panels:user_profile, /theme/preferences/ -> panels:theme_preferences"
 
 pending_modules_in_order:
-  - "EduPredict Core Architecture, 4 Role Panels, Evaluation Engine, PDF Reports, and Production Operations/Packaging are 100% complete, hardened, and verified."
+  - "Phase 23: Real-Time Notifications + Admin Feedback Reply CRUD + Typewriter Page Guide Wizard Modal"
+  - "Phase 24: Card-Grid User/Student/Teacher Directories + Modalized Upload/Quick Entry + Dot-Graph KPI Cards"
+  - "Phase 25: Stepper Signup Wizard + Teacher Approval Guard + Student PDF Transcript"
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
-  - "Docker build command: docker compose up --build (or docker build -t edupredict:latest .)."
-  - "Automated backup cron: python manage.py export_backup --format json --output-dir backups/ --retention-days 30 --quiet."
-  - "Health endpoint is active at /health/ with live MongoDB Atlas ping, IP rate-limiting, and RSS memory telemetry."
+  - "Keep role navigation strictly isolated across all panels per Rule 20; preserve get_cached TTL keys, invalidate_cache on mutations, and scoped ep_theme_prefs:<user_id>:<role> isolation."
   - "Always track .env and .agents/* in Git."
 ```

@@ -1,7 +1,8 @@
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from pymongo.errors import DuplicateKeyError
+from core.cloudinary_services import upload_user_avatar
 from core.db import invalidate_cache, student_records_col, users_col
 from panels.admin_audit_services import record_audit_log
 
@@ -78,11 +79,9 @@ def _pick(source, key, allowed, default):
 
 
 def _resolve_theme_scope(request):
-    session = getattr(request, "session", None)
-    raw_user = session.get("user") if session is not None else None
-    user = raw_user if isinstance(raw_user, dict) and raw_user else None
-    uid = str((user or {}).get("user_id") or "").strip() or "guest"
-    raw_role = str((user or {}).get("role") or "").strip().upper()
+    _, user, uid = _session_user_ctx(request)
+    uid = uid or "guest"
+    raw_role = str(user.get("role") or "").strip().upper()
     if raw_role in _VALID_ROLES:
         return raw_role, uid
     path = str(getattr(request, "path", "") or "").strip()
@@ -93,13 +92,7 @@ def _resolve_theme_scope(request):
 
 
 def get_theme_studio_catalog():
-    return {
-        "modes": [dict(item) for item in APPEARANCE_MODES],
-        "shell_themes": [dict(item) for item in SHELL_THEMES],
-        "swatches": [dict(item) for item in BRAND_SWATCHES],
-        "presets": [dict(item) for item in SURFACE_PRESETS],
-        "save_url": "/theme/preferences/",
-    }
+    return {"modes": [dict(i) for i in APPEARANCE_MODES], "shell_themes": [dict(i) for i in SHELL_THEMES], "swatches": [dict(i) for i in BRAND_SWATCHES], "presets": [dict(i) for i in SURFACE_PRESETS], "save_url": "/theme/preferences/"}
 
 
 def normalize_theme_prefs(raw, role="PORTAL", user_id="guest"):
@@ -107,8 +100,8 @@ def normalize_theme_prefs(raw, role="PORTAL", user_id="guest"):
     clean_role = str(role or "PORTAL").strip().upper() or "PORTAL"
     clean_uid = str(user_id or "guest").strip() or "guest"
     mode = _pick(source, "mode", _MODE_SLUGS, "light")
-    shell_theme = _pick(source, "shell_theme", _SHELL_MAP, "white")
-    accent = _pick(source, "accent", _SWATCH_MAP, "indigo")
+    shell_theme = _pick(source, "shell_theme", _SHELL_MAP, "blue")
+    accent = _pick(source, "accent", _SWATCH_MAP, "ocean")
     preset = _pick(source, "preset", _PRESET_MAP, "neutral")
     density = _pick(source, "density", _DENSITY_VALUES, "comfortable")
     sync_shell = _parse_bool(source.get("sync_shell"), default=True)
@@ -222,11 +215,39 @@ def sync_theme_prefs_on_login(request, user_doc):
     return session_by_role
 
 
-def update_user_profile_data(request, post_data):
+def _session_user_ctx(request):
     session = getattr(request, "session", None)
     raw_user = session.get("user") if session is not None else None
-    session_user = dict(raw_user) if isinstance(raw_user, dict) else {}
-    uid = str(session_user.get("user_id") or "").strip()
+    user = dict(raw_user) if isinstance(raw_user, dict) else {}
+    return session, user, str(user.get("user_id") or "").strip()
+
+def _safe_user_audit(session_user, uid, action, summary):
+    try:
+        actor = str(session_user.get("full_name") or uid).strip() or uid
+        role = str(session_user.get("role") or "USER").strip().upper() or "USER"
+        record_audit_log(actor, role, "USERS", action, summary, severity="INFO", source="USER")
+    except Exception:
+        pass
+
+def _validate_new_password(new_pwd, confirm_pwd):
+    if len(new_pwd) < 6:
+        return "New password must be at least 6 characters long."
+    return "New passwords do not match." if new_pwd != confirm_pwd else None
+
+def _save_session_user(session, updated_user):
+    if session is not None:
+        session["user"] = updated_user
+        session.modified = True
+
+def _set_avatar_state(session, session_user, uid, url, action, summary):
+    users_col().update_one({"user_id": uid}, {"$set": {"avatar_url": url}})
+    _save_session_user(session, {**session_user, "avatar_url": url})
+    _safe_user_audit(session_user, uid, action, summary)
+    invalidate_cache()
+
+
+def update_user_profile_data(request, post_data, files=None):
+    session, session_user, uid = _session_user_ctx(request)
     if not uid:
         return None, "Please sign in to update your profile."
     data = post_data or {}
@@ -241,35 +262,72 @@ def update_user_profile_data(request, post_data):
     batch = str(data.get("batch") or "").strip() or str(session_user.get("batch") or "").strip() or "ALL"
     phone, bio = str(data.get("phone") or "").strip(), str(data.get("bio") or "").strip()
     new_pwd, confirm_pwd = str(data.get("new_password") or ""), str(data.get("confirm_password") or "")
-    if new_pwd or confirm_pwd:
-        if len(new_pwd) < 6:
-            return None, "New password must be at least 6 characters long."
-        if new_pwd != confirm_pwd:
-            return None, "New passwords do not match."
+    if (new_pwd or confirm_pwd) and (pwd_err := _validate_new_password(new_pwd, confirm_pwd)):
+        return None, pwd_err
     col = users_col()
     if col.find_one({"email": email, "user_id": {"$ne": uid}}, {"_id": 1}) is not None:
         return None, "Another user already uses this email address."
-    updates = {"full_name": full_name, "email": email, "department": department, "batch": batch, "phone": phone, "bio": bio}
-    if new_pwd:
-        updates["password_hash"] = make_password(new_pwd)
+    updates = {"full_name": full_name, "email": email, "department": department, "batch": batch, "phone": phone, "bio": bio, **({"password_hash": make_password(new_pwd)} if new_pwd else {})}
+    avatar_file = files.get("avatar_file") if files and hasattr(files, "get") else None
+    avatar_url = None
+    if avatar_file:
+        avatar_url, upload_err = upload_user_avatar(avatar_file, uid)
+        if upload_err or not avatar_url:
+            return None, upload_err or "Could not upload profile photo."
+        updates["avatar_url"] = avatar_url
     try:
         col.update_one({"user_id": uid}, {"$set": updates})
     except DuplicateKeyError:
         return None, "Another user already uses this email address."
-    student_id = str(session_user.get("student_id") or "").strip()
-    if student_id:
+    if student_id := str(session_user.get("student_id") or "").strip():
         try:
             sr_col = student_records_col()
             (sr_col.update_many if hasattr(sr_col, "update_many") else sr_col.update_one)({"student_id": student_id}, {"$set": {"full_name": full_name}})
         except Exception:
             pass
-    updated_user = {**session_user, "full_name": full_name, "email": email, "department": department, "batch": batch, "phone": phone, "bio": bio}
-    if session is not None:
-        session["user"] = updated_user
-        session.modified = True
-    try:
-        record_audit_log(full_name, str(session_user.get("role") or "USER").strip().upper() or "USER", "USERS", "UPDATE_PROFILE", f"Updated profile for {full_name} ({uid}).", severity="INFO", source="USER")
-    except Exception:
-        pass
+    updated_user = {**session_user, "full_name": full_name, "email": email, "department": department, "batch": batch, "phone": phone, "bio": bio, **({"avatar_url": avatar_url} if avatar_url else {})}
+    _save_session_user(session, updated_user)
+    _safe_user_audit(session_user, uid, "UPDATE_PROFILE", f"Updated profile for {full_name} ({uid}).")
     invalidate_cache()
     return updated_user, None
+
+
+def change_user_password(request, post_data):
+    _, session_user, uid = _session_user_ctx(request)
+    if not uid:
+        return False, "Please sign in to change your password."
+    data = post_data or {}
+    current_pwd, new_pwd, confirm_pwd = str(data.get("current_password") or ""), str(data.get("new_password") or ""), str(data.get("confirm_password") or "")
+    if not current_pwd:
+        return False, "Current password is required."
+    if pwd_err := _validate_new_password(new_pwd, confirm_pwd):
+        return False, pwd_err
+    col = users_col()
+    user_doc = col.find_one({"user_id": uid})
+    if user_doc is None:
+        return False, "Account record not found."
+    if not check_password(current_pwd, str(user_doc.get("password_hash") or "")):
+        return False, "Current password is incorrect."
+    col.update_one({"user_id": uid}, {"$set": {"password_hash": make_password(new_pwd)}})
+    _safe_user_audit(session_user, uid, "CHANGE_PASSWORD", f"Changed password for {session_user.get('full_name') or uid} ({uid}).")
+    invalidate_cache()
+    return True, None
+
+
+def save_user_avatar(request, file_obj):
+    session, session_user, uid = _session_user_ctx(request)
+    if not uid:
+        return None, "Please sign in to upload a profile photo."
+    url, err = upload_user_avatar(file_obj, uid)
+    if err or not url:
+        return None, err or "Could not upload profile photo."
+    _set_avatar_state(session, session_user, uid, url, "UPDATE_AVATAR", f"Updated profile photo for {uid}.")
+    return url, None
+
+
+def remove_user_avatar(request):
+    session, session_user, uid = _session_user_ctx(request)
+    if not uid:
+        return False, "Please sign in to remove your profile photo."
+    _set_avatar_state(session, session_user, uid, "", "REMOVE_AVATAR", f"Removed profile photo for {uid}.")
+    return True, None

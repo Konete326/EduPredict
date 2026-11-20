@@ -1,11 +1,13 @@
 import json
 from unittest.mock import MagicMock, patch
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
 from accounts.services import serialize_session_user
 from analytics.data_pipeline import generate_sample_dataset_df
 from analytics.tests import _build_genuine_labelled_records
+from core.cloudinary_services import upload_user_avatar
 from core.db import invalidate_cache
 from core.theme_services import get_theme_studio_catalog, get_user_theme_prefs, sync_theme_prefs_on_login
 from panels.admin_services import build_user_table_data
@@ -191,23 +193,10 @@ class AnalystDashboardEvaluationTests(TestCase):
         self.assertEqual(anon.get(reverse("analytics:model_evaluation")).status_code, 302)
 
         student = self._login_as("STUDENT")
-        self.assertRedirects(
-            student.get(reverse("panels:analyst_dashboard")),
-            reverse("panels:student_dashboard"),
-            fetch_redirect_response=False,
-        )
-        self.assertRedirects(
-            student.get(reverse("analytics:model_evaluation")),
-            reverse("panels:student_dashboard"),
-            fetch_redirect_response=False,
-        )
-
+        self.assertRedirects(student.get(reverse("panels:analyst_dashboard")), reverse("panels:student_dashboard"), fetch_redirect_response=False)
+        self.assertRedirects(student.get(reverse("analytics:model_evaluation")), reverse("panels:student_dashboard"), fetch_redirect_response=False)
         teacher = self._login_as("TEACHER")
-        self.assertRedirects(
-            teacher.get(reverse("analytics:model_evaluation")),
-            reverse("panels:teacher_dashboard"),
-            fetch_redirect_response=False,
-        )
+        self.assertRedirects(teacher.get(reverse("analytics:model_evaluation")), reverse("panels:teacher_dashboard"), fetch_redirect_response=False)
 
 
 class ThemePreferencesTests(TestCase):
@@ -230,9 +219,9 @@ class ThemePreferencesTests(TestCase):
         data = resp.json()
         self.assertTrue(data["ok"])
         prefs = data["theme_prefs"]
-        self.assertEqual((prefs["role"], prefs["user_id"], prefs["mode"], prefs["shell_theme"], prefs["accent"], prefs["preset"], prefs["density"]), ("PORTAL", "guest", "light", "white", "indigo", "neutral", "comfortable"))
+        self.assertEqual((prefs["role"], prefs["user_id"], prefs["mode"], prefs["shell_theme"], prefs["accent"], prefs["preset"], prefs["density"]), ("PORTAL", "guest", "light", "blue", "ocean", "neutral", "comfortable"))
         self.assertTrue(prefs["sync_shell"])
-        self.assertEqual(prefs["tokens"]["accent_primary"], "#4f46e5")
+        self.assertEqual(prefs["tokens"]["accent_primary"], "#2563eb")
         self.assertEqual(mock_users_col.call_count, 0)
 
         req = RequestFactory().get("/teacher-panel/")
@@ -245,11 +234,7 @@ class ThemePreferencesTests(TestCase):
         client = Client()
         self._set_user(client, "TEACHER", "USR-T1")
 
-        post_resp = client.post(
-            reverse("panels:theme_preferences"),
-            data=json.dumps({"mode": "dark", "shell_theme": "blue", "accent": "ocean", "preset": "matcha", "density": "compact", "sync_shell": True}),
-            content_type="application/json",
-        )
+        post_resp = client.post(reverse("panels:theme_preferences"), data=json.dumps({"mode": "dark", "shell_theme": "blue", "accent": "ocean", "preset": "matcha", "density": "compact", "sync_shell": True}), content_type="application/json")
         self.assertEqual(post_resp.status_code, 200)
         t_prefs = post_resp.json()["theme_prefs"]
         self.assertEqual((t_prefs["role"], t_prefs["mode"], t_prefs["shell_theme"], t_prefs["accent"], t_prefs["preset"], t_prefs["density"]), ("TEACHER", "dark", "blue", "ocean", "matcha", "compact"))
@@ -266,20 +251,16 @@ class ThemePreferencesTests(TestCase):
 
         self._set_user(client, "ADMIN", "USR-T1")
         admin_get = client.get(reverse("panels:theme_preferences")).json()["theme_prefs"]
-        self.assertEqual((admin_get["role"], admin_get["mode"], admin_get["shell_theme"], admin_get["accent"], admin_get["preset"]), ("ADMIN", "light", "white", "indigo", "neutral"))
+        self.assertEqual((admin_get["role"], admin_get["mode"], admin_get["shell_theme"], admin_get["accent"], admin_get["preset"]), ("ADMIN", "light", "blue", "ocean", "neutral"))
 
-        admin_post = client.post(
-            reverse("panels:theme_preferences"),
-            data=json.dumps({"mode": "dark", "shell_theme": "red", "accent": "crimson", "preset": "gothic", "sync_shell": False}),
-            content_type="application/json",
-        ).json()["theme_prefs"]
+        admin_post = client.post(reverse("panels:theme_preferences"), data=json.dumps({"mode": "dark", "shell_theme": "red", "accent": "crimson", "preset": "gothic", "sync_shell": False}), content_type="application/json").json()["theme_prefs"]
         self.assertEqual((admin_post["role"], admin_post["shell_theme"], admin_post["accent"], admin_post["preset"], admin_post["sync_shell"]), ("ADMIN", "red", "crimson", "gothic", False))
 
         self._set_user(client, "TEACHER", "USR-T1")
         reset_resp = client.post(reverse("panels:theme_preferences"), data=json.dumps({"action": "reset"}), content_type="application/json")
         self.assertEqual(reset_resp.status_code, 200)
         reset_prefs = reset_resp.json()["theme_prefs"]
-        self.assertEqual((reset_prefs["role"], reset_prefs["mode"], reset_prefs["shell_theme"], reset_prefs["accent"], reset_prefs["preset"], reset_prefs["density"]), ("TEACHER", "light", "white", "indigo", "neutral", "comfortable"))
+        self.assertEqual((reset_prefs["role"], reset_prefs["mode"], reset_prefs["shell_theme"], reset_prefs["accent"], reset_prefs["preset"], reset_prefs["density"]), ("TEACHER", "light", "blue", "ocean", "neutral", "comfortable"))
         self.assertEqual(client.session["theme_prefs_by_role"]["ADMIN"]["shell_theme"], "red")
 
     @patch("core.theme_services.invalidate_cache")
@@ -296,12 +277,13 @@ class ThemePreferencesTests(TestCase):
         s = client.session
         s["user"] = {"user_id": "USR-1003", "student_id": "STD-2026-001", "role": "STUDENT", "email": "zainab@edupredict.edu", "full_name": "Zainab Raza", "is_active": True}
         s.save()
-        mock_view_users.return_value.find_one.return_value = {"user_id": "USR-1003", "student_id": "STD-2026-001", "full_name": "Zainab Raza", "email": "zainab@edupredict.edu", "role": "STUDENT", "department": "CS", "batch": "2026-A", "phone": "0300-111", "bio": "CS Scholar", "is_active": True}
+        mock_view_users.return_value.find_one.return_value = {"user_id": "USR-1003", "student_id": "STD-2026-001", "full_name": "Zainab Raza", "email": "zainab@edupredict.edu", "role": "STUDENT", "department": "CS", "batch": "2026-A", "phone": "0300-111", "bio": "CS Scholar", "avatar_url": "", "is_active": True}
         get_resp = client.get(reverse("panels:user_profile"))
         self.assertEqual(get_resp.status_code, 200)
         html = get_resp.content.decode("utf-8")
-        for marker in ('name="full_name"', 'name="phone"', 'name="bio"', 'name="new_password"', "0300-111", "CS Scholar"):
+        for marker in ('name="full_name"', 'name="phone"', 'name="bio"', 'new_password', "0300-111", "CS Scholar"):
             self.assertIn(marker, html)
+        self.assertEqual((len(get_resp.context["faq_items"]), "cloudinary_ready" in get_resp.context), (4, True))
         mock_svc_users.return_value.find_one.return_value = None
         bad_resp = client.post(reverse("panels:user_profile"), {"full_name": "Zainab", "email": "z@e.edu", "new_password": "secret1", "confirm_password": "diff"})
         self.assertRedirects(bad_resp, reverse("panels:user_profile"), fetch_redirect_response=False)
@@ -313,10 +295,39 @@ class ThemePreferencesTests(TestCase):
         self.assertTrue(check_password("newpass123", updates["password_hash"]) and "role" not in updates and "is_active" not in updates)
         mock_sr.return_value.update_many.assert_called_once_with({"student_id": "STD-2026-001"}, {"$set": {"full_name": "Zainab Updated"}})
         self.assertEqual((client.session["user"]["role"], client.session["user"]["full_name"], client.session["user"]["phone"]), ("STUDENT", "Zainab Updated", "0321-999"))
-        ser = serialize_session_user({"user_id": "USR-1", "role": "ADMIN", "email": "a@e.edu", "phone": "123", "bio": "Lead"})
-        self.assertEqual((ser["phone"], ser["bio"]), ("123", "Lead"))
+        ser = serialize_session_user({"user_id": "USR-1", "role": "ADMIN", "email": "a@e.edu", "phone": "123", "bio": "Lead", "avatar_url": "https://cdn.test/a.webp"})
+        self.assertEqual((ser["phone"], ser["bio"], ser["avatar_url"]), ("123", "Lead", "https://cdn.test/a.webp"))
         _, rows = build_user_table_data([{"user_id": "USR-1", "full_name": "Root Admin", "email": "a@e.edu", "role": "ADMIN", "department": "Admin", "batch": "ALL", "is_active": True}], "ALL", "USR-1", "a@e.edu")
         self.assertEqual((rows[0][1], rows[0][6]["actions"][0]["attrs"].get("data-is-self")), ("Root Admin (You)", "true"))
+
+    @patch("core.theme_services.invalidate_cache")
+    @patch("core.theme_services.record_audit_log")
+    @patch("core.theme_services.upload_user_avatar", return_value=("https://res.cloudinary.com/demo/image/upload/v1/user_USR-1003.png", None))
+    @patch("core.theme_services.users_col")
+    def test_profile_change_password_and_cloudinary_avatar_actions(self, mock_users_col, mock_upload, mock_audit, mock_inv):
+        client = Client()
+        self._set_user(client, "STUDENT", "USR-1003")
+        mock_users_col.return_value.find_one.return_value = {"user_id": "USR-1003", "password_hash": make_password("oldpass1")}
+        bad_pwd = client.post(reverse("panels:user_profile"), {"action": "change_password", "current_password": "wrong", "new_password": "newpass99", "confirm_password": "newpass99"})
+        self.assertRedirects(bad_pwd, reverse("panels:user_profile"), fetch_redirect_response=False)
+        mock_users_col.return_value.update_one.assert_not_called()
+        ok_pwd = client.post(reverse("panels:user_profile"), {"action": "change_password", "current_password": "oldpass1", "new_password": "newpass99", "confirm_password": "newpass99"})
+        self.assertRedirects(ok_pwd, reverse("panels:user_profile"), fetch_redirect_response=False)
+        self.assertTrue(check_password("newpass99", mock_users_col.return_value.update_one.call_args[0][1]["$set"]["password_hash"]))
+        self.assertEqual(mock_audit.call_args[0][3], "CHANGE_PASSWORD")
+        avatar_file = SimpleUploadedFile("avatar.png", b"fake-png-bytes", content_type="image/png")
+        up_resp = client.post(reverse("panels:user_profile"), {"action": "upload_avatar", "avatar_file": avatar_file})
+        self.assertRedirects(up_resp, reverse("panels:user_profile"), fetch_redirect_response=False)
+        expected_url = "https://res.cloudinary.com/demo/image/upload/v1/user_USR-1003.png"
+        mock_users_col.return_value.update_one.assert_called_with({"user_id": "USR-1003"}, {"$set": {"avatar_url": expected_url}})
+        self.assertEqual(client.session["user"]["avatar_url"], expected_url)
+        rm_resp = client.post(reverse("panels:user_profile"), {"action": "remove_avatar"})
+        self.assertRedirects(rm_resp, reverse("panels:user_profile"), fetch_redirect_response=False)
+        mock_users_col.return_value.update_one.assert_called_with({"user_id": "USR-1003"}, {"$set": {"avatar_url": ""}})
+        self.assertEqual(client.session["user"]["avatar_url"], "")
+        self.assertIsNone(upload_user_avatar(SimpleUploadedFile("bad.txt", b"x"), "USR-1003")[0])
+        with patch.dict("os.environ", {"CLOUDINARY_CLOUD_NAME": "c", "CLOUDINARY_API_KEY": "k", "CLOUDINARY_API_SECRET": "s"}), patch("core.cloudinary_services.cloudinary.uploader.upload", return_value={"secure_url": "https://res.cloudinary.com/c/a.webp"}):
+            self.assertEqual(upload_user_avatar(SimpleUploadedFile("a.png", b"img"), "USR-1003"), ("https://res.cloudinary.com/c/a.webp", None))
 
     @patch("core.theme_services.users_col")
     def test_sync_theme_prefs_on_login_merges_portal_and_hydrates_db_roles(self, mock_users_col):

@@ -40,7 +40,7 @@
                   <button type="button" data-theme-mode="light" aria-pressed="{% if theme_prefs.mode != 'dark' %}true{% else %}false{% endif %}" class="group flex flex-col gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5 text-left transition-colors hover:bg-[var(--bg-elevated)]">
                     <div class="h-11 w-full rounded-lg border border-slate-200 bg-[#f8fafc] p-1.5 flex flex-col justify-between">
                       <div class="flex items-center gap-1">
-                        <span class="h-1.5 w-4 rounded-full bg-indigo-500"></span>
+                        <span class="h-1.5 w-4 rounded-full bg-blue-600"></span>
                         <span class="h-1.5 w-7 rounded-full bg-slate-300"></span>
                       </div>
                       <div class="grid grid-cols-3 gap-1">
@@ -56,7 +56,7 @@
                   <button type="button" data-theme-mode="dark" aria-pressed="{% if theme_prefs.mode == 'dark' %}true{% else %}false{% endif %}" class="group flex flex-col gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5 text-left transition-colors hover:bg-[var(--bg-elevated)]">
                     <div class="h-11 w-full rounded-lg border border-slate-800 bg-[#090d16] p-1.5 flex flex-col justify-between">
                       <div class="flex items-center gap-1">
-                        <span class="h-1.5 w-4 rounded-full bg-indigo-400"></span>
+                        <span class="h-1.5 w-4 rounded-full bg-blue-400"></span>
                         <span class="h-1.5 w-7 rounded-full bg-slate-700"></span>
                       </div>
                       <div class="grid grid-cols-3 gap-1">
@@ -153,7 +153,7 @@
               <div class="space-y-4">
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Live Preview</span>
-                  <span id="theme-preview-swatch-name" class="inline-flex items-center rounded-full border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]">{{ theme_prefs.accent|default:"Indigo"|title }}</span>
+                  <span id="theme-preview-swatch-name" class="inline-flex items-center rounded-full border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]">{{ theme_prefs.accent|default:"Ocean"|title }}</span>
                 </div>
 
                 <div class="space-y-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3">
@@ -205,11 +205,11 @@
                 </div>
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-[var(--text-muted)]">Chrome</span>
-                  <span id="theme-preview-shell-text" class="font-medium text-[var(--text-primary)]">{{ theme_prefs.shell_theme|default:"white"|title }}</span>
+                  <span id="theme-preview-shell-text" class="font-medium text-[var(--text-primary)]">{{ theme_prefs.shell_theme|default:"blue"|title }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-[var(--text-muted)]">Accent Hex</span>
-                  <span id="theme-preview-hex-text" class="font-mono font-medium text-[var(--accent-primary)]">{{ theme_prefs.tokens.accent_primary|default:"#4f46e5" }}</span>
+                  <span id="theme-preview-hex-text" class="font-mono font-medium text-[var(--accent-primary)]">{{ theme_prefs.tokens.accent_primary|default:"#2563eb" }}</span>
                 </div>
               </div>
             </div>
