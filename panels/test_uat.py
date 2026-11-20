@@ -330,3 +330,10 @@ class ProductionDocumentationTests(TestCase):
         for sec in ("quickstart", "architecture", "docker", "operations", "runbook"):
             self.assertIn(sec, text)
         self.assertTrue("role" in text or "roles" in text)
+
+    def test_readme_documents_rate_limit_per_worker_and_verify_backup(self):
+        text = self.content.lower()
+        self.assertIn("per-worker", text)
+        self.assertIn("x-ratelimit-remaining", text)
+        self.assertIn("verify_backup", text)
+        self.assertIn("workers x max_requests", text)

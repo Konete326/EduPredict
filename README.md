@@ -128,7 +128,7 @@ curl http://localhost:8000/health/
 
 ## Automated Verification & Testing
 
-### 1. Unit & Integration Test Suite (77 Tests)
+### 1. Unit & Integration Test Suite (98 Tests)
 ```bash
 python manage.py test
 ```
@@ -192,6 +192,11 @@ python manage.py export_backup --format csv --output-dir backups/ --quiet
 ```
 Alternatively, administrators can trigger downloads from the UI at `/admin-panel/backup/?format=json` or `/admin-panel/backup/?format=csv`.
 
+Each backup also gets a `<file>.sha256` sidecar manifest. Verify integrity at any time (a mismatch exits with an error):
+```bash
+python manage.py verify_backup backups/<file>.json
+```
+
 ### 4. Automated GitHub Actions CI Pipeline (`.github/workflows/django.yml`)
 Triggers on every push to `main`, `feature/**`, and pull requests targeting `main`:
 1. **Ubuntu Runner:** Python 3.12 + Node.js 20.
@@ -200,6 +205,11 @@ Triggers on every push to `main`, `feature/**`, and pull requests targeting `mai
 4. **Unit Test Suite:** Full Django test runner execution.
 5. **Multi-Role UAT:** `python manage.py verify_uat`.
 6. **Static Verification:** `python manage.py collectstatic --noinput --dry-run`.
+
+### 5. Rate Limiting (Per-Worker Limits)
+Endpoints such as `/health/` use an in-memory rate limiter that returns `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and (on HTTP 429) `Retry-After`.
+
+> **Note:** Counters live in each worker process memory and are not shared. The Docker image runs gunicorn with 3 workers, so the effective limit per client IP can reach up to `workers x max_requests` (for example, 3 x 120 = 360 requests per minute on `/health/`). Use a shared store such as Redis, or a limit at the reverse proxy, if you need a strict global limit.
 
 ---
 
