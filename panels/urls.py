@@ -1,5 +1,5 @@
 from django.urls import path
-from panels import views_admin, views_analyst, views_student, views_teacher, views_theme
+from panels import views_admin, views_analyst, views_notifications, views_student, views_teacher, views_theme
 
 app_name = 'panels'
 
@@ -15,6 +15,7 @@ urlpatterns = [
     path('admin-panel/backup/', views_admin.admin_backup_export, name='admin_backup_export'),
     path('support/submit/', views_admin.submit_support_ticket, name='submit_support_ticket'),
     path('notifications/mark-read/', views_admin.mark_notifications_read_view, name='mark_notifications_read'),
+    path('notifications/feed/', views_notifications.notifications_feed_view, name='notifications_feed'),
     path('teacher-panel/', views_teacher.teacher_dashboard, name='teacher_dashboard'),
     path('teacher-panel/students/', views_teacher.teacher_students, name='teacher_students'),
     path('teacher-panel/students/export-pdf/', views_teacher.teacher_roster_pdf, name='teacher_roster_pdf'),

@@ -30,6 +30,8 @@ def _fetch_unread_notifications(current_user, active_role):
             if "_id" in item:
                 item["id"] = str(item["_id"])
                 del item["_id"]
+            item["feedback_text"] = str(item.get("feedback_text") or "")
+            item["reply_text"] = str(item.get("reply_text") or "")
             items.append(item)
         return items, total_count
 

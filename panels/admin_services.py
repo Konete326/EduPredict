@@ -9,6 +9,7 @@ from accounts.services import VALID_ROLES, ensure_accounts_indexes_once, generat
 from core.db import get_cached, invalidate_cache, notifications_col, student_records_col, support_tickets_col, users_col
 from panels.admin_audit_services import record_audit_log
 from panels.admin_seed import _format_dt, _safe_int, build_backup_payload, courses_col, ensure_admin_seed_data, get_admin_overview_context
+from panels.notification_services import create_notification
 
 VALID_TICKET_STATUSES = ("OPEN", "RESOLVED")
 VALID_COURSE_STATUSES = ("ACTIVE", "ARCHIVED")
@@ -231,7 +232,7 @@ def _load_tickets(clean_status):
         if status in counts:
             counts[status] += 1
         if clean_status not in VALID_TICKET_STATUSES or status == clean_status:
-            tickets.append({"ticket_id": str(doc.get("ticket_id") or ""), "user_id": str(doc.get("user_id") or ""), "user_name": str(doc.get("user_name") or "User"), "role": str(doc.get("role") or "USER").upper(), "subject": str(doc.get("subject") or ""), "message": str(doc.get("message") or ""), "status": status, "created_at_str": _format_dt(doc.get("created_at"))})
+            tickets.append({"ticket_id": str(doc.get("ticket_id") or ""), "user_id": str(doc.get("user_id") or ""), "user_name": str(doc.get("user_name") or "User"), "role": str(doc.get("role") or "USER").upper(), "subject": str(doc.get("subject") or ""), "message": str(doc.get("message") or ""), "status": status, "admin_reply": str(doc.get("admin_reply") or ""), "replied_by": str(doc.get("replied_by") or ""), "replied_at_str": _format_dt(doc.get("replied_at")) if doc.get("replied_at") else "", "created_at_str": _format_dt(doc.get("created_at"))})
     return tickets, counts
 
 
@@ -247,6 +248,7 @@ def create_ticket_record(user_id, user_name, role, subject, message):
     col = support_tickets_col()
     doc = {"ticket_id": _generate_unique_ticket_id(col), "user_id": str(user_id or ""), "user_name": str(user_name or "Portal User").strip() or "Portal User", "role": str(role or "USER").strip().upper(), "subject": clean_subject, "message": clean_message, "status": "OPEN", "created_at": datetime.now(timezone.utc)}
     col.insert_one(doc)
+    create_notification(f"New Ticket {doc['ticket_id']}: {clean_subject}", clean_message, severity="WARNING", target_role="ADMIN", category="TICKET", ticket_id=doc["ticket_id"], feedback_text=clean_message)
     _audit("TICKETS", "CREATE_TICKET", f"Support ticket {doc['ticket_id']} submitted by {doc['user_name']}: {clean_subject}", "WARNING", actor=doc["user_name"])
     invalidate_cache()
     return doc, None
@@ -259,7 +261,10 @@ def toggle_ticket_status(ticket_id, actor_name="System Admin"):
         return None, "Support ticket not found."
     new_status = "RESOLVED" if str(existing.get("status") or "OPEN").strip().upper() == "OPEN" else "OPEN"
     col.update_one({"_id": existing["_id"]}, {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}})
-    _audit("TICKETS", "TOGGLE_TICKET", f"Ticket {existing.get('ticket_id') or ticket_id} marked as {new_status}.", "SUCCESS" if new_status == "RESOLVED" else "WARNING", actor=actor_name)
+    tid = str(existing.get("ticket_id") or ticket_id)
+    if existing.get("user_id"):
+        create_notification(f"Ticket {tid} {new_status}", f"Your support ticket \"{existing.get('subject', '')}\" is now {new_status}.", severity="SUCCESS" if new_status == "RESOLVED" else "INFO", target_user_id=str(existing.get("user_id") or ""), category="TICKET_STATUS", ticket_id=tid)
+    _audit("TICKETS", "TOGGLE_TICKET", f"Ticket {tid} marked as {new_status}.", "SUCCESS" if new_status == "RESOLVED" else "WARNING", actor=actor_name)
     invalidate_cache()
     return new_status, None
 
@@ -332,11 +337,13 @@ def build_ticket_table_data(tickets, filter_status):
     headers = ["Ticket ID", "User", "Role", "Subject", "Status", "Date", "Actions"]
     rows = []
     for t in tickets:
-        is_open = t["status"] == "OPEN"
+        is_open, has_reply = t["status"] == "OPEN", bool(t.get("admin_reply"))
         lbl, ico = ("Resolve", "fa-solid fa-circle-check") if is_open else ("Reopen", "fa-solid fa-rotate-left")
-        actions = [
-            _action(lbl, ico, "openToggleTicketModal(this)", f"{lbl} {t['ticket_id']}", {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-status": t["status"], "data-filter-status": filter_status}, variant="primary" if is_open else "default"),
-            _action("Delete", "fa-solid fa-trash", "openDeleteTicketModal(this)", f"Delete {t['ticket_id']}", {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-filter-status": filter_status}, variant="danger"),
-        ]
-        rows.append([t["ticket_id"], t["user_name"], {"text": t["role"], "status": "info"}, t["subject"], {"text": t["status"], "status": "success" if t["status"] == "RESOLVED" else "warning"}, t["created_at_str"], {"actions": actions}])
+        reply_attrs = {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-message": t["message"], "data-admin-reply": t.get("admin_reply", ""), "data-status": t["status"], "data-filter-status": filter_status}
+        actions = [_action("Edit Reply" if has_reply else "Reply", "fa-solid fa-reply", "openReplyTicketModal(this)", f"Reply to {t['ticket_id']}", reply_attrs, variant="primary")]
+        if has_reply:
+            actions.append(_action("Delete Reply", "fa-solid fa-comment-slash", "openDeleteReplyModal(this)", f"Delete reply on {t['ticket_id']}", {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-filter-status": filter_status}, variant="danger"))
+        actions.extend([_action(lbl, ico, "openToggleTicketModal(this)", f"{lbl} {t['ticket_id']}", {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-status": t["status"], "data-filter-status": filter_status}), _action("Delete", "fa-solid fa-trash", "openDeleteTicketModal(this)", f"Delete {t['ticket_id']}", {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-filter-status": filter_status}, variant="danger")])
+        subject_cell = f"{t['subject']} (Replied)" if has_reply else t["subject"]
+        rows.append([t["ticket_id"], t["user_name"], {"text": t["role"], "status": "info"}, subject_cell, {"text": t["status"], "status": "success" if t["status"] == "RESOLVED" else "warning"}, t["created_at_str"], {"actions": actions}])
     return headers, rows

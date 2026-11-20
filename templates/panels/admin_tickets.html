@@ -62,6 +62,39 @@
       });
     };
 
+    window.openReplyTicketModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      const feedbackSummary = (d.subject ? d.subject + (d.feedbackText || d.message ? ' — ' : '') : '') + (d.feedbackText || d.message || '');
+      window.openFormModal({
+        title: 'Reply to Ticket ' + (d.ticketId || ''),
+        actionUrl: adminTicketsUrl,
+        submitText: d.adminReply ? 'Update Reply' : 'Send Reply',
+        fields: [
+          { type: 'hidden', name: 'action', value: 'reply_ticket' },
+          { type: 'hidden', name: 'ticket_id', value: d.ticketId || '' },
+          { type: 'hidden', name: 'filter_status', value: d.filterStatus || selectedStatus },
+          { type: 'textarea', name: 'feedback_summary', label: 'User Feedback', value: feedbackSummary || 'No feedback text provided.', readonly: true, rows: 2 },
+          { type: 'textarea', name: 'reply_text', label: 'Admin Reply', value: d.adminReply || '', placeholder: 'Write a clear, helpful reply for this user...', required: true, rows: 3 },
+          { type: 'select', name: 'resolve_ticket', label: 'Ticket Status After Reply', value: '1', options: [{ value: '1', label: 'Mark as Resolved' }, { value: '0', label: 'Keep Current Status' }] }
+        ]
+      });
+    };
+
+    window.openDeleteReplyModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      window.openConfirmModal({
+        title: 'Delete Admin Reply',
+        message: 'Remove your admin reply from ticket ' + (d.ticketId || '') + '?',
+        confirmText: 'Delete Reply',
+        onConfirmUrl: adminTicketsUrl,
+        fields: {
+          action: 'delete_reply',
+          ticket_id: d.ticketId || '',
+          filter_status: d.filterStatus || selectedStatus
+        }
+      });
+    };
+
     window.openDeleteTicketModal = function (btn) {
       const d = btn ? btn.dataset : {};
       window.openConfirmModal({

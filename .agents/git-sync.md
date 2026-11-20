@@ -61,33 +61,33 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 22 Ocean Blue Default, Cloudinary Avatars & UX Polish QA Team"
-active_branch_merged_to_main: "feature/phase22-ux-cloudinary-blue -> main"
-project_phase: "Phase 22 Complete: Ocean Blue Default Theme, Cloudinary Avatars, Change Password Modal, Global Loading Lock, Top SPA Progress Bar, Responsive Table Wrap, Gradient Uploader & FAQ-Pro"
+last_updated_by_agent: "Phase 23 Real-Time Notifications, Feedback Reply CRUD & Typewriter Page Guide QA Team"
+active_branch_merged_to_main: "feature/phase23-realtime-notifs-guide -> main"
+project_phase: "Phase 23 Complete: Real-Time Notifications Feed, Admin Feedback Reply CRUD & Typewriter Page Guide Wizard Modal"
 
 completed_modules:
-  - "Phase 1-21: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Actor Audit & Dynamic Thresholds, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/ & Cancelable Auto-Upload."
-  - "Phase 22: Ocean Blue Default, Cloudinary Avatars & UX Polish:"
-      - "Ocean Blue Default & Clean Shell: Switched default theme to shell_theme='blue' and accent='ocean' (#2563eb / #3b82f6) across core/theme_services.py (333 lines), static/css/global.css (217 lines), static/js/theme_studio.js (300 lines), static/js/charts.js (264 lines), templates/components/theme_studio_modal.html (221 lines), templates/base.html (179 lines), and templates/accounts/auth.html (331 lines); added inline Ocean Blue SVG favicon and removed 'Atlas Ready' pill from templates/components/topbar.html (75 lines)."
-      - "Cloudinary Avatar Media Pipeline: Added core/cloudinary_services.py (68 lines) with is_cloudinary_configured() and 320x320 face-cropped upload_user_avatar() (<= 5 MB), tracked CLOUDINARY_* keys in .env / .env.example, froze cloudinary== in requirements.txt, and wired avatar_url into accounts/services.py (193 lines), panels/admin_services.py (342 lines), topbar.html, and sidebar.html (196 lines)."
-      - "Change Password Modal & Profile Widgets: Updated panels/views_theme.py (139 lines) and core/theme_services.py for action='change_password', 'upload_avatar', and 'remove_avatar'; updated templates/panels/user_profile.html (165 lines) with openChangePasswordModal() (no inline password inputs), templates/components/gradient_file_uploader.html (32 lines), and templates/components/faq_pro.html (34 lines)."
-      - "Global Loading Lock, SPA Progress & Zero Horizontal Scrollbar: Added static/js/ui_widgets.js (163 lines) with window.EduPredictProgress (#ep-top-progress), double-submit guard ('Processing...' + aria-busy + 12s/pageshow reset), FaqPro search highlight, and GradientUploader; wired into static/js/nav.js (249 lines) and static/js/app.js (341 lines); enforced overflow-x: clip in global.css and break-words max-w-[18rem] in templates/components/data_table.html (134 lines)."
-      - "Docs & Tests: Updated .agents/trd.md, .agents/design.md, .agents/project-rules.md, and .agents/rules/edupredict-rules.md (14,509 bytes < 24,000); expanded panels/tests.py (345 lines)."
+  - "Phase 1-22: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/, Ocean Blue Default, Cloudinary Avatars, Change Password Modal, Global Loading Lock, SPA Progress & Responsive Table Wrap."
+  - "Phase 23: Real-Time Notifications, Admin Feedback Reply CRUD & Typewriter Page Guide Wizard:"
+      - "Real-Time Notification Feed: Created panels/notification_services.py (134 lines) and panels/views_notifications.py (15 lines) exposing GET /notifications/feed/ (panels:notifications_feed) with 10s TTL caching; updated core/context_processors.py (76 lines) and templates/components/topbar.html (89 lines) to surface feedback_text + reply_text; wired idempotent 15s visibility-gated polling + toast alerts in static/js/ui_widgets.js (248 lines)."
+      - "Admin Feedback Reply CRUD: Updated panels/admin_services.py (349 lines) and panels/views_admin.py (247 lines) to support reply_ticket (saving admin_reply, optional status resolve, and targeted FEEDBACK_REPLY user notification containing both feedback_text and reply_text) and delete_reply; updated templates/panels/admin_tickets.html (114 lines) with openReplyTicketModal() and openDeleteReplyModal()."
+      - "Typewriter Page Guide Wizard Modal: Created templates/components/page_guide_modal.html (59 lines) and static/js/page_guides.js (115 lines) with 3-step Wizard (Overview, How to Use, Quick FAQs), prefers-reduced-motion-aware typewriter + Skip typing button across 17 routes + fallback; wired #open-page-guide-btn in topbar.html, included modal & ?v=10 assets in templates/base.html (181 lines), and registered 'page-guide-modal' in static/js/app.js (342 lines)."
+      - "Tests: Created panels/test_notifications.py (168 lines) covering /notifications/feed/, submit_support_ticket admin notifications, and reply_ticket/delete_reply CRUD."
 
 verification_results:
-  - "manage.py check: 0 issues reported."
-  - "manage.py test analytics panels --verbosity=2: 38/38 tests PASSED (11.602s)."
-  - "node --check static/js/ui_widgets.js, app.js, nav.js, charts.js, theme_studio.js: all exited 0."
-  - "Static audit (21 files): 0 comments, 0 triple-quotes, all files within line caps (views <= 250, others <= 350); .agents/rules/edupredict-rules.md (14,509 bytes < 24,000); .env and 8 .agents/* files tracked."
-  - "Live Django Client() smoke checks: is_cloudinary_configured()=True; GET /theme/preferences/ returns shell_theme='blue', accent='ocean', accent_primary='#2563eb'; /admin-panel/ & /auth/ include SVG favicon; /admin-panel/ excludes 'Atlas Ready' and includes #ep-top-progress; /profile/ includes openChangePasswordModal(), data-gradient-uploader, and data-faq-pro without inline new_password; data_table.html includes break-words."
+  - "manage.py check: 0 issues reported (exit 0)."
+  - "manage.py test analytics panels --verbosity=2: 85/85 tests PASSED (72.717s)."
+  - "node --check static/js/ui_widgets.js, page_guides.js, app.js, nav.js, charts.js, theme_studio.js: all exited 0."
+  - "Static audit (14 modified/created files): 0 comments, 0 triple-quotes, all files within line caps (views_*.py <= 250, others <= 350); .agents/rules/edupredict-rules.md (14,509 bytes < 24,000)."
+  - "Live Django Client() smoke checks: GET /notifications/feed/ -> 200 JSON (ok=True, unread_count, notifications); POST /admin-panel/tickets/ reply_ticket saved admin_reply & created FEEDBACK_REPLY notification with feedback_text + reply_text, delete_reply cleared admin_reply; GET /admin-panel/ & /profile/ -> 200 with openPageGuideModal(), page-guide-modal, page_guides.js?v=10, ui_widgets.js?v=10, and notification-bell-btn."
 
 active_routes_and_files:
-  - "core/cloudinary_services.py (68 lines), core/theme_services.py (333 lines), panels/views_theme.py (139 lines), static/js/ui_widgets.js (163 lines), static/css/global.css (217 lines)"
-  - "templates/components/gradient_file_uploader.html (32 lines), templates/components/faq_pro.html (34 lines), templates/panels/user_profile.html (165 lines)"
-  - "/profile/ -> panels:user_profile, /theme/preferences/ -> panels:theme_preferences"
+  - "panels/notification_services.py (134 lines), panels/views_notifications.py (15 lines), panels/test_notifications.py (168 lines), panels/urls.py (32 lines)"
+  - "panels/admin_services.py (349 lines), panels/views_admin.py (247 lines), core/context_processors.py (76 lines)"
+  - "templates/components/topbar.html (89 lines), templates/components/page_guide_modal.html (59 lines), templates/base.html (181 lines), templates/panels/admin_tickets.html (114 lines)"
+  - "static/js/ui_widgets.js (248 lines), static/js/page_guides.js (115 lines), static/js/app.js (342 lines)"
+  - "/notifications/feed/ -> panels:notifications_feed"
 
 pending_modules_in_order:
-  - "Phase 23: Real-Time Notifications + Admin Feedback Reply CRUD + Typewriter Page Guide Wizard Modal"
   - "Phase 24: Card-Grid User/Student/Teacher Directories + Modalized Upload/Quick Entry + Dot-Graph KPI Cards"
   - "Phase 25: Stepper Signup Wizard + Teacher Approval Guard + Student PDF Transcript"
 

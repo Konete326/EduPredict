@@ -17,6 +17,7 @@ from panels.admin_services import (
     list_tickets, list_users, mark_notifications_read, toggle_ticket_status,
     toggle_user_status, update_course_record, update_user_record,
 )
+from panels.notification_services import delete_ticket_reply, reply_to_ticket
 
 
 def _param(request, key, default=""):
@@ -125,6 +126,13 @@ def admin_tickets(request):
             if action == "toggle_status":
                 new_status, err = toggle_ticket_status(ticket_id, actor_name=actor)
                 _flash_result(request, new_status is not None, err, f"Ticket {ticket_id} marked as {new_status}.")
+            elif action == "reply_ticket":
+                resolve_flag = True if "resolve_ticket" not in request.POST else str(request.POST.get("resolve_ticket") or "").strip().lower() in ("1", "true", "yes", "on")
+                ok, err = reply_to_ticket(ticket_id, request.POST.get("reply_text"), actor_name=actor, resolve_ticket=resolve_flag)
+                _flash_result(request, ok, err, f"Reply sent for ticket {ticket_id}.")
+            elif action == "delete_reply":
+                ok, err = delete_ticket_reply(ticket_id, actor_name=actor)
+                _flash_result(request, ok, err, f"Reply removed from ticket {ticket_id}.")
             elif action == "delete":
                 ok, err = delete_ticket_record(ticket_id, actor_name=actor)
                 _flash_result(request, ok, err, f"Ticket {ticket_id} deleted.")
@@ -233,11 +241,7 @@ def mark_notifications_read_view(request):
     if request.method != "POST":
         return redirect(get_dashboard_route(user.get("role")))
     try:
-        user_payload = {
-            "user_id": str(user.get("user_id") or "").strip(),
-            "student_id": str(user.get("student_id") or "").strip(),
-            "role": str(user.get("role") or "").strip().upper(),
-        }
+        user_payload = {"user_id": str(user.get("user_id") or "").strip(), "student_id": str(user.get("student_id") or "").strip(), "role": str(user.get("role") or "").strip().upper()}
         return JsonResponse({"ok": True, "updated": mark_notifications_read(user_payload)})
     except Exception as exc:
         return JsonResponse({"ok": False, "error": str(exc)}, status=500)

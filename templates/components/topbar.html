@@ -21,6 +21,11 @@
       <input type="search" data-table-search="" placeholder="Quick search..." aria-label="Quick search" class="w-44 lg:w-56 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] py-1.5 pl-8 pr-3 text-xs sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none transition-colors">
     </div>
 
+    <button id="open-page-guide-btn" type="button" onclick="openPageGuideModal()" title="How this page works" aria-label="How this page works" class="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+      <i class="fa-solid fa-circle-question text-sm text-[var(--accent-primary)]"></i>
+      <span class="hidden sm:inline text-xs font-medium">Guide</span>
+    </button>
+
     <div class="relative">
       <button id="notification-bell-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-label="Notifications" title="Notifications" class="relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
         <i class="fa-regular fa-bell text-sm"></i>
@@ -49,6 +54,15 @@
             <div class="min-w-0 flex-1">
               <p class="truncate text-xs font-semibold text-[var(--text-primary)]">{{ notif.title|default:"Alert" }}</p>
               <p class="mt-0.5 text-xs text-[var(--text-secondary)]">{{ notif.message }}</p>
+              {% if notif.feedback_text %}
+              <p class="mt-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-1 text-[11px] italic text-[var(--text-muted)] line-clamp-2">"{{ notif.feedback_text }}"</p>
+              {% endif %}
+              {% if notif.reply_text %}
+              <div class="mt-1 rounded-md bg-[var(--accent-soft)] px-2 py-1 text-[11px] text-[var(--text-primary)]">
+                <span class="font-semibold text-[var(--accent-primary)]">Admin Reply:</span>
+                <span>{{ notif.reply_text }}</span>
+              </div>
+              {% endif %}
             </div>
           </div>
           {% empty %}

@@ -1,6 +1,6 @@
 (function () {
   const THEME_KEY = 'edupredict_theme', SIDEBAR_KEY = 'edupredict_sidebar_collapsed';
-  const MODAL_IDS = ['confirm-modal', 'form-modal', 'coming-soon-modal', 'theme-studio-modal'];
+  const MODAL_IDS = ['confirm-modal', 'form-modal', 'coming-soon-modal', 'theme-studio-modal', 'page-guide-modal'];
   const FIELD_CLS = 'w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none';
   const TOAST_STYLES = { success: { border: 'var(--status-success)', icon: 'fa-solid fa-circle-check', color: 'var(--status-success)' }, warning: { border: 'var(--status-warning)', icon: 'fa-solid fa-triangle-exclamation', color: 'var(--status-warning)' }, danger: { border: 'var(--status-danger)', icon: 'fa-solid fa-circle-exclamation', color: 'var(--status-danger)' }, info: { border: 'var(--accent-primary)', icon: 'fa-solid fa-circle-info', color: 'var(--accent-primary)' } };
   let activeSubmitHandler = null, globalsBound = false, pointerDownTarget = null;
@@ -265,7 +265,8 @@
   }
   function closeModalById(id) {
     if (id === 'confirm-modal') closeConfirmModal(); else if (id === 'form-modal') closeFormModal(); else if (id === 'coming-soon-modal') closeComingSoonModal();
-    else if (id === 'theme-studio-modal' && typeof window.closeThemeStudioModal === 'function') window.closeThemeStudioModal(); else setModalOpen(byId(id), false);
+    else if (id === 'theme-studio-modal' && typeof window.closeThemeStudioModal === 'function') window.closeThemeStudioModal();
+    else if (id === 'page-guide-modal' && typeof window.closePageGuideModal === 'function') window.closePageGuideModal(); else setModalOpen(byId(id), false);
   }
   const closeAllModals = () => MODAL_IDS.forEach(closeModalById);
   function bindModalBackdrops() {
