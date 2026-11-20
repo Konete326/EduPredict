@@ -39,30 +39,30 @@ EduPredict strictly isolates four role-based dashboard panels:
 
 ```text
 [ Browser Clients: Chrome / Firefox / Safari / Edge ]
-                       â”‚
+                       │
        HTTP / HTTPS (Reverse Proxy / Nginx / Direct)
-                       â–¼
+                       ▼
       [ Gunicorn WSGI Server: 3 Workers / Port 8000 ]
-                       â”‚
+                       │
         [ Django Application Server (MVT) ]
-   â”œâ”€â”€ Authentication & RBAC Middleware (@role_required)
-   â”œâ”€â”€ Role Views (Admin, Teacher, Student, Analyst)
-   â”œâ”€â”€ Analytics Engine (Pandas, NumPy, Scikit-Learn)
-   â”œâ”€â”€ PDF Generation Engine (ReportLab)
-   â”œâ”€â”€ Live Theme Studio Service (CSS Variable Tokenization)
-   â””â”€â”€ WhiteNoise Middleware (Compressed Static Serving)
-                       â”‚
+   ├── Authentication & RBAC Middleware (@role_required)
+   ├── Role Views (Admin, Teacher, Student, Analyst)
+   ├── Analytics Engine (Pandas, NumPy, Scikit-Learn)
+   ├── PDF Generation Engine (ReportLab)
+   ├── Live Theme Studio Service (CSS Variable Tokenization)
+   └── WhiteNoise Middleware (Compressed Static Serving)
+                       │
              PyMongo Connection Pool
-                       â–¼
+                       ▼
     [ MongoDB Atlas Cloud Database: edupredict_db ]
-   â”œâ”€â”€ users (RBAC, credentials, scoped theme preferences)
-   â”œâ”€â”€ courses (catalog, department, instructor mapping)
-   â”œâ”€â”€ student_records (marks, attendance, activity logs)
-   â”œâ”€â”€ predictions (ML risk scores, anomalies, suggestions)
-   â”œâ”€â”€ notifications (targeted alerts with real-time sync)
-   â”œâ”€â”€ support_tickets (issue resolution tracking)
-   â”œâ”€â”€ activity_logs (audit trail and actor attribution)
-   â””â”€â”€ system_settings (dynamic operational thresholds)
+   ├── users (RBAC, credentials, scoped theme preferences)
+   ├── courses (catalog, department, instructor mapping)
+   ├── student_records (marks, attendance, activity logs)
+   ├── predictions (ML risk scores, anomalies, suggestions)
+   ├── notifications (targeted alerts with real-time sync)
+   ├── support_tickets (issue resolution tracking)
+   ├── activity_logs (audit trail and actor attribution)
+   └── system_settings (dynamic operational thresholds)
 ```
 
 ---
