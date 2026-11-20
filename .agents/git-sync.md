@@ -93,7 +93,10 @@ active_routes_and_files:
   - "panels/tests.py (359 lines) -> Unit tests including cgroup container memory telemetry verification"
 
 pending_modules_in_order:
-  - "All planned Phases 1-25 Complete."
+  - "Phase 60: Enterprise UI Simplification (Admin-Only Theme Studio, Instant 3-Bullet Page Guide Popover, Default 5-Col Compact Table + [Table | Cards] Toggle, Clean Minimal KPI Cards)"
+  - "Phase 61: Zero-Click Automation (Auto-ML + Auto-Alert Escalation, Smart CSV Column Auto-Mapper, 1-Click Notify All High-Risk Students, visibilitychange Instant Notification Sync, Dynamic Institution Branding in PDF Transcript)"
+  - "Phase 62: Student 360 Quick-View Slide-Over Drawer & Teacher Rejection Reason + Re-Apply Flow"
+  - "Phase 63: Real-Time LMS Data Stream Simulator & Aptech Final Submission Pack (Report, Flowcharts/DFDs, Test CSV, Installation ReadMe, Demo Walkthrough)"
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

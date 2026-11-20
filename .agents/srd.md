@@ -23,18 +23,19 @@ v                                               v
 
 ### 2.2. Automated Data Ingestion & Cleaning Pipeline
 - **Supported Formats:** `.csv`, `.xlsx`, and standard web form inputs.
-- **Automated Preprocessing (`services/data_pipeline.py`):**
-  1. Validates required columns (`student_id`, `attendance_pct`, `internal_marks`, `lms_hours`, `previous_gpa`, `course_code`).
+- **Automated Preprocessing (`analytics/data_pipeline.py` & `analytics/preprocessing.py`):**
+  1. **Smart CSV Column Auto-Mapper:** Automatically maps common institutional header aliases (`Roll_No`, `Enrollment`, `Reg_No` -> `student_id`; `Attendance`, `Att_%` -> `attendance_pct`; `Marks`, `Score`, `Test_Score` -> `internal_marks`; `Prev_GPA` -> `previous_gpa`; `LMS_Hours` -> `lms_hours_weekly`) so staff uploads succeed without manual renaming.
   2. Automatically fills missing numeric values using median imputation and categorical values using mode imputation so the system never crashes on incomplete data.
   3. Stores partitioned document collections in MongoDB Atlas with indexing on `student_id`, `batch`, and `timestamp`.
 
-### 2.3. Predictive Analytics & Anomaly Workflow (`services/ml_engine.py`)
-- Triggered automatically whenever a new dataset is uploaded or when the Analyst clicks "Retrain & Predict".
+### 2.3. Predictive Analytics, Auto-Escalation & Real-Time Stream (`analytics/ml_engine.py`)
+- **Zero-Click ML Execution:** Triggered automatically whenever a Teacher updates marks/attendance or an Analyst uploads a dataset (eliminating manual retraining clicks).
 - **Algorithms Used (Lightweight & Fast):**
-  - *Dropout Classification:* Random Forest / Logistic Regression (`Low` < 35%, `Medium` 35–70%, `High` > 70%).
-  - *Score Prediction:* Linear / Ridge Regression (`predicted_gpa`).
-  - *Anomaly Detection:* Isolation Forest / Z-Score threshold (flags students whose attendance or score drops > 25% suddenly).
-- **Automated Alert Generation:** Whenever a student is classified as `High` dropout risk or an anomaly is detected, the system automatically inserts an alert document in the `notifications` collection for both the Student and their assigned Teacher.
+  - *Dropout Classification:* `RandomForestClassifier(n_estimators=50, n_jobs=-1)` (`Low` < 35%, `Medium` 35–70%, `High` > 70%).
+  - *Score Prediction:* Ridge Regression (`predicted_gpa` 0.0–4.0, millisecond training, noise-resistant linear model).
+  - *Anomaly Detection:* Isolation Forest + rule thresholds (flags students whose attendance or score drops > 25% suddenly).
+- **Zero-Click Auto-Alert Escalation & Bulk Notify:** Whenever `attendance < 75%`, `risk == HIGH`, or an anomaly is detected, automatically dispatch an encouraging tip notification to the Student and a warning alert to Teachers (deduplicated), plus support 1-click "Notify All High-Risk Students" in Teacher Alerts.
+- **Real-Time LMS Stream Simulator (Phase 63):** Optional Analyst live-stream toggle pushing 2–3 simulated LMS/attendance events every 5 seconds into MongoDB with live anomaly flagging for real-time streaming demos.
 
 ## 3. Non-Functional Requirements (NFRs)
 
