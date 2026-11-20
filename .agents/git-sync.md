@@ -61,29 +61,28 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 25 Stepper Signup Wizard, Teacher Approval Guard & Official PDF Transcript QA Team"
-active_branch_merged_to_main: "feature/phase25-stepper-approval-pdf -> main"
-project_phase: "Phase 25 Complete: Stepper Signup Wizard, Teacher Approval Guard & Student PDF Transcript (Phases 1-25 Complete)"
+last_updated_by_agent: "EduPredict Production Operations & Safety Team"
+active_branch_merged_to_main: "feature/backup-disk-space-check -> main"
+project_phase: "Phase 50 Complete: Backup CLI Disk Space Pre-Flight Safety Check"
 
 completed_modules:
-  - "Phase 1-24: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/, Ocean Blue Default, Cloudinary Avatars, Change Password Modal, Global Loading Lock, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Typewriter Page Guide Wizard Modal, Card-Grid User/Student/Teacher Directories, Modalized Upload/Quick Entry & Dot-Graph KPI Cards."
-  - "Phase 25: Stepper Signup Wizard + Teacher Approval Guard + Student PDF Transcript:"
-      - "Stepper Signup Backend & Teacher Approval Guard: Updated accounts/services.py (220 lines) with SELF_REGISTER_ROLES, approval_status in serialize_session_user, PENDING check before is_active in authenticate_user, and register_user(phone, bio) storing PENDING/is_active=False + unread ADMIN notification ('Teacher Approval Needed') for TEACHER while blocking ADMIN self-signup; updated accounts/views.py (198 lines) to read phone/bio, enforce SELF_REGISTER_ROLES, and keep PENDING teachers signed out with warning flash."
-      - "Admin Approval Queue & Cards: Updated panels/admin_services.py (348 lines) with PENDING count/filter, phone/bio/approval_status, and APPROVE_USER + 'Account Approved' notification in toggle_user_status; updated panels/directory_card_services.py (172 lines) with Pending Approval warning badge, Approve primary action, and data-approval-status; updated templates/panels/admin_users.html (176 lines) with Pending Approval filter pill and openToggleUserModal() approval wording."
-      - "3-Step Auth Stepper UI: Updated templates/accounts/auth.html (313 lines) with [data-auth-stepper] 3-step wizard (Account, Profile, Security), #teacher-approval-notice, optional phone/bio, #wizard-review-summary, and ?v=12 assets; created static/js/auth_wizard.js (162 lines) with linear step validation, teacher notice/batch autofill, IME-guarded Enter navigation, and Caps Lock/password toggles; updated static/css/global.css (275 lines) with .ep-step-indicator and .ep-step-line styles."
-      - "Official Student PDF Transcript & Cache-Bust: Updated panels/pdf_services.py (243 lines) with _letter_grade(), EARNED CREDITS, CLASS STANDING, OFFICIAL ACADEMIC TRANSCRIPT & REPORT CARD heading, and 7-col GRADE table; updated templates/panels/student_dashboard.html (175 lines) and templates/panels/student_report.html (80 lines) with primary Download PDF Transcript + data-no-loading='true'; bumped ?v=12 in templates/base.html (182 lines); created panels/test_phase25.py (142 lines)."
+  - "Phase 1-25: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/, Ocean Blue Default, Cloudinary Avatars, Change Password Modal, Global Loading Lock, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Typewriter Page Guide Wizard Modal, Card-Grid User/Student/Teacher Directories, Modalized Upload/Quick Entry, Dot-Graph KPI Cards, Stepper Signup Wizard, Teacher Approval Guard & Official Student PDF Transcript."
+  - "Phase 26-49: Production Operations Runbook, Docker Containers, WhiteNoise Static Serving, Atlas Connection Pooling, Automated Backup CLI with Atomic Write & Retention Purging, Endpoint Rate Limiting with Retry-After, Production CSP & Permissions-Policy Headers, Sentry Before-Send Sanitization & Environment Tagging, Health Check Process Memory & O(1) Estimated Document Counts with 30s TTL Cache."
+  - "Phase 50: Backup CLI Disk Space Pre-Flight Safety Check:"
+      - "Updated core/management/commands/export_backup.py (118 lines, 0 comments): Added _check_disk_space() using shutil.disk_usage() to enforce a 50MB minimum free disk space threshold before backup payload generation and verify payload_bytes + 5MB safety margin before atomic disk write."
+      - "Updated panels/test_uat.py (399 lines, 0 comments): Added test_export_backup_insufficient_disk_space_raises_error mocking shutil.disk_usage to verify CommandError on low disk space, and removed redundant inner Path imports (94/94 tests PASS)."
 
 verification_results:
   - "manage.py check: 0 issues reported (exit 0)."
-  - "manage.py test analytics panels --verbosity=2: 93/93 tests PASSED (106.643s)."
-  - "node --check static/js/auth_wizard.js, dot_kpi.js, ui_widgets.js, page_guides.js, app.js, nav.js, charts.js, theme_studio.js, analyst_evaluation.js: all 9 exited 0."
-  - "Static audit (13 modified/created Phase 25 files): 0 comments, 0 triple-quotes, all files within line caps (views_*.py <= 250, others <= 350); .agents/rules/edupredict-rules.md (14,509 bytes < 24,000); .env and 8 .agents/* files tracked in Git."
-  - "Live Django Client() smoke checks: /auth/ (200), /admin-panel/users/?role=PENDING (200), /student-panel/ (200), /student-panel/report/ (200), and /student-panel/report/download-pdf/ (200, application/pdf, %PDF-) verified."
+  - "manage.py test: 94/94 tests PASSED (46.642s)."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED (11.92s)."
+  - "node --check: all 9 JS scripts exited 0."
+  - "Zero comments audit: 0 comments across all modified files."
+  - "Line caps: export_backup.py (118 <= 350), test_uat.py (399 <= 400)."
 
 active_routes_and_files:
-  - "accounts/services.py (220 lines), accounts/views.py (198 lines), panels/admin_services.py (348 lines), panels/directory_card_services.py (172 lines), panels/pdf_services.py (243 lines), panels/test_phase25.py (142 lines)"
-  - "templates/accounts/auth.html (313 lines), templates/base.html (182 lines), templates/panels/admin_users.html (176 lines), templates/panels/student_dashboard.html (175 lines), templates/panels/student_report.html (80 lines)"
-  - "static/js/auth_wizard.js (162 lines), static/css/global.css (275 lines)"
+  - "core/management/commands/export_backup.py (118 lines) -> Pre-flight & post-payload disk space safety guard"
+  - "panels/test_uat.py (399 lines) -> 30 UAT/ops/doc tests (94 unit tests total)"
 
 pending_modules_in_order:
   - "All planned Phases 1-25 Complete."

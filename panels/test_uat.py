@@ -135,7 +135,6 @@ class StaticFilesAndProductionConfigTests(TestCase):
         importlib.reload(cfg_settings)
 
     def test_docker_and_compose_files_exist_and_clean(self):
-        from pathlib import Path
         base = Path(__file__).resolve().parent.parent
         dockerfile = base / "Dockerfile"
         compose = base / "docker-compose.yml"
@@ -194,7 +193,6 @@ class StaticFilesAndProductionConfigTests(TestCase):
     def test_export_backup_management_command_execution(self):
         import json
         import tempfile
-        from pathlib import Path
         with tempfile.TemporaryDirectory() as tmp_dir:
             out_path = call_command("export_backup", format="json", output_dir=tmp_dir, filename="snap.json")
             target = Path(out_path)
@@ -214,6 +212,14 @@ class StaticFilesAndProductionConfigTests(TestCase):
     def test_export_backup_command_invalid_format_raises_error(self):
         with self.assertRaises(CommandError):
             call_command("export_backup", format="invalid_format")
+
+    @patch("core.management.commands.export_backup.shutil.disk_usage")
+    def test_export_backup_insufficient_disk_space_raises_error(self, mock_disk_usage):
+        import tempfile
+        mock_disk_usage.return_value = MagicMock(total=1000000, used=999000, free=1024)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            with self.assertRaisesMessage(CommandError, "Insufficient disk space"):
+                call_command("export_backup", format="json", output_dir=tmp_dir, quiet=True)
 
     @patch("sentry_sdk.init")
     def test_sentry_sdk_conditional_initialization_block(self, mock_sentry_init):
@@ -255,7 +261,6 @@ class StaticFilesAndProductionConfigTests(TestCase):
         import os
         import tempfile
         import time
-        from pathlib import Path
         with tempfile.TemporaryDirectory() as tmp_dir:
             old_backup = Path(tmp_dir) / "edupredict_backup_old.json"
             old_backup.write_text("{}", encoding="utf-8")

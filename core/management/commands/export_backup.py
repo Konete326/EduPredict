@@ -1,7 +1,10 @@
+import shutil
 import time
 from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from panels.admin_seed import build_backup_payload
+
+MIN_BACKUP_FREE_BYTES = 50 * 1024 * 1024
 
 
 class Command(BaseCommand):
@@ -36,6 +39,16 @@ class Command(BaseCommand):
             help="Suppress informational stdout output.",
         )
 
+    def _check_disk_space(self, target_dir, required_bytes=MIN_BACKUP_FREE_BYTES):
+        target_dir.mkdir(parents=True, exist_ok=True)
+        usage = shutil.disk_usage(target_dir)
+        if usage.free < required_bytes:
+            raise CommandError(
+                f"Insufficient disk space in {target_dir}: {usage.free} bytes free, "
+                f"minimum {required_bytes} bytes required."
+            )
+        return usage.free
+
     def handle(self, *args, **options):
         fmt = str(options.get("format") or "json").strip().lower()
         if fmt not in ("json", "csv"):
@@ -45,13 +58,20 @@ class Command(BaseCommand):
         quiet = bool(options.get("quiet"))
         retention_days = int(options.get("retention_days") or 0)
 
+        free_bytes = self._check_disk_space(output_dir)
+
         try:
             content, mime_type, default_name = build_backup_payload(fmt=fmt)
         except Exception as exc:
             raise CommandError(f"Backup payload generation failed: {exc}") from exc
 
+        payload_bytes = len(content.encode("utf-8"))
+        if free_bytes < payload_bytes + (5 * 1024 * 1024):
+            raise CommandError(
+                f"Insufficient disk space for {payload_bytes} byte backup in {output_dir}."
+            )
+
         target_name = custom_name if custom_name else default_name
-        output_dir.mkdir(parents=True, exist_ok=True)
         target_path = output_dir / target_name
         temp_path = output_dir / f"{target_name}.tmp.{int(time.time())}"
 
