@@ -8,6 +8,7 @@ from analytics.data_pipeline import REQUIRED_COLUMNS, ingest_dataset
 from analytics.ml_engine import run_prediction_pipeline
 from core.db import invalidate_cache
 from core.decorators import role_required
+from panels.directory_card_services import build_teacher_student_cards
 from panels.pdf_services import generate_teacher_roster_pdf
 from panels.teacher_alert_services import get_teacher_alerts_context
 from panels.teacher_services import (
@@ -129,6 +130,7 @@ def teacher_students(request):
         "selected_filters": {"batch": batch_f, "course_code": course_f, "course": course_f, "status": status_f},
         "student_headers": data["student_headers"],
         "student_rows": data["student_rows"],
+        "student_cards": build_teacher_student_cards(data.get("students_raw"), fallback_rows=data.get("student_rows"), include_alert=True, include_delete=True),
         "db_error": db_error,
     })
 
@@ -231,5 +233,6 @@ def teacher_ingest(request):
         "page_title": "Upload Marks",
         "active_role": "TEACHER",
         **data,
+        "roster_cards": build_teacher_student_cards(data.get("roster_raw"), fallback_rows=data.get("roster_rows"), include_alert=False, include_delete=True),
         "db_error": db_error,
     })

@@ -61,34 +61,32 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 23 Real-Time Notifications, Feedback Reply CRUD & Typewriter Page Guide QA Team"
-active_branch_merged_to_main: "feature/phase23-realtime-notifs-guide -> main"
-project_phase: "Phase 23 Complete: Real-Time Notifications Feed, Admin Feedback Reply CRUD & Typewriter Page Guide Wizard Modal"
+last_updated_by_agent: "Phase 24 Card-Grid Directories, Modalized Upload/Quick Entry & Dot-Graph KPI Cards QA Team"
+active_branch_merged_to_main: "feature/phase24-cards-modals-dotkpi -> main"
+project_phase: "Phase 24 Complete: Card-Grid Directories, Modalized Upload/Quick Entry & Dot-Graph KPI Cards"
 
 completed_modules:
-  - "Phase 1-22: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/, Ocean Blue Default, Cloudinary Avatars, Change Password Modal, Global Loading Lock, SPA Progress & Responsive Table Wrap."
-  - "Phase 23: Real-Time Notifications, Admin Feedback Reply CRUD & Typewriter Page Guide Wizard:"
-      - "Real-Time Notification Feed: Created panels/notification_services.py (134 lines) and panels/views_notifications.py (15 lines) exposing GET /notifications/feed/ (panels:notifications_feed) with 10s TTL caching; updated core/context_processors.py (76 lines) and templates/components/topbar.html (89 lines) to surface feedback_text + reply_text; wired idempotent 15s visibility-gated polling + toast alerts in static/js/ui_widgets.js (248 lines)."
-      - "Admin Feedback Reply CRUD: Updated panels/admin_services.py (349 lines) and panels/views_admin.py (247 lines) to support reply_ticket (saving admin_reply, optional status resolve, and targeted FEEDBACK_REPLY user notification containing both feedback_text and reply_text) and delete_reply; updated templates/panels/admin_tickets.html (114 lines) with openReplyTicketModal() and openDeleteReplyModal()."
-      - "Typewriter Page Guide Wizard Modal: Created templates/components/page_guide_modal.html (59 lines) and static/js/page_guides.js (115 lines) with 3-step Wizard (Overview, How to Use, Quick FAQs), prefers-reduced-motion-aware typewriter + Skip typing button across 17 routes + fallback; wired #open-page-guide-btn in topbar.html, included modal & ?v=10 assets in templates/base.html (181 lines), and registered 'page-guide-modal' in static/js/app.js (342 lines)."
-      - "Tests: Created panels/test_notifications.py (168 lines) covering /notifications/feed/, submit_support_ticket admin notifications, and reply_ticket/delete_reply CRUD."
+  - "Phase 1-23: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/, Ocean Blue Default, Cloudinary Avatars, Change Password Modal, Global Loading Lock, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Typewriter Page Guide Wizard Modal."
+  - "Phase 24: Card-Grid User/Student/Teacher Directories + Modalized Upload/Quick Entry + Dot-Graph KPI Cards:"
+      - "Directory Card Services & Views: Created panels/directory_card_services.py (162 lines) with build_admin_user_cards (self-protection guard, avatar_url, role_badge, actions) and build_teacher_student_cards (single users_col() avatar lookup + 9-col/8-col fallback_rows parser); updated panels/teacher_services.py (334 lines), panels/views_admin.py (249 lines), and panels/views_teacher.py (238 lines) to inject user_cards, student_cards, and roster_cards."
+      - "Card-Grid & Modalized Upload/Quick Entry UI: Created templates/components/directory_cards.html (99 lines) supporting [data-paginated-container], [data-table-search], avatar_url/initials, status badge, 2-col meta grid, and [data-pagination-bar]; updated templates/panels/admin_users.html (169 lines), templates/panels/teacher_students.html (169 lines), templates/panels/teacher_ingest.html (176 lines, #teacher-upload-modal + openQuickEntryModal), and templates/panels/analyst_dashboard.html (264 lines, #analyst-upload-modal)."
+      - "Dot-Graph KPI Cards & Modal Shell JS: Updated templates/components/metric_card.html (31 lines) with [data-dot-kpi], [data-kpi-counter], [data-dot-tooltip], and [data-dot-matrix]; updated static/css/global.css (235 lines) with .ep-dot-matrix, .ep-dot-col, .ep-dot, status color variants, @keyframes epDotPop, and prefers-reduced-motion; created static/js/dot_kpi.js (98 lines) exposing window.initDotKpiCards(); updated static/js/app.js (345 lines) with generic [data-ep-modal] handling and window.openCustomModal/closeCustomModal; bumped static assets to ?v=11 in templates/base.html (182 lines) and templates/accounts/auth.html (331 lines)."
+      - "Tests: Created panels/test_phase24.py (156 lines) covering DirectoryCardServicesUnitTests and Phase24IntegrationTests."
 
 verification_results:
   - "manage.py check: 0 issues reported (exit 0)."
-  - "manage.py test analytics panels --verbosity=2: 85/85 tests PASSED (72.717s)."
-  - "node --check static/js/ui_widgets.js, page_guides.js, app.js, nav.js, charts.js, theme_studio.js: all exited 0."
-  - "Static audit (14 modified/created files): 0 comments, 0 triple-quotes, all files within line caps (views_*.py <= 250, others <= 350); .agents/rules/edupredict-rules.md (14,509 bytes < 24,000)."
-  - "Live Django Client() smoke checks: GET /notifications/feed/ -> 200 JSON (ok=True, unread_count, notifications); POST /admin-panel/tickets/ reply_ticket saved admin_reply & created FEEDBACK_REPLY notification with feedback_text + reply_text, delete_reply cleared admin_reply; GET /admin-panel/ & /profile/ -> 200 with openPageGuideModal(), page-guide-modal, page_guides.js?v=10, ui_widgets.js?v=10, and notification-bell-btn."
+  - "manage.py test analytics panels --verbosity=2: 88/88 tests PASSED (54.944s)."
+  - "node --check static/js/dot_kpi.js, ui_widgets.js, page_guides.js, app.js, nav.js, charts.js, theme_studio.js, analyst_evaluation.js: all exited 0."
+  - "Static audit (16 modified/created Phase 24 files): 0 comments, 0 triple-quotes, all files within line caps (views_*.py <= 250, others <= 350); .agents/rules/edupredict-rules.md (14,509 bytes < 24,000); .env and 8 .agents/* files tracked in Git."
+  - "Live Django Client() smoke checks: /admin-panel/, /admin-panel/users/, /teacher-panel/, /teacher-panel/students/, /teacher-panel/ingest/, /student-panel/, and /analyst-panel/ verified."
 
 active_routes_and_files:
-  - "panels/notification_services.py (134 lines), panels/views_notifications.py (15 lines), panels/test_notifications.py (168 lines), panels/urls.py (32 lines)"
-  - "panels/admin_services.py (349 lines), panels/views_admin.py (247 lines), core/context_processors.py (76 lines)"
-  - "templates/components/topbar.html (89 lines), templates/components/page_guide_modal.html (59 lines), templates/base.html (181 lines), templates/panels/admin_tickets.html (114 lines)"
-  - "static/js/ui_widgets.js (248 lines), static/js/page_guides.js (115 lines), static/js/app.js (342 lines)"
-  - "/notifications/feed/ -> panels:notifications_feed"
+  - "panels/directory_card_services.py (162 lines), panels/teacher_services.py (334 lines), panels/views_admin.py (249 lines), panels/views_teacher.py (238 lines), panels/test_phase24.py (156 lines)"
+  - "templates/components/directory_cards.html (99 lines), templates/components/metric_card.html (31 lines), templates/base.html (182 lines), templates/accounts/auth.html (331 lines)"
+  - "templates/panels/admin_users.html (169 lines), templates/panels/teacher_students.html (169 lines), templates/panels/teacher_ingest.html (176 lines), templates/panels/analyst_dashboard.html (264 lines)"
+  - "static/css/global.css (235 lines), static/js/dot_kpi.js (98 lines), static/js/app.js (345 lines)"
 
 pending_modules_in_order:
-  - "Phase 24: Card-Grid User/Student/Teacher Directories + Modalized Upload/Quick Entry + Dot-Graph KPI Cards"
   - "Phase 25: Stepper Signup Wizard + Teacher Approval Guard + Student PDF Transcript"
 
 important_notes_for_next_agent:

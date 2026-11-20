@@ -13,6 +13,10 @@
     <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Search students, update internal test scores, dispatch alerts, and export roster.</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
+    <button type="button" onclick="openQuickEntryModal()" title="Quickly add or update student marks" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <i class="fa-solid fa-plus text-xs text-[var(--accent-primary)]"></i>
+      <span>Quick Entry</span>
+    </button>
     <a href="{% url 'panels:teacher_roster_pdf' %}?batch={{ selected_filters.batch|default:'ALL'|urlencode }}&course_code={{ selected_filters.course_code|default:'ALL'|urlencode }}&status={{ selected_filters.status|default:'ALL'|urlencode }}" title="Export printable class roster as PDF" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
       <i class="fa-solid fa-file-pdf text-[var(--accent-primary)]"></i>
       <span>Export PDF Roster</span>
@@ -82,7 +86,7 @@
     </div>
   </form>
 
-  {% include 'components/data_table.html' with table_id="teacher-students-table" table_title="Student Performance List" headers=student_headers rows=student_rows page_size=5 empty_message="No students match these filters. Upload class marks or reset filters." %}
+  {% include 'components/directory_cards.html' with grid_id="teacher-students-table" grid_title="Student Directory" cards=student_cards page_size=8 empty_message="No students match these filters. Upload class marks or reset filters." %}
 </section>
 {% endblock %}
 
@@ -90,6 +94,23 @@
 <script>
   (function () {
     const TEACHER_STUDENTS_URL = "{% url 'panels:teacher_students' %}";
+
+    window.openQuickEntryModal = function () {
+      window.openFormModal({
+        title: 'Quick Student Entry',
+        actionUrl: TEACHER_STUDENTS_URL,
+        submitText: 'Save Student Marks',
+        fields: [
+          { type: 'hidden', name: 'action', value: 'manual_entry' },
+          { name: 'student_id', label: 'Student ID', type: 'text', placeholder: 'STD-2026-001', required: true },
+          { name: 'full_name', label: 'Student Name', type: 'text', placeholder: 'e.g. Ayesha Khan' },
+          { name: 'batch', label: 'Batch', type: 'text', value: '2026-A', required: true },
+          { name: 'course_code', label: 'Course Code', type: 'text', value: 'CS-101', required: true },
+          { name: 'internal_marks', label: 'Marks (0-100)', type: 'number', value: '75', min: '0', max: '100', step: '0.1', required: true },
+          { name: 'attendance_pct', label: 'Attendance (%)', type: 'number', value: '85', min: '0', max: '100', step: '0.1', required: true }
+        ]
+      });
+    };
 
     window.openUpdateMarksModal = function (btn) {
       const d = btn ? btn.dataset : {};

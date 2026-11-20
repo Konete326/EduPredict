@@ -207,6 +207,7 @@ def _load_teacher_students_context(batch_f, course_f, status_f):
         "filter_options": {"batches": batches, "courses": courses, "statuses": statuses},
         "student_headers": headers,
         "student_rows": rows,
+        "students_raw": filtered,
         "export_rows": export_rows,
     }
 
@@ -251,6 +252,7 @@ def _load_teacher_ingest_context():
     return {
         "roster_headers": roster_headers,
         "roster_rows": roster_rows,
+        "roster_raw": students,
         "log_headers": log_headers,
         "log_rows": log_rows,
         "courses_list": sorted(course_codes) or ["CS-101"],

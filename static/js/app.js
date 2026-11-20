@@ -13,7 +13,7 @@
 
   function syncBodyScrollLock() {
     if (!document.body) return;
-    const modalOpen = MODAL_IDS.some((id) => { const m = byId(id); return m && !m.classList.contains('hidden'); });
+    const modalOpen = MODAL_IDS.some((id) => { const m = byId(id); return m && !m.classList.contains('hidden'); }) || Boolean(document.querySelector('[data-ep-modal]:not(.hidden)'));
     const drawer = byId('mobile-sidebar-drawer');
     document.body.classList.toggle('modal-open', Boolean(modalOpen));
     document.body.classList.toggle('drawer-open', Boolean(!isDesktop() && drawer && !drawer.classList.contains('-translate-x-full')));
@@ -268,12 +268,15 @@
     else if (id === 'theme-studio-modal' && typeof window.closeThemeStudioModal === 'function') window.closeThemeStudioModal();
     else if (id === 'page-guide-modal' && typeof window.closePageGuideModal === 'function') window.closePageGuideModal(); else setModalOpen(byId(id), false);
   }
-  const closeAllModals = () => MODAL_IDS.forEach(closeModalById);
+  const openCustomModal = (id) => setModalOpen(byId(id), true);
+  const closeCustomModal = (id) => setModalOpen(byId(id), false);
+  const closeAllModals = () => { MODAL_IDS.forEach(closeModalById); document.querySelectorAll('[data-ep-modal]').forEach((m) => setModalOpen(m, false)); };
   function bindModalBackdrops() {
-    MODAL_IDS.forEach((id) => bindOnce(byId(id), 'click', (e) => {
-      const modal = byId(id);
-      if (modal && pointerDownTarget === e.target && (e.target === modal || e.target.hasAttribute('data-modal-backdrop'))) closeModalById(id);
-    }));
+    const attach = (m, fn) => bindOnce(m, 'click', (e) => {
+      if (pointerDownTarget === e.target && (e.target === m || e.target.hasAttribute('data-modal-backdrop'))) fn();
+    });
+    MODAL_IDS.forEach((id) => attach(byId(id), () => closeModalById(id)));
+    document.querySelectorAll('[data-ep-modal]').forEach((m) => attach(m, () => setModalOpen(m, false)));
   }
   function bindDynamicControls() {
     restoreSidebarState(); syncThemeButton();
@@ -332,11 +335,11 @@
       syncSidebarToggleA11y();
     });
   }
-  function reinitEduPredictUI() { closeAllModals(); closeNotificationDropdown(); if (typeof window.eduPredictCancelUpload === 'function') window.eduPredictCancelUpload(true); if (typeof window.resetEduPredictSubmitLocks === 'function') window.resetEduPredictSubmitLocks(); bindDynamicControls(); if (typeof window.initSmartAutomation === 'function') window.initSmartAutomation(); if (typeof window.initEduPredictWidgets === 'function') window.initEduPredictWidgets(); }
+  function reinitEduPredictUI() { closeAllModals(); closeNotificationDropdown(); if (typeof window.eduPredictCancelUpload === 'function') window.eduPredictCancelUpload(true); if (typeof window.resetEduPredictSubmitLocks === 'function') window.resetEduPredictSubmitLocks(); bindDynamicControls(); if (typeof window.initSmartAutomation === 'function') window.initSmartAutomation(); if (typeof window.initEduPredictWidgets === 'function') window.initEduPredictWidgets(); if (typeof window.initDotKpiCards === 'function') window.initDotKpiCards(); }
   function initShellBindings() { bindDocumentGlobalsOnce(); bindDynamicControls(); }
 
   restoreSidebarState();
-  Object.assign(window, { openConfirmModal, closeConfirmModal, openFormModal, closeFormModal, openComingSoonModal, closeComingSoonModal, showToast, toggleTheme, openMobileSidebar, closeMobileSidebar, toggleSidebar, closeSidebarAny, syncBodyScrollLock, reinitEduPredictUI });
+  Object.assign(window, { openConfirmModal, closeConfirmModal, openFormModal, closeFormModal, openComingSoonModal, closeComingSoonModal, openCustomModal, closeCustomModal, showToast, toggleTheme, openMobileSidebar, closeMobileSidebar, toggleSidebar, closeSidebarAny, syncBodyScrollLock, reinitEduPredictUI });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initShellBindings);
   else initShellBindings();
 })();

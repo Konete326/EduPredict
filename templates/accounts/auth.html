@@ -48,7 +48,7 @@
     };
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=9">
+  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=11">
 </head>
 <body class="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased">
   <div class="min-h-screen grid grid-cols-1 lg:grid-cols-12">
@@ -258,8 +258,8 @@
   {% include 'components/toast.html' %}
   {{ theme_prefs|json_script:"ep-theme-prefs-data" }}
   {{ theme_catalog|json_script:"ep-theme-catalog-data" }}
-  <script src="{% static 'js/app.js' %}?v=9"></script>
-  <script src="{% static 'js/theme_studio.js' %}?v=9"></script>
+  <script src="{% static 'js/app.js' %}?v=11"></script>
+  <script src="{% static 'js/theme_studio.js' %}?v=11"></script>
   <script>
     function switchAuthTab(tab) {
       const isRegister = tab === 'register';

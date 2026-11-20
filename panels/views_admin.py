@@ -17,6 +17,7 @@ from panels.admin_services import (
     list_tickets, list_users, mark_notifications_read, toggle_ticket_status,
     toggle_user_status, update_course_record, update_user_record,
 )
+from panels.directory_card_services import build_admin_user_cards
 from panels.notification_services import delete_ticket_reply, reply_to_ticket
 
 
@@ -85,7 +86,8 @@ def admin_users(request):
     except Exception as exc:
         db_error = str(exc)
     user_headers, user_rows = build_user_table_data(users, filter_role, actor_id, actor_email=actor_email)
-    return render(request, "panels/admin_users.html", {"page_title": "Users", "active_role": "ADMIN", "users": users, "user_headers": user_headers, "user_rows": user_rows, "role_counts": role_counts, "selected_role": filter_role, "db_error": db_error})
+    user_cards = build_admin_user_cards(users, filter_role, actor_id, actor_email=actor_email)
+    return render(request, "panels/admin_users.html", {"page_title": "Users", "active_role": "ADMIN", "users": users, "user_headers": user_headers, "user_rows": user_rows, "user_cards": user_cards, "role_counts": role_counts, "selected_role": filter_role, "db_error": db_error})
 
 
 @role_required(["ADMIN"])

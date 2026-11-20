@@ -172,6 +172,8 @@ html.theme-transitioning *::after {
   .spa-page-enter { animation: none; }
   .ep-faq-panel { transition: none; }
   .ep-gradient-upload { animation: none; }
+  .ep-dot { animation: none; opacity: 1; transform: none; }
+  .ep-dot-tooltip { transition: none; }
 }
 
 @media (min-width: 1024px) {
@@ -215,3 +217,19 @@ th[data-sortable][data-sort-dir="desc"]::after { content: " \2193"; font-size: 0
 #theme-studio-modal [aria-pressed="true"] [data-check-icon] { opacity: 1; }
 #theme-studio-sync-toggle[aria-checked="true"] { background-color: var(--accent-primary); border-color: var(--accent-primary); }
 #theme-studio-sync-toggle[aria-checked="true"] [data-sync-thumb] { transform: translateX(1.125rem); }
+.ep-dot-matrix { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); align-items: end; gap: 3px; height: 44px; }
+.ep-dot-col { display: flex; flex-direction: column-reverse; align-items: center; gap: 2px; height: 100%; cursor: pointer; }
+.ep-dot { width: 4px; height: 4px; border-radius: 9999px; opacity: 0; transform: scale(0.4); animation: epDotPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.ep-dot-muted { background: color-mix(in srgb, var(--text-muted) 28%, transparent); }
+.ep-dot-active { background: var(--accent-primary); }
+[data-status="success"] .ep-dot-active { background: var(--status-success); }
+[data-status="warning"] .ep-dot-active { background: var(--status-warning); }
+[data-status="danger"] .ep-dot-active,
+[data-status="error"] .ep-dot-active { background: var(--status-danger); }
+@keyframes epDotPop { to { opacity: 1; transform: scale(1); } }
+.ep-dot-tooltip {
+  position: absolute; top: -1.35rem; left: 0; transform: translateX(-50%); pointer-events: none; opacity: 0; white-space: nowrap;
+  border-radius: 0.375rem; border: 1px solid var(--border-subtle); background: var(--bg-elevated); color: var(--text-primary);
+  padding: 0.125rem 0.45rem; font-size: 10px; font-weight: 600; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); transition: opacity 0.15s ease; z-index: 10;
+}
+.ep-dot-tooltip.is-visible { opacity: 1; }
