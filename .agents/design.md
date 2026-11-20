@@ -136,9 +136,62 @@ To guarantee overlays, dropdowns, and modals never clash or clip across panels:
 - **Global Button Loading Lock & Cancelable Auto-Upload:** `static/js/ui_widgets.js` (`initGlobalSubmitGuards`) locks submit buttons with `"Processing..."` spinner + `#ep-top-progress` (12s fallback + `pageshow` reset, skipping `[data-no-lock]`, `[data-no-loading]`, and download forms). `bindSmartFileUploads()` gives `input[type="file"][data-auto-submit="true"]` a 1200ms cancelable toast grace window (`window.eduPredictCancelUpload` cleared on SPA swap). Global modals use `pointerdown` target checks for drag-safe backdrop dismissal.
 - **Phases 1–59 Built:** Real-Time Notifications, Admin Feedback Reply CRUD, Card-Grid Directories, Modalized Uploads, Stepper Signup Wizard, Teacher Approval Guard, Official PDF Transcript, and Ops/Security suite are complete.
 
-## 14. Enterprise UI Simplification & "Less Clutter, Higher Quality" Standard (Phases 60–63)
-- **Admin-Only Theme Studio:** Keep a single crisp Ocean Blue brand theme + Light/Dark toggle in the topbar for Teachers, Students, and Analysts; house full Theme Studio customization exclusively inside **Admin Portal Settings** (`/admin-panel/settings/`).
-- **Instant 3-Bullet Page Guide:** Replace slow typewriter delays with an instant, scannable 3-bullet `"How This Page Works"` popover/modal so users read page instructions immediately without waiting.
-- **Compact Table Default + `[Table | Cards]` Toggle:** On User Directory (`/admin-panel/users/`) and Student Directory (`/teacher-panel/students/`), default to a clean **5-column Compact Table** (for fast 40–50+ student comparison) with a persisted `[Table | Cards]` switcher in the toolbar.
-- **Clean Minimalist KPI Cards:** Display bold tabular metrics + concise trend/status pills (`+4% this week`) by default; only render dot-matrix histograms when driven by real historical time-series data.
-- **Student 360° Quick-View Slide-Over Drawer (`z-50`):** Clicking a student's name/ID in Teacher or Analyst views opens a right-side slide-over drawer showing Attendance %, Predicted GPA, AI Risk Reason, Subject Marks, and Past Alerts without a full page jump.
+## 14. Enterprise UI/UX Masterplan — Anti-AI-Slop & Modern Polish (Phases 60–63)
+
+### 14.1. Visual Foundation & 90 / 8 / 2 Color Discipline
+- **3-Layer Depth System (No Heavy `shadow-xl`):** Use 1px hairline borders (`1px solid var(--border-subtle)`) to separate surfaces across 3 clean layers:
+  - **Canvas:** Light `#f8fafc` / Dark `#090d16`
+  - **Surface (Cards, Sidebar, Topbar):** Light `#ffffff` / Dark `#111827`
+  - **Elevated (Table Headers, Hover Rows, Inputs):** Light `#f1f5f9` / Dark `#1e293b`
+  - **Dark Mode Hairline Border:** Prefer crisp translucent hairline `rgba(255, 255, 255, 0.08)` for `--border-subtle` in dark mode.
+- **90 / 8 / 2 Color Rule:** 90% neutral surface/canvas, 8% secondary text & borders, 2% Primary Ocean Blue accent (primary CTA, active nav indicator, focus ring). Reserve Green/Amber/Red strictly for status badges, dots, and chart series — never tint entire cards red or yellow.
+- **Native Browser UI Theming:** Enforce `color-scheme: light dark` and `accent-color: var(--accent-primary)` on `:root` so scrollbars, checkboxes, radios, and date inputs match Light/Dark mode natively.
+- **Typography & Number Precision:** Inter / Plus Jakarta Sans for UI, JetBrains Mono + `tabular-nums` for all IDs/percentages/GPAs, `text-wrap: balance` on headings, and strict 3-level contrast hierarchy (`600` values, `500` labels, `400` metadata).
+- **Ban Generic AI Icon Boxes:** Never render oversized 48x48 colored rounded boxes around card icons. Use crisp inline `14px–16px` muted FontAwesome icons beside titles or `6px` status dots (`● Active`, `● High Risk`).
+
+### 14.2. Global App Shell Polish (Sidebar, Topbar & Instant Help)
+- **Slim Left Sidebar (`sidebar.html`):** `240px–256px` expanded (`68px` icon-only collapsed rail with hover tooltips on desktop). Active nav item uses soft tinted background (`rgba(37, 99, 235, 0.10)`), primary blue text, and a `3px` left vertical Ocean Blue indicator bar (no heavy solid blue block). Clean footer: `32x32` circular avatar, single-line truncated name, role pill, and 1-click Logout icon (triggers `confirm_modal.html`). Mobile drawer supports blur backdrop, outside tap, `Esc`, and swipe-left dismiss.
+- **Scroll-Aware 4-Item Topbar (`topbar.html`):** Flat/seamless at scroll `y = 0`; smoothly reveals `backdrop-filter: blur(12px)` and 1px bottom border after `10px` scroll. Keep strictly 4 clean controls:
+  1. Left: Clean **Breadcrumb** (`Teacher / Students`).
+  2. Center-Right: Compact **Quick Search** trigger (`Search... Ctrl+K`) opening a Command/Search modal.
+  3. Right 1: **Notification Bell** (unread red dot + viewport-aware dropdown).
+  4. Right 2: Single **1-Click Light/Dark Toggle** + compact Profile avatar pill.
+- **Admin-Only Theme Studio:** Move full Theme Studio strictly inside **Admin -> Portal Settings (`/admin-panel/settings/`)** so institutions configure one official brand theme while Teachers, Students, and Analysts use clean Ocean Blue + Light/Dark toggle.
+- **Instant Contextual Help Popover:** Replace slow typewriter guide animations with an instant `0ms` `?` Help Popover in the topbar showing **3 crisp bullets + 2 quick FAQs** per page.
+
+### 14.3. Global Components Standards
+- **Ultra-Clean Clickable KPI Cards (`metric_card.html`):** Remove synthetic 14-column dot-matrix histograms. Structure: Top Row (muted label + 14px muted icon), Middle Row (bold `tabular-nums` value), Bottom Row (compact trend pill or 1-line micro-context). Support clickable filtering (e.g. clicking `"High Risk Students"` filters the page table).
+- **Table-First Directories + `[Table | Cards]` Toggle:** Default Admin Users & Teacher Students to a clean **5–6 column Compact Table** (Stacked Avatar+Name+ID, Attendance % with mini inline bar, Predicted GPA, Risk Badge, right-aligned Actions) with a persisted `[Table | Cards]` toolbar toggle, sortable column headers, horizontal scrollability affordance shadows on mobile, and **1-Click Copy ID/Email** (hover copy icon -> `✓ Copied`).
+- **Forms, Modals, Drawers & Toasts:** Post-interaction `:user-invalid` validation only; auto-sizing textareas (`field-sizing: content`); width-locked button loading spinner (`Saving...`); consistent motion (`180ms ease-out` modal fade+scale `0.96 -> 1`, `220ms` right-side slide-over drawer, `<body>` scroll lock + `Esc`/backdrop dismiss); stackable bottom-right toasts (max 3) with hover-pausable countdown progress bar.
+
+### 14.4. Global Image Cropper (`Cropper.js` CDN) & Feedback Thread UX
+- **Reusable Cropper Modal (`templates/components/image_cropper_modal.html`):**
+  - **Avatar Mode (`/profile/`):** 1:1 circular mask, Zoom slider, Rotate 90° L/R, Reset, 48x48 live topbar preview; uploads cropped canvas blob to Cloudinary and deletes previous Cloudinary avatar.
+  - **Feedback Screenshot Mode (Support/Report Issue Modal):** Supports Click Browse, Drag & Drop, and direct **`Ctrl+V` Clipboard Paste**; opens Free Crop + `16:9` / `4:3` presets; attaches neat Attachment Chips (thumbnail + filename + size + `×` remove, max 2–3 screenshots).
+- **Ticket Thread & Lightbox:** Users see message + thumbnail + Admin reply timeline card; Admin `/admin-panel/tickets/` opens a **Ticket Detail Slide-Over Drawer** with **Full-Screen Image Lightbox** (dark backdrop, zoom toggle, download, `Esc` close) + quick reply & resolve toggle.
+
+### 14.5. Auth & Onboarding (`/auth/`) Polish
+- Split-screen restraint: deep Ocean Blue subtle mesh left panel (zero flashy AI blobs), crisp logo, and 3 concise bullets.
+- 3-Step Stepper: smooth horizontal progress fill, directional slide transition, live 4-bar Password Strength Meter (`Weak`/`Fair`/`Good`/`Strong`) + Caps Lock badge, and a calm **Teacher Pending Approval Status Card** on teacher registration.
+
+### 14.6. Page-by-Page Blueprint Across All 4 Panels
+- **Admin (`/admin-panel/*`):** Overview (4 clickable KPIs + 60/40 charts + 5 latest open tickets + Backup pill); Users (Compact Table + `[Table | Cards]`, Pending Approval red badge, inline Approve & Reject-with-Reason modal); Courses (Capacity progress bar turning amber `>= 90%`); Tickets (thumbnail + Lightbox + Detail Drawer); Logs (Chronological Timeline with category icons + CSV); Settings (Tabbed: `General & Branding | ML Thresholds | Appearance`, syncing live `institution_name` & `current_term` to PDF headers).
+- **Teacher (`/teacher-panel/*`):** Class Home (4 KPIs + `"Needs Attention Today"` watchlist + 1-click Upload Marks); Student Directory (Compact Table + click row -> **Student 360° Slide-Over Drawer** with Attendance Ring, Predicted GPA, AI Risk Reasons, 1-click Send Alert & Quick Edit); Upload Marks (clean dashed dropzone + Auto-Column Mapping preview + automatic ML & alert run); Risk Alerts (1-click `"Notify All High-Risk Students"` + auto-alert `< 75%` toggle + Read `✓✓` / Unread badges).
+- **Student (`/student-panel/*`):** Dashboard (friendly greeting, Attendance SVG Progress Ring, Predicted GPA, Rank, Credits, Marks vs Class Avg chart, positive AI Insight card); Report Card & PDF (paper-style summary + prominent `"Download Official PDF"` with live Institution Name & Term); Study Tips (3–4 interactive checklist cards with progress bar); Alerts & Support (`visibilitychange` instant refresh + Screenshot `Ctrl+V` feedback).
+- **Data Analyst (`/analyst-panel/*`):** Hub (1-line Model Health Strip + `"Simulate Live LMS Stream"` 5s pulsing toggle + 2–3 crisp charts + filterable table); AI Evaluation & Health (sliding underline tabs `Classification | Regression | Anomaly`, color-graded Confusion Matrix Heatmap, `(?)` metric tooltips).
+
+### 14.7. Chart.js 6 Global Visual Defaults (`static/js/charts.js`)
+1. **Gridlines:** Vertical `display: false`; horizontal ultra-light dashed `rgba(148, 163, 184, 0.15)`.
+2. **Rounded Bars:** `borderRadius: 6`, `borderSkipped: false`, `maxBarThickness: 36`.
+3. **Clean Doughnut:** `cutout: '72%'`, `borderWidth: 0`, centered total/percentage label.
+4. **Modern Tooltips:** Dark slate rounded tooltip (`padding: 10`, `cornerRadius: 8`, `displayColors: true`, mono numbers).
+5. **Minimal Legends:** Top-right circular point style (`usePointStyle: true`, `boxWidth: 8`).
+6. **Zero-Reload Theme Sync:** Light/Dark toggle immediately updates all active `Chart.instances`.
+
+### 14.8. Micro-Interactions, Mobile Touch & Rollout Phases (60–63)
+- Minimum `40px–44px` touch targets on mobile buttons/pills/links; `overflow-x: clip`; positive illustrated empty states with 1 CTA; strict `@media (prefers-reduced-motion: reduce)` support; `visibilitychange` instant notification sync.
+- **4 Risk-Free Rollout Phases:**
+  - **Phase 60 (26A — Visual Polish):** Clean KPI cards, Chart.js 6 global defaults, Scroll-aware 4-item Topbar + `Ctrl+K` Search + Admin-Only Theme Studio + Instant 3-Bullet Help Popover + Slim Sidebar 3px active bar.
+  - **Phase 61 (26B — Global Image Cropper & Ticket Lightbox):** `image_cropper_modal.html` (`Cropper.js` CDN) for Profile Avatar (1:1 circle + old Cloudinary delete) & Feedback Screenshots (`Ctrl+V` paste + Free/16:9/4:3 crop + Attachment Chips) + Admin Ticket Detail Drawer & Full-Screen Lightbox.
+  - **Phase 62 (26C — Table-First Directories, Student 360° & Teacher Reject):** Default Compact Table + `[Table | Cards]` toggle + 1-Click Copy ID + Student 360° Slide-Over Drawer (`/students/<student_id>/summary/`) + Teacher Reject with Reason Modal (`REJECT_USER`).
+  - **Phase 63 (26D — Hyper-Automation & Aptech Pack):** Zero-Click Auto-ML (`RandomForest(n_estimators=50, n_jobs=-1)`) + Auto-Alert escalation, Smart CSV Auto-Mapper + preview, 1-Click `"Notify All High-Risk Students"`, `visibilitychange` sync, Dynamic Institution/Term PDF Branding, Live LMS Stream Simulator (`/analyst-panel/stream-tick/`), and Aptech Final Submission Pack (`docs/aptech_submission/`).

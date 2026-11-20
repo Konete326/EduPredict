@@ -93,10 +93,10 @@ active_routes_and_files:
   - "panels/tests.py (359 lines) -> Unit tests including cgroup container memory telemetry verification"
 
 pending_modules_in_order:
-  - "Phase 60: Enterprise UI Simplification (Admin-Only Theme Studio, Instant 3-Bullet Page Guide Popover, Default 5-Col Compact Table + [Table | Cards] Toggle, Clean Minimal KPI Cards)"
-  - "Phase 61: Zero-Click Automation (Auto-ML + Auto-Alert Escalation, Smart CSV Column Auto-Mapper, 1-Click Notify All High-Risk Students, visibilitychange Instant Notification Sync, Dynamic Institution Branding in PDF Transcript)"
-  - "Phase 62: Student 360 Quick-View Slide-Over Drawer & Teacher Rejection Reason + Re-Apply Flow"
-  - "Phase 63: Real-Time LMS Data Stream Simulator & Aptech Final Submission Pack (Report, Flowcharts/DFDs, Test CSV, Installation ReadMe, Demo Walkthrough)"
+  - "Phase 60 (26A): Visual Polish & Clean Shell (90/8/2 Depth, Clean Clickable KPIs, Chart.js 6 Global Defaults, Scroll-Aware 4-Item Topbar + Ctrl+K Search, Slim Sidebar 3px Active Bar, Admin-Only Theme Studio in Portal Settings, Instant 3-Bullet Help Popover)"
+  - "Phase 61 (26B): Global Image Cropper (Cropper.js CDN + Ctrl+V Screenshot Paste + Avatar 1:1 Crop & Old Cloudinary Delete + Attachment Chips) & Admin Ticket Detail Drawer + Full-Screen Lightbox"
+  - "Phase 62 (26C): Table-First Directories + [Table | Cards] Toggle + 1-Click Copy ID + Student 360 Slide-Over Drawer + Teacher Reject-with-Reason Workflow"
+  - "Phase 63 (26D): Hyper-Automation (Zero-Click Auto-ML + Auto-Alert Escalation, Smart CSV Auto-Mapper + Preview, 1-Click Notify All High-Risk Students, visibilitychange Sync, Dynamic Institution/Term PDF Branding, Live LMS Stream Simulator) & Aptech Final Submission Pack"
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
