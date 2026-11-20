@@ -17,9 +17,9 @@
       textSecondary: readCssVar('--text-secondary', isDark ? '#cbd5e1' : '#475569'),
       textMuted: readCssVar('--text-muted', isDark ? '#94a3b8' : '#64748b'),
       borderSubtle: readCssVar('--border-subtle', isDark ? '#1e293b' : '#e2e8f0'),
-      accentPrimary: readCssVar('--accent-primary', isDark ? '#6366f1' : '#4f46e5'),
-      accentHover: readCssVar('--accent-hover', isDark ? '#818cf8' : '#4338ca'),
-      accentSoft: readCssVar('--accent-soft', isDark ? 'rgba(99, 102, 241, 0.14)' : '#eef2ff'),
+      accentPrimary: readCssVar('--accent-primary', isDark ? '#3b82f6' : '#2563eb'),
+      accentHover: readCssVar('--accent-hover', isDark ? '#60a5fa' : '#1d4ed8'),
+      accentSoft: readCssVar('--accent-soft', isDark ? 'rgba(59, 130, 246, 0.16)' : '#eff6ff'),
       statusSuccess: readCssVar('--status-success', isDark ? '#22c55e' : '#16a34a'),
       statusWarning: readCssVar('--status-warning', isDark ? '#f59e0b' : '#d97706'),
       statusDanger: readCssVar('--status-danger', isDark ? '#ef4444' : '#dc2626')

@@ -88,6 +88,7 @@ def serialize_session_user(user_doc):
         "batch": str(user_doc.get("batch") or ""),
         "phone": str(user_doc.get("phone") or ""),
         "bio": str(user_doc.get("bio") or ""),
+        "avatar_url": str(user_doc.get("avatar_url") or ""),
         "is_active": bool(user_doc.get("is_active", True)),
         "theme_prefs": dict(user_doc.get("theme_prefs")) if isinstance(user_doc.get("theme_prefs"), dict) else {},
     }

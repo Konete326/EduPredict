@@ -1,0 +1,34 @@
+<div id="{{ faq_id|default:'ep-faq-pro' }}" data-faq-pro class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3 shadow-sm">
+  <div class="flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2 min-w-0">
+      <i class="fa-solid fa-circle-question text-xs text-[var(--accent-primary)] shrink-0" aria-hidden="true"></i>
+      <h3 class="truncate text-sm font-semibold text-[var(--text-primary)]">{{ faq_title|default:"Quick Help & FAQ" }}</h3>
+    </div>
+    <span class="shrink-0 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] font-mono tabular-nums text-[var(--text-muted)]">{{ faq_items|length }}</span>
+  </div>
+
+  <div class="relative">
+    <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-[var(--text-muted)]" aria-hidden="true"></i>
+    <input type="search" data-faq-search placeholder="{{ search_placeholder|default:'Search questions...' }}" aria-label="{{ search_placeholder|default:'Search questions' }}" class="w-full rounded-full border border-[var(--border-subtle)] bg-[var(--bg-canvas)] py-1.5 pl-8 pr-8 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none transition-colors">
+    <button type="button" data-faq-clear aria-label="Clear FAQ search" title="Clear search" class="hidden absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-5 w-5 items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+      <i class="fa-solid fa-xmark text-[10px]" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <div class="space-y-1.5">
+    {% for item in faq_items %}
+    <div data-faq-item class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] overflow-hidden transition-colors">
+      <button type="button" data-faq-trigger aria-expanded="false" class="flex w-full items-center justify-between gap-2.5 px-3 py-2.5 text-left hover:bg-[var(--bg-elevated)] transition-colors">
+        <span data-faq-question class="text-xs font-semibold text-[var(--text-primary)] leading-snug">{% if item.question %}{{ item.question }}{% else %}{{ item.q }}{% endif %}</span>
+        <i data-faq-chevron class="fa-solid fa-chevron-down shrink-0 text-[10px] text-[var(--text-muted)] transition-transform duration-200" aria-hidden="true"></i>
+      </button>
+      <div class="ep-faq-panel">
+        <div>
+          <p data-faq-answer class="px-3 pb-2.5 pt-0.5 text-xs leading-relaxed text-[var(--text-secondary)]">{% if item.answer %}{{ item.answer }}{% else %}{{ item.a }}{% endif %}</p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    <p data-faq-empty class="{% if faq_items %}hidden {% endif %}py-4 text-center text-xs text-[var(--text-muted)]">No matching FAQ topics found.</p>
+  </div>
+</div>

@@ -184,11 +184,13 @@
     if (typeof window.reinitEduPredictUI === 'function') window.reinitEduPredictUI();
     runExtraScripts(doc.getElementById('page-extra-js'));
     scrollForUrl(targetUrl);
+    if (window.EduPredictProgress) window.EduPredictProgress.done();
   }
 
   function navigateTo(targetUrl, options) {
     const opts = options || {};
     const token = ++navId;
+    if (window.EduPredictProgress) window.EduPredictProgress.start();
     return fetchPageHtml(targetUrl, Boolean(opts.bypassCache))
       .then((res) => {
         if (token !== navId) return;
@@ -198,6 +200,7 @@
         applyPageSwap(res.html, finalUrl, opts.pushState !== false);
       })
       .catch(() => {
+        if (window.EduPredictProgress) window.EduPredictProgress.done();
         if (token === navId) window.location.assign(targetUrl.href);
       });
   }

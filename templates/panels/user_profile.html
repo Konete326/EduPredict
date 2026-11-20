@@ -11,22 +11,32 @@
       <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">{{ profile_user.user_id|default:current_user.user_id }}</span>
     </div>
     <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">My Profile &amp; Settings</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Update your profile details, change your password, or customize your panel theme anytime.</p>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Manage your profile photo, personal details, password, and per-panel theme preferences.</p>
   </div>
-  <button type="button" onclick="openThemeStudioModal()" title="Customize theme colors &amp; layout" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)] shadow-sm">
-    <span class="h-2.5 w-2.5 rounded-full border border-[var(--border-subtle)]" style="background-color: var(--accent-primary);" aria-hidden="true"></span>
-    <i class="fa-solid fa-palette text-xs text-[var(--accent-primary)]" aria-hidden="true"></i>
-    <span>Theme &amp; Colors</span>
-  </button>
+  <div class="flex flex-wrap items-center gap-2 shrink-0">
+    <button type="button" onclick="openChangePasswordModal()" title="Change account password" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)] shadow-sm">
+      <i class="fa-solid fa-key text-xs text-[var(--accent-primary)]" aria-hidden="true"></i>
+      <span>Change Password</span>
+    </button>
+    <button type="button" onclick="openThemeStudioModal()" title="Customize theme colors &amp; layout" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)] shadow-sm">
+      <span class="h-2.5 w-2.5 rounded-full border border-[var(--border-subtle)]" style="background-color: var(--accent-primary);" aria-hidden="true"></span>
+      <i class="fa-solid fa-palette text-xs text-[var(--accent-primary)]" aria-hidden="true"></i>
+      <span>Theme &amp; Colors</span>
+    </button>
+  </div>
 </section>
 
 <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
   <div class="xl:col-span-4 min-w-0 space-y-4">
     <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 space-y-4 shadow-sm">
       <div class="flex items-start gap-3">
-        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-primary)]">
+        {% if profile_user.avatar_url %}
+        <img src="{{ profile_user.avatar_url }}" alt="{{ profile_user.full_name|default:'Profile Photo' }}" class="h-12 w-12 shrink-0 rounded-xl border border-[var(--border-subtle)] object-cover shadow-sm">
+        {% else %}
+        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-primary)]">
           {{ profile_user.full_name|default:current_user.full_name|default:"EP"|slice:":2"|upper }}
         </div>
+        {% endif %}
         <div class="min-w-0 flex-1 space-y-1">
           <h3 class="truncate text-base font-bold text-[var(--text-primary)]">{{ profile_user.full_name|default:current_user.full_name|default:"EduPredict User" }}</h3>
           <p class="truncate text-xs text-[var(--text-secondary)]">{{ profile_user.email|default:current_user.email }}</p>
@@ -63,33 +73,33 @@
           <dd class="font-mono font-medium text-[var(--text-primary)]">{{ profile_user.batch|default:"ALL" }}</dd>
         </div>
       </dl>
+
+      <form method="post" action="{% url 'panels:user_profile' %}" enctype="multipart/form-data" class="space-y-2.5 pt-2 border-t border-[var(--border-subtle)]">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="upload_avatar">
+        {% include 'components/gradient_file_uploader.html' with input_id="profile-avatar-file" input_name="avatar_file" accept="image/*" title="Upload Profile Photo" subtitle="PNG, JPG or WEBP up to 5 MB" max_mb=5 preview_url=profile_user.avatar_url %}
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="submit" class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+            <i class="fa-solid fa-cloud-arrow-up text-xs" aria-hidden="true"></i>
+            <span>Upload Photo</span>
+          </button>
+          {% if profile_user.avatar_url %}
+          <button type="button" onclick="openConfirmModal({ title: 'Remove Profile Photo', message: 'Remove your profile photo and restore initials?', confirmText: 'Remove Photo', onConfirmUrl: '{% url 'panels:user_profile' %}', fields: [{ name: 'action', value: 'remove_avatar' }] })" class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-semibold text-[var(--status-danger)] transition-colors hover:bg-[var(--bg-elevated)]">
+            <i class="fa-solid fa-trash-can text-xs" aria-hidden="true"></i>
+            <span>Remove Photo</span>
+          </button>
+          {% endif %}
+        </div>
+      </form>
     </div>
 
-    <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3 shadow-sm">
-      <div class="flex items-center gap-2">
-        <i class="fa-solid fa-wand-magic-sparkles text-xs text-[var(--accent-primary)]" aria-hidden="true"></i>
-        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Automated Portal Flow</h3>
-      </div>
-      <ul class="space-y-2 text-xs text-[var(--text-secondary)]">
-        <li class="flex items-start gap-2">
-          <i class="fa-solid fa-circle-check mt-0.5 shrink-0 text-[var(--status-success)]" aria-hidden="true"></i>
-          <span>Automatic ML predictions and risk updates run whenever marks or files are saved.</span>
-        </li>
-        <li class="flex items-start gap-2">
-          <i class="fa-solid fa-circle-check mt-0.5 shrink-0 text-[var(--status-success)]" aria-hidden="true"></i>
-          <span>Auto alerts notify teachers and students if attendance or scores drop suddenly.</span>
-        </li>
-        <li class="flex items-start gap-2">
-          <i class="fa-solid fa-circle-check mt-0.5 shrink-0 text-[var(--status-success)]" aria-hidden="true"></i>
-          <span>Your Theme &amp; Colors stay saved per account and per panel automatically.</span>
-        </li>
-      </ul>
-    </div>
+    {% include 'components/faq_pro.html' with faq_id="profile-flow-faq" faq_title="How EduPredict Works (Quick FAQ)" faq_items=faq_items search_placeholder="Search help & guides..." %}
   </div>
 
   <div class="xl:col-span-8 min-w-0">
     <form method="post" action="{% url 'panels:user_profile' %}" class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 space-y-4 shadow-sm">
       {% csrf_token %}
+      <input type="hidden" name="action" value="update_profile">
       <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-3">
         <div>
           <h3 class="text-sm sm:text-base font-semibold text-[var(--text-primary)]">Profile Details</h3>
@@ -120,35 +130,12 @@
         </div>
         <div class="space-y-1 sm:col-span-2">
           <label for="profile-bio" class="block text-xs font-medium text-[var(--text-secondary)]">Academic Title / Bio (Optional)</label>
-          <textarea id="profile-bio" name="bio" rows="2" placeholder="Short title, subject focus, or office hours..." class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">{{ profile_user.bio|default:'' }}</textarea>
-        </div>
-      </div>
-
-      <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 space-y-3">
-        <div>
-          <h4 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)]">Change Password (Optional)</h4>
-          <p class="text-[11px] text-[var(--text-muted)]">Leave blank to keep your current password.</p>
-        </div>
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div class="space-y-1">
-            <label for="profile-new-password" class="block text-xs font-medium text-[var(--text-secondary)]">New Password (Optional)</label>
-            <div class="relative">
-              <input id="profile-new-password" name="new_password" type="password" minlength="6" autocomplete="new-password" placeholder="Min 6 characters" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] py-2 pl-3 pr-10 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-              <button type="button" data-password-toggle="true" aria-label="Show or hide password" class="absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-muted)] hover:text-[var(--text-primary)]"><i class="fa-regular fa-eye text-xs" aria-hidden="true"></i></button>
-            </div>
-          </div>
-          <div class="space-y-1">
-            <label for="profile-confirm-password" class="block text-xs font-medium text-[var(--text-secondary)]">Confirm New Password (Optional)</label>
-            <div class="relative">
-              <input id="profile-confirm-password" name="confirm_password" type="password" minlength="6" autocomplete="new-password" placeholder="Repeat new password" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] py-2 pl-3 pr-10 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-              <button type="button" data-password-toggle="true" aria-label="Show or hide password" class="absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-muted)] hover:text-[var(--text-primary)]"><i class="fa-regular fa-eye text-xs" aria-hidden="true"></i></button>
-            </div>
-          </div>
+          <textarea id="profile-bio" name="bio" rows="3" placeholder="Short title, subject focus, or office hours..." class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">{{ profile_user.bio|default:'' }}</textarea>
         </div>
       </div>
 
       <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-3">
-        <p class="text-xs text-[var(--text-muted)]">Changes apply immediately across your active session.</p>
+        <p class="text-xs text-[var(--text-muted)]">Need to update your login password? Use the Change Password button above.</p>
         <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
           <i class="fa-solid fa-floppy-disk text-xs" aria-hidden="true"></i>
           <span>Save Profile</span>
@@ -157,4 +144,22 @@
     </form>
   </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.openChangePasswordModal = function () {
+    openFormModal({
+      title: 'Change Password',
+      actionUrl: '{% url 'panels:user_profile' %}',
+      submitText: 'Update Password',
+      fields: [
+        { name: 'action', type: 'hidden', value: 'change_password' },
+        { name: 'current_password', label: 'Current Password', type: 'password', placeholder: 'Enter current password', required: true },
+        { name: 'new_password', label: 'New Password', type: 'password', placeholder: 'Min 6 characters', required: true },
+        { name: 'confirm_password', label: 'Confirm New Password', type: 'password', placeholder: 'Repeat new password', required: true }
+      ]
+    });
+  };
+</script>
 {% endblock %}

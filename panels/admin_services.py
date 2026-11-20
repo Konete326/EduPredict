@@ -48,7 +48,7 @@ def _load_users(normalized):
         if role in role_counts:
             role_counts[role] += 1
         if normalized == "ALL" or role == normalized:
-            users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "is_active": bool(doc.get("is_active", True)), "student_id": str(doc.get("student_id") or ""), "created_at_str": _format_dt(doc.get("created_at"))})
+            users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "is_active": bool(doc.get("is_active", True)), "student_id": str(doc.get("student_id") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at"))})
     return users, role_counts
 
 

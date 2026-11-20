@@ -4,6 +4,7 @@
 - **Backend Framework:** Python 3.11+ & Django (Latest Stable, Standard MVT Architecture)
 - **Database:** MongoDB Atlas (`pymongo` + clean helper layer in `core/db.py` alongside Django Auth, or `mongoengine`)
 - **Data Science & ML:** `pandas`, `numpy`, `scikit-learn`, `openpyxl`
+- **Media Storage:** `cloudinary` (Avatar uploads via `core/cloudinary_services.py`, URLs persisted in MongoDB `users.avatar_url`)
 - **Package Version Policy (Always Install Latest Packages Rule):** Whenever any Python package, library, or dependency is installed or updated, the **latest stable version** MUST be installed (`pip install --upgrade <package>`) and frozen into `requirements.txt`.
 - **Frontend Templating:** Pure Django HTML5 Templates (`{% extends %}`, `{% include %}`)
 - **Styling:** Tailwind CSS (Global config in `base.html` + `static/css/global.css`)
@@ -32,7 +33,8 @@ edupredict/
 │   ├── db.py                       # MongoDB Atlas Singleton, TTL Cache & Helpers
 │   ├── decorators.py               # @role_required & @login_required_custom guards
 │   ├── context_processors.py       # Global notifications, role & theme context
-│   └── theme_services.py           # Per-user/per-panel theme, login sync & profile updates
+│   ├── cloudinary_services.py      # Cloudinary avatar validation & 320x320 upload helper
+│   └── theme_services.py           # Per-user/per-panel theme, login sync & profile/password updates
 ├── accounts/                       # Auth & User Session App
 │   ├── services.py                 # Auth, registration, session serialization
 │   ├── views.py
@@ -49,7 +51,7 @@ edupredict/
 │   ├── views_teacher.py            # Teacher Panel Views (<= 250 lines)
 │   ├── views_student.py            # Student Panel Views (<= 250 lines)
 │   ├── views_analyst.py            # Analyst Panel Views (<= 250 lines)
-│   ├── views_theme.py              # Theme Preferences API & My Profile Views (<= 115 lines)
+│   ├── views_theme.py              # Theme Preferences API & My Profile/Avatar/Password Views (<= 145 lines)
 │   ├── tests.py, test_admin.py, test_teacher_student.py
 │   └── urls.py                     # Connected routes for all 4 panels + profile/theme
 ├── analytics/                      # Big Data Ingestion & ML Engine App
@@ -66,12 +68,14 @@ edupredict/
 │   ├── 404.html                    # Theme-aware custom 404 page
 │   ├── components/                 # MANDATORY Reusable Global UI Components
 │   │   ├── sidebar.html            # Role-isolated sidebar + Settings & Theme dropdown
-│   │   ├── topbar.html             # Header with Theme Toggle, Bell, Search & Profile pill
+│   │   ├── topbar.html             # Header with Theme Toggle, Bell, Search & Profile/Avatar pill
 │   │   ├── metric_card.html        # Global KPI Stat Card
 │   │   ├── confirm_modal.html      # Global Custom Confirm & Coming Soon Modals
-│   │   ├── form_modal.html         # Global Reusable Add/Edit Modal
+│   │   ├── form_modal.html         # Global Reusable Add/Edit/Change-Password Modal
 │   │   ├── theme_studio_modal.html # Theme & Appearance Live Studio Modal
-│   │   ├── data_table.html         # Global Desktop Table + Mobile Stacked Cards
+│   │   ├── gradient_file_uploader.html # Animated drag/drop uploader + preview & progress bar
+│   │   ├── faq_pro.html            # Live search & animated accordion FAQ widget
+│   │   ├── data_table.html         # Global Wrapped Desktop Table + Mobile Stacked Cards
 │   │   └── toast.html              # Global Non-Intrusive Toast Notification
 │   ├── accounts/
 │   │   └── auth.html               # Unified Sign-In / Sign-Up + Eye Toggles + Theme Hydration
@@ -87,18 +91,19 @@ edupredict/
 │   │   └── global.css              # Design tokens, dark shell chrome & modern baseline CSS
 │   └── js/
 │       ├── app.js                  # Sidebar, Modals, Password Toggle, Pagination & Sorting
-│       ├── nav.js                  # SPA navigation cache & collapsible nav groups
-│       ├── theme_studio.js         # Live Theme Studio & 1.2s Cancelable Auto-Upload
+│       ├── nav.js                  # SPA navigation cache, #ep-top-progress & nav groups
+│       ├── theme_studio.js         # Ocean Blue Theme Studio & 1.2s Cancelable Auto-Upload
+│       ├── ui_widgets.js           # Top Progress Bar, Submit Lock, FaqPro & Gradient Uploaders
 │       ├── charts.js               # Theme-aware Chart.js helper functions
 │       └── analyst_evaluation.js   # Evaluation chart & diagnostics renderer
-├── .env.example                    # Template for MONGODB_URI & SECRET_KEY
+├── .env.example                    # Template for MONGODB_URI, SECRET_KEY & CLOUDINARY_* keys
 ├── requirements.txt                # Pinned latest stable packages
 └── manage.py
 ```
 ## 3. MongoDB Atlas Collections Schema (`core/db.py` & `panels/admin_audit_services.py`)
 All collections reside in the `edupredict_db` database on MongoDB Atlas:
 
-- `users`: `{ "_id": ObjectId, "user_id": "USR-1001", "student_id": str (optional), "full_name": str, "email": str, "password_hash": str, "role": "ADMIN|TEACHER|STUDENT|ANALYST", "department": str, "batch": str, "phone": str, "bio": str, "theme_prefs": dict (keyed by role), "is_active": bool, "created_at": datetime }`
+- `users`: `{ "_id": ObjectId, "user_id": "USR-1001", "student_id": str (optional), "full_name": str, "email": str, "password_hash": str, "role": "ADMIN|TEACHER|STUDENT|ANALYST", "department": str, "batch": str, "phone": str, "bio": str, "avatar_url": str, "theme_prefs": dict (keyed by role), "is_active": bool, "created_at": datetime }`
 - `courses`: `{ "_id": ObjectId, "course_code": "CS-101", "title": str, "department": str, "batch": str, "instructor": str, "credits": int, "capacity": int, "status": "ACTIVE|ARCHIVED", "created_at": datetime }`
 - `student_records` (Indexed by `student_id` and `batch`): `{ "_id": ObjectId, "student_id": "STD-2026-01", "full_name": str, "batch": str, "course_code": str, "attendance_pct": float, "internal_marks": float, "assignment_score": float, "lms_hours_weekly": float, "previous_gpa": float, "updated_at": datetime }`
 - `predictions`: `{ "_id": ObjectId, "student_id": "STD-2026-01", "predicted_gpa": float, "dropout_risk_score": float, "risk_level": "LOW|MEDIUM|HIGH", "is_anomaly": bool, "anomaly_reason": str, "recommendation": str, "model_version": str, "generated_at": datetime }`
@@ -141,8 +146,11 @@ Every route must be cleanly named so templates only use `{% url 'route_name' %}`
 - `/analyst-panel/evaluation/` -> `analytics:model_evaluation`
 
 ## 5. Global Component Connectivity & UX Contracts
-- **No Duplicate UI Code:** Always `{% include %}` from `templates/components/` (`metric_card.html`, `data_table.html`, `confirm_modal.html`, `form_modal.html`, `theme_studio_modal.html`, `toast.html`).
+- **No Duplicate UI Code:** Always `{% include %}` from `templates/components/` (`metric_card.html`, `data_table.html`, `confirm_modal.html`, `form_modal.html`, `theme_studio_modal.html`, `gradient_file_uploader.html`, `faq_pro.html`, `toast.html`).
 - **No Native Browser Popups:** `window.alert()`, `window.confirm()`, and `window.prompt()` are strictly banned. Use `openConfirmModal`, `openFormModal`, `openThemeStudioModal`, `openComingSoonModal`, or `showToast`.
-- **Unified Password Toggles:** `static/js/app.js` wraps `type="password"` modal fields in `<div class="relative">` + `pr-9` + `[data-password-toggle]` eye buttons and handles delegated click toggling across `/profile/` and `form_modal.html` (while `auth.html` uses `togglePasswordVisibility`).
-- **1.2s Cancelable Auto-Upload:** `static/js/theme_studio.js` (`bindSmartFileUploads()`) gives `input[type="file"][data-auto-submit="true"]` a 1200ms cancelable toast window (`window.eduPredictCancelUpload` cleared on SPA swaps via `reinitEduPredictUI()`).
-- **Theme Studio Contract:** `get_user_theme_prefs(request)` MUST stay strictly session-only on GET (never query `users_col()`); guest `PORTAL` prefs merge on login via `sync_theme_prefs_on_login`; sidebar stays fixed on the left (no LTR/RTL flip).
+- **Unified Password Toggles & Change Password Modal:** `static/js/app.js` wraps `type="password"` modal fields in `<div class="relative">` + `pr-9` + `[data-password-toggle]` eye buttons and handles delegated click toggling across `form_modal.html` (while `auth.html` uses `togglePasswordVisibility`). `user_profile.html` NEVER displays inline optional password inputs on the Profile Details form — password updates use `openChangePasswordModal()` posting `action="change_password"` (`current_password`, `new_password`, `confirm_password`) verified with `check_password`.
+- **Cloudinary Media Policy:** `.env` holds `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` (with empty placeholders in `.env.example`). `core/cloudinary_services.py` validates images (`<= 5 MB`) and uploads `320x320` face-cropped avatars to `edupredict/avatars`; only secure URLs are stored in MongoDB Atlas `users.avatar_url` and session `current_user.avatar_url`.
+- **Global Loading Lock, `#ep-top-progress` & UI Widgets (`ui_widgets.js`, `nav.js`):** `#ep-top-progress` (`z-60`) animates via `window.EduPredictProgress = { start, done }` on SPA navigation and form submits; `initGlobalSubmitGuards` prevents duplicate POST submits, locks submit buttons with `<i class="fa-solid fa-spinner fa-spin">` + `"Processing..."` + `aria-busy="true"` (12s fallback + `pageshow` reset via `resetEduPredictSubmitLocks`, skipping `[data-no-lock]`, `[data-no-loading]`, and download forms); `initGradientUploaders()` powers `[data-gradient-uploader]` and `initFaqProWidgets()` powers `[data-faq-pro]` using safe DOM `Text` nodes + `<mark>` (never untrusted `innerHTML`).
+- **Zero Horizontal Scrollbar & Ocean Blue Default:** `static/css/global.css` enforces `html, body { overflow-x: clip; }` and `data_table.html` wraps body cells (`break-words max-w-[18rem]`) instead of blanket `whitespace-nowrap`. Default theme is Ocean Blue (`shell_theme="blue"`, `accent="ocean"`, `#2563eb` light / `#3b82f6` dark).
+- **1.2s Cancelable Auto-Upload & Theme Contract:** `static/js/theme_studio.js` (`bindSmartFileUploads()`) gives `input[type="file"][data-auto-submit="true"]` a 1200ms cancelable toast grace window (`window.eduPredictCancelUpload` cleared on SPA swaps via `reinitEduPredictUI()`). `get_user_theme_prefs(request)` MUST stay strictly session-only on GET (never query `users_col()`); guest `PORTAL` prefs merge on login via `sync_theme_prefs_on_login`; sidebar stays fixed on the left (no LTR/RTL flip).
+- **Phases 23–25 Roadmap:** Phase 23: Real-Time Notifications + Admin Feedback Reply CRUD + Typewriter Page Guide Wizard Modal; Phase 24: Card-Grid User/Student/Teacher Directories + Modalized Upload/Quick Entry + Dot-Graph KPI Cards; Phase 25: Stepper Signup Wizard + Teacher Approval Guard + Student PDF Transcript.
