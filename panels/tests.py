@@ -344,6 +344,24 @@ class ThemePreferencesTests(TestCase):
         self.assertEqual((synced_keep["TEACHER"]["mode"], synced_keep["TEACHER"]["accent"]), ("light", "emerald"))
         mock_users_col.return_value.update_one.assert_not_called()
 
+    def test_rate_limit_decorator_emits_limit_and_remaining_headers(self):
+        from django.http import JsonResponse
+        from core.decorators import _clear_rate_limit_buckets, rate_limit
+        _clear_rate_limit_buckets()
+
+        @rate_limit(max_requests=2, window_seconds=60)
+        def sample_view(request):
+            return JsonResponse({"ok": True})
+
+        rf = RequestFactory()
+        r1 = sample_view(rf.get("/t/", HTTP_ACCEPT="application/json"))
+        r2 = sample_view(rf.get("/t/", HTTP_ACCEPT="application/json"))
+        r3 = sample_view(rf.get("/t/", HTTP_ACCEPT="application/json"))
+        self.assertEqual((r1["X-RateLimit-Limit"], r1["X-RateLimit-Remaining"]), ("2", "1"))
+        self.assertEqual(r2["X-RateLimit-Remaining"], "0")
+        self.assertEqual((r3.status_code, r3["X-RateLimit-Remaining"], r3["X-RateLimit-Limit"]), (429, "0", "2"))
+        _clear_rate_limit_buckets()
+
     def test_export_backup_writes_sha256_checksum_manifest(self):
         import hashlib
         import tempfile

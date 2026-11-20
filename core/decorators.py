@@ -12,6 +12,15 @@ def _clear_rate_limit_buckets():
     _RATE_LIMIT_BUCKETS.clear()
 
 
+def _apply_rate_limit_headers(response, limit, remaining):
+    try:
+        response["X-RateLimit-Limit"] = str(limit)
+        response["X-RateLimit-Remaining"] = str(remaining)
+    except Exception:
+        pass
+    return response
+
+
 def rate_limit(max_requests=60, window_seconds=60):
     def decorator(view_func):
         @wraps(view_func)
@@ -43,6 +52,7 @@ def rate_limit(max_requests=60, window_seconds=60):
                         status=429,
                     )
                     response["Retry-After"] = str(wait_seconds)
+                    _apply_rate_limit_headers(response, max_requests, 0)
                     return response
                 _queue_message(
                     messages.error,
@@ -51,16 +61,20 @@ def rate_limit(max_requests=60, window_seconds=60):
                 )
                 response = HttpResponse("Too Many Requests", status=429)
                 response["Retry-After"] = str(wait_seconds)
+                _apply_rate_limit_headers(response, max_requests, 0)
                 return response
 
             _RATE_LIMIT_BUCKETS[key].append(now)
+            remaining = max(0, max_requests - len(_RATE_LIMIT_BUCKETS[key]))
 
             if len(_RATE_LIMIT_BUCKETS) > 1000:
                 stale_keys = [k for k, timestamps in _RATE_LIMIT_BUCKETS.items() if not timestamps or timestamps[-1] <= cutoff]
                 for k in stale_keys:
                     _RATE_LIMIT_BUCKETS.pop(k, None)
 
-            return view_func(request, *args, **kwargs)
+            response = view_func(request, *args, **kwargs)
+            _apply_rate_limit_headers(response, max_requests, remaining)
+            return response
 
         return wrapper
 
