@@ -1,0 +1,104 @@
+<style>.ep-crop-circle .cropper-view-box,.ep-crop-circle .cropper-face{border-radius:50%}#cropper-avatar-live-preview img{max-width:none}</style>
+
+<div id="support-ticket-modal" data-ep-modal class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto overflow-x-hidden p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="support-ticket-modal-title" aria-hidden="true">
+  <div data-modal-backdrop="support-ticket-modal" class="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"></div>
+  <div class="relative z-10 flex min-h-full w-full items-center justify-center pointer-events-none">
+    <div class="pointer-events-auto relative w-full max-w-lg mx-auto my-auto flex flex-col rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden max-h-[90vh]">
+      <div class="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5 py-3.5 bg-[var(--bg-surface)]">
+        <div class="flex items-center gap-2"><i class="fa-solid fa-headset text-sm text-[var(--accent-primary)]" aria-hidden="true"></i><h3 id="support-ticket-modal-title" class="text-base font-semibold text-[var(--text-primary)]">Need Help</h3></div>
+        <button type="button" onclick="closeSupportTicketModal()" aria-label="Close help modal" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-xmark text-sm" aria-hidden="true"></i></button>
+      </div>
+      <form id="support-ticket-form" method="post" action="{% url 'panels:submit_support_ticket' %}" enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0">
+        {% csrf_token %}
+        <div class="flex-1 overflow-y-auto px-5 py-4 space-y-3.5">
+          <div class="space-y-1">
+            <label for="ticket-subject-input" class="block text-xs font-medium text-[var(--text-secondary)]">Subject</label>
+            <input id="ticket-subject-input" name="subject" type="text" required placeholder="Short title" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+          </div>
+          <div class="space-y-1">
+            <label for="ticket-message-input" class="block text-xs font-medium text-[var(--text-secondary)]">Message</label>
+            <textarea id="ticket-message-input" name="message" rows="3" required placeholder="Write your question or issue..." class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none"></textarea>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-medium text-[var(--text-secondary)]">Screenshots (Optional, max 3)</span>
+              <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--text-muted)]">Ctrl+V Paste</span>
+            </div>
+            <div id="ticket-screenshot-dropzone" role="button" tabindex="0" aria-label="Add or paste screenshot" class="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-3.5 text-center transition-colors hover:border-[var(--accent-primary)] cursor-pointer">
+              <input id="ticket-screenshot-input" type="file" accept="image/*" class="sr-only">
+              <i class="fa-regular fa-image text-base text-[var(--accent-primary)]" aria-hidden="true"></i>
+              <p class="text-xs font-medium text-[var(--text-primary)]">Browse, drag &amp; drop, or press Ctrl+V to paste &amp; crop</p>
+              <p class="text-[11px] text-[var(--text-muted)]">PNG, JPG or WEBP up to 5 MB each</p>
+            </div>
+            <div id="ticket-attachment-chips" class="flex flex-wrap gap-2"></div>
+            <div id="ticket-attachments-inputs" class="hidden"></div>
+          </div>
+        </div>
+        <div class="flex shrink-0 items-center justify-end gap-2.5 border-t border-[var(--border-subtle)] px-5 py-3.5 bg-[var(--bg-surface)]">
+          <button type="button" onclick="closeSupportTicketModal()" class="inline-flex items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">Cancel</button>
+          <button type="submit" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"><i class="fa-solid fa-paper-plane text-xs" aria-hidden="true"></i><span>Send Request</span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="image-cropper-modal" data-ep-modal class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto overflow-x-hidden p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="image-cropper-title" aria-hidden="true">
+  <div data-modal-backdrop="image-cropper-modal" class="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"></div>
+  <div class="relative z-10 flex min-h-full w-full items-center justify-center pointer-events-none">
+    <div class="pointer-events-auto relative w-full max-w-2xl mx-auto my-auto flex flex-col rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden max-h-[92vh]">
+      <div class="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5 py-3 bg-[var(--bg-surface)]">
+        <div class="flex items-center gap-2 min-w-0"><i class="fa-solid fa-crop-simple text-sm text-[var(--accent-primary)]" aria-hidden="true"></i><h3 id="image-cropper-title" class="truncate text-base font-semibold text-[var(--text-primary)]">Crop Image</h3></div>
+        <button type="button" onclick="closeImageCropperModal()" aria-label="Close cropper" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-xmark text-sm" aria-hidden="true"></i></button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div id="cropper-aspect-bar" class="flex flex-wrap items-center gap-1.5">
+            <button type="button" data-crop-aspect="free" aria-pressed="false" class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)]">Free</button>
+            <button type="button" data-crop-aspect="16:9" aria-pressed="false" class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)]">16:9</button>
+            <button type="button" data-crop-aspect="4:3" aria-pressed="false" class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)]">4:3</button>
+            <button type="button" data-crop-aspect="1:1" aria-pressed="false" class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)]">1:1</button>
+          </div>
+          <div id="cropper-avatar-live-wrap" class="flex items-center gap-2">
+            <span class="text-[11px] font-medium text-[var(--text-muted)]">48px Preview</span>
+            <div id="cropper-avatar-live-preview" class="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)]"></div>
+          </div>
+        </div>
+        <div id="cropper-stage-wrap" class="relative flex h-64 sm:h-72 w-full items-center justify-center overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
+          <img id="cropper-target-image" alt="Crop preview" class="block max-h-full max-w-full">
+          <canvas id="cropper-fallback-canvas" class="hidden max-h-full max-w-full cursor-move"></canvas>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2">
+          <label for="cropper-zoom-range" class="flex flex-1 min-w-[10rem] items-center gap-2 text-xs text-[var(--text-secondary)]">
+            <i class="fa-solid fa-magnifying-glass-plus text-[11px] text-[var(--text-muted)]" aria-hidden="true"></i>
+            <input id="cropper-zoom-range" type="range" min="0.5" max="3" step="0.05" value="1" class="w-full accent-[var(--accent-primary)]">
+          </label>
+          <div class="flex items-center gap-1.5">
+            <button id="cropper-rotate-left" type="button" title="Rotate left 90 degrees" aria-label="Rotate left" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
+            <button id="cropper-rotate-right" type="button" title="Rotate right 90 degrees" aria-label="Rotate right" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
+            <button id="cropper-reset-btn" type="button" title="Reset crop" class="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-arrows-rotate text-[10px]" aria-hidden="true"></i><span>Reset</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="flex shrink-0 items-center justify-end gap-2.5 border-t border-[var(--border-subtle)] px-5 py-3 bg-[var(--bg-surface)]">
+        <button type="button" onclick="closeImageCropperModal()" class="inline-flex items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">Cancel</button>
+        <button id="cropper-apply-btn" type="button" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"><i class="fa-solid fa-check text-xs" aria-hidden="true"></i><span>Apply Crop</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="image-lightbox-modal" data-ep-modal class="fixed inset-0 z-60 hidden flex-col overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="lightbox-caption" aria-hidden="true">
+  <div data-modal-backdrop="image-lightbox-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm"></div>
+  <div class="relative z-10 flex shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-slate-950/75 px-4 py-3 text-slate-100">
+    <p id="lightbox-caption" class="truncate text-sm font-semibold text-slate-100">Attachment Preview</p>
+    <div class="flex items-center gap-2 shrink-0">
+      <button id="lightbox-zoom-btn" type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-100 hover:bg-white/20 transition-colors"><i class="fa-solid fa-magnifying-glass-plus text-xs" aria-hidden="true"></i><span>Zoom</span></button>
+      <a id="lightbox-download-btn" href="#" download="attachment.png" class="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-100 hover:bg-white/20 transition-colors"><i class="fa-solid fa-download text-xs" aria-hidden="true"></i><span>Download</span></a>
+      <button type="button" onclick="closeImageLightbox()" aria-label="Close lightbox" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 bg-white/10 text-slate-100 hover:bg-white/20 transition-colors"><i class="fa-solid fa-xmark text-sm" aria-hidden="true"></i></button>
+    </div>
+  </div>
+  <div id="lightbox-stage" class="relative z-10 flex flex-1 items-center justify-center overflow-auto p-4 sm:p-6">
+    <img id="lightbox-image" src="" alt="Attachment preview" class="max-h-[82vh] max-w-full rounded-xl object-contain transition-transform duration-200 cursor-zoom-in shadow-2xl">
+  </div>
+</div>

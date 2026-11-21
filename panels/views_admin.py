@@ -4,19 +4,9 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from core.decorators import get_dashboard_route, login_required_custom, role_required
-from panels.admin_audit_services import (
-    VALID_LOG_CATEGORIES, clear_manual_audit_logs, export_activity_logs_csv,
-    get_default_admin_logs_context, get_default_portal_settings_context, get_portal_settings,
-    list_activity_logs, record_audit_log, reset_portal_settings, update_portal_settings,
-)
+from panels.admin_audit_services import VALID_LOG_CATEGORIES, clear_manual_audit_logs, export_activity_logs_csv, get_default_admin_logs_context, get_default_portal_settings_context, get_portal_settings, list_activity_logs, record_audit_log, reset_portal_settings, update_portal_settings
 from panels.admin_seed import get_default_admin_overview_context
-from panels.admin_services import (
-    build_backup_payload, build_course_table_data, build_ticket_table_data, build_user_table_data,
-    create_course_record, create_ticket_record, create_user_record, delete_course_record,
-    delete_ticket_record, delete_user_record, get_admin_overview_context, list_courses_with_stats,
-    list_tickets, list_users, mark_notifications_read, toggle_ticket_status,
-    toggle_user_status, update_course_record, update_user_record,
-)
+from panels.admin_services import build_backup_payload, build_course_table_data, build_ticket_table_data, build_user_table_data, create_course_record, create_ticket_record, create_user_record, delete_course_record, delete_ticket_record, delete_user_record, get_admin_overview_context, list_courses_with_stats, list_tickets, list_users, mark_notifications_read, toggle_ticket_status, toggle_user_status, update_course_record, update_user_record
 from panels.directory_card_services import build_admin_user_cards
 from panels.notification_services import delete_ticket_reply, reply_to_ticket
 
@@ -230,7 +220,9 @@ def submit_support_ticket(request):
     if request.method != "POST":
         return redirect(next_url)
     try:
-        created, err = create_ticket_record(user.get("user_id", ""), user.get("full_name") or user.get("email") or "Portal User", user.get("role") or "USER", request.POST.get("subject"), request.POST.get("message"))
+        files = request.FILES.getlist("attachments")
+        urls = [u.strip() for u in request.POST.getlist("attachment_urls") if u.strip()]
+        created, err = create_ticket_record(user.get("user_id", ""), user.get("full_name") or user.get("email") or "Portal User", user.get("role") or "USER", request.POST.get("subject"), request.POST.get("message"), attachments=(urls + files)[:3])
         _flash_result(request, created is not None, err, f"Help ticket {created['ticket_id']} sent to Admin." if created else "")
     except Exception as exc:
         messages.error(request, f"Could not send help ticket: {exc}")

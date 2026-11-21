@@ -209,10 +209,14 @@ def student_notifications(request):
     ticket_headers = ["Ticket ID", "Subject", "Message", "Status", "Date"]
     ticket_rows = []
     for t in data["my_tickets"]:
+        msg_preview = f"{t['message'][:60]}..." if len(t["message"]) > 60 else t["message"]
+        attachments = t.get("attachments") or []
+        if attachments:
+            msg_preview = f"{msg_preview} [{len(attachments)} img]"
         ticket_rows.append([
             t["ticket_id"],
             t["subject"],
-            f"{t['message'][:60]}..." if len(t["message"]) > 60 else t["message"],
+            msg_preview,
             t["status_badge"],
             t["created"],
         ])

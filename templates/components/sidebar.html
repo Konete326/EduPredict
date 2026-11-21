@@ -186,7 +186,7 @@
       </button>
     </div>
     {% if active_role and active_role != 'ADMIN' %}
-    <button type="button" onclick="openFormModal({ title: 'Need Help', actionUrl: '{% url 'panels:submit_support_ticket' %}', fields: [{ name: 'subject', label: 'Subject', type: 'text', placeholder: 'Short title', required: true }, { name: 'message', label: 'Message', type: 'textarea', placeholder: 'Write your question or issue...', required: true }] })" title="Ask for help or report a problem" class="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+    <button type="button" onclick="openSupportTicketModal()" title="Ask for help or report a problem" class="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
       <i class="fa-solid fa-headset text-xs"></i>
       <span>Need Help</span>
     </button>

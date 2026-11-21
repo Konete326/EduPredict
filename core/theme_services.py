@@ -2,7 +2,7 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from pymongo.errors import DuplicateKeyError
-from core.cloudinary_services import upload_user_avatar
+from core.cloudinary_services import destroy_cloudinary_asset, upload_user_avatar
 from core.db import invalidate_cache, student_records_col, users_col
 from panels.admin_audit_services import record_audit_log
 
@@ -318,9 +318,12 @@ def save_user_avatar(request, file_obj):
     session, session_user, uid = _session_user_ctx(request)
     if not uid:
         return None, "Please sign in to upload a profile photo."
+    old_url = str(session_user.get("avatar_url") or "").strip()
     url, err = upload_user_avatar(file_obj, uid)
     if err or not url:
         return None, err or "Could not upload profile photo."
+    if old_url:
+        destroy_cloudinary_asset(old_url, default_public_id=f"edupredict/avatars/user_{uid}")
     _set_avatar_state(session, session_user, uid, url, "UPDATE_AVATAR", f"Updated profile photo for {uid}.")
     return url, None
 
@@ -329,5 +332,8 @@ def remove_user_avatar(request):
     session, session_user, uid = _session_user_ctx(request)
     if not uid:
         return False, "Please sign in to remove your profile photo."
+    old_url = str(session_user.get("avatar_url") or "").strip()
+    if old_url:
+        destroy_cloudinary_asset(old_url, default_public_id=f"edupredict/avatars/user_{uid}")
     _set_avatar_state(session, session_user, uid, "", "REMOVE_AVATAR", f"Removed profile photo for {uid}.")
     return True, None

@@ -38,6 +38,73 @@
 
   {% include 'components/data_table.html' with table_id="admin-tickets-table" table_title="Help Tickets" headers=ticket_headers rows=ticket_rows page_size=5 empty_message="No help tickets found." %}
 </section>
+
+<div id="ticket-detail-drawer" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="drawer-ticket-subject" aria-hidden="true">
+  <div data-drawer-backdrop="ticket-detail-drawer" class="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"></div>
+  <div class="relative z-10 ml-auto flex h-full w-full max-w-lg flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl">
+    <div class="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-5 py-3.5 bg-[var(--bg-surface)]">
+      <div class="flex items-center gap-2 min-w-0">
+        <span id="drawer-ticket-id" class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 font-mono text-xs font-semibold text-[var(--text-primary)]">-</span>
+        <span id="drawer-ticket-status" class="inline-flex items-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-semibold text-[var(--status-warning)]">OPEN</span>
+      </div>
+      <button type="button" onclick="closeTicketDetailDrawer()" aria-label="Close ticket drawer" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <i class="fa-solid fa-xmark text-sm" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+      <div class="grid grid-cols-2 gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3 text-xs">
+        <div class="min-w-0">
+          <p class="text-[11px] font-medium text-[var(--text-muted)]">Submitted By</p>
+          <p id="drawer-ticket-user" class="truncate font-semibold text-[var(--text-primary)]">-</p>
+        </div>
+        <div class="min-w-0">
+          <p class="text-[11px] font-medium text-[var(--text-muted)]">Date</p>
+          <p id="drawer-ticket-date" class="truncate font-mono text-[var(--text-primary)]">-</p>
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <h3 id="drawer-ticket-subject" class="text-base font-bold text-[var(--text-primary)]">Ticket Subject</h3>
+        <p id="drawer-ticket-message" class="whitespace-pre-line rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 text-sm leading-relaxed text-[var(--text-secondary)]"></p>
+      </div>
+
+      <div class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Attached Screenshots</p>
+        <div id="drawer-ticket-attachments" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5"></div>
+      </div>
+
+      <div id="drawer-ticket-reply-box" class="hidden rounded-xl border border-[var(--accent-primary)]/30 bg-[var(--accent-soft)] p-3.5 space-y-1">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs font-semibold text-[var(--accent-primary)]">Admin Reply</span>
+          <span id="drawer-ticket-reply-meta" class="text-[11px] text-[var(--text-muted)]"></span>
+        </div>
+        <p id="drawer-ticket-reply-text" class="whitespace-pre-line text-xs leading-relaxed text-[var(--text-primary)]"></p>
+      </div>
+
+      <form method="post" action="{% url 'panels:admin_tickets' %}" class="space-y-3 border-t border-[var(--border-subtle)] pt-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="reply_ticket">
+        <input id="drawer-reply-ticket-id" type="hidden" name="ticket_id" value="">
+        <input id="drawer-reply-filter-status" type="hidden" name="filter_status" value="{{ selected_status }}">
+        <div class="space-y-1">
+          <label for="drawer-reply-text" class="block text-xs font-medium text-[var(--text-secondary)]">Quick Reply</label>
+          <textarea id="drawer-reply-text" name="reply_text" rows="3" required placeholder="Write a helpful reply for this user..." class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none"></textarea>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <select id="drawer-resolve-ticket" name="resolve_ticket" aria-label="Ticket status after reply" class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+            <option value="1" selected>Mark as Resolved</option>
+            <option value="0">Keep Current Status</option>
+          </select>
+          <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
+            <i class="fa-solid fa-reply text-xs" aria-hidden="true"></i>
+            <span>Send Reply</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}

@@ -1,9 +1,13 @@
 import json
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
+from core.cloudinary_services import destroy_cloudinary_asset, extract_cloudinary_public_id
 from core.db import invalidate_cache
+from core.theme_services import remove_user_avatar, save_user_avatar
 import panels.admin_audit_services as audit_svc
 import panels.admin_seed as admin_seed
 
@@ -88,10 +92,13 @@ class NotificationAndReplyTests(TestCase):
             "support_tickets": _MemCol([{"ticket_id": "TKT-1001", "user_id": "USR-1003", "user_name": "Zainab Raza", "role": "STUDENT", "subject": "Lab marks mismatch", "message": "My lab attendance shows 60% instead of 85%.", "status": "OPEN", "created_at": now}]),
             "notifications": _MemCol([]),
             "activity_logs": _MemCol([]),
+            "system_settings": _MemCol([]),
         }
         admin_seed._ADMIN_SEED_DONE = True
         audit_svc._AUDIT_SEED_DONE = True
         self.patchers = [
+            patch("core.db.MongoDBClient.get_collection", side_effect=lambda name: self.cols.setdefault(name, _MemCol())),
+            patch("core.db.MongoDBClient.check_health", return_value={"connected": True, "error": None}),
             patch("core.context_processors.check_db_health", return_value={"connected": True}),
             patch("core.context_processors.notifications_col", side_effect=lambda: self.cols["notifications"]),
             patch("panels.notification_services.notifications_col", side_effect=lambda: self.cols["notifications"]),
@@ -166,3 +173,70 @@ class NotificationAndReplyTests(TestCase):
         admin_notif = self.cols["notifications"].find_one({"target_role": "ADMIN", "category": "TICKET"})
         self.assertIsNotNone(admin_notif)
         self.assertEqual(admin_notif["feedback_text"], "Password reset link expired.")
+
+    def test_avatar_save_and_remove_destroy_previous_cloudinary_asset(self):
+        old_url = "https://res.cloudinary.com/demo/image/upload/v123/edupredict/avatars/user_USR-1003_old.jpg"
+        new_url = "https://res.cloudinary.com/demo/image/upload/v456/edupredict/avatars/user_USR-1003_new.jpg"
+        self.assertEqual(extract_cloudinary_public_id(old_url), "edupredict/avatars/user_USR-1003_old")
+        with patch("core.cloudinary_services.is_cloudinary_configured", return_value=True), patch("core.cloudinary_services._configure_cloudinary"), patch("core.cloudinary_services.cloudinary.uploader.destroy", return_value={"result": "ok"}) as mock_cloud_destroy:
+            self.assertTrue(destroy_cloudinary_asset(old_url))
+            mock_cloud_destroy.assert_called_once_with("edupredict/avatars/user_USR-1003_old", invalidate=True)
+        client = Client()
+        sess = client.session
+        sess["user"] = {"user_id": "USR-1003", "full_name": "Zainab Raza", "role": "STUDENT", "avatar_url": old_url}
+        sess.save()
+        req = SimpleNamespace(session=sess)
+        with patch("core.theme_services.upload_user_avatar", return_value=(new_url, None)), patch("core.theme_services.destroy_cloudinary_asset", return_value=True) as mock_destroy:
+            saved_url, err = save_user_avatar(req, SimpleUploadedFile("avatar.png", b"pngbytes", content_type="image/png"))
+            self.assertIsNone(err)
+            self.assertEqual(saved_url, new_url)
+            mock_destroy.assert_called_once_with(old_url, default_public_id="edupredict/avatars/user_USR-1003")
+            ok, rm_err = remove_user_avatar(req)
+            self.assertTrue(ok)
+            self.assertIsNone(rm_err)
+            mock_destroy.assert_called_with(new_url, default_public_id="edupredict/avatars/user_USR-1003")
+            self.assertEqual(req.session["user"]["avatar_url"], "")
+
+    def test_support_ticket_attachments_capped_and_admin_drawer_lightbox_rendered(self):
+        student = Client()
+        self._set_session(student, "STUDENT", user_id="USR-1003", full_name="Zainab Raza", student_id="STD-2026-001")
+        urls = [
+            "data:image/png;base64,iVBORw0KGgo=",
+            "https://res.cloudinary.com/demo/image/upload/v1/shot2.png",
+            "https://res.cloudinary.com/demo/image/upload/v1/shot3.png",
+            "https://res.cloudinary.com/demo/image/upload/v1/shot4.png",
+        ]
+        res = student.post(reverse("panels:submit_support_ticket"), {"subject": "Chart screenshot bug", "message": "Overlap on small screen.", "attachment_urls": urls})
+        self.assertEqual(res.status_code, 302)
+        saved = self.cols["support_tickets"].find_one({"subject": "Chart screenshot bug"})
+        self.assertIsNotNone(saved)
+        self.assertEqual(saved["attachments"], urls[:3])
+        admin = Client()
+        self._set_session(admin, "ADMIN")
+        admin_res = admin.get(reverse("panels:admin_tickets"))
+        self.assertEqual(admin_res.status_code, 200)
+        html = admin_res.content.decode("utf-8")
+        expected_attr = f'data-attachments="{"|".join(urls[:3])}"'
+        for marker in (expected_attr, 'id="ticket-detail-drawer"', 'id="image-lightbox-modal"', 'id="image-cropper-modal"', 'id="support-ticket-modal"', "openTicketDetailDrawer(this)"):
+            self.assertIn(marker, html)
+
+    def test_profile_and_student_notifications_render_cropper_and_hide_non_admin_theme_studio(self):
+        student = Client()
+        self._set_session(student, "STUDENT", user_id="USR-1003", full_name="Zainab Raza", student_id="STD-2026-001")
+        prof_res = student.get(reverse("panels:user_profile"))
+        self.assertEqual(prof_res.status_code, 200)
+        prof_html = prof_res.content.decode("utf-8")
+        for marker in ('id="image-cropper-modal"', 'id="support-ticket-modal"', "openSupportTicketModal()"):
+            self.assertIn(marker, prof_html)
+        self.assertNotIn("openThemeStudioModal()", prof_html)
+        self.assertNotIn('id="theme-studio-modal"', prof_html)
+        notif_res = student.get(reverse("panels:student_notifications"))
+        self.assertEqual(notif_res.status_code, 200)
+        notif_html = notif_res.content.decode("utf-8")
+        for marker in ('id="image-cropper-modal"', 'id="support-ticket-modal"', "openSupportTicketModal()"):
+            self.assertIn(marker, notif_html)
+        admin = Client()
+        self._set_session(admin, "ADMIN")
+        admin_prof = admin.get(reverse("panels:user_profile"))
+        self.assertEqual(admin_prof.status_code, 200)
+        self.assertIn("openThemeStudioModal()", admin_prof.content.decode("utf-8"))

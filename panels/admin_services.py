@@ -6,6 +6,7 @@ from django.core.validators import validate_email
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError
 from accounts.services import VALID_ROLES, ensure_accounts_indexes_once, generate_unique_student_id, generate_unique_user_id
+from core.cloudinary_services import encode_image_data_uri, is_cloudinary_configured, upload_ticket_attachment
 from core.db import get_cached, invalidate_cache, notifications_col, student_records_col, support_tickets_col, users_col
 from panels.admin_audit_services import record_audit_log
 from panels.admin_seed import _format_dt, _safe_int, build_backup_payload, courses_col, ensure_admin_seed_data, get_admin_overview_context
@@ -234,7 +235,7 @@ def _load_tickets(clean_status):
         if status in counts:
             counts[status] += 1
         if clean_status not in VALID_TICKET_STATUSES or status == clean_status:
-            tickets.append({"ticket_id": str(doc.get("ticket_id") or ""), "user_id": str(doc.get("user_id") or ""), "user_name": str(doc.get("user_name") or "User"), "role": str(doc.get("role") or "USER").upper(), "subject": str(doc.get("subject") or ""), "message": str(doc.get("message") or ""), "status": status, "admin_reply": str(doc.get("admin_reply") or ""), "replied_by": str(doc.get("replied_by") or ""), "replied_at_str": _format_dt(doc.get("replied_at")) if doc.get("replied_at") else "", "created_at_str": _format_dt(doc.get("created_at"))})
+            tickets.append({"ticket_id": str(doc.get("ticket_id") or ""), "user_id": str(doc.get("user_id") or ""), "user_name": str(doc.get("user_name") or "User"), "role": str(doc.get("role") or "USER").upper(), "subject": str(doc.get("subject") or ""), "message": str(doc.get("message") or ""), "status": status, "admin_reply": str(doc.get("admin_reply") or ""), "replied_by": str(doc.get("replied_by") or ""), "replied_at_str": _format_dt(doc.get("replied_at")) if doc.get("replied_at") else "", "created_at_str": _format_dt(doc.get("created_at")), "attachments": [str(a) for a in (doc.get("attachments") or []) if a]})
     return tickets, counts
 
 
@@ -243,12 +244,32 @@ def list_tickets(status_filter="ALL"):
     return get_cached(f"admin:tickets:{clean_status}", lambda: _load_tickets(clean_status), ttl=30.0)
 
 
-def create_ticket_record(user_id, user_name, role, subject, message):
+def _clean_ticket_attachments(attachments, user_id):
+    clean = []
+    for idx, item in enumerate(attachments or []):
+        if len(clean) >= 3:
+            break
+        if isinstance(item, str):
+            val = item.strip()
+            if val.lower().startswith(("https://", "http://", "data:image/")):
+                clean.append(val)
+        elif item is not None:
+            if is_cloudinary_configured():
+                url, _ = upload_ticket_attachment(item, user_id, index=idx)
+                if url:
+                    clean.append(url)
+            elif fallback_uri := encode_image_data_uri(item):
+                clean.append(fallback_uri)
+    return clean[:3]
+
+
+def create_ticket_record(user_id, user_name, role, subject, message, attachments=None):
     clean_subject, clean_message = str(subject or "").strip(), str(message or "").strip()
     if not clean_subject or not clean_message:
         return None, "Subject and message details are required."
-    col = support_tickets_col()
-    doc = {"ticket_id": _generate_unique_ticket_id(col), "user_id": str(user_id or ""), "user_name": str(user_name or "Portal User").strip() or "Portal User", "role": str(role or "USER").strip().upper(), "subject": clean_subject, "message": clean_message, "status": "OPEN", "created_at": datetime.now(timezone.utc)}
+    col, uid = support_tickets_col(), str(user_id or "")
+    clean_attachments = _clean_ticket_attachments(attachments, uid)
+    doc = {"ticket_id": _generate_unique_ticket_id(col), "user_id": uid, "user_name": str(user_name or "Portal User").strip() or "Portal User", "role": str(role or "USER").strip().upper(), "subject": clean_subject, "message": clean_message, "attachments": clean_attachments[:3], "status": "OPEN", "created_at": datetime.now(timezone.utc)}
     col.insert_one(doc)
     create_notification(f"New Ticket {doc['ticket_id']}: {clean_subject}", clean_message, severity="WARNING", target_role="ADMIN", category="TICKET", ticket_id=doc["ticket_id"], feedback_text=clean_message)
     _audit("TICKETS", "CREATE_TICKET", f"Support ticket {doc['ticket_id']} submitted by {doc['user_name']}: {clean_subject}", "WARNING", actor=doc["user_name"])
@@ -338,11 +359,13 @@ def build_ticket_table_data(tickets, filter_status):
     for t in tickets:
         is_open, has_reply = t["status"] == "OPEN", bool(t.get("admin_reply"))
         lbl, ico = ("Resolve", "fa-solid fa-circle-check") if is_open else ("Reopen", "fa-solid fa-rotate-left")
-        reply_attrs = {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-message": t["message"], "data-admin-reply": t.get("admin_reply", ""), "data-status": t["status"], "data-filter-status": filter_status}
-        actions = [_action("Edit Reply" if has_reply else "Reply", "fa-solid fa-reply", "openReplyTicketModal(this)", f"Reply to {t['ticket_id']}", reply_attrs, variant="primary")]
+        attachments = [str(a) for a in (t.get("attachments") or []) if a]
+        created_at = t.get("created_at_str") or t.get("created_at", "")
+        detail_attrs = {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-message": t["message"], "data-admin-reply": t.get("admin_reply", ""), "data-status": t["status"], "data-filter-status": filter_status, "data-attachments": "|".join(attachments), "data-user-name": t.get("user_name", ""), "data-role": t.get("role", ""), "data-created-at": created_at, "data-replied-by": t.get("replied_by", ""), "data-replied-at": t.get("replied_at_str") or t.get("replied_at", "")}
+        actions = [_action("View", "fa-solid fa-eye", "openTicketDetailDrawer(this)", f"View {t['ticket_id']}", detail_attrs), _action("Edit Reply" if has_reply else "Reply", "fa-solid fa-reply", "openReplyTicketModal(this)", f"Reply to {t['ticket_id']}", detail_attrs, variant="primary")]
         if has_reply:
             actions.append(_action("Delete Reply", "fa-solid fa-comment-slash", "openDeleteReplyModal(this)", f"Delete reply on {t['ticket_id']}", {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-filter-status": filter_status}, variant="danger"))
         actions.extend([_action(lbl, ico, "openToggleTicketModal(this)", f"{lbl} {t['ticket_id']}", {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-status": t["status"], "data-filter-status": filter_status}), _action("Delete", "fa-solid fa-trash", "openDeleteTicketModal(this)", f"Delete {t['ticket_id']}", {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-filter-status": filter_status}, variant="danger")])
-        subject_cell = f"{t['subject']} (Replied)" if has_reply else t["subject"]
-        rows.append([t["ticket_id"], t["user_name"], {"text": t["role"], "status": "info"}, subject_cell, {"text": t["status"], "status": "success" if t["status"] == "RESOLVED" else "warning"}, t["created_at_str"], {"actions": actions}])
+        subject_cell = (f"{t['subject']} (Replied)" if has_reply else t["subject"]) + (f" [{len(attachments)} img]" if attachments else "")
+        rows.append([t["ticket_id"], t["user_name"], {"text": t["role"], "status": "info"}, subject_cell, {"text": t["status"], "status": "success" if t["status"] == "RESOLVED" else "warning"}, created_at, {"actions": actions}])
     return headers, rows

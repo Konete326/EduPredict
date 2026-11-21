@@ -18,11 +18,13 @@
       <i class="fa-solid fa-key text-xs text-[var(--accent-primary)]" aria-hidden="true"></i>
       <span>Change Password</span>
     </button>
+    {% if active_role == 'ADMIN' %}
     <button type="button" onclick="openThemeStudioModal()" title="Customize theme colors &amp; layout" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)] shadow-sm">
       <span class="h-2.5 w-2.5 rounded-full border border-[var(--border-subtle)]" style="background-color: var(--accent-primary);" aria-hidden="true"></span>
       <i class="fa-solid fa-palette text-xs text-[var(--accent-primary)]" aria-hidden="true"></i>
       <span>Theme &amp; Colors</span>
     </button>
+    {% endif %}
   </div>
 </section>
 
@@ -30,13 +32,12 @@
   <div class="xl:col-span-4 min-w-0 space-y-4">
     <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 space-y-4 shadow-sm">
       <div class="flex items-start gap-3">
-        {% if profile_user.avatar_url %}
-        <img src="{{ profile_user.avatar_url }}" alt="{{ profile_user.full_name|default:'Profile Photo' }}" class="h-12 w-12 shrink-0 rounded-xl border border-[var(--border-subtle)] object-cover shadow-sm">
-        {% else %}
-        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-primary)]">
-          {{ profile_user.full_name|default:current_user.full_name|default:"EP"|slice:":2"|upper }}
+        <div id="profile-avatar-container" class="relative shrink-0">
+          <img id="profile-avatar-preview" src="{{ profile_user.avatar_url|default:'' }}" alt="{{ profile_user.full_name|default:'Profile Photo' }}" class="{% if not profile_user.avatar_url %}hidden {% endif %}h-12 w-12 shrink-0 rounded-xl border border-[var(--border-subtle)] object-cover shadow-sm">
+          <div id="profile-avatar-initials" class="{% if profile_user.avatar_url %}hidden {% endif %}flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-primary)]">
+            {{ profile_user.full_name|default:current_user.full_name|default:"EP"|slice:":2"|upper }}
+          </div>
         </div>
-        {% endif %}
         <div class="min-w-0 flex-1 space-y-1">
           <h3 class="truncate text-base font-bold text-[var(--text-primary)]">{{ profile_user.full_name|default:current_user.full_name|default:"EduPredict User" }}</h3>
           <p class="truncate text-xs text-[var(--text-secondary)]">{{ profile_user.email|default:current_user.email }}</p>
@@ -82,6 +83,10 @@
           <button type="submit" class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
             <i class="fa-solid fa-cloud-arrow-up text-xs" aria-hidden="true"></i>
             <span>Upload Photo</span>
+          </button>
+          <button id="profile-crop-photo-btn" type="button" title="Crop or adjust profile photo before uploading" class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+            <i class="fa-solid fa-crop-simple text-xs text-[var(--accent-primary)]" aria-hidden="true"></i>
+            <span>Crop Photo</span>
           </button>
           {% if profile_user.avatar_url %}
           <button type="button" onclick="openConfirmModal({ title: 'Remove Profile Photo', message: 'Remove your profile photo and restore initials?', confirmText: 'Remove Photo', onConfirmUrl: '{% url 'panels:user_profile' %}', fields: [{ name: 'action', value: 'remove_avatar' }] })" class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-semibold text-[var(--status-danger)] transition-colors hover:bg-[var(--bg-elevated)]">

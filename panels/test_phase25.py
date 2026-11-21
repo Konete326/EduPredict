@@ -114,7 +114,7 @@ class Phase25IntegrationTests(TestCase):
         resp = Client().get(reverse("accounts:auth_view"))
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
-        for marker in ("data-auth-stepper", "auth_wizard.js?v=13", "teacher-approval-notice"):
+        for marker in ("data-auth-stepper", "auth_wizard.js?v=14", "teacher-approval-notice"):
             self.assertIn(marker, html)
         reg_start = html.find('id="reg-role"')
         reg_end = html.find("</select>", reg_start)

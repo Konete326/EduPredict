@@ -43,6 +43,8 @@ def _build_student_alerts(student_id, user_id, role):
             "ticket_id": str(t.get("ticket_id") or ""),
             "subject": str(t.get("subject") or ""),
             "message": str(t.get("message") or ""),
+            "admin_reply": str(t.get("admin_reply") or ""),
+            "attachments": [str(a) for a in (t.get("attachments") or []) if a],
             "status": status,
             "status_badge": {"text": "Resolved" if status == "RESOLVED" else "Open", "status": "success" if status == "RESOLVED" else "warning"},
             "created": created.strftime("%Y-%m-%d %H:%M") if hasattr(created, "strftime") else "-",

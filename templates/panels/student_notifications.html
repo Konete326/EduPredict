@@ -13,7 +13,7 @@
     <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Read messages from your teachers and track the help requests you sent.</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
-    <button type="button" onclick="openFormModal({ title: 'Need Help', actionUrl: '{% url 'panels:submit_support_ticket' %}', fields: [{ name: 'subject', label: 'Subject', type: 'text', placeholder: 'Short title', required: true }, { name: 'message', label: 'Message', type: 'textarea', placeholder: 'Write your question or issue...', required: true }] })" title="Send a new help request" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+    <button type="button" onclick="openSupportTicketModal()" title="Send a new help request" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
       <i class="fa-solid fa-headset text-xs"></i>
       <span>Need Help</span>
     </button>
