@@ -41,7 +41,29 @@
       <i class="fa-solid fa-file-csv text-xs text-[var(--status-success)]"></i>
       <span>Export CSV</span>
     </a>
+    <button id="live-stream-toggle-btn" type="button" data-stream-url="{% url 'analytics:stream_tick' %}" data-no-lock="true" aria-pressed="false" title="Toggle simulated 5-second live LMS stream" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <span class="relative flex h-2 w-2 shrink-0" aria-hidden="true">
+        <span id="live-stream-ping" class="absolute inline-flex h-full w-full motion-safe:animate-ping rounded-full bg-[var(--accent-primary)] opacity-60"></span>
+        <span id="live-stream-dot" class="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent-primary)]"></span>
+      </span>
+      <span id="live-stream-label">Simulate Live LMS Stream</span>
+    </button>
   </div>
+</section>
+
+<section id="live-stream-status-strip" class="hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3 space-y-2" aria-live="polite">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div class="flex items-center gap-2 min-w-0">
+      <span class="h-2 w-2 shrink-0 rounded-full bg-[var(--status-success)] motion-safe:animate-pulse" aria-hidden="true"></span>
+      <span class="text-xs font-semibold text-[var(--text-primary)]">Live LMS Stream</span>
+      <span id="live-stream-summary" class="truncate text-xs text-[var(--text-secondary)]">Waiting for stream tick...</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="live-stream-kpi-badge" class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 font-mono text-[11px] tabular-nums text-[var(--text-secondary)]">Idle</span>
+      <button id="live-stream-hide-btn" type="button" class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]">Hide</button>
+    </div>
+  </div>
+  <div id="live-stream-events" class="flex flex-wrap gap-2"></div>
 </section>
 
 {% if db_error %}
@@ -212,10 +234,7 @@
       window.createThemedChart('chart-dropout-doughnut', function (tokens) {
         return {
           type: 'doughnut',
-          data: {
-            labels: ['Low Risk', 'Medium Risk', 'High Risk'],
-            datasets: [{ data: [counts.LOW || 0, counts.MEDIUM || 0, counts.HIGH || 0], backgroundColor: [tokens.statusSuccess, tokens.statusWarning, tokens.statusDanger], borderColor: tokens.bgSurface, borderWidth: 2 }]
-          },
+          data: { labels: ['Low Risk', 'Medium Risk', 'High Risk'], datasets: [{ data: [counts.LOW || 0, counts.MEDIUM || 0, counts.HIGH || 0], backgroundColor: [tokens.statusSuccess, tokens.statusWarning, tokens.statusDanger], borderColor: tokens.bgSurface, borderWidth: 2 }] },
           options: { responsive: true, maintainAspectRatio: false, cutout: '64%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } } } }
         };
       });
@@ -225,40 +244,69 @@
         return {
           type: 'scatter',
           data: { datasets: [{ label: 'Students', data: scatter.map(function (pt) { return { x: pt.x, y: pt.y, label: pt.label }; }), backgroundColor: pointColors, pointRadius: 4.5, pointHoverRadius: 6 }] },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (ctx) { const raw = ctx.raw || {}; return (raw.label || 'Student') + ': ' + ctx.parsed.x + '% att, ' + ctx.parsed.y + ' GPA'; } } } },
-            scales: {
-              x: { min: 0, max: 100, title: { display: true, text: 'Attendance %', color: tokens.textMuted }, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } },
-              y: { min: 0, max: 4.0, title: { display: true, text: 'Predicted GPA', color: tokens.textMuted }, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } }
-            }
-          }
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (ctx) { const raw = ctx.raw || {}; return (raw.label || 'Student') + ': ' + ctx.parsed.x + '% att, ' + ctx.parsed.y + ' GPA'; } } } }, scales: { x: { min: 0, max: 100, title: { display: true, text: 'Attendance %', color: tokens.textMuted }, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } }, y: { min: 0, max: 4.0, title: { display: true, text: 'Predicted GPA', color: tokens.textMuted }, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } } } }
         };
       });
 
       window.createThemedChart('chart-course-demand', function (tokens) {
         return {
           type: 'bar',
-          data: {
-            labels: demand.map(function (d) { return d.course_code; }),
-            datasets: [
-              { label: 'Joined Now', data: demand.map(function (d) { return d.current_enrolled; }), backgroundColor: tokens.accentSoft, borderColor: tokens.accentPrimary, borderWidth: 1.5, borderRadius: 6 },
-              { label: 'Next Term Need', data: demand.map(function (d) { return d.projected_demand; }), backgroundColor: tokens.accentPrimary, borderRadius: 6 }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } } },
-            scales: { x: { grid: { display: false }, ticks: { color: tokens.textMuted } }, y: { beginAtZero: true, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } } }
-          }
+          data: { labels: demand.map(function (d) { return d.course_code; }), datasets: [{ label: 'Joined Now', data: demand.map(function (d) { return d.current_enrolled; }), backgroundColor: tokens.accentSoft, borderColor: tokens.accentPrimary, borderWidth: 1.5, borderRadius: 6 }, { label: 'Next Term Need', data: demand.map(function (d) { return d.projected_demand; }), backgroundColor: tokens.accentPrimary, borderRadius: 6 }] },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } } }, scales: { x: { grid: { display: false }, ticks: { color: tokens.textMuted } }, y: { beginAtZero: true, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } } } }
         };
       });
     }
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAnalystCharts, { once: true });
-    else initAnalystCharts();
+    function initLiveStreamSimulator() {
+      if (window._epAnalystStreamTimer) { clearInterval(window._epAnalystStreamTimer); window._epAnalystStreamTimer = null; }
+      const btn = document.getElementById('live-stream-toggle-btn'), strip = document.getElementById('live-stream-status-strip');
+      if (!btn || btn.dataset.streamBound === '1') return;
+      btn.dataset.streamBound = '1';
+      const url = btn.getAttribute('data-stream-url') || '/analyst-panel/stream-tick/';
+      const pingEl = document.getElementById('live-stream-ping'), dotEl = document.getElementById('live-stream-dot'), lblEl = document.getElementById('live-stream-label');
+      const summaryEl = document.getElementById('live-stream-summary'), kpiEl = document.getElementById('live-stream-kpi-badge'), eventsEl = document.getElementById('live-stream-events'), hideBtn = document.getElementById('live-stream-hide-btn');
+      let inFlight = false;
+      const getCsrf = () => { const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/); return m ? decodeURIComponent(m[1]) : (document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || ''); };
+      const setUi = (on) => {
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false'); btn.classList.toggle('border-[var(--accent-primary)]', on); btn.classList.toggle('bg-[var(--accent-soft)]', on);
+        [pingEl, dotEl].forEach((el) => { if (el) { el.classList.toggle('bg-[var(--status-success)]', on); el.classList.toggle('bg-[var(--accent-primary)]', !on); } });
+        if (lblEl) lblEl.textContent = on ? 'Stop Live LMS Stream' : 'Simulate Live LMS Stream';
+      };
+      const stop = (silent) => { if (window._epAnalystStreamTimer) { clearInterval(window._epAnalystStreamTimer); window._epAnalystStreamTimer = null; } inFlight = false; setUi(false); if (!silent && typeof window.showToast === 'function') window.showToast('Live LMS stream paused.', 'info'); };
+      const render = (data) => {
+        if (strip) strip.classList.remove('hidden');
+        if (summaryEl) summaryEl.textContent = data.message || ('Streamed ' + (data.events_pushed || 0) + ' live events.');
+        if (kpiEl) kpiEl.textContent = 'Preds ' + (data.predictions_generated || 0) + ' · High ' + (data.high_risk_count || 0) + ' · Anom ' + (data.anomalies_count || 0);
+        if (!eventsEl) return;
+        eventsEl.textContent = '';
+        (Array.isArray(data.events) ? data.events : []).forEach((ev) => {
+          const sid = String(ev.student_id || 'Student'), risk = String(ev.risk_level || 'UPDATED').toUpperCase(), attVal = ev.attendance_pct != null ? ev.attendance_pct : ev.attendance;
+          const chip = document.createElement('button'), dot = document.createElement('span'), txt = document.createElement('span');
+          chip.type = 'button'; chip.className = 'inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-[11px] font-mono text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors';
+          dot.className = 'h-1.5 w-1.5 rounded-full ' + (risk === 'HIGH' ? 'bg-[var(--status-danger)]' : (risk === 'MEDIUM' ? 'bg-[var(--status-warning)]' : (risk === 'LOW' ? 'bg-[var(--status-success)]' : 'bg-[var(--accent-primary)]')));
+          txt.textContent = sid + ' · ' + risk + (attVal != null ? ' · ' + Number(attVal).toFixed(1) + '%' : '');
+          chip.append(dot, txt);
+          chip.addEventListener('click', () => { if (typeof window.openStudent360Drawer === 'function') window.openStudent360Drawer(sid); });
+          eventsEl.appendChild(chip);
+        });
+      };
+      const tick = () => {
+        if (!document.getElementById('live-stream-toggle-btn')) { stop(true); return; }
+        if (inFlight) return;
+        inFlight = true;
+        const csrf = getCsrf();
+        fetch(url, { method: 'POST', credentials: 'same-origin', headers: Object.assign({ 'X-Requested-With': 'XMLHttpRequest' }, csrf ? { 'X-CSRFToken': csrf } : {}) })
+          .then((r) => ((r.headers.get('content-type') || '').includes('application/json') ? r.json().then((d) => ({ ok: r.ok, d })) : Promise.reject(new Error('Stream error'))))
+          .then(({ ok, d }) => { if (!ok || !d || !d.ok) throw new Error((d && d.error) || 'Stream failed'); render(d); if (typeof window.clearEduPredictPageCache === 'function') window.clearEduPredictPageCache(); })
+          .catch((e) => { stop(true); if (typeof window.showToast === 'function') window.showToast(e && e.message ? e.message : 'Live stream failed.', 'warning'); })
+          .finally(() => { inFlight = false; });
+      };
+      btn.addEventListener('click', () => { if (window._epAnalystStreamTimer) { stop(false); return; } setUi(true); if (strip) strip.classList.remove('hidden'); if (typeof window.showToast === 'function') window.showToast('Live LMS stream started (5s interval).', 'info'); tick(); window._epAnalystStreamTimer = setInterval(tick, 5000); });
+      if (hideBtn && strip) hideBtn.addEventListener('click', () => strip.classList.add('hidden'));
+    }
+
+    function bootAnalystPage() { initAnalystCharts(); initLiveStreamSimulator(); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootAnalystPage, { once: true }); else bootAnalystPage();
   })();
 </script>
 {% endblock %}

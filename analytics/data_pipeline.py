@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import re
 import numpy as np
 import pandas as pd
 from pymongo import UpdateOne
@@ -30,14 +31,24 @@ COLUMN_ALIASES = {
     "exam_marks": "internal_marks",
     "attendance": "attendance_pct",
     "att": "attendance_pct",
+    "att_pct": "attendance_pct",
+    "attpct": "attendance_pct",
+    "pct_attendance": "attendance_pct",
     "attendance_rate": "attendance_pct",
     "attendance_percentage": "attendance_pct",
     "roll_no": "student_id",
     "roll_number": "student_id",
+    "enrollment": "student_id",
+    "enrollment_no": "student_id",
+    "reg_no": "student_id",
+    "registration_no": "student_id",
     "id": "student_id",
     "std_id": "student_id",
     "student": "student_id",
     "student_id_number": "student_id",
+    "test_score": "internal_marks",
+    "exam_score": "internal_marks",
+    "quiz_marks": "internal_marks",
     "name": "full_name",
     "student_name": "full_name",
     "course": "course_code",
@@ -81,8 +92,18 @@ LAST_NAMES = (
 
 
 def _normalize_column_name(col):
-    name = str(col).strip().lower().replace(" ", "_").replace("-", "_").replace(".", "_")
+    name = str(col).strip().lower().replace("%", "pct").replace(" ", "_").replace("-", "_").replace(".", "_")
+    name = re.sub(r"_+", "_", name).strip("_")
     return COLUMN_ALIASES.get(name, name)
+
+
+def _write_ops(col, ops):
+    if hasattr(col, "bulk_write"):
+        for start in range(0, len(ops), 500):
+            col.bulk_write(ops[start:start + 500], ordered=False)
+    else:
+        for op in ops:
+            col.update_one(op._filter, op._doc, upsert=op._upsert)
 
 
 def validate_dataset_columns(columns):
@@ -202,7 +223,10 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload"):
         return _failed_result(filename, uploaded_by, load_error)
 
     df = df.copy()
-    df.columns = [_normalize_column_name(col) for col in df.columns]
+    raw_headers = [str(col) for col in df.columns]
+    normalized_headers = [_normalize_column_name(col) for col in raw_headers]
+    column_mappings = {raw: norm for raw, norm in zip(raw_headers, normalized_headers)}
+    df.columns = normalized_headers
     df = df.loc[:, ~df.columns.duplicated()]
 
     validation = validate_dataset_columns(df.columns)
@@ -271,7 +295,7 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload"):
         df["anomaly_label"] = df["anomaly_label"].apply(parse_binary_label)
 
     now = datetime.now(timezone.utc)
-    operations = []
+    operations, preview_rows = [], []
     label_counts = {"dropout_label": 0, "actual_gpa": 0, "anomaly_label": 0}
     for row in df.to_dict(orient="records"):
         sid = str(row["student_id"]).strip()
@@ -287,6 +311,8 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload"):
             "previous_gpa": round(float(row["previous_gpa"]), 2),
             "updated_at": now,
         }
+        if len(preview_rows) < 3:
+            preview_rows.append({k: doc[k] for k in ("student_id", "full_name", "batch", "course_code", "attendance_pct", "internal_marks", "previous_gpa")})
         if has_dropout_label:
             lbl = row.get("dropout_label")
             doc["dropout_label"] = int(lbl) if pd.notna(lbl) else None
@@ -306,9 +332,7 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload"):
 
     try:
         ensure_indexes()
-        col = student_records_col()
-        for start in range(0, len(operations), 500):
-            col.bulk_write(operations[start:start + 500], ordered=False)
+        _write_ops(student_records_col(), operations)
         datasets_log_col().insert_one({
             "filename": filename,
             "uploaded_by": uploaded_by or "Analyst",
@@ -327,4 +351,6 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload"):
         "rows_processed": len(operations),
         "missing_values_fixed": missing_values_fixed,
         "labels_detected": label_counts,
+        "column_mappings": column_mappings,
+        "preview_rows": preview_rows,
     }

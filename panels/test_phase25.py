@@ -1,15 +1,22 @@
+import io
 from datetime import datetime, timezone
+from pathlib import Path
 from unittest.mock import patch
+from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.test import Client, TestCase
 from django.urls import reverse
+from sklearn.ensemble import RandomForestClassifier
 import accounts.services as acc_svc
+from analytics.data_pipeline import _normalize_column_name, ingest_dataset
+from analytics.ml_engine import run_prediction_pipeline
+from analytics.preprocessing import build_dropout_pipeline
 from core.db import invalidate_cache
 import panels.admin_audit_services as audit_svc
 import panels.admin_seed as admin_seed
-from panels.pdf_services import generate_student_report_card_pdf
+from panels.pdf_services import generate_student_report_card_pdf, generate_teacher_roster_pdf
 from panels.test_admin import _MemCol
-from panels.test_pdf import _sample_student_overview
+from panels.test_pdf import _sample_student_overview, _sample_teacher_students_context
 
 
 class Phase25IntegrationTests(TestCase):
@@ -22,8 +29,9 @@ class Phase25IntegrationTests(TestCase):
                 "password_hash": make_password("admin123"), "role": "ADMIN", "department": "Administration",
                 "batch": "ALL", "is_active": True, "approval_status": "APPROVED", "created_at": now,
             }]),
-            "student_records": _MemCol(), "predictions": _MemCol(), "notifications": _MemCol(),
-            "activity_logs": _MemCol(), "courses": _MemCol(), "support_tickets": _MemCol(), "system_settings": _MemCol(),
+            "student_records": _MemCol(), "predictions": _MemCol(), "datasets_log": _MemCol(),
+            "notifications": _MemCol(), "activity_logs": _MemCol(), "courses": _MemCol(),
+            "support_tickets": _MemCol(), "system_settings": _MemCol(),
         }
         for p in (
             patch("core.db.MongoDBClient.get_collection", side_effect=lambda name: self.cols.setdefault(name, _MemCol())),
@@ -124,7 +132,7 @@ class Phase25IntegrationTests(TestCase):
         resp = Client().get(reverse("accounts:auth_view"))
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
-        for marker in ("data-auth-stepper", "auth_wizard.js?v=15", "teacher-approval-notice"):
+        for marker in ("data-auth-stepper", "auth_wizard.js?v=16", "teacher-approval-notice"):
             self.assertIn(marker, html)
         reg_start = html.find('id="reg-role"')
         reg_end = html.find("</select>", reg_start)
@@ -257,3 +265,82 @@ class Phase25IntegrationTests(TestCase):
         missing = teacher.get(reverse("panels:student_360_summary", args=["STD-9999-MISSING"]))
         self.assertEqual(missing.status_code, 404)
         self.assertFalse(missing.json()["ok"])
+
+    def test_phase63_hyper_automation_live_stream_and_aptech_pack(self):
+        for raw, expected in (("Roll_No", "student_id"), ("Enrollment", "student_id"), ("Reg_No", "student_id"), ("Att_%", "attendance_pct"), ("Test_Score", "internal_marks"), ("Prev_GPA", "previous_gpa"), ("LMS_Hours", "lms_hours_weekly")):
+            self.assertEqual(_normalize_column_name(raw), expected)
+
+        csv_rows = [
+            "Roll_No,Name,Course,Att_%,Test_Score,Prev_GPA,LMS_Hours",
+            "STD-HIGH,High Risk Student,CS-101,35.0,28.0,1.40,1.5",
+            "STD-ANOM,Anomaly Student,DS-204,86.0,38.0,3.60,10.0",
+            "STD-LOWATT,Low Att Student,CS-101,71.0,88.0,3.40,14.0",
+        ] + [f"STD-OK-{i},Steady Student {i},CS-101,91.0,86.0,3.50,13.5" for i in range(1, 9)]
+        csv_file = io.BytesIO("\n".join(csv_rows).encode("utf-8"))
+        csv_file.name = "aptech_aliases.csv"
+        ingest_res = ingest_dataset(file_obj=csv_file, uploaded_by="teacher@edupredict.edu", mode="upload")
+        self.assertEqual(ingest_res["status"], "COMPLETED")
+        self.assertEqual(ingest_res["column_mappings"]["Roll_No"], "student_id")
+        self.assertEqual(ingest_res["column_mappings"]["Att_%"], "attendance_pct")
+        self.assertEqual(ingest_res["column_mappings"]["Test_Score"], "internal_marks")
+        self.assertEqual(ingest_res["column_mappings"]["Prev_GPA"], "previous_gpa")
+        self.assertEqual(ingest_res["column_mappings"]["LMS_Hours"], "lms_hours_weekly")
+        self.assertEqual(len(ingest_res["preview_rows"]), 3)
+
+        rf_model = build_dropout_pipeline().named_steps["model"]
+        self.assertIsInstance(rf_model, RandomForestClassifier)
+        self.assertEqual(rf_model.n_estimators, 50)
+        self.assertEqual(rf_model.n_jobs, -1)
+
+        ml_res = run_prediction_pipeline(persist=True)
+        self.assertEqual(ml_res["status"], "COMPLETED")
+        notif_titles = [d.get("title", "") for d in self.cols["notifications"].docs]
+        self.assertTrue(any(t.startswith("High Dropout Risk:") for t in notif_titles))
+        self.assertTrue(any(t.startswith("Academic Anomaly Flagged:") for t in notif_titles))
+        self.assertTrue(any(t == "Low Attendance Alert: STD-LOWATT" for t in notif_titles))
+
+        self.cols["notifications"].insert_one({
+            "target_role": "STUDENT", "target_user_id": "STD-HIGH", "student_id": "STD-HIGH",
+            "title": "Teacher Alert (CS-101)", "message": "Previous read alert", "severity": "WARNING",
+            "is_read": True, "created_at": datetime(2026, 11, 21, 11, 0, tzinfo=timezone.utc),
+        })
+        teacher = self._login_role("TEACHER", user_id="USR-T1")
+        alerts_html = teacher.get(reverse("panels:teacher_alerts")).content.decode("utf-8")
+        self.assertIn("Read ✓✓", alerts_html)
+        self.assertIn("Notify All High-Risk Students", alerts_html)
+        self.assertIn("Auto-Alert &lt; 75%: On", alerts_html)
+
+        self.assertEqual(teacher.post(reverse("panels:teacher_alerts"), {"action": "notify_all_high_risk"}).status_code, 302)
+        self.assertGreaterEqual(len([d for d in self.cols["notifications"].docs if str(d.get("title", "")).startswith("Teacher Alert (") and not d.get("is_read")]), 1)
+        self.assertEqual(teacher.post(reverse("panels:teacher_alerts"), {"action": "toggle_auto_alerts", "enabled": "0"}).status_code, 302)
+        self.assertFalse(self.cols["system_settings"].find_one({"setting_key": "portal_config"})["auto_student_alerts"])
+        self.assertIn("Auto-Alert &lt; 75%: Off", teacher.get(reverse("panels:teacher_alerts")).content.decode("utf-8"))
+
+        analyst = self._login_role("ANALYST", user_id="USR-AN1")
+        dash_html = analyst.get(reverse("panels:analyst_dashboard")).content.decode("utf-8")
+        stream_url = reverse("analytics:stream_tick")
+        self.assertIn('id="live-stream-toggle-btn"', dash_html)
+        self.assertIn(stream_url, dash_html)
+        self.assertEqual(analyst.get(stream_url).status_code, 405)
+        tick_resp = analyst.post(stream_url)
+        self.assertEqual(tick_resp.status_code, 200)
+        tick_data = tick_resp.json()
+        self.assertTrue(tick_data["ok"])
+        self.assertGreaterEqual(tick_data["events_pushed"], 1)
+        self.assertGreaterEqual(len(tick_data["events"]), 1)
+        self.assertGreaterEqual(tick_data["predictions_generated"], 1)
+        self.assertIsNotNone(self.cols["datasets_log"].find_one({"mode": "STREAM_TICK"}))
+
+        with patch("panels.pdf_services.get_portal_settings", return_value={"settings_data": {"institution_name": "Aptech Metro Campus", "current_term": "Spring 2027"}}):
+            s_pdf = generate_student_report_card_pdf(_sample_student_overview())
+            t_pdf = generate_teacher_roster_pdf(_sample_teacher_students_context())
+        for pdf_bytes in (s_pdf, t_pdf):
+            self.assertTrue(pdf_bytes.startswith(b"%PDF-"))
+            self.assertIn(b"Aptech Metro Campus", pdf_bytes)
+            self.assertIn(b"Spring 2027", pdf_bytes)
+
+        pack_dir = Path(settings.BASE_DIR) / "docs" / "aptech_submission"
+        for fname in ("PROJECT_REPORT.md", "INSTALLATION_README.md", "DEMO_WALKTHROUGH.md", "sample_aptech_test_dataset.csv"):
+            fpath = pack_dir / fname
+            self.assertTrue(fpath.is_file(), fname)
+            self.assertGreater(fpath.stat().st_size, 0, fname)

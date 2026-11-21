@@ -10,14 +10,10 @@ from core.db import invalidate_cache
 from core.decorators import role_required
 from panels.directory_card_services import build_teacher_student_cards
 from panels.pdf_services import generate_teacher_roster_pdf
-from panels.teacher_alert_services import get_teacher_alerts_context
+from panels.teacher_alert_services import get_teacher_alerts_context, notify_all_high_risk_students, toggle_teacher_auto_alerts
 from panels.teacher_services import (
-    delete_student_record,
-    get_teacher_dashboard_context,
-    get_teacher_ingest_context,
-    get_teacher_students_context,
-    send_student_alert,
-    update_student_record_inline,
+    delete_student_record, get_teacher_dashboard_context, get_teacher_ingest_context,
+    get_teacher_students_context, send_student_alert, update_student_record_inline,
 )
 
 
@@ -61,6 +57,15 @@ def _handle_common_post(request):
         sid = _param(request, "student_id")
         ok, err = delete_student_record(sid)
         _flash(request, ok, err, f"Removed student record {sid}.")
+        return True
+    if action == "notify_all_high_risk":
+        sent_count, err = notify_all_high_risk_students(_actor_label(request))
+        _flash(request, sent_count > 0, err, f"Sent alerts to {sent_count} high-risk / low-attendance student(s).")
+        return True
+    if action == "toggle_auto_alerts":
+        enabled_flag = _param(request, "enabled") == "1"
+        state, err = toggle_teacher_auto_alerts(enabled_flag, _actor_label(request))
+        _flash(request, err is None, err, f"Auto-alerts below 75% attendance {'enabled' if state else 'paused'}.")
         return True
     return False
 
@@ -168,6 +173,8 @@ def teacher_alerts(request):
         "history_headers": ["Title", "Student", "Message", "Level", "Read", "Date"],
         "history_rows": [],
         "students_picker": [],
+        "auto_alerts_enabled": True,
+        "high_risk_only_count": 0,
     }
     db_error = None
     try:
@@ -184,6 +191,8 @@ def teacher_alerts(request):
         "history_headers": data["history_headers"],
         "history_rows": data["history_rows"],
         "students_picker": data["students_picker"],
+        "auto_alerts_enabled": data.get("auto_alerts_enabled", True),
+        "high_risk_only_count": data.get("high_risk_only_count", 0),
         "db_error": db_error,
     })
 

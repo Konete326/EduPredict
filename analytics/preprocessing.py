@@ -155,6 +155,7 @@ def build_dropout_pipeline(random_state=DEFAULT_RANDOM_STATE):
         ("imputer", MedianFallbackImputer(fallback_list)),
         ("model", RandomForestClassifier(
             n_estimators=50,
+            n_jobs=-1,
             max_depth=4,
             min_samples_leaf=2,
             random_state=random_state,

@@ -227,6 +227,15 @@ def evaluate_models(records=None, test_size=DEFAULT_TEST_SIZE, random_state=DEFA
     return report
 
 
+def _write_ops(col, ops):
+    if hasattr(col, "bulk_write"):
+        for start in range(0, len(ops), 500):
+            col.bulk_write(ops[start:start + 500], ordered=False)
+    else:
+        for op in ops:
+            col.update_one(op._filter, op._doc, upsert=op._upsert)
+
+
 def run_prediction_pipeline(records=None, persist=True, test_size=DEFAULT_TEST_SIZE, random_state=DEFAULT_RANDOM_STATE, portal_settings=None):
     ts, rs = validate_eval_params(test_size, random_state)
     cfg = _resolve_runtime_settings(portal_settings=portal_settings, persist=persist)
@@ -308,10 +317,19 @@ def run_prediction_pipeline(records=None, persist=True, test_size=DEFAULT_TEST_S
         pred_docs.append(pred_doc)
         pred_ops.append(UpdateOne({"student_id": sid}, {"$set": pred_doc}, upsert=True))
 
-        if risk_level == "HIGH" or is_anomaly:
-            severity = "DANGER" if risk_level == "HIGH" else "WARNING"
-            title = f"High Dropout Risk: {sid}" if risk_level == "HIGH" else f"Academic Anomaly Flagged: {sid}"
-            detail = anomaly_reason if anomaly_reason else f"Dropout risk score {round(risk_score * 100)}%"
+        if risk_level == "HIGH" or is_anomaly or att < min_att:
+            if risk_level == "HIGH":
+                severity = "DANGER"
+                title = f"High Dropout Risk: {sid}"
+                detail = anomaly_reason if anomaly_reason else f"Dropout risk score {round(risk_score * 100)}%"
+            elif is_anomaly:
+                severity = "WARNING"
+                title = f"Academic Anomaly Flagged: {sid}"
+                detail = anomaly_reason if anomaly_reason else f"Dropout risk score {round(risk_score * 100)}%"
+            else:
+                severity = "WARNING"
+                title = f"Low Attendance Alert: {sid}"
+                detail = f"Attendance {att:.1f}% is below {int(round(min_att))}% minimum"
             targets = ([("TEACHER", sid)] if cfg["auto_teacher_alerts"] else []) + ([("STUDENT", sid)] if cfg["auto_student_alerts"] else [])
             for target_role, target_uid in targets:
                 notif_ops.append(UpdateOne(
@@ -325,13 +343,9 @@ def run_prediction_pipeline(records=None, persist=True, test_size=DEFAULT_TEST_S
                 ))
 
     if persist:
-        preds_col = predictions_col()
-        for start in range(0, len(pred_ops), 500):
-            preds_col.bulk_write(pred_ops[start:start + 500], ordered=False)
+        _write_ops(predictions_col(), pred_ops)
         if notif_ops:
-            notifs_col = notifications_col()
-            for start in range(0, len(notif_ops), 500):
-                notifs_col.bulk_write(notif_ops[start:start + 500], ordered=False)
+            _write_ops(notifications_col(), notif_ops)
         invalidate_cache()
 
     result = {

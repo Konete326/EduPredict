@@ -7,4 +7,5 @@ urlpatterns = [
     path('analyst-panel/upload/', views.upload_dataset, name='upload_dataset'),
     path('analyst-panel/run-ml/', views.run_predictions, name='run_predictions'),
     path('analyst-panel/evaluation/', views.model_evaluation, name='model_evaluation'),
+    path('analyst-panel/stream-tick/', views.stream_tick, name='stream_tick'),
 ]

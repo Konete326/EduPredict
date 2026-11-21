@@ -111,6 +111,93 @@
     });
   }
 
+  const CSV_ALIASES = {
+    student_id: 'student_id', roll_no: 'student_id', roll_number: 'student_id', enrollment: 'student_id', enrollment_no: 'student_id', reg_no: 'student_id', registration_no: 'student_id', id: 'student_id', std_id: 'student_id', student: 'student_id', student_id_number: 'student_id',
+    full_name: 'full_name', name: 'full_name', student_name: 'full_name',
+    course_code: 'course_code', course: 'course_code', course_id: 'course_code', subject: 'course_code', class: 'course_code',
+    batch: 'batch', batch_name: 'batch', section: 'batch',
+    attendance_pct: 'attendance_pct', attendance: 'attendance_pct', att: 'attendance_pct', att_pct: 'attendance_pct', attendance_rate: 'attendance_pct', attendance_percentage: 'attendance_pct',
+    internal_marks: 'internal_marks', marks: 'internal_marks', mark: 'internal_marks', score: 'internal_marks', test_score: 'internal_marks', exam_score: 'internal_marks', quiz_marks: 'internal_marks', exam_marks: 'internal_marks', total_marks: 'internal_marks', obtained_marks: 'internal_marks', internal_mark: 'internal_marks', class_marks: 'internal_marks',
+    assignment_score: 'assignment_score', assignment: 'assignment_score', assignments: 'assignment_score',
+    lms_hours_weekly: 'lms_hours_weekly', lms_hours: 'lms_hours_weekly', study_hours: 'lms_hours_weekly', hours: 'lms_hours_weekly',
+    previous_gpa: 'previous_gpa', prev_gpa: 'previous_gpa', cgpa: 'previous_gpa', gpa: 'previous_gpa',
+    dropout_label: 'dropout_label', actual_dropout: 'dropout_label', dropped_out: 'dropout_label', is_dropout: 'dropout_label', dropout: 'dropout_label', dropout_status: 'dropout_label', target_dropout: 'dropout_label',
+    actual_gpa: 'actual_gpa', final_gpa: 'actual_gpa', next_gpa: 'actual_gpa', target_gpa: 'actual_gpa', semester_gpa: 'actual_gpa', earned_gpa: 'actual_gpa'
+  };
+
+  function mapCsvHeader(raw) {
+    const clean = String(raw || '').trim();
+    const norm = clean.toLowerCase().replace(/%/g, 'pct').replace(/[\s\-.]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    return { raw: clean || '-', canonical: CSV_ALIASES[norm] || norm || clean || '-' };
+  }
+
+  function parseCsvPreviewRows(text, maxRows) {
+    return String(text || '').replace(/^\uFEFF/, '').split(/\r?\n/).filter((l) => l.trim().length > 0).slice(0, maxRows).map((line) => {
+      const cols = [];
+      let cur = '', inQ = false;
+      for (let i = 0; i < line.length; i += 1) {
+        const ch = line[i];
+        if (ch === '"') { if (inQ && line[i + 1] === '"') { cur += '"'; i += 1; } else inQ = !inQ; }
+        else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+        else cur += ch;
+      }
+      cols.push(cur.trim());
+      return cols;
+    });
+  }
+
+  function renderCsvMapperPreview(root, text) {
+    let box = root.querySelector('[data-csv-mapper-preview]');
+    const parsed = parseCsvPreviewRows(text, 4);
+    if (!parsed.length || !parsed[0].length) { if (box) { box.textContent = ''; box.classList.add('hidden'); } return; }
+    if (!box) {
+      box = document.createElement('div');
+      box.setAttribute('data-csv-mapper-preview', '');
+      box.className = 'rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-2.5 space-y-2 text-xs';
+      root.appendChild(box);
+    }
+    box.textContent = ''; box.classList.remove('hidden');
+    const mapped = parsed[0].map(mapCsvHeader), dataRows = parsed.slice(1, 4);
+    const head = document.createElement('div'), ttl = document.createElement('span'), meta = document.createElement('span');
+    head.className = 'flex items-center justify-between gap-2';
+    ttl.className = 'text-[11px] font-semibold text-[var(--text-primary)]'; ttl.textContent = 'Smart CSV Column Auto-Mapper';
+    meta.className = 'font-mono text-[10px] text-[var(--text-muted)]'; meta.textContent = mapped.length + ' cols · ' + dataRows.length + ' preview rows';
+    head.append(ttl, meta);
+    const badges = document.createElement('div');
+    badges.className = 'flex flex-wrap gap-1';
+    mapped.forEach((m) => {
+      const pill = document.createElement('span');
+      pill.className = 'inline-flex items-center rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--text-secondary)]';
+      pill.textContent = m.raw + ' -> ' + m.canonical;
+      badges.appendChild(pill);
+    });
+    box.append(head, badges);
+    if (!dataRows.length) return;
+    const wrap = document.createElement('div'), tbl = document.createElement('table'), thead = document.createElement('thead'), trH = document.createElement('tr'), tbody = document.createElement('tbody');
+    wrap.className = 'overflow-x-auto rounded border border-[var(--border-subtle)]';
+    tbl.className = 'w-full border-collapse text-left text-[11px] tabular-nums';
+    trH.className = 'border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]';
+    mapped.forEach((m) => {
+      const th = document.createElement('th');
+      th.className = 'px-2 py-1 font-mono text-[10px] font-semibold text-[var(--text-muted)] whitespace-nowrap';
+      th.textContent = m.canonical;
+      trH.appendChild(th);
+    });
+    thead.appendChild(trH);
+    tbody.className = 'divide-y divide-[var(--border-subtle)]';
+    dataRows.forEach((row) => {
+      const tr = document.createElement('tr');
+      mapped.forEach((_, idx) => {
+        const td = document.createElement('td');
+        td.className = 'px-2 py-1 text-[var(--text-primary)] max-w-[8rem] truncate';
+        td.textContent = row[idx] !== undefined ? row[idx] : '';
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    tbl.append(thead, tbody); wrap.appendChild(tbl); box.appendChild(wrap);
+  }
+
   function initGradientUploaders() {
     document.querySelectorAll('[data-gradient-uploader]').forEach((root) => {
       if (root.dataset.uploaderReady === '1') return;
@@ -120,8 +207,9 @@
       if (!input) return;
       const defImgSrc = img ? (img.getAttribute('src') || '') : '', defPreview = Boolean(preview && !preview.classList.contains('hidden')), defName = nameEl ? nameEl.textContent : '', defMeta = metaEl ? metaEl.textContent : '', maxMb = parseFloat(root.getAttribute('data-max-mb') || '0') || 0;
       const revokeObjUrl = () => { if (root._epObjUrl && typeof URL !== 'undefined' && URL.revokeObjectURL) { URL.revokeObjectURL(root._epObjUrl); root._epObjUrl = null; } };
+      const clearCsvBox = () => { root._epCsvSeq = (root._epCsvSeq || 0) + 1; const cb = q('[data-csv-mapper-preview]'); if (cb) { cb.textContent = ''; cb.classList.add('hidden'); } };
       const resetUploader = () => {
-        input.value = ''; revokeObjUrl();
+        input.value = ''; revokeObjUrl(); clearCsvBox();
         if (img) { if (defImgSrc) { img.src = defImgSrc; img.classList.remove('hidden'); } else { img.removeAttribute('src'); img.classList.add('hidden'); } }
         if (preview) preview.classList.toggle('hidden', !defPreview); if (nameEl) nameEl.textContent = defName; if (metaEl) metaEl.textContent = defMeta;
         if (progressEl) { progressEl.classList.remove('w-full', 'w-0'); progressEl.style.width = defImgSrc ? '100%' : '0%'; }
@@ -137,6 +225,12 @@
         if (img) { if (file.type && file.type.startsWith('image/') && typeof URL !== 'undefined' && URL.createObjectURL) { root._epObjUrl = URL.createObjectURL(file); img.src = root._epObjUrl; img.classList.remove('hidden'); } else { img.removeAttribute('src'); img.classList.add('hidden'); } }
         if (progressEl) { progressEl.classList.remove('w-full', 'w-0'); progressEl.style.width = '0%'; requestAnimationFrame(() => { progressEl.style.width = '100%'; }); }
         if (clearBtn) clearBtn.classList.remove('hidden');
+        if (/\.csv$/i.test(file.name || '') && typeof FileReader !== 'undefined') {
+          const seq = (root._epCsvSeq || 0) + 1; root._epCsvSeq = seq;
+          const reader = new FileReader();
+          reader.onload = () => { if (root._epCsvSeq === seq) renderCsvMapperPreview(root, reader.result || ''); };
+          reader.readAsText(file.slice(0, 4096));
+        } else clearCsvBox();
       };
       input.addEventListener('change', () => applyFile(input.files && input.files[0]));
       if (browseBtn) browseBtn.addEventListener('click', (e) => { e.preventDefault(); input.click(); });
@@ -218,18 +312,14 @@
     const bell = document.getElementById('notification-bell-btn');
     if (!bell || typeof fetch !== 'function') return;
     const badge = document.getElementById('notification-unread-badge');
-    if (window._epLastUnreadCount === undefined) {
-      window._epLastUnreadCount = badge && !badge.classList.contains('hidden') ? (parseInt(badge.textContent, 10) || 0) : 0;
-    }
-    if (window._epLiveNotifTimer) return;
+    if (window._epLastUnreadCount === undefined) window._epLastUnreadCount = badge && !badge.classList.contains('hidden') ? (parseInt(badge.textContent, 10) || 0) : 0;
     const pollFeed = () => {
       if (document.visibilityState !== 'visible' || !document.getElementById('notification-bell-btn')) return;
       fetch('/notifications/feed/', { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (!data || !data.ok) return;
-          const nextCount = Math.max(0, parseInt(data.unread_count, 10) || 0);
-          const prevCount = typeof window._epLastUnreadCount === 'number' ? window._epLastUnreadCount : 0;
+          const nextCount = Math.max(0, parseInt(data.unread_count, 10) || 0), prevCount = typeof window._epLastUnreadCount === 'number' ? window._epLastUnreadCount : 0;
           renderNotificationFeed(data);
           if (nextCount > prevCount && Array.isArray(data.notifications) && data.notifications.length && typeof window.showToast === 'function') {
             const top = data.notifications[0];
@@ -239,7 +329,11 @@
         })
         .catch(() => {});
     };
-    window._epLiveNotifTimer = setInterval(pollFeed, 15000);
+    if (!window._epVisNotifBound) {
+      window._epVisNotifBound = true;
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') pollFeed(); });
+    }
+    if (!window._epLiveNotifTimer) window._epLiveNotifTimer = setInterval(pollFeed, 15000);
   }
 
   function initEduPredictWidgets() { initGlobalSubmitGuards(); initFaqProWidgets(); initGradientUploaders(); initLiveNotifications(); }

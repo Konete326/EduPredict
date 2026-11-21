@@ -50,6 +50,10 @@
   <div class="xl:col-span-4 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
     <h3 class="text-sm font-semibold text-[var(--text-primary)]">Report Summary</h3>
     <div class="space-y-2 text-xs">
+      <div class="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2">
+        <span class="text-[var(--text-muted)] shrink-0">Portal / Term</span>
+        <span class="font-semibold text-[var(--text-primary)] truncate text-right">{{ portal_institution_name|default:"EduPredict Academic Portal" }} · {{ portal_current_term|default:"Fall 2026" }}</span>
+      </div>
       <div class="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2">
         <span class="text-[var(--text-muted)]">Student Name</span>
         <span class="font-semibold text-[var(--text-primary)] truncate">{{ record.full_name|default:"-" }}</span>

@@ -5,6 +5,7 @@ from analytics.data_pipeline import ingest_dataset
 from analytics.evaluation import DEFAULT_TEST_SIZE
 from analytics.ml_engine import evaluate_models, run_prediction_pipeline
 from analytics.preprocessing import DEFAULT_RANDOM_STATE, validate_eval_params
+from analytics.stream_services import simulate_lms_stream_tick
 from core.db import get_cached, invalidate_cache, student_records_col
 from core.decorators import role_required
 
@@ -117,3 +118,15 @@ def model_evaluation(request):
         return JsonResponse({'status': 'ERROR', 'error': str(exc)}, status=400)
     except Exception as exc:
         return JsonResponse({'status': 'ERROR', 'error': f'Evaluation failed: {exc}'}, status=500)
+
+
+@role_required(['ANALYST', 'ADMIN'])
+def stream_tick(request):
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'POST method required.'}, status=405)
+    try:
+        res = simulate_lms_stream_tick(_get_actor_label(request))
+        return JsonResponse(res, status=200)
+    except Exception as exc:
+        invalidate_cache()
+        return JsonResponse({'ok': False, 'error': f'Stream tick failed: {exc}'}, status=500)

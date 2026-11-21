@@ -12,10 +12,29 @@
     <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Risk Alerts</h2>
     <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Send warning notes to students who miss classes or drop in marks, and see what you already sent.</p>
   </div>
-  <a href="{% url 'panels:teacher_dashboard' %}" title="Back to class overview" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
-    <i class="fa-solid fa-arrow-left text-[10px]"></i>
-    <span>Class Home</span>
-  </a>
+  <div class="flex flex-wrap items-center gap-2">
+    <form method="post" action="{% url 'panels:teacher_alerts' %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="toggle_auto_alerts">
+      <input type="hidden" name="enabled" value="{% if auto_alerts_enabled %}0{% else %}1{% endif %}">
+      <button type="submit" id="toggle-auto-alerts-btn" title="Turn automatic low-attendance alerts on or off" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+        <span class="h-2 w-2 rounded-full {% if auto_alerts_enabled %}bg-[var(--status-success)]{% else %}bg-[var(--text-muted)]{% endif %}" aria-hidden="true"></span>
+        <span>Auto-Alert &lt; 75%: {% if auto_alerts_enabled %}On{% else %}Off{% endif %}</span>
+      </button>
+    </form>
+    <form method="post" action="{% url 'panels:teacher_alerts' %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="notify_all_high_risk">
+      <button type="submit" id="notify-all-high-risk-btn" title="Send warning alerts to all high-risk and low-attendance students" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+        <i class="fa-solid fa-bullhorn text-xs" aria-hidden="true"></i>
+        <span>Notify All High-Risk Students</span>
+      </button>
+    </form>
+    <a href="{% url 'panels:teacher_dashboard' %}" title="Back to class overview" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <i class="fa-solid fa-arrow-left text-[10px]"></i>
+      <span>Class Home</span>
+    </a>
+  </div>
 </section>
 
 {% if db_error %}

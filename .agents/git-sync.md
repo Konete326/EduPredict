@@ -61,35 +61,37 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 62 (26C) Table-First Directories, Student 360° Drawer & Teacher Reject Team"
-active_branch_merged_to_main: "feature/phase62-table-first-360-reject -> main"
-project_phase: "Phase 62 (26C) Complete: Table-First Directories, [Table | Cards] Toggle, 1-Click Copy ID, Student 360° Drawer & Teacher Reject-with-Reason"
+last_updated_by_agent: "Phase 63 (26D) Hyper-Automation, Live LMS Stream Simulator & Aptech Submission Team"
+active_branch_merged_to_main: "feature/phase63-hyper-automation-aptech -> main"
+project_phase: "Phase 63 (26D) Complete: Enterprise UI/UX Masterplan (Phases 60-63) & Aptech Final Submission Pack Finished"
 
 completed_modules:
-  - "Phase 1-61: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Theme Studio, My Profile, Cloudinary Avatars, Notifications Feed, Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval Guard, Official PDF Transcript, Cgroup Health, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (Phase 60 / 26A), and Global Image Cropper & Ticket Lightbox (Phase 61 / 26B)."
-  - "Phase 62 (26C): Table-First Directories, Student 360° Drawer & Teacher Reject-with-Reason:"
-      - "Backend Reject & Student 360° API: Created panels/phase62_services.py (155 lines) with reject_teacher_account (reason validation, self-action guard, approval_status=REJECTED, is_active=False, REJECT_USER audit log, DANGER APPROVAL notification, cache invalidation) and get_student_360_summary (records, prediction, user, last 5 alerts, risk_status, 2-4 risk_reasons, courses, recent_alerts, edit_attrs). Updated accounts/services.py (224 lines) to block REJECTED logins with the Admin reason; updated panels/admin_services.py (374 lines) & panels/views_admin.py (244 lines) for action='reject' and REJECTED filter/counts; updated panels/directory_card_services.py (187 lines) with Rejected badge, Reject action on pending teachers, and student_360_id/attendance/marks/GPA metadata; added student_360_summary_view at GET /students/<student_id>/summary/ (panels:student_360_summary) in panels/views_notifications.py (29 lines) & panels/urls.py (33 lines)."
-      - "Table-First Directories, 360° Drawer & Reject UI: Updated templates/components/directory_cards.html (184 lines) with default 6-column compact table ([data-directory-table-view]), [Table | Cards] toggle ([data-directory-view-toggle]), 1-click Copy ID/email ([data-copy-text]), inline attendance bars, and synced cards grid ([data-directory-cards-view]); created templates/components/student_360_drawer.html (96 lines) & static/js/directory_ui.js (253 lines) with SVG attendance ring, risk reasons, courses, alerts, footer modals, localStorage view persistence (ep_dir_view:<id>), and #analyst-predictions-table Student ID links; updated static/css/global.css (313 lines), templates/panels/admin_users.html (196 lines, Rejected pill + openRejectUserModal), templates/panels/teacher_students.html (169 lines), templates/base.html (188 lines), and templates/accounts/auth.html (313 lines, ?v=15)."
+  - "Phase 1-62: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF Transcript, Cgroup Health Telemetry, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (Phase 60 / 26A), Image Cropper & Ticket Lightbox (Phase 61 / 26B), and Table-First Directories & Student 360° Drawer (Phase 62 / 26C)."
+  - "Phase 63 (26D): Hyper-Automation, Live LMS Stream Simulator & Aptech Submission Pack:"
+      - "Zero-Click ML, Smart CSV Auto-Mapper & Live LMS Stream Backend: Updated analytics/preprocessing.py (181 lines) with RandomForestClassifier(n_estimators=50, n_jobs=-1, max_depth=4, min_samples_leaf=2); updated analytics/data_pipeline.py (356 lines) with institutional aliases (Roll_No, Enrollment, Reg_No, Att_%, Test_Score, Prev_GPA, LMS_Hours), column_mappings, and 3-row preview_rows; updated analytics/ml_engine.py (364 lines) with <75% Low Attendance Alert auto-escalation; created analytics/stream_services.py (111 lines) with simulate_lms_stream_tick() pushing live LMS/attendance events, logging STREAM_TICK, and refreshing predictions; added stream_tick endpoint (/analyst-panel/stream-tick/, analytics:stream_tick) in analytics/views.py (132 lines) & analytics/urls.py (11 lines)."
+      - "Teacher Bulk Alerts, Auto-Alert Toggle & Dynamic PDF Branding: Updated panels/teacher_alert_services.py (128 lines) & panels/views_teacher.py (247 lines) with notify_all_high_risk_students, toggle_teacher_auto_alerts, auto_alerts_enabled, and 'Read ✓✓' history badges; updated panels/pdf_services.py (255 lines) with _resolve_pdf_branding() syncing live institution_name and current_term from get_portal_settings() into both Student Report Card and Teacher Roster PDFs."
+      - "Frontend Hyper-Automation & Aptech Final Submission Pack: Updated templates/panels/teacher_alerts.html (83 lines) with 1-click Bulk Notify & Auto-Alert < 75% toggle; updated templates/panels/analyst_dashboard.html (312 lines) with pulsing Simulate Live LMS Stream button, #live-stream-status-strip, and 5s X-CSRFToken fetch polling; updated static/js/ui_widgets.js (342 lines) with 4 KB FileReader Smart CSV Column Auto-Mapper preview ([data-csv-mapper-preview]) and visibilitychange instant notification sync; updated templates/panels/student_report.html (84 lines), templates/base.html (188 lines, ?v=16), and templates/accounts/auth.html (313 lines, ?v=16); created Aptech pack in docs/aptech_submission/ (PROJECT_REPORT.md 163 lines, INSTALLATION_README.md 128 lines, DEMO_WALKTHROUGH.md 76 lines, sample_aptech_test_dataset.csv 13 lines)."
 
 verification_results:
   - "manage.py check: 0 issues reported (exit 0)."
-  - "manage.py test: 108/108 tests PASSED (63.624s)."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED (18.47s)."
+  - "manage.py test: 109/109 tests PASSED (51.440s), including test_phase63_hyper_automation_live_stream_and_aptech_pack in panels/test_phase25.py (346 lines)."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED in 10.38s (System 100% Operational)."
   - "node --check: all 11 JS scripts (analyst_evaluation.js, app.js, auth_wizard.js, charts.js, directory_ui.js, dot_kpi.js, image_cropper.js, nav.js, page_guides.js, theme_studio.js, ui_widgets.js) exited 0."
-  - "Static audit (16 modified/created files): 0 comments, views <= 244 lines, all other files <= 374 lines; .agents/rules/edupredict-rules.md 15,978 bytes (< 24,000)."
+  - "Static audit (16 modified/created code files + 4 Aptech docs): 0 comments, views <= 247 lines, all other files <= 364 lines; .agents/rules/edupredict-rules.md 15,978 bytes (< 24,000)."
 
 active_routes_and_files:
-  - "panels/phase62_services.py (155 lines), accounts/services.py (224 lines), panels/admin_services.py (374 lines), panels/views_admin.py (244 lines)"
-  - "panels/directory_card_services.py (187 lines), panels/views_notifications.py (29 lines), panels/urls.py (33 lines)"
-  - "templates/components/directory_cards.html (184 lines), templates/components/student_360_drawer.html (96 lines), static/js/directory_ui.js (253 lines)"
-  - "static/css/global.css (313 lines), templates/panels/admin_users.html (196 lines), templates/panels/teacher_students.html (169 lines)"
-  - "templates/base.html (188 lines), templates/accounts/auth.html (313 lines), panels/test_phase25.py (259 lines)"
+  - "analytics/preprocessing.py (181 lines), analytics/data_pipeline.py (356 lines), analytics/ml_engine.py (364 lines), analytics/stream_services.py (111 lines)"
+  - "analytics/views.py (132 lines), analytics/urls.py (11 lines), panels/teacher_alert_services.py (128 lines), panels/views_teacher.py (247 lines)"
+  - "panels/pdf_services.py (255 lines), panels/test_phase25.py (346 lines), static/js/ui_widgets.js (342 lines)"
+  - "templates/panels/teacher_alerts.html (83 lines), templates/panels/analyst_dashboard.html (312 lines), templates/panels/student_report.html (84 lines)"
+  - "templates/base.html (188 lines), templates/accounts/auth.html (313 lines)"
+  - "docs/aptech_submission/: PROJECT_REPORT.md (163 lines), INSTALLATION_README.md (128 lines), DEMO_WALKTHROUGH.md (76 lines), sample_aptech_test_dataset.csv (13 lines)"
 
 pending_modules_in_order:
-  - "Phase 63 (26D): Hyper-Automation (Zero-Click Auto-ML + Auto-Alert Escalation, Smart CSV Auto-Mapper + Preview, 1-Click Notify All High-Risk Students, visibilitychange Sync, Dynamic Institution/Term PDF Branding, Live LMS Stream Simulator) & Aptech Final Submission Pack"
+  - "All Planned Core, Ops, Security & Enterprise Masterplan Phases (Phases 1-63) Complete — Ready for Final Aptech Viva & Production Deployment."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
   - "Keep role navigation strictly isolated across all panels per Rule 20; preserve get_cached TTL keys, invalidate_cache on mutations, and scoped ep_theme_prefs:<user_id>:<role> isolation."
-  - "Always track .env and .agents/* in Git."
+  - "Always track .env, .agents/*, and docs/aptech_submission/* in Git."
 ```

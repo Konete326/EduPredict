@@ -1,17 +1,27 @@
 import io
 from datetime import datetime
+import panels.admin_audit_services as _audit_services
+from panels.admin_audit_services import get_portal_settings
 from reportlab.lib import colors
+
+_ORIG_GET_PORTAL_SETTINGS = get_portal_settings
+
+
+def _resolve_pdf_branding(data):
+    inst = str(data.get("institution_name") or "").strip() if isinstance(data, dict) else ""
+    term = str(data.get("current_term") or "").strip() if isinstance(data, dict) else ""
+    if not inst or not term:
+        try:
+            loader = get_portal_settings if get_portal_settings is not _ORIG_GET_PORTAL_SETTINGS else _audit_services.get_portal_settings
+            cfg = (loader() or {}).get("settings_data") or {}
+            inst = inst or str(cfg.get("institution_name") or "").strip()
+            term = term or str(cfg.get("current_term") or "").strip()
+        except Exception:
+            pass
+    return inst or "EduPredict Academic Portal", term or "Fall 2026"
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.platypus import (
-    HRFlowable,
-    KeepTogether,
-    Paragraph,
-    SimpleDocTemplate,
-    Spacer,
-    Table,
-    TableStyle,
-)
+from reportlab.platypus import HRFlowable, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
 def _safe_float(val, default=0.0):
@@ -111,13 +121,14 @@ def _extract_student_data(data):
 
 def generate_student_report_card_pdf(data):
     info = _extract_student_data(data)
+    institution_name, current_term = _resolve_pdf_branding(data)
     styles = _get_styles()
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, leftMargin=36, rightMargin=36, topMargin=32, bottomMargin=32)
+    doc = SimpleDocTemplate(buffer, pagesize=letter, leftMargin=36, rightMargin=36, topMargin=32, bottomMargin=32, pageCompression=0)
     story = []
     now_str = datetime.now().strftime("%B %d, %Y - %H:%M")
 
-    header_table = Table([[Paragraph("EduPredict Portal", styles["portal_tag"]), Paragraph(f"Report Date: {now_str}", styles["meta_lbl"])], [Paragraph("OFFICIAL ACADEMIC TRANSCRIPT & REPORT CARD", styles["title"]), Paragraph("Official Academic Record", styles["subtitle"])]], colWidths=[380, 160])
+    header_table = Table([[Paragraph(f"{institution_name} ({current_term})", styles["portal_tag"]), Paragraph(f"Report Date: {now_str}", styles["meta_lbl"])], [Paragraph("OFFICIAL ACADEMIC TRANSCRIPT & REPORT CARD", styles["title"]), Paragraph("Official Academic Record", styles["subtitle"])]], colWidths=[380, 160])
     header_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("ALIGN", (1, 0), (1, -1), "RIGHT"), ("BOTTOMPADDING", (0, 0), (-1, -1), 1)]))
     story.extend([header_table, HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#2563EB"), spaceBefore=4, spaceAfter=8)])
 
@@ -125,7 +136,7 @@ def generate_student_report_card_pdf(data):
         [Paragraph("STUDENT ID", styles["meta_lbl"]), Paragraph("STUDENT NAME", styles["meta_lbl"]), Paragraph("DEPARTMENT", styles["meta_lbl"]), Paragraph("BATCH / CLASS", styles["meta_lbl"])],
         [Paragraph(info["student_id"], styles["meta_val"]), Paragraph(info["full_name"], styles["meta_val"]), Paragraph(info["department"], styles["meta_val"]), Paragraph(info["batch"], styles["meta_val"])],
         [Paragraph("EARNED CREDITS", styles["meta_lbl"]), Paragraph("CLASS STANDING", styles["meta_lbl"]), Paragraph("ACADEMIC STATUS", styles["meta_lbl"]), Paragraph("ISSUED BY", styles["meta_lbl"])],
-        [Paragraph(f"{info['credits']:.1f}", styles["meta_val"]), Paragraph(info["rank_text"], styles["meta_val"]), Paragraph(info["risk_level"], styles["meta_val"]), Paragraph("EduPredict Registrar", styles["meta_val"])],
+        [Paragraph(f"{info['credits']:.1f}", styles["meta_val"]), Paragraph(info["rank_text"], styles["meta_val"]), Paragraph(info["risk_level"], styles["meta_val"]), Paragraph(f"{institution_name} Registrar", styles["meta_val"])],
     ], colWidths=[110, 170, 170, 90])
     meta_table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")), ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")), ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")), ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4)]))
     story.extend([meta_table, Spacer(1, 6)])
@@ -160,9 +171,9 @@ def generate_student_report_card_pdf(data):
     advisory_table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), advisory_bg), ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#93C5FD")), ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5), ("LEFTPADDING", (0, 0), (-1, -1), 8), ("RIGHTPADDING", (0, 0), (-1, -1), 8)]))
     story.extend([advisory_table, Spacer(1, 14)])
 
-    sig_table = Table([[Paragraph("________________________________________", styles["sig_line"]), "", Paragraph("________________________________________", styles["sig_line"])], [Paragraph("Academic Advisor / Faculty Mentor", styles["sig_role"]), "", Paragraph("Controller of Examinations / Dean", styles["sig_role"])], [Paragraph("EduPredict Portal Academic Verification", styles["sig_line"]), "", Paragraph("Office of Academic Records & Registrar", styles["sig_line"])]], colWidths=[240, 60, 240])
+    sig_table = Table([[Paragraph("________________________________________", styles["sig_line"]), "", Paragraph("________________________________________", styles["sig_line"])], [Paragraph("Academic Advisor / Faculty Mentor", styles["sig_role"]), "", Paragraph("Controller of Examinations / Dean", styles["sig_role"])], [Paragraph(f"{institution_name} Academic Verification", styles["sig_line"]), "", Paragraph(f"{institution_name} Registrar", styles["sig_line"])]], colWidths=[240, 60, 240])
     sig_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("TOPPADDING", (0, 0), (-1, -1), 1), ("BOTTOMPADDING", (0, 0), (-1, -1), 1)]))
-    footer_text = f"EduPredict Intelligence Portal | Document ID: EP-{info['student_id']}-{datetime.now().strftime('%Y%m%d%H%M')} | Certified System Copy"
+    footer_text = f"{institution_name} ({current_term}) | Document ID: EP-{info['student_id']}-{datetime.now().strftime('%Y%m%d%H%M')} | Certified System Copy"
     story.extend([KeepTogether(sig_table), Spacer(1, 6), Paragraph(footer_text, styles["footer"])])
 
     doc.build(story)
@@ -204,13 +215,14 @@ def _extract_teacher_data(data):
 
 def generate_teacher_roster_pdf(data):
     info = _extract_teacher_data(data)
+    institution_name, current_term = _resolve_pdf_branding(data)
     styles = _get_styles()
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, leftMargin=36, rightMargin=36, topMargin=32, bottomMargin=32)
+    doc = SimpleDocTemplate(buffer, pagesize=letter, leftMargin=36, rightMargin=36, topMargin=32, bottomMargin=32, pageCompression=0)
     story = []
     now_str = datetime.now().strftime("%B %d, %Y - %H:%M")
 
-    header_table = Table([[Paragraph("EduPredict Portal", styles["portal_tag"]), Paragraph(f"Generated: {now_str}", styles["meta_lbl"])], [Paragraph("CLASS PERFORMANCE ROSTER", styles["title"]), Paragraph(f"Batch: {info['batch']} | Course: {info['course']}", styles["subtitle"])]], colWidths=[370, 170])
+    header_table = Table([[Paragraph(f"{institution_name} ({current_term})", styles["portal_tag"]), Paragraph(f"Generated: {now_str}", styles["meta_lbl"])], [Paragraph("CLASS PERFORMANCE ROSTER", styles["title"]), Paragraph(f"Batch: {info['batch']} | Course: {info['course']} | Issued By: {institution_name} Registrar", styles["subtitle"])]], colWidths=[370, 170])
     header_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("ALIGN", (1, 0), (1, -1), "RIGHT"), ("BOTTOMPADDING", (0, 0), (-1, -1), 1)]))
     story.extend([header_table, HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#2563EB"), spaceBefore=4, spaceAfter=8)])
 
@@ -232,9 +244,9 @@ def generate_teacher_roster_pdf(data):
     roster_table.setStyle(TableStyle(roster_styles))
     story.extend([roster_table, Spacer(1, 12)])
 
-    sig_table = Table([[Paragraph("________________________________________", styles["sig_line"]), "", Paragraph("________________________________________", styles["sig_line"])], [Paragraph("Class Instructor / Teacher Signature", styles["sig_role"]), "", Paragraph("Academic Head / Department Chair", styles["sig_role"])], [Paragraph(f"Date: {now_str}", styles["sig_line"]), "", Paragraph("Official Class Record Verification", styles["sig_line"])]], colWidths=[240, 60, 240])
+    sig_table = Table([[Paragraph("________________________________________", styles["sig_line"]), "", Paragraph("________________________________________", styles["sig_line"])], [Paragraph("Class Instructor / Teacher Signature", styles["sig_role"]), "", Paragraph("Academic Head / Department Chair", styles["sig_role"])], [Paragraph(f"Date: {now_str}", styles["sig_line"]), "", Paragraph(f"{institution_name} Registrar", styles["sig_line"])]], colWidths=[240, 60, 240])
     sig_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("TOPPADDING", (0, 0), (-1, -1), 1), ("BOTTOMPADDING", (0, 0), (-1, -1), 1)]))
-    footer_text = f"EduPredict Intelligence Portal | Class Roster Export | Total Students: {info['total']} | Batch: {info['batch']} | Course: {info['course']}"
+    footer_text = f"{institution_name} ({current_term}) | Class Roster Export | Total Students: {info['total']} | Batch: {info['batch']} | Course: {info['course']}"
     story.extend([KeepTogether(sig_table), Spacer(1, 6), Paragraph(footer_text, styles["footer"])])
 
     doc.build(story)
