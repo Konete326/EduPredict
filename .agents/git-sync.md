@@ -61,30 +61,31 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 65 Global Branding Context & Live Stream Charts Team"
-active_branch_merged_to_main: "feature/phase65-stream-charts-global-branding -> main"
-project_phase: "Phase 65 Complete: Global Cached Portal Branding Context & Live LMS Stream Chart Auto-Refresh"
+last_updated_by_agent: "Phase 66 Live Stream Scatter/KPI Sync & Core Branding Refactor Team"
+active_branch_merged_to_main: "feature/phase66-scatter-kpi-core-branding -> main"
+project_phase: "Phase 66 Complete: Live LMS Stream Scatter/KPI Auto-Sync & Core Branding Helper Refactor"
 
 completed_modules:
-  - "Phase 1-64: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF & HTML Branding Sync, Cgroup Health Telemetry, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (60/26A), Image Cropper & Lightbox (61/26B), Table-First Directories & Student 360° Drawer (62/26C), Hyper-Automation, Live LMS Stream Simulator & Aptech Pack (63/26D), Student Report HTML Branding Sync & PEP 8 PDF Imports (64)."
-  - "Phase 65: Global Cached Portal Branding Context & Live Stream Chart Auto-Refresh:"
-      - "core/context_processors.py (92 lines, 0 comments): added _resolve_global_branding(db_connected) returning ('EduPredict Academic Portal', 'Fall 2026') when disconnected or on error and calling _resolve_pdf_branding({}) (backed by get_cached admin:settings TTL=30s) inside try/except when connected; global_context(request) now exposes portal_institution_name and portal_current_term across all routes."
-      - "analytics/stream_services.py (118 lines, 0 comments): simulate_lms_stream_tick(uploaded_by='Analyst') now returns low_risk_count, medium_risk_count, dropout_counts (LOW, MEDIUM, HIGH), and course_demand alongside events and predictions_generated."
-      - "templates/panels/analyst_dashboard.html (326 lines, 0 comments): initLiveStreamSimulator() -> render(data) updates Chart.getChart(document.getElementById('chart-dropout-doughnut')) and Chart.getChart(document.getElementById('chart-course-demand')) live with chart.update() on every stream tick."
-      - "panels/test_phase25.py (394 lines, 0 comments): added test_phase65_global_branding_and_live_stream_charts verifying disconnected fallback defaults, custom system_settings branding via RequestFactory + global_context and live GETs on teacher_dashboard & student_dashboard, live Chart.getChart wiring in analyst_dashboard HTML, and dropout_counts + course_demand JSON payload from analytics:stream_tick."
+  - "Phase 1-65: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF & HTML Branding Sync, Cgroup Health Telemetry, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (60/26A), Image Cropper & Lightbox (61/26B), Table-First Directories & Student 360° Drawer (62/26C), Hyper-Automation, Live LMS Stream Simulator & Aptech Pack (63/26D), Student Report HTML Branding Sync & PEP 8 PDF Imports (64), Global Cached Portal Branding Context & Live Stream Chart Auto-Refresh (65)."
+  - "Phase 66: Live Stream Scatter/KPI Sync & Core Branding Helper Refactor:"
+      - "core/db.py (272 lines, 0 comments): added DEFAULT_PORTAL_BRANDING and resolve_portal_branding(data=None, db_connected=True) backed by get_cached('portal:branding', ..., ttl=30.0) on system_settings."
+      - "core/context_processors.py (86 lines, 0 comments): removed all panels.pdf_services imports, imported DEFAULT_PORTAL_BRANDING & resolve_portal_branding from core.db, and kept _resolve_global_branding(db_connected) + global_context branding keys with zero reverse imports from panels/."
+      - "analytics/stream_services.py (145 lines, 0 comments): added _build_stream_metrics(records_col, pred_map) inside simulate_lms_stream_tick returning avg_predicted_gpa ('0.00' fallback) and scatter_points (up to 60 dicts with x, y, label, risk, falling back to previous_gpa when predicted_gpa is None)."
+      - "templates/panels/analyst_dashboard.html (342 lines, 0 comments): updated initLiveStreamSimulator() -> render(data) to refresh the 4 top KPI counters ([data-kpi-label='...'] [data-kpi-counter]) and Chart.getChart(document.getElementById('chart-correlation-scatter')) using theme tokens (--status-danger, --status-warning, --status-success), preserving doughnut and course demand chart updates."
+      - "panels/test_phase66.py (101 lines, 0 comments): added Phase66IntegrationTests verifying zero panels imports in core/context_processors.py via AST, resolve_portal_branding offline/connected behavior, stream_tick avg_predicted_gpa & scatter_points JSON payload, and analyst_dashboard scatter + KPI live update wiring (panels/test_phase25.py untouched at 394 lines)."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check: all 11 JS scripts (analyst_evaluation.js, app.js, auth_wizard.js, charts.js, directory_ui.js, dot_kpi.js, image_cropper.js, nav.js, page_guides.js, theme_studio.js, ui_widgets.js) exited 0."
-  - "manage.py test: Ran 111 tests in 54.085s (OK)."
-  - "manage.py verify_uat: UAT Results: 7/7 passed in 10.38s - System 100% Operational."
-  - "Static audit: core/context_processors.py (92 lines, 0 comments), analytics/stream_services.py (118 lines, 0 comments), templates/panels/analyst_dashboard.html (326 lines, 0 comments), panels/test_phase25.py (394 lines, 0 comments); .agents/rules/edupredict-rules.md 15,978 bytes (< 24,000); .env tracked."
+  - "manage.py test: Ran 113 tests in 57.979s (OK)."
+  - "manage.py verify_uat: UAT Results: 7/7 passed in 11.28s - System 100% Operational."
+  - "Static audit: core/db.py (272 lines, 0 comments), core/context_processors.py (86 lines, 0 comments), analytics/stream_services.py (145 lines, 0 comments), templates/panels/analyst_dashboard.html (342 lines, 0 comments), panels/test_phase66.py (101 lines, 0 comments), panels/test_phase25.py (394 lines, 0 comments); .agents/rules/edupredict-rules.md 15,978 bytes (< 24,000); .env tracked."
 
 active_routes_and_files:
-  - "core/context_processors.py (92 lines), analytics/stream_services.py (118 lines), templates/panels/analyst_dashboard.html (326 lines), panels/test_phase25.py (394 lines)"
+  - "core/db.py (272 lines), core/context_processors.py (86 lines), analytics/stream_services.py (145 lines), templates/panels/analyst_dashboard.html (342 lines), panels/test_phase66.py (101 lines)"
 
 pending_modules_in_order:
-  - "All Planned Phases (Phases 1-65) Complete — Ready for Final Aptech Viva & Production Deployment."
+  - "All Planned Phases (Phases 1-66) Complete — Ready for Final Aptech Viva & Production Deployment."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

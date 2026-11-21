@@ -277,11 +277,27 @@
         if (strip) strip.classList.remove('hidden');
         if (summaryEl) summaryEl.textContent = data.message || ('Streamed ' + (data.events_pushed || 0) + ' live events.');
         if (kpiEl) kpiEl.textContent = 'Preds ' + (data.predictions_generated || 0) + ' · High ' + (data.high_risk_count || 0) + ' · Anom ' + (data.anomalies_count || 0);
+        [['Student Records', data.predictions_generated], ['High Risk', data.high_risk_count], ['Unusual Drops', data.anomalies_count], ['Average Pred. GPA', data.avg_predicted_gpa]].forEach(([label, val]) => {
+          if (val == null) return;
+          const counterEl = document.querySelector('[data-kpi-label="' + label + '"] [data-kpi-counter]');
+          if (counterEl) counterEl.textContent = String(val);
+        });
         if (typeof Chart !== 'undefined' && typeof Chart.getChart === 'function') {
           const riskChart = data.dropout_counts ? Chart.getChart(document.getElementById('chart-dropout-doughnut')) : null;
           if (riskChart && riskChart.data && Array.isArray(riskChart.data.datasets) && riskChart.data.datasets[0]) {
             riskChart.data.datasets[0].data = [data.dropout_counts.LOW || 0, data.dropout_counts.MEDIUM || 0, data.dropout_counts.HIGH || 0];
             riskChart.update();
+          }
+          const scatterChart = Array.isArray(data.scatter_points) ? Chart.getChart(document.getElementById('chart-correlation-scatter')) : null;
+          if (scatterChart && scatterChart.data && Array.isArray(scatterChart.data.datasets) && scatterChart.data.datasets[0]) {
+            const tokens = typeof window.getChartThemeTokens === 'function' ? window.getChartThemeTokens() : {};
+            const cs = getComputedStyle(document.documentElement);
+            const dangerCol = tokens.statusDanger || cs.getPropertyValue('--status-danger').trim() || '#dc2626';
+            const warnCol = tokens.statusWarning || cs.getPropertyValue('--status-warning').trim() || '#d97706';
+            const okCol = tokens.statusSuccess || cs.getPropertyValue('--status-success').trim() || '#16a34a';
+            scatterChart.data.datasets[0].data = data.scatter_points.map((pt) => ({ x: pt.x, y: pt.y, label: pt.label }));
+            scatterChart.data.datasets[0].backgroundColor = data.scatter_points.map((pt) => (pt.risk === 'HIGH' ? dangerCol : (pt.risk === 'MEDIUM' ? warnCol : okCol)));
+            scatterChart.update();
           }
           const demandChart = Array.isArray(data.course_demand) && data.course_demand.length ? Chart.getChart(document.getElementById('chart-course-demand')) : null;
           if (demandChart && demandChart.data && Array.isArray(demandChart.data.datasets) && demandChart.data.datasets.length >= 2) {

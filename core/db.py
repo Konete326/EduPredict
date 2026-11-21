@@ -249,3 +249,24 @@ def ensure_indexes():
 
 def check_db_health():
     return MongoDBClient().check_health()
+
+
+DEFAULT_PORTAL_BRANDING = ("EduPredict Academic Portal", "Fall 2026")
+
+
+def resolve_portal_branding(data=None, db_connected=True):
+    inst = str(data.get("institution_name") or "").strip() if isinstance(data, dict) else ""
+    term = str(data.get("current_term") or "").strip() if isinstance(data, dict) else ""
+    if (not inst or not term) and db_connected:
+        try:
+            doc = get_cached(
+                "portal:branding",
+                lambda: get_collection("system_settings").find_one({"setting_key": "portal_config"}, {"_id": 0}) or {},
+                ttl=30.0,
+            )
+            if isinstance(doc, dict):
+                inst = inst or str(doc.get("institution_name") or "").strip()
+                term = term or str(doc.get("current_term") or "").strip()
+        except Exception:
+            pass
+    return inst or DEFAULT_PORTAL_BRANDING[0], term or DEFAULT_PORTAL_BRANDING[1]

@@ -1,19 +1,13 @@
 from pymongo import DESCENDING
-from core.db import check_db_health, get_cached, notifications_col
+from core.db import DEFAULT_PORTAL_BRANDING, check_db_health, get_cached, notifications_col, resolve_portal_branding
 from core.theme_services import get_theme_studio_catalog, get_user_theme_prefs
-import panels.pdf_services as _pdf_services
-from panels.pdf_services import _resolve_pdf_branding
-
-_ORIG_RESOLVE_PDF_BRANDING = _resolve_pdf_branding
-DEFAULT_PORTAL_BRANDING = ("EduPredict Academic Portal", "Fall 2026")
 
 
 def _resolve_global_branding(db_connected):
     if not db_connected:
         return DEFAULT_PORTAL_BRANDING
     try:
-        resolver = _resolve_pdf_branding if _resolve_pdf_branding is not _ORIG_RESOLVE_PDF_BRANDING else _pdf_services._resolve_pdf_branding
-        inst_name, term_name = resolver({})
+        inst_name, term_name = resolve_portal_branding(db_connected=db_connected)
         return str(inst_name or DEFAULT_PORTAL_BRANDING[0]).strip() or DEFAULT_PORTAL_BRANDING[0], str(term_name or DEFAULT_PORTAL_BRANDING[1]).strip() or DEFAULT_PORTAL_BRANDING[1]
     except Exception:
         return DEFAULT_PORTAL_BRANDING
