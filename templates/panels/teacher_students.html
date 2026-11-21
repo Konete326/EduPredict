@@ -86,7 +86,7 @@
     </div>
   </form>
 
-  {% include 'components/directory_cards.html' with grid_id="teacher-students-table" grid_title="Student Directory" cards=student_cards page_size=8 empty_message="No students match these filters. Upload class marks or reset filters." %}
+  {% include 'components/directory_cards.html' with grid_id="teacher-students-table" grid_title="Student Directory" cards=student_cards page_size=5 empty_message="No students match these filters. Upload class marks or reset filters." %}
 </section>
 {% endblock %}
 

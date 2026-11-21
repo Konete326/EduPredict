@@ -43,6 +43,16 @@ class Phase25IntegrationTests(TestCase):
         session.save()
         return client
 
+    def _login_role(self, role, user_id="USR-2000", student_id=None):
+        client = Client()
+        session = client.session
+        user = {"user_id": user_id, "role": role, "email": f"{role.lower()}@edupredict.edu", "full_name": f"Test {role.title()}"}
+        if student_id:
+            user["student_id"] = student_id
+        session["user"] = user
+        session.save()
+        return client
+
     def test_student_self_signup_approves_and_redirects(self):
         client = Client()
         resp = client.post(reverse("accounts:auth_view"), {
@@ -114,7 +124,7 @@ class Phase25IntegrationTests(TestCase):
         resp = Client().get(reverse("accounts:auth_view"))
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
-        for marker in ("data-auth-stepper", "auth_wizard.js?v=14", "teacher-approval-notice"):
+        for marker in ("data-auth-stepper", "auth_wizard.js?v=15", "teacher-approval-notice"):
             self.assertIn(marker, html)
         reg_start = html.find('id="reg-role"')
         reg_end = html.find("</select>", reg_start)
@@ -128,10 +138,7 @@ class Phase25IntegrationTests(TestCase):
         overview["rank"] = {"rank": 2, "total": 30}
         overview["subject_rows"][0]["my_marks"] = 88.0
         mock_overview.return_value = overview
-        client = Client()
-        session = client.session
-        session["user"] = {"user_id": "USR-1003", "student_id": "STD-2026-001", "role": "STUDENT", "email": "s@edupredict.edu", "full_name": "Zainab Raza"}
-        session.save()
+        client = self._login_role("STUDENT", user_id="USR-1003", student_id="STD-2026-001")
         for route_name in ("panels:student_dashboard", "panels:student_report"):
             resp = client.get(reverse(route_name))
             self.assertEqual(resp.status_code, 200)
@@ -140,3 +147,113 @@ class Phase25IntegrationTests(TestCase):
         self.assertIsInstance(pdf_bytes, bytes)
         self.assertTrue(pdf_bytes.startswith(b"%PDF-"))
         self.assertGreater(len(pdf_bytes), 500)
+
+    def test_admin_reject_pending_teacher_with_reason_and_login_block(self):
+        anon = Client()
+        anon.post(reverse("accounts:auth_view"), {
+            "action": "register", "full_name": "Dr. Farhan Ali", "email": "farhan@edupredict.edu",
+            "password": "password123", "confirm_password": "password123", "role": "TEACHER",
+            "department": "Computer Science", "batch": "ALL",
+        })
+        teacher = self.cols["users"].find_one({"email": "farhan@edupredict.edu"})
+        self.assertIsNotNone(teacher)
+
+        admin_client = self._login_admin_client()
+        pending_resp = admin_client.get(reverse("panels:admin_users"), {"role": "PENDING"})
+        self.assertEqual(pending_resp.status_code, 200)
+        pending_html = pending_resp.content.decode("utf-8")
+        self.assertIn("openRejectUserModal(this)", pending_html)
+        self.assertIn("Rejected", pending_html)
+
+        reason = "Faculty verification document did not match."
+        rej_resp = admin_client.post(reverse("panels:admin_users"), {
+            "action": "reject", "user_id": teacher["user_id"], "rejection_reason": reason, "filter_role": "PENDING",
+        })
+        self.assertEqual(rej_resp.status_code, 302)
+
+        rejected_user = self.cols["users"].find_one({"user_id": teacher["user_id"]})
+        self.assertEqual(rejected_user["approval_status"], "REJECTED")
+        self.assertFalse(rejected_user["is_active"])
+        self.assertEqual(rejected_user["rejection_reason"], reason)
+
+        audit = self.cols["activity_logs"].find_one({"action": "REJECT_USER"})
+        self.assertIsNotNone(audit)
+        self.assertIn(reason, audit["summary"])
+        notif = self.cols["notifications"].find_one({"target_user_id": teacher["user_id"], "category": "APPROVAL"})
+        self.assertIsNotNone(notif)
+        self.assertEqual(notif["severity"], "DANGER")
+        self.assertIn(reason, notif["message"])
+
+        admin_client.post(reverse("panels:admin_users"), {"action": "reject", "user_id": "USR-1000", "rejection_reason": "Self guard check"})
+        self_admin = self.cols["users"].find_one({"user_id": "USR-1000"})
+        self.assertTrue(self_admin["is_active"])
+        self.assertEqual(self_admin["approval_status"], "APPROVED")
+
+        blocked = anon.post(reverse("accounts:auth_view"), {"action": "login", "email": "farhan@edupredict.edu", "password": "password123"})
+        self.assertEqual(blocked.status_code, 200)
+        self.assertNotIn("user", anon.session)
+        self.assertIn(reason, blocked.content.decode("utf-8"))
+
+        rej_page = admin_client.get(reverse("panels:admin_users"), {"role": "REJECTED"})
+        self.assertEqual(rej_page.status_code, 200)
+        rej_html = rej_page.content.decode("utf-8")
+        self.assertIn("openRejectUserModal", rej_html)
+        self.assertIn("Rejected", rej_html)
+        self.assertIn(reason, rej_html)
+
+    def test_phase62_table_first_toggle_copy_and_student_360(self):
+        now = datetime(2026, 11, 21, 10, 0, tzinfo=timezone.utc)
+        self.cols["student_records"].insert_one({
+            "student_id": "STD-2026-001", "full_name": "Zainab Raza", "batch": "2026-A", "course_code": "CS-101",
+            "attendance_pct": 62.5, "internal_marks": 58.0, "assignment_score": 64.0, "lms_hours_weekly": 6.5, "previous_gpa": 2.9, "updated_at": now,
+        })
+        self.cols["predictions"].insert_one({
+            "student_id": "STD-2026-001", "predicted_gpa": 2.45, "dropout_risk_score": 0.68,
+            "risk_level": "MEDIUM", "is_anomaly": False, "recommendation": "Increase attendance above 75%.", "generated_at": now,
+        })
+        self.cols["notifications"].insert_one({
+            "target_user_id": "STD-2026-001", "title": "Attendance Warning",
+            "message": "Attendance fell to 62.5%.", "severity": "WARNING", "is_read": False, "created_at": now,
+        })
+
+        admin = self._login_admin_client()
+        teacher = self._login_role("TEACHER", user_id="USR-T1")
+        analyst = self._login_role("ANALYST", user_id="USR-AN1")
+        student = self._login_role("STUDENT", user_id="USR-1003", student_id="STD-2026-001")
+
+        markers = (
+            'data-directory-mode="table"', "data-directory-view-toggle", "data-directory-table-view",
+            "data-directory-cards-view", "data-copy-text", 'id="student-360-drawer"',
+        )
+        for client, path in ((admin, reverse("panels:admin_users")), (teacher, reverse("panels:teacher_students"))):
+            resp = client.get(path)
+            self.assertEqual(resp.status_code, 200)
+            html = resp.content.decode("utf-8")
+            for marker in markers:
+                self.assertIn(marker, html)
+            if path.endswith("/students/"):
+                self.assertIn("openStudent360Drawer(", html)
+                self.assertIn('data-copy-text="STD-2026-001"', html)
+
+        summary_url = reverse("panels:student_360_summary", args=["STD-2026-001"])
+        for client in (teacher, analyst, admin):
+            res = client.get(summary_url)
+            self.assertEqual(res.status_code, 200)
+            data = res.json()
+            self.assertTrue(data["ok"])
+            summary = data["summary"]
+            for key in ("avg_attendance", "predicted_gpa", "risk_level", "risk_reasons", "courses", "recent_alerts"):
+                self.assertIn(key, summary)
+            self.assertAlmostEqual(summary["avg_attendance"], 62.5)
+            self.assertAlmostEqual(summary["predicted_gpa"], 2.45)
+            self.assertEqual(summary["risk_level"], "MEDIUM")
+            self.assertGreaterEqual(len(summary["risk_reasons"]), 2)
+            self.assertEqual(len(summary["courses"]), 1)
+            self.assertEqual(len(summary["recent_alerts"]), 1)
+
+        denied = student.get(summary_url)
+        self.assertEqual(denied.status_code, 302)
+
+        missing = teacher.get(reverse("panels:student_360_summary", args=["STD-9999-MISSING"]))
+        self.assertEqual(missing.status_code, 404)
+        self.assertFalse(missing.json()["ok"])

@@ -51,9 +51,14 @@
       <span>Pending Approval</span>
       <span class="tabular-nums opacity-80">({{ role_counts.PENDING|default:0 }})</span>
     </a>
+    <a href="{% url 'panels:admin_users' %}?role=REJECTED" title="Show rejected teacher accounts" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'REJECTED' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+      {% if role_counts.REJECTED %}<span class="h-2 w-2 rounded-full bg-[var(--status-danger)]"></span>{% endif %}
+      <span>Rejected</span>
+      <span class="tabular-nums opacity-80">({{ role_counts.REJECTED|default:0 }})</span>
+    </a>
   </div>
 
-  {% include 'components/directory_cards.html' with grid_id="admin-users-table" grid_title="User Directory" cards=user_cards page_size=8 empty_message="No users found for this role." %}
+  {% include 'components/directory_cards.html' with grid_id="admin-users-table" grid_title="User Directory" cards=user_cards page_size=5 empty_message="No users found for this role." %}
 </section>
 {% endblock %}
 
@@ -154,6 +159,21 @@
           user_id: d.userId || '',
           filter_role: d.filterRole || selectedRole
         }
+      });
+    };
+
+    window.openRejectUserModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      window.openFormModal({
+        title: 'Reject Teacher Account (' + (d.fullName || d.userId || '') + ')',
+        actionUrl: adminUsersUrl,
+        submitText: 'Reject Account',
+        fields: [
+          { type: 'hidden', name: 'action', value: 'reject' },
+          { type: 'hidden', name: 'user_id', value: d.userId || '' },
+          { type: 'hidden', name: 'filter_role', value: d.filterRole || selectedRole },
+          { name: 'rejection_reason', label: 'Rejection Reason', type: 'textarea', rows: 3, placeholder: 'Explain why this teacher application was rejected...', required: true }
+        ]
       });
     };
 

@@ -125,8 +125,12 @@ def authenticate_user(email, password):
     user_doc = users_col().find_one({"email": email.strip().lower()})
     if user_doc is None:
         return None, "Invalid email or password."
-    if str(user_doc.get("approval_status") or "").strip().upper() == "PENDING":
+    approval_status = str(user_doc.get("approval_status") or "").strip().upper()
+    if approval_status == "PENDING":
         return None, "Your teacher account is pending Admin approval. Please wait until an administrator approves your account."
+    if approval_status == "REJECTED":
+        reason = str(user_doc.get("rejection_reason") or "").strip()
+        return None, (f"Your teacher account request was rejected by Admin. Reason: {reason}" if reason else "Your teacher account request was rejected by Admin.")
     if not user_doc.get("is_active", True):
         return None, "Your account is inactive. Please contact an administrator."
     if not check_password(password, user_doc.get("password_hash", "")):

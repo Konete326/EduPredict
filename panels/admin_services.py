@@ -11,6 +11,7 @@ from core.db import get_cached, invalidate_cache, notifications_col, student_rec
 from panels.admin_audit_services import record_audit_log
 from panels.admin_seed import _format_dt, _safe_int, build_backup_payload, courses_col, ensure_admin_seed_data, get_admin_overview_context
 from panels.notification_services import create_notification
+from panels.phase62_services import reject_teacher_account
 
 VALID_TICKET_STATUSES = ("OPEN", "RESOLVED")
 VALID_COURSE_STATUSES = ("ACTIVE", "ARCHIVED")
@@ -43,7 +44,7 @@ def _is_self_target(existing, clean_uid, actor_user_id, actor_email):
 
 def _load_users(normalized):
     ensure_admin_seed_data()
-    role_counts, users = {"ALL": 0, "ADMIN": 0, "TEACHER": 0, "STUDENT": 0, "ANALYST": 0, "PENDING": 0}, []
+    role_counts, users = {"ALL": 0, "ADMIN": 0, "TEACHER": 0, "STUDENT": 0, "ANALYST": 0, "PENDING": 0, "REJECTED": 0}, []
     for doc in users_col().find({}, {"_id": 0, "password_hash": 0}).sort("created_at", DESCENDING):
         role = str(doc.get("role") or "").strip().upper()
         is_active = bool(doc.get("is_active", True))
@@ -53,8 +54,10 @@ def _load_users(normalized):
             role_counts[role] += 1
         if approval_status == "PENDING":
             role_counts["PENDING"] += 1
-        if normalized == "ALL" or (normalized == "PENDING" and approval_status == "PENDING") or role == normalized:
-            users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "phone": str(doc.get("phone") or ""), "bio": str(doc.get("bio") or ""), "is_active": is_active, "approval_status": approval_status, "student_id": str(doc.get("student_id") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at"))})
+        elif approval_status == "REJECTED":
+            role_counts["REJECTED"] += 1
+        if normalized == "ALL" or (normalized in ("PENDING", "REJECTED") and approval_status == normalized) or role == normalized:
+            users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "phone": str(doc.get("phone") or ""), "bio": str(doc.get("bio") or ""), "is_active": is_active, "approval_status": approval_status, "rejection_reason": str(doc.get("rejection_reason") or ""), "student_id": str(doc.get("student_id") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at"))})
     return users, role_counts
 
 

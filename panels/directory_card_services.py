@@ -50,6 +50,7 @@ def build_admin_user_cards(users, filter_role, actor_user_id, actor_email=""):
         is_active = bool(u.get("is_active", True))
         approval_status = str(u.get("approval_status") or ("APPROVED" if is_active else "INACTIVE")).upper()
         is_pending = approval_status == "PENDING"
+        is_rejected = approval_status == "REJECTED"
         is_self = (clean_actor_id and uid == clean_actor_id) or (clean_actor_email and email.strip().lower() == clean_actor_email)
         edit_attrs = {"data-user-id": uid, "data-full-name": full_name, "data-email": email, "data-role": role, "data-department": dept, "data-batch": batch, "data-filter-role": filter_role}
         if is_self:
@@ -64,13 +65,19 @@ def build_admin_user_cards(users, filter_role, actor_user_id, actor_email=""):
             toggle_attrs = {"data-user-id": uid, "data-full-name": full_name, "data-is-active": "true" if is_active else "false", "data-filter-role": filter_role}
             if is_pending:
                 toggle_attrs["data-approval-status"] = approval_status
-            actions.extend([
-                _action(lbl, ico, "openToggleUserModal(this)", f"{lbl} {full_name}", toggle_attrs, variant=toggle_variant),
-                _action("Delete", "fa-solid fa-trash", "openDeleteUserModal(this)", f"Delete {full_name}", {"data-user-id": uid, "data-full-name": full_name, "data-filter-role": filter_role}, variant="danger"),
-            ])
-        badge = {"text": "Pending Approval", "status": "warning"} if is_pending else {"text": "Active" if is_active else "Inactive", "status": "success" if is_active else "danger"}
+            actions.append(_action(lbl, ico, "openToggleUserModal(this)", f"{lbl} {full_name}", toggle_attrs, variant=toggle_variant))
+            if is_pending:
+                actions.append(_action("Reject", "fa-solid fa-user-xmark", "openRejectUserModal(this)", f"Reject {full_name}", {"data-user-id": uid, "data-full-name": full_name, "data-filter-role": filter_role}, variant="danger"))
+            actions.append(_action("Delete", "fa-solid fa-trash", "openDeleteUserModal(this)", f"Delete {full_name}", {"data-user-id": uid, "data-full-name": full_name, "data-filter-role": filter_role}, variant="danger"))
+        if is_pending:
+            badge = {"text": "Pending Approval", "status": "warning"}
+        elif is_rejected:
+            badge = {"text": "Rejected", "status": "danger"}
+        else:
+            badge = {"text": "Active" if is_active else "Inactive", "status": "success" if is_active else "danger"}
         cards.append({
             "id": uid,
+            "kind": "user",
             "title": f"{full_name} (You)" if is_self else full_name,
             "subtitle": email,
             "code": uid,
@@ -78,6 +85,7 @@ def build_admin_user_cards(users, filter_role, actor_user_id, actor_email=""):
             "initials": _initials(full_name, "U"),
             "badge": badge,
             "role_badge": {"text": role, "status": role_status_map.get(role, "info")},
+            "rejection_reason": str(u.get("rejection_reason") or ""),
             "meta": [
                 {"label": "Role", "value": role},
                 {"label": "Dept", "value": dept},
@@ -155,12 +163,19 @@ def build_teacher_student_cards(students=None, fallback_rows=None, include_alert
             actions.append(_action("Delete", "fa-solid fa-trash", "openDeleteStudentModal(this)", f"Delete {full_name}", {"data-student-id": sid, "data-full-name": full_name}, variant="danger"))
         cards.append({
             "id": sid,
+            "kind": "student",
+            "student_360_id": sid,
             "title": full_name,
             "subtitle": f"{course_code} · Batch {batch}",
             "code": sid,
             "avatar_url": str(s.get("avatar_url") or avatar_map.get(sid) or ""),
             "initials": _initials(full_name, "S"),
             "badge": badge,
+            "attendance_pct": round(att, 1),
+            "marks_display": f"{marks:.1f}",
+            "gpa_display": gpa_display,
+            "course_code": course_code,
+            "batch": batch,
             "meta": [
                 {"label": "Course", "value": course_code},
                 {"label": "Batch", "value": batch},

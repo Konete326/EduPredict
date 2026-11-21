@@ -16,6 +16,7 @@ urlpatterns = [
     path('support/submit/', views_admin.submit_support_ticket, name='submit_support_ticket'),
     path('notifications/mark-read/', views_admin.mark_notifications_read_view, name='mark_notifications_read'),
     path('notifications/feed/', views_notifications.notifications_feed_view, name='notifications_feed'),
+    path('students/<str:student_id>/summary/', views_notifications.student_360_summary_view, name='student_360_summary'),
     path('teacher-panel/', views_teacher.teacher_dashboard, name='teacher_dashboard'),
     path('teacher-panel/students/', views_teacher.teacher_students, name='teacher_students'),
     path('teacher-panel/students/export-pdf/', views_teacher.teacher_roster_pdf, name='teacher_roster_pdf'),

@@ -6,7 +6,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from core.decorators import get_dashboard_route, login_required_custom, role_required
 from panels.admin_audit_services import VALID_LOG_CATEGORIES, clear_manual_audit_logs, export_activity_logs_csv, get_default_admin_logs_context, get_default_portal_settings_context, get_portal_settings, list_activity_logs, record_audit_log, reset_portal_settings, update_portal_settings
 from panels.admin_seed import get_default_admin_overview_context
-from panels.admin_services import build_backup_payload, build_course_table_data, build_ticket_table_data, build_user_table_data, create_course_record, create_ticket_record, create_user_record, delete_course_record, delete_ticket_record, delete_user_record, get_admin_overview_context, list_courses_with_stats, list_tickets, list_users, mark_notifications_read, toggle_ticket_status, toggle_user_status, update_course_record, update_user_record
+from panels.admin_services import build_backup_payload, build_course_table_data, build_ticket_table_data, build_user_table_data, create_course_record, create_ticket_record, create_user_record, delete_course_record, delete_ticket_record, delete_user_record, get_admin_overview_context, list_courses_with_stats, list_tickets, list_users, mark_notifications_read, reject_teacher_account, toggle_ticket_status, toggle_user_status, update_course_record, update_user_record
 from panels.directory_card_services import build_admin_user_cards
 from panels.notification_services import delete_ticket_reply, reply_to_ticket
 
@@ -62,6 +62,9 @@ def admin_users(request):
             elif action == "toggle":
                 new_state, err = toggle_user_status(user_id, actor_user_id=actor_id, actor_email=actor_email, actor_name=actor)
                 _flash_result(request, new_state is not None, err, f"User {user_id} {'activated' if new_state else 'deactivated'}.")
+            elif action == "reject":
+                ok, err = reject_teacher_account(user_id, request.POST.get("rejection_reason") or request.POST.get("reason"), actor_user_id=actor_id, actor_email=actor_email, actor_name=actor)
+                _flash_result(request, ok, err, f"Teacher request {user_id} rejected.")
             elif action == "delete":
                 ok, err = delete_user_record(user_id, actor_user_id=actor_id, actor_email=actor_email, actor_name=actor)
                 _flash_result(request, ok, err, f"User {user_id} deleted.")
@@ -70,7 +73,7 @@ def admin_users(request):
         except Exception as exc:
             messages.error(request, f"Database error: {exc}")
         return _redirect_with_filter("panels:admin_users", "role", filter_role)
-    users, role_counts, db_error = [], {"ALL": 0, "ADMIN": 0, "TEACHER": 0, "STUDENT": 0, "ANALYST": 0}, None
+    users, role_counts, db_error = [], {"ALL": 0, "ADMIN": 0, "TEACHER": 0, "STUDENT": 0, "ANALYST": 0, "PENDING": 0, "REJECTED": 0}, None
     try:
         users, role_counts = list_users(filter_role)
     except Exception as exc:

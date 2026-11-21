@@ -1,99 +1,184 @@
-<div{% if grid_id %} id="{{ grid_id }}"{% endif %} data-directory-cards data-paginated-container data-page-size="{{ page_size|default:8 }}" class="space-y-3">
-  {% if grid_title %}
+<div{% if grid_id %} id="{{ grid_id }}"{% endif %} data-directory-cards data-paginated-container data-page-size="{{ page_size|default:5 }}" data-directory-mode="table" class="space-y-3">
   <div class="flex flex-wrap items-center justify-between gap-2">
-    <h3 class="text-sm font-semibold text-[var(--text-primary)]">{{ grid_title }}</h3>
-    {% if cards %}
-    <span class="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-0.5 tabular-nums text-xs font-medium text-[var(--text-muted)]">{{ cards|length }} items</span>
-    {% endif %}
+    <div class="flex flex-wrap items-center gap-2 min-w-0">
+      {% if grid_title %}<h3 class="text-sm font-semibold text-[var(--text-primary)]">{{ grid_title }}</h3>{% endif %}
+      {% if cards %}<span class="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-0.5 tabular-nums text-xs font-medium text-[var(--text-muted)]">{{ cards|length }} items</span>{% endif %}
+    </div>
+    <div data-directory-view-toggle class="hidden md:inline-flex items-center gap-0.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-0.5">
+      <button type="button" data-set-view="table" aria-pressed="true" title="Show compact table view" class="inline-flex items-center gap-1.5 rounded-md bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--accent-primary)] shadow-sm transition-colors"><i class="fa-solid fa-table-list text-[11px]" aria-hidden="true"></i><span>Table</span></button>
+      <button type="button" data-set-view="cards" aria-pressed="false" title="Show cards grid view" class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"><i class="fa-solid fa-grip text-[11px]" aria-hidden="true"></i><span>Cards</span></button>
+    </div>
   </div>
-  {% endif %}
 
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+  <div data-directory-table-view class="hidden md:block ep-table-scroll-wrap overflow-x-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+    <table data-searchable-table class="w-full border-collapse text-left text-sm">
+      <thead class="sticky top-0 z-10 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
+        <tr>
+          <th scope="col" class="whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Identity</th>
+          <th scope="col" class="whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Role / Course</th>
+          <th scope="col" class="whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Dept / Attendance</th>
+          <th scope="col" class="whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Details / GPA</th>
+          <th scope="col" class="whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Status</th>
+          <th scope="col" class="whitespace-nowrap px-3.5 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-[var(--border-subtle)] tabular-nums">
+        {% for card in cards %}
+        <tr data-page-item class="transition-colors hover:bg-[var(--bg-elevated)]">
+          <td class="px-3.5 py-2.5 align-middle max-w-[19rem]">
+            <div class="flex items-center gap-2.5 min-w-0">
+              {% if card.avatar_url %}
+              <img src="{{ card.avatar_url }}" alt="{{ card.title }}" class="h-8 w-8 shrink-0 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-canvas)] object-cover">
+              {% else %}
+              <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--accent-soft)] text-xs font-bold text-[var(--accent-primary)]">{{ card.initials|default:"EP" }}</span>
+              {% endif %}
+              <div class="min-w-0 space-y-0.5">
+                {% if card.student_360_id %}
+                <button type="button" onclick="openStudent360Drawer('{{ card.student_360_id|escapejs }}')" title="Open Student 360 profile" class="block max-w-full truncate text-left text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors">{{ card.title }}</button>
+                {% else %}
+                <p class="truncate text-sm font-semibold text-[var(--text-primary)]">{{ card.title }}</p>
+                {% endif %}
+                <div class="flex flex-wrap items-center gap-1.5">
+                  {% if card.code %}
+                  <button type="button" data-copy-text="{{ card.code }}" title="Copy ID {{ card.code }}" class="inline-flex items-center gap-1 rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-1.5 py-0.5 font-mono text-[11px] font-medium text-[var(--text-secondary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] transition-colors"><span>{{ card.code }}</span><i class="fa-regular fa-copy text-[10px] opacity-70" aria-hidden="true"></i></button>
+                  {% endif %}
+                  {% if card.subtitle %}
+                    {% if "@" in card.subtitle %}
+                    <button type="button" data-copy-text="{{ card.subtitle }}" title="Copy email {{ card.subtitle }}" class="inline-flex max-w-[12rem] items-center gap-1 rounded px-1 py-0.5 text-[11px] text-[var(--text-muted)] hover:bg-[var(--bg-canvas)] hover:text-[var(--accent-primary)] transition-colors"><span class="truncate">{{ card.subtitle }}</span><i class="fa-regular fa-copy text-[9px] shrink-0" aria-hidden="true"></i></button>
+                    {% else %}
+                    <span class="truncate text-[11px] text-[var(--text-muted)]">{{ card.subtitle }}</span>
+                    {% endif %}
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="px-3.5 py-2.5 align-middle whitespace-nowrap">
+            {% if card.kind == 'student' %}
+            <span class="inline-flex rounded-md bg-[var(--accent-soft)] px-2 py-0.5 font-mono text-xs font-semibold text-[var(--accent-primary)]">{{ card.course_code|default:card.meta.0.value|default:"-" }}</span>
+            {% else %}
+            <span class="inline-flex rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">{% if card.role_badge.text %}{{ card.role_badge.text }}{% elif card.role_badge %}{{ card.role_badge }}{% else %}{{ card.meta.0.value|default:"-" }}{% endif %}</span>
+            {% endif %}
+          </td>
+          <td class="px-3.5 py-2.5 align-middle">
+            {% if card.kind == 'student' %}
+            <div class="min-w-[6.5rem] max-w-[8.5rem] space-y-1">
+              <div class="flex items-center justify-between text-xs font-semibold tabular-nums text-[var(--text-primary)]"><span>{{ card.attendance_pct }}%</span></div>
+              <div class="h-1.5 w-full overflow-hidden rounded-full bg-[var(--bg-elevated)]"><div class="h-full rounded-full {% if card.attendance_pct >= 75 %}bg-emerald-500{% elif card.attendance_pct >= 60 %}bg-amber-500{% else %}bg-red-500{% endif %}" style="width: {{ card.attendance_pct }}%;"></div></div>
+            </div>
+            {% else %}
+            <div class="space-y-0.5 text-xs">
+              <p class="font-medium text-[var(--text-primary)]">{{ card.meta.1.value|default:"General" }}</p>
+              <p class="text-[11px] text-[var(--text-muted)]">Batch {{ card.meta.2.value|default:"ALL" }}</p>
+            </div>
+            {% endif %}
+          </td>
+          <td class="px-3.5 py-2.5 align-middle">
+            {% if card.kind == 'student' %}
+            <div class="space-y-0.5 text-xs tabular-nums">
+              <p class="font-semibold text-[var(--text-primary)]">GPA {{ card.gpa_display|default:"-" }}</p>
+              <p class="text-[11px] text-[var(--text-muted)]">Marks {{ card.marks_display|default:"-" }} &middot; {{ card.batch|default:card.meta.1.value|default:"-" }}</p>
+            </div>
+            {% else %}
+            <div class="space-y-0.5 text-xs">
+              <p class="font-mono text-[11px] text-[var(--text-secondary)]">Joined {{ card.meta.3.value|default:"-" }}</p>
+              {% if card.rejection_reason %}<p class="max-w-[14rem] truncate text-[11px] text-[var(--status-danger)]" title="{{ card.rejection_reason }}">{{ card.rejection_reason }}</p>{% endif %}
+            </div>
+            {% endif %}
+          </td>
+          <td class="px-3.5 py-2.5 align-middle whitespace-nowrap">
+            {% if card.badge %}
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full {% if card.badge.status == 'success' %}bg-[var(--status-success)]{% elif card.badge.status == 'warning' %}bg-[var(--status-warning)]{% elif card.badge.status == 'danger' or card.badge.status == 'error' %}bg-[var(--status-danger)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span><span>{{ card.badge.text }}</span></span>
+            {% endif %}
+          </td>
+          <td class="px-3.5 py-2.5 align-middle">
+            <div class="flex flex-wrap items-center justify-end gap-1.5 whitespace-nowrap">
+              {% if card.student_360_id %}
+              <button type="button" onclick="openStudent360Drawer('{{ card.student_360_id|escapejs }}')" title="Open Student 360 summary" class="inline-flex items-center gap-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-1 text-xs font-medium text-[var(--accent-primary)] hover:bg-[var(--accent-soft)] transition-colors"><i class="fa-solid fa-id-card-clip text-[11px]" aria-hidden="true"></i><span>360</span></button>
+              {% endif %}
+              {% for act in card.actions %}
+              <button type="button"{% if act.onclick %} onclick="{{ act.onclick }}"{% endif %}{% if act.title %} title="{{ act.title }}"{% endif %}{% if act.attrs %}{% for k, v in act.attrs.items %} {{ k }}="{{ v }}"{% endfor %}{% endif %} class="inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors {% if act.variant == 'danger' %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]{% elif act.variant == 'primary' %}border-transparent bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]{% else %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">{% if act.icon %}<i class="{{ act.icon }} text-[11px]" aria-hidden="true"></i>{% endif %}{% if act.label %}<span>{{ act.label }}</span>{% endif %}</button>
+              {% endfor %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr data-empty-row>
+          <td colspan="6" class="px-4 py-8 text-center">
+            <div class="flex flex-col items-center justify-center gap-2 text-[var(--text-muted)]"><i class="fa-regular fa-folder-open text-lg" aria-hidden="true"></i><p class="text-sm font-medium text-[var(--text-secondary)]">{{ empty_message|default:"No items found." }}</p></div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div data-directory-cards-view class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:hidden">
     {% for card in cards %}
-    <article data-page-item class="group flex flex-col overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-colors hover:border-[var(--accent-primary)]">
-      <div class="flex items-center justify-between gap-3 bg-[var(--bg-elevated)] px-4 py-3.5">
+    <article data-mobile-card data-page-item class="group flex flex-col overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-colors hover:border-[var(--accent-primary)]">
+      <div class="flex items-center justify-between gap-3 bg-[var(--bg-elevated)] px-4 py-3">
         {% if card.avatar_url %}
-        <img src="{{ card.avatar_url }}" alt="{{ card.title }}" class="h-11 w-11 shrink-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] object-cover">
+        <img src="{{ card.avatar_url }}" alt="{{ card.title }}" class="h-10 w-10 shrink-0 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] object-cover">
         {% else %}
-        <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-primary)]">{{ card.initials|default:"EP" }}</span>
+        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-primary)]">{{ card.initials|default:"EP" }}</span>
         {% endif %}
         {% if card.badge %}
-        <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]">
-          <span class="h-1.5 w-1.5 rounded-full {% if card.badge.status == 'success' %}bg-[var(--status-success)]{% elif card.badge.status == 'warning' %}bg-[var(--status-warning)]{% elif card.badge.status == 'danger' or card.badge.status == 'error' %}bg-[var(--status-danger)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span>
-          <span>{{ card.badge.text }}</span>
-        </span>
+        <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full {% if card.badge.status == 'success' %}bg-[var(--status-success)]{% elif card.badge.status == 'warning' %}bg-[var(--status-warning)]{% elif card.badge.status == 'danger' or card.badge.status == 'error' %}bg-[var(--status-danger)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span><span>{{ card.badge.text }}</span></span>
         {% endif %}
       </div>
-
       <div class="flex flex-1 flex-col gap-3 p-4">
         <div class="min-w-0 space-y-1">
+          {% if card.student_360_id %}
+          <button type="button" onclick="openStudent360Drawer('{{ card.student_360_id|escapejs }}')" class="block max-w-full truncate text-left text-sm font-bold text-[var(--text-primary)] hover:text-[var(--accent-primary)]">{{ card.title }}</button>
+          {% else %}
           <h4 class="truncate text-sm font-bold text-[var(--text-primary)]">{{ card.title }}</h4>
+          {% endif %}
           {% if card.subtitle %}
-          <p class="truncate text-xs text-[var(--text-muted)]">{{ card.subtitle }}</p>
+            {% if "@" in card.subtitle %}
+            <button type="button" data-copy-text="{{ card.subtitle }}" title="Copy email {{ card.subtitle }}" class="inline-flex max-w-full items-center gap-1 truncate text-xs text-[var(--text-muted)] hover:text-[var(--accent-primary)]"><span class="truncate">{{ card.subtitle }}</span><i class="fa-regular fa-copy text-[10px] shrink-0" aria-hidden="true"></i></button>
+            {% else %}
+            <p class="truncate text-xs text-[var(--text-muted)]">{{ card.subtitle }}</p>
+            {% endif %}
           {% endif %}
-          {% if card.code or card.role_badge %}
           <div class="flex flex-wrap items-center gap-1.5 pt-1">
-            {% if card.code %}
-            <span class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[11px] font-medium text-[var(--text-secondary)]">{{ card.code }}</span>
-            {% endif %}
-            {% if card.role_badge %}
-            <span class="rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]">{{ card.role_badge }}</span>
-            {% endif %}
+            {% if card.code %}<button type="button" data-copy-text="{{ card.code }}" title="Copy ID {{ card.code }}" class="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[11px] font-medium text-[var(--text-secondary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] transition-colors"><span>{{ card.code }}</span><i class="fa-regular fa-copy text-[10px]" aria-hidden="true"></i></button>{% endif %}
+            {% if card.role_badge %}<span class="rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]">{% if card.role_badge.text %}{{ card.role_badge.text }}{% else %}{{ card.role_badge }}{% endif %}</span>{% endif %}
           </div>
-          {% endif %}
         </div>
-
         {% if card.meta %}
         <div class="border-t border-[var(--border-subtle)] pt-3">
           <dl class="grid grid-cols-2 gap-2 text-xs">
             {% for m in card.meta %}
-            <div class="min-w-0">
-              <dt class="truncate text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">{{ m.label }}</dt>
-              <dd class="truncate font-semibold tabular-nums text-[var(--text-primary)]">{{ m.value }}</dd>
-            </div>
+            <div class="min-w-0"><dt class="truncate text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">{{ m.label }}</dt><dd class="truncate font-semibold tabular-nums text-[var(--text-primary)]">{{ m.value }}</dd></div>
             {% endfor %}
           </dl>
         </div>
         {% endif %}
-
-        {% if card.actions %}
         <div class="mt-auto flex flex-wrap items-center gap-1.5 border-t border-[var(--border-subtle)] pt-3">
+          {% if card.student_360_id %}
+          <button type="button" onclick="openStudent360Drawer('{{ card.student_360_id|escapejs }}')" title="Open Student 360 summary" class="inline-flex min-h-[34px] items-center gap-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-xs font-medium text-[var(--accent-primary)] hover:bg-[var(--accent-soft)] transition-colors"><i class="fa-solid fa-id-card-clip text-[11px]" aria-hidden="true"></i><span>360</span></button>
+          {% endif %}
           {% for act in card.actions %}
-          <button type="button"{% if act.onclick %} onclick="{{ act.onclick }}"{% endif %}{% if act.title %} title="{{ act.title }}"{% endif %}{% if act.attrs %}{% for k, v in act.attrs.items %} {{ k }}="{{ v }}"{% endfor %}{% endif %} class="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors {% if act.variant == 'danger' %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]{% elif act.variant == 'primary' %}border-transparent bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]{% else %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-            {% if act.icon %}<i class="{{ act.icon }} text-[11px]" aria-hidden="true"></i>{% endif %}
-            {% if act.label %}<span>{{ act.label }}</span>{% endif %}
-          </button>
+          <button type="button"{% if act.onclick %} onclick="{{ act.onclick }}"{% endif %}{% if act.title %} title="{{ act.title }}"{% endif %}{% if act.attrs %}{% for k, v in act.attrs.items %} {{ k }}="{{ v }}"{% endfor %}{% endif %} class="inline-flex min-h-[34px] items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors {% if act.variant == 'danger' %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]{% elif act.variant == 'primary' %}border-transparent bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]{% else %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">{% if act.icon %}<i class="{{ act.icon }} text-[11px]" aria-hidden="true"></i>{% endif %}{% if act.label %}<span>{{ act.label }}</span>{% endif %}</button>
           {% endfor %}
         </div>
-        {% endif %}
       </div>
     </article>
     {% empty %}
     <div data-empty-row class="col-span-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-8 text-center">
-      <div class="flex flex-col items-center justify-center gap-2 text-[var(--text-muted)]">
-        <i class="fa-regular fa-folder-open text-lg" aria-hidden="true"></i>
-        <p class="text-sm font-medium text-[var(--text-secondary)]">{{ empty_message|default:"No items found." }}</p>
-      </div>
+      <div class="flex flex-col items-center justify-center gap-2 text-[var(--text-muted)]"><i class="fa-regular fa-folder-open text-lg" aria-hidden="true"></i><p class="text-sm font-medium text-[var(--text-secondary)]">{{ empty_message|default:"No items found." }}</p></div>
     </div>
     {% endfor %}
   </div>
 
-  <div data-search-empty class="hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-6 text-center text-xs text-[var(--text-muted)]">
-    No matching items found.
-  </div>
+  <div data-search-empty class="hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-6 text-center text-xs text-[var(--text-muted)]">No matching items found.</div>
 
   <div data-pagination-bar class="hidden flex-wrap items-center justify-between gap-2 pt-1 text-xs text-[var(--text-muted)]">
     <span data-pagination-info class="tabular-nums"></span>
     <div class="flex items-center gap-1.5">
-      <button type="button" data-page-prev class="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40">
-        <i class="fa-solid fa-chevron-left text-[10px]" aria-hidden="true"></i>
-        <span>Prev</span>
-      </button>
+      <button type="button" data-page-prev class="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40"><i class="fa-solid fa-chevron-left text-[10px]" aria-hidden="true"></i><span>Prev</span></button>
       <span data-page-indicator class="px-2 font-medium tabular-nums text-[var(--text-secondary)]"></span>
-      <button type="button" data-page-next class="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40">
-        <span>Next</span>
-        <i class="fa-solid fa-chevron-right text-[10px]" aria-hidden="true"></i>
-      </button>
+      <button type="button" data-page-next class="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40"><span>Next</span><i class="fa-solid fa-chevron-right text-[10px]" aria-hidden="true"></i></button>
     </div>
   </div>
 </div>
