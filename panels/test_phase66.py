@@ -11,6 +11,7 @@ from core.context_processors import global_context
 from core.db import DEFAULT_PORTAL_BRANDING, invalidate_cache, resolve_portal_branding
 import panels.admin_audit_services as audit_svc
 import panels.admin_seed as admin_seed
+from panels.pdf_services import _resolve_pdf_branding
 from panels.test_admin import _MemCol
 
 
@@ -99,3 +100,37 @@ class Phase66IntegrationTests(TestCase):
             "data.avg_predicted_gpa",
         ):
             self.assertIn(expected, html)
+
+    def test_phase67_kpi_data_value_spa_hook_and_pdf_branding_delegation(self):
+        pdf_src = (Path(settings.BASE_DIR) / "panels" / "pdf_services.py").read_text(encoding="utf-8")
+        tree = ast.parse(pdf_src)
+        first_body_line = min(n.lineno for n in tree.body if not isinstance(n, (ast.Import, ast.ImportFrom)))
+        import_nodes = [n for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))]
+        self.assertTrue(import_nodes and all(n.lineno < first_body_line for n in import_nodes))
+        self.assertTrue(any(
+            isinstance(n, ast.ImportFrom) and n.module == "core.db"
+            and any(a.name == "resolve_portal_branding" for a in n.names)
+            and n.lineno < first_body_line
+            for n in tree.body
+        ))
+
+        with patch("panels.pdf_services.resolve_portal_branding", return_value=("Delegated Campus", "Winter 2028")) as mock_resolve:
+            self.assertEqual(_resolve_pdf_branding({"batch": "2026-A"}), ("Delegated Campus", "Winter 2028"))
+        mock_resolve.assert_called_once_with({"batch": "2026-A"}, db_connected=True)
+
+        self.cols["system_settings"].insert_one({
+            "setting_key": "portal_config", "institution_name": "Metro Campus 67", "current_term": "Autumn 2027",
+        })
+        invalidate_cache()
+        self.assertEqual(_resolve_pdf_branding({}), ("Metro Campus 67", "Autumn 2027"))
+
+        with patch("panels.pdf_services.get_portal_settings", return_value={"settings_data": {"institution_name": "Mocked Settings Tech", "current_term": "Spring 2029"}}):
+            self.assertEqual(_resolve_pdf_branding({}), ("Mocked Settings Tech", "Spring 2029"))
+            self.assertEqual(_resolve_pdf_branding({"institution_name": "Payload Campus"}), ("Payload Campus", "Spring 2029"))
+
+        analyst = self._login_analyst()
+        dash_resp = analyst.get(reverse("panels:analyst_dashboard"))
+        self.assertEqual(dash_resp.status_code, 200)
+        html = dash_resp.content.decode("utf-8")
+        self.assertIn("setAttribute('data-kpi-value'", html)
+        self.assertIn("window.initAnalystPage", html)

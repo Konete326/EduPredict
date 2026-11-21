@@ -279,7 +279,10 @@
         if (kpiEl) kpiEl.textContent = 'Preds ' + (data.predictions_generated || 0) + ' · High ' + (data.high_risk_count || 0) + ' · Anom ' + (data.anomalies_count || 0);
         [['Student Records', data.predictions_generated], ['High Risk', data.high_risk_count], ['Unusual Drops', data.anomalies_count], ['Average Pred. GPA', data.avg_predicted_gpa]].forEach(([label, val]) => {
           if (val == null) return;
-          const counterEl = document.querySelector('[data-kpi-label="' + label + '"] [data-kpi-counter]');
+          const cardEl = document.querySelector('[data-kpi-label="' + label + '"]');
+          if (!cardEl) return;
+          cardEl.setAttribute('data-kpi-value', String(val));
+          const counterEl = cardEl.querySelector('[data-kpi-counter]');
           if (counterEl) counterEl.textContent = String(val);
         });
         if (typeof Chart !== 'undefined' && typeof Chart.getChart === 'function') {
@@ -336,6 +339,7 @@
     }
 
     function bootAnalystPage() { initAnalystCharts(); initLiveStreamSimulator(); }
+    window.initAnalystPage = bootAnalystPage;
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootAnalystPage, { once: true }); else bootAnalystPage();
   })();
 </script>

@@ -4,6 +4,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.platypus import HRFlowable, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from core.db import resolve_portal_branding
 import panels.admin_audit_services as _audit_services
 from panels.admin_audit_services import get_portal_settings
 
@@ -11,17 +12,20 @@ _ORIG_GET_PORTAL_SETTINGS = get_portal_settings
 
 
 def _resolve_pdf_branding(data):
-    inst = str(data.get("institution_name") or "").strip() if isinstance(data, dict) else ""
-    term = str(data.get("current_term") or "").strip() if isinstance(data, dict) else ""
-    if not inst or not term:
-        try:
-            loader = get_portal_settings if get_portal_settings is not _ORIG_GET_PORTAL_SETTINGS else _audit_services.get_portal_settings
-            cfg = (loader() or {}).get("settings_data") or {}
-            inst = inst or str(cfg.get("institution_name") or "").strip()
-            term = term or str(cfg.get("current_term") or "").strip()
-        except Exception:
-            pass
-    return inst or "EduPredict Academic Portal", term or "Fall 2026"
+    if get_portal_settings is not _ORIG_GET_PORTAL_SETTINGS or hasattr(_audit_services.get_portal_settings, "_mock_name"):
+        inst = str(data.get("institution_name") or "").strip() if isinstance(data, dict) else ""
+        term = str(data.get("current_term") or "").strip() if isinstance(data, dict) else ""
+        if not inst or not term:
+            try:
+                loader = get_portal_settings if get_portal_settings is not _ORIG_GET_PORTAL_SETTINGS else _audit_services.get_portal_settings
+                cfg = (loader() or {}).get("settings_data") or {}
+                inst = inst or str(cfg.get("institution_name") or "").strip()
+                term = term or str(cfg.get("current_term") or "").strip()
+            except Exception:
+                pass
+        default_inst, default_term = resolve_portal_branding(data, db_connected=False)
+        return inst or default_inst, term or default_term
+    return resolve_portal_branding(data, db_connected=True)
 
 
 def _safe_float(val, default=0.0):
@@ -127,7 +131,6 @@ def generate_student_report_card_pdf(data):
     doc = SimpleDocTemplate(buffer, pagesize=letter, leftMargin=36, rightMargin=36, topMargin=32, bottomMargin=32, pageCompression=0)
     story = []
     now_str = datetime.now().strftime("%B %d, %Y - %H:%M")
-
     header_table = Table([[Paragraph(f"{institution_name} ({current_term})", styles["portal_tag"]), Paragraph(f"Report Date: {now_str}", styles["meta_lbl"])], [Paragraph("OFFICIAL ACADEMIC TRANSCRIPT & REPORT CARD", styles["title"]), Paragraph("Official Academic Record", styles["subtitle"])]], colWidths=[380, 160])
     header_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("ALIGN", (1, 0), (1, -1), "RIGHT"), ("BOTTOMPADDING", (0, 0), (-1, -1), 1)]))
     story.extend([header_table, HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#2563EB"), spaceBefore=4, spaceAfter=8)])
@@ -175,7 +178,6 @@ def generate_student_report_card_pdf(data):
     sig_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("TOPPADDING", (0, 0), (-1, -1), 1), ("BOTTOMPADDING", (0, 0), (-1, -1), 1)]))
     footer_text = f"{institution_name} ({current_term}) | Document ID: EP-{info['student_id']}-{datetime.now().strftime('%Y%m%d%H%M')} | Certified System Copy"
     story.extend([KeepTogether(sig_table), Spacer(1, 6), Paragraph(footer_text, styles["footer"])])
-
     doc.build(story)
     pdf_bytes = buffer.getvalue()
     buffer.close()
@@ -204,12 +206,10 @@ def _extract_teacher_data(data):
             status_elem = s[7] if len(s) > 7 else s[5]
             st_text = status_elem.get("text") if isinstance(status_elem, dict) else str(status_elem)
             students.append({"student_id": str(s[0]), "full_name": str(s[1]), "batch": str(s[2]) if len(s) > 7 else "-", "course_code": str(s[3] if len(s) > 7 else s[2]).upper(), "attendance_pct": _safe_float(str(s[4] if len(s) > 7 else s[3]).replace("%", "")), "internal_marks": _safe_float(str(s[5] if len(s) > 7 else s[4]).replace("%", "")), "predicted_gpa": str(s[6]) if len(s) > 7 else "-", "status": st_text})
-
     total = len(students)
     avg_att = _safe_float(kpis_raw.get("avg_attendance")) or (round(sum(x["attendance_pct"] for x in students) / total, 1) if total else 0.0)
     avg_marks = _safe_float(kpis_raw.get("avg_marks")) or (round(sum(x["internal_marks"] for x in students) / total, 1) if total else 0.0)
     at_risk = int(kpis_raw.get("at_risk_count", 0)) or sum(1 for x in students if x["status"] in ("High Risk", "Needs Help", "HIGH", "MEDIUM"))
-
     return {"batch": batch, "course": course, "total": total, "avg_attendance": avg_att, "avg_marks": avg_marks, "at_risk": at_risk, "students": students}
 
 
@@ -248,7 +248,6 @@ def generate_teacher_roster_pdf(data):
     sig_table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("TOPPADDING", (0, 0), (-1, -1), 1), ("BOTTOMPADDING", (0, 0), (-1, -1), 1)]))
     footer_text = f"{institution_name} ({current_term}) | Class Roster Export | Total Students: {info['total']} | Batch: {info['batch']} | Course: {info['course']}"
     story.extend([KeepTogether(sig_table), Spacer(1, 6), Paragraph(footer_text, styles["footer"])])
-
     doc.build(story)
     pdf_bytes = buffer.getvalue()
     buffer.close()
