@@ -310,6 +310,7 @@
             demandChart.update();
           }
         }
+        if (typeof window.syncStreamPredictionTable === 'function') window.syncStreamPredictionTable(data.events);
         if (!eventsEl) return;
         eventsEl.textContent = '';
         (Array.isArray(data.events) ? data.events : []).forEach((ev) => {

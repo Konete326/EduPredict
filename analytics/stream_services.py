@@ -115,16 +115,26 @@ def simulate_lms_stream_tick(uploaded_by="Analyst"):
     try:
         pred_map = {
             str(p.get("student_id") or "").strip(): p
-            for p in predictions_col().find({}, {"_id": 0, "student_id": 1, "predicted_gpa": 1, "risk_level": 1, "is_anomaly": 1, "dropout_risk_score": 1})
+            for p in predictions_col().find(
+                {},
+                {
+                    "_id": 0, "student_id": 1, "predicted_gpa": 1, "risk_level": 1,
+                    "is_anomaly": 1, "dropout_risk_score": 1, "anomaly_reason": 1, "recommendation": 1,
+                },
+            )
             if str(p.get("student_id") or "").strip()
         }
-        for ev in events:
-            pred = pred_map.get(ev["student_id"])
-            if pred:
-                ev["risk_level"] = str(pred.get("risk_level") or ev["risk_level"]).upper()
-                ev["is_anomaly"] = bool(pred.get("is_anomaly", ev["is_anomaly"]))
     except Exception:
-        pass
+        pred_map = {}
+    for ev in events:
+        pred = pred_map.get(ev["student_id"])
+        if pred:
+            ev["risk_level"] = str(pred.get("risk_level") or ev["risk_level"]).upper()
+            ev["is_anomaly"] = bool(pred.get("is_anomaly", ev["is_anomaly"]))
+        ev["predicted_gpa"] = round(_safe_float(pred.get("predicted_gpa")), 2) if (pred and pred.get("predicted_gpa") is not None) else None
+        ev["dropout_risk_score"] = round(_safe_float(pred.get("dropout_risk_score")), 4) if (pred and pred.get("dropout_risk_score") is not None) else None
+        ev["risk_text"] = f"{ev['risk_level']} ({int(round(_safe_float(pred.get('dropout_risk_score')) * 100))}%)" if (pred and pred.get("dropout_risk_score") is not None) else ev["risk_level"]
+        ev["tip"] = (str(pred.get("anomaly_reason") or "").strip() if (ev["is_anomaly"] and str(pred.get("anomaly_reason") or "").strip()) else str(pred.get("recommendation") or "")) if pred else ""
     try:
         avg_predicted_gpa, scatter_points = _build_stream_metrics(records_col, pred_map)
     except Exception:

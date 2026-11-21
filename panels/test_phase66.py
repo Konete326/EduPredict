@@ -134,3 +134,38 @@ class Phase66IntegrationTests(TestCase):
         html = dash_resp.content.decode("utf-8")
         self.assertIn("setAttribute('data-kpi-value'", html)
         self.assertIn("window.initAnalystPage", html)
+
+    def test_phase68_spa_stream_hook_and_live_predictions_table_sync(self):
+        analyst = self._login_analyst()
+        resp = analyst.post(reverse("analytics:stream_tick"))
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertTrue(data["ok"])
+        events = data.get("events")
+        self.assertIsInstance(events, list)
+        self.assertTrue(events)
+        for ev in events:
+            self.assertTrue({"predicted_gpa", "dropout_risk_score", "risk_text", "tip"} <= set(ev.keys()))
+            self.assertIsInstance(ev["predicted_gpa"], (int, float))
+            self.assertTrue(0.0 <= ev["predicted_gpa"] <= 4.0)
+            self.assertIsInstance(ev["dropout_risk_score"], (int, float))
+            self.assertTrue(0.0 <= ev["dropout_risk_score"] <= 1.0)
+            self.assertRegex(ev["risk_text"], r"^(HIGH|MEDIUM|LOW) \(\d+%\)$")
+            self.assertIsInstance(ev["tip"], str)
+            self.assertTrue(ev["tip"])
+
+        dir_js = (Path(settings.BASE_DIR) / "static" / "js" / "directory_ui.js").read_text(encoding="utf-8")
+        self.assertIn("function syncStreamPredictionTable(events)", dir_js)
+        self.assertIn("analyst-predictions-table", dir_js)
+        self.assertRegex(dir_js, r"Object\.assign\(\s*window\b[^;]*\bsyncStreamPredictionTable\b")
+        reinit_block = dir_js[dir_js.index("window.reinitEduPredictUI"):]
+        self.assertIn("clearInterval(window._epAnalystStreamTimer)", reinit_block)
+        self.assertIn("window._epAnalystStreamTimer = null", reinit_block)
+        self.assertIn("byId('live-stream-toggle-btn')", reinit_block)
+        self.assertIn("window.initAnalystPage()", reinit_block)
+
+        dash_resp = analyst.get(reverse("panels:analyst_dashboard"))
+        self.assertEqual(dash_resp.status_code, 200)
+        html = dash_resp.content.decode("utf-8")
+        self.assertIn('id="analyst-predictions-table"', html)
+        self.assertIn("window.syncStreamPredictionTable(data.events)", html)

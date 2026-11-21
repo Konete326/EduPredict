@@ -61,29 +61,30 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 67 KPI Data-Value, SPA Init Hook & PDF Branding Delegation Team"
-active_branch_merged_to_main: "feature/phase67-kpi-spa-pdf-branding -> main"
-project_phase: "Phase 67 Complete: Live KPI data-kpi-value Sync, SPA Init Hook & PDF Branding Delegation"
+last_updated_by_agent: "Phase 68 SPA Reinit Stream Hook & Live Predictions Table Sync Team"
+active_branch_merged_to_main: "feature/phase68-spa-stream-table-sync -> main"
+project_phase: "Phase 68 Complete: SPA reinitEduPredictUI Stream Hook & Live Predictions Table Refresh"
 
 completed_modules:
-  - "Phase 1-66: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF & HTML Branding Sync, Cgroup Health Telemetry, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (60/26A), Image Cropper & Lightbox (61/26B), Table-First Directories & Student 360° Drawer (62/26C), Hyper-Automation, Live LMS Stream Simulator & Aptech Pack (63/26D), Student Report HTML Branding Sync & PEP 8 PDF Imports (64), Global Cached Portal Branding Context & Live Stream Chart Auto-Refresh (65), Live Stream Scatter/KPI Sync & Core Branding Helper Refactor (66)."
-  - "Phase 67: Live KPI data-kpi-value Sync, SPA Init Hook & PDF Branding Delegation:"
-      - "panels/pdf_services.py (254 lines, 0 comments): imported resolve_portal_branding from core.db in top import block before _ORIG_GET_PORTAL_SETTINGS; updated _resolve_pdf_branding(data) to honor mocked get_portal_settings (reading data first, filling missing via get_portal_settings with resolve_portal_branding(data, db_connected=False) defaults) and delegate to resolve_portal_branding(data, db_connected=True) otherwise."
-      - "templates/panels/analyst_dashboard.html (346 lines, 0 comments): updated initLiveStreamSimulator() -> render(data) KPI loop to call cardEl.setAttribute('data-kpi-value', String(val)) and update [data-kpi-counter] textContent; exposed window.initAnalystPage = bootAnalystPage for SPA swaps."
-      - "panels/test_phase66.py (136 lines, 0 comments): added test_phase67_kpi_data_value_spa_hook_and_pdf_branding_delegation verifying AST top-block import of core.db.resolve_portal_branding, _resolve_pdf_branding delegation and get_portal_settings mock override, plus analyst_dashboard HTML setAttribute('data-kpi-value' and window.initAnalystPage (panels/test_phase25.py untouched at 394 lines)."
+  - "Phase 1-67: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF & HTML Branding Sync, Cgroup Health Telemetry, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (60/26A), Image Cropper & Lightbox (61/26B), Table-First Directories & Student 360° Drawer (62/26C), Hyper-Automation, Live LMS Stream Simulator & Aptech Pack (63/26D), Student Report HTML Branding Sync & PEP 8 PDF Imports (64), Global Cached Portal Branding Context & Live Stream Chart Auto-Refresh (65), Live Stream Scatter/KPI Sync & Core Branding Helper Refactor (66), Live KPI data-kpi-value Sync, SPA Init Hook & PDF Branding Delegation (67)."
+  - "Phase 68: SPA reinitEduPredictUI Stream Hook & Live Predictions Table Refresh:"
+      - "analytics/stream_services.py (155 lines, 0 comments): included anomaly_reason and recommendation in predictions_col().find() projection; enriched each event in simulate_lms_stream_tick with predicted_gpa, dropout_risk_score, risk_text, and tip."
+      - "static/js/directory_ui.js (300 lines, 0 comments): added syncStreamPredictionTable(events) + updateStreamCellBadge helper and exported syncStreamPredictionTable on window; updated window.reinitEduPredictUI wrapper to clear window._epAnalystStreamTimer before orig() and call window.initAnalystPage() when #live-stream-toggle-btn is present."
+      - "templates/panels/analyst_dashboard.html (347 lines, 0 comments): invoked window.syncStreamPredictionTable(data.events) inside initLiveStreamSimulator() -> render(data)."
+      - "panels/test_phase66.py (171 lines, 0 comments): added test_phase68_spa_stream_hook_and_live_predictions_table_sync testing stream_tick event payload fields (predicted_gpa, dropout_risk_score, risk_text, tip), directory_ui.js syncStreamPredictionTable + reinitEduPredictUI stream hook, and analyst_dashboard HTML integration (panels/test_phase25.py untouched at 394 lines)."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "node --check: all 11 JS scripts (analyst_evaluation.js, app.js, auth_wizard.js, charts.js, directory_ui.js, dot_kpi.js, image_cropper.js, nav.js, page_guides.js, theme_studio.js, ui_widgets.js) exited 0 + analyst_dashboard.html inline script syntax OK."
-  - "manage.py test: Ran 114 tests in 58.954s (OK)."
-  - "manage.py verify_uat: UAT Results: 7/7 passed in 10.41s - System 100% Operational."
-  - "Static audit: panels/pdf_services.py (254 lines, 0 comments), templates/panels/analyst_dashboard.html (346 lines, 0 comments), panels/test_phase66.py (136 lines, 0 comments), panels/test_phase25.py (394 lines, 0 comments); .agents/rules/edupredict-rules.md 15,978 bytes (< 24,000); .env tracked."
+  - "node --check: all 11 JS scripts (analyst_evaluation.js, app.js, auth_wizard.js, charts.js, directory_ui.js, dot_kpi.js, image_cropper.js, nav.js, page_guides.js, theme_studio.js, ui_widgets.js) exited 0 + analyst_dashboard.html inline script syntax OK (140 lines)."
+  - "manage.py test: Ran 115 tests in 61.256s (OK)."
+  - "manage.py verify_uat: UAT Results: 7/7 passed in 11.17s - System 100% Operational."
+  - "Static audit: analytics/stream_services.py (155 lines, 0 comments), static/js/directory_ui.js (300 lines, 0 comments), templates/panels/analyst_dashboard.html (347 lines, 0 comments), panels/test_phase66.py (171 lines, 0 comments), panels/test_phase25.py (394 lines, 0 comments); .agents/rules/edupredict-rules.md 15,978 bytes (< 24,000); .env tracked."
 
 active_routes_and_files:
-  - "panels/pdf_services.py (254 lines), templates/panels/analyst_dashboard.html (346 lines), panels/test_phase66.py (136 lines), .agents/git-sync.md"
+  - "analytics/stream_services.py (155 lines), static/js/directory_ui.js (300 lines), templates/panels/analyst_dashboard.html (347 lines), panels/test_phase66.py (171 lines), .agents/git-sync.md"
 
 pending_modules_in_order:
-  - "All Planned Phases (Phases 1-67) Complete — Ready for Final Aptech Viva & Production Deployment."
+  - "All Planned Phases (Phases 1-68) Complete — Ready for Final Aptech Viva & Production Deployment."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

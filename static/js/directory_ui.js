@@ -230,6 +230,47 @@
     });
   }
 
+  function updateStreamCellBadge(cell, dotCls, labelText) {
+    if (!cell) return;
+    const dot = cell.querySelector('span.rounded-full');
+    const pill = dot ? dot.parentElement : cell.querySelector('span');
+    const lbl = pill ? Array.from(pill.children).find((el) => el !== dot) : null;
+    if (dot) {
+      dot.classList.remove('bg-[var(--status-success)]', 'bg-[var(--status-warning)]', 'bg-[var(--status-danger)]', 'bg-[var(--accent-primary)]');
+      dot.classList.add(dotCls);
+    }
+    if (lbl) lbl.textContent = labelText;
+    else if (pill && !dot) pill.textContent = labelText;
+    else if (!pill) cell.textContent = labelText;
+  }
+
+  function syncStreamPredictionTable(events) {
+    const table = byId('analyst-predictions-table');
+    if (!table || !Array.isArray(events) || !events.length) return;
+    const evMap = new Map();
+    events.forEach((ev) => {
+      const sid = String(ev && ev.student_id ? ev.student_id : '').trim().toUpperCase();
+      if (sid) evMap.set(sid, ev);
+    });
+    if (!evMap.size) return;
+    table.querySelectorAll('tbody tr:not([data-empty-row])').forEach((tr) => {
+      const sid = (tr.cells[0]?.textContent || '').trim().toUpperCase();
+      const ev = sid ? evMap.get(sid) : null;
+      if (!ev || tr.cells.length < 10) return;
+      const rawAtt = ev.attendance_pct != null ? ev.attendance_pct : ev.attendance;
+      const attNum = rawAtt != null && String(rawAtt).trim() !== '' && typeof rawAtt !== 'boolean' ? Number(rawAtt) : NaN;
+      if (Number.isFinite(attNum)) tr.cells[4].textContent = attNum.toFixed(1) + '%';
+      const gpaNum = ev.predicted_gpa != null && String(ev.predicted_gpa).trim() !== '' && typeof ev.predicted_gpa !== 'boolean' ? Number(ev.predicted_gpa) : NaN;
+      tr.cells[6].textContent = Number.isFinite(gpaNum) ? gpaNum.toFixed(2) : '-';
+      const risk = String(ev.risk_level || '').trim().toUpperCase();
+      const riskDot = risk === 'HIGH' ? 'bg-[var(--status-danger)]' : (risk === 'MEDIUM' ? 'bg-[var(--status-warning)]' : 'bg-[var(--status-success)]');
+      updateStreamCellBadge(tr.cells[7], riskDot, ev.risk_text || ev.risk_level || '');
+      const isAnom = Boolean(ev.is_anomaly);
+      updateStreamCellBadge(tr.cells[8], isAnom ? 'bg-[var(--status-danger)]' : 'bg-[var(--status-success)]', isAnom ? 'Flagged' : 'Normal');
+      tr.cells[9].textContent = ev.tip || tr.cells[9].textContent;
+    });
+  }
+
   function initDirectoryUI() {
     bindGlobalsOnce();
     document.querySelectorAll('[data-directory-cards]').forEach((container) => {
@@ -242,12 +283,18 @@
 
   if (typeof window.reinitEduPredictUI === 'function' && !window.reinitEduPredictUI._dirWrapped) {
     const orig = window.reinitEduPredictUI;
-    const wrapped = function () { closeStudent360Drawer(true); orig(); initDirectoryUI(); };
+    const wrapped = function () {
+      if (window._epAnalystStreamTimer) { clearInterval(window._epAnalystStreamTimer); window._epAnalystStreamTimer = null; }
+      closeStudent360Drawer(true);
+      orig();
+      initDirectoryUI();
+      if (typeof window.initAnalystPage === 'function' && byId('live-stream-toggle-btn')) window.initAnalystPage();
+    };
     wrapped._dirWrapped = true;
     window.reinitEduPredictUI = wrapped;
   }
 
-  Object.assign(window, { initDirectoryUI, setDirectoryView, openStudent360Drawer, closeStudent360Drawer, copyTextToClipboard });
+  Object.assign(window, { initDirectoryUI, setDirectoryView, openStudent360Drawer, closeStudent360Drawer, copyTextToClipboard, syncStreamPredictionTable });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDirectoryUI);
   else initDirectoryUI();
 })();
