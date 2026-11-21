@@ -1,3 +1,4 @@
+import ast
 import io
 from datetime import datetime, timezone
 from pathlib import Path
@@ -344,3 +345,26 @@ class Phase25IntegrationTests(TestCase):
             fpath = pack_dir / fname
             self.assertTrue(fpath.is_file(), fname)
             self.assertGreater(fpath.stat().st_size, 0, fname)
+
+    def test_phase64_portal_branding_html_sync_and_pdf_imports(self):
+        self.cols["system_settings"].insert_one({
+            "setting_key": "portal_config", "institution_name": "Apex Tech Institute", "current_term": "Spring 2027",
+        })
+        invalidate_cache()
+        student = self._login_role("STUDENT", user_id="USR-1003", student_id="STD-2026-001")
+        resp = student.get(reverse("panels:student_report"))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+        for expected in ("Portal / Term", "Apex Tech Institute", "Spring 2027"):
+            self.assertIn(expected, html)
+        pdf_resp = student.get(reverse("panels:student_report_pdf"))
+        self.assertEqual(pdf_resp.status_code, 200)
+        self.assertTrue(pdf_resp.content.startswith(b"%PDF-"))
+        for expected_b in (b"Apex Tech Institute", b"Spring 2027"):
+            self.assertIn(expected_b, pdf_resp.content)
+
+        pdf_src = (Path(settings.BASE_DIR) / "panels" / "pdf_services.py").read_text(encoding="utf-8")
+        tree = ast.parse(pdf_src)
+        first_body_line = min(n.lineno for n in tree.body if not isinstance(n, (ast.Import, ast.ImportFrom)))
+        import_lines = [n.lineno for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))]
+        self.assertTrue(import_lines and all(ln < first_body_line for ln in import_lines))

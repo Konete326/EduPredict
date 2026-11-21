@@ -5,7 +5,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from core.decorators import role_required
 from panels.admin_services import mark_notifications_read
-from panels.pdf_services import generate_student_report_card_pdf
+from panels.pdf_services import _resolve_pdf_branding, generate_student_report_card_pdf
 from panels.student_services import (
     build_report_export_rows,
     get_student_alerts_context,
@@ -113,6 +113,7 @@ def student_dashboard(request):
 def student_report(request):
     student_id, user_id, role, user = _student_identity(request)
     data, db_error = _safe_context(get_student_overview_context, student_id, user_id, role)
+    inst_name, term_name = _resolve_pdf_branding(data)
     record = data["record"]
     report_rows = []
     for s in data["subject_rows"]:
@@ -134,6 +135,8 @@ def student_report(request):
         "report_rows": report_rows,
         "credits": data["credits"],
         "insight": data["insight"],
+        "portal_institution_name": inst_name,
+        "portal_current_term": term_name,
         "db_error": db_error,
     })
 
@@ -161,7 +164,9 @@ def student_report_pdf(request):
     if db_error:
         messages.error(request, f"Report PDF generation failed: {db_error}")
         return redirect("panels:student_report")
-    pdf_bytes = generate_student_report_card_pdf(data)
+    inst_name, term_name = _resolve_pdf_branding(data)
+    pdf_data = {**data, "institution_name": inst_name, "current_term": term_name} if isinstance(data, dict) else data
+    pdf_bytes = generate_student_report_card_pdf(pdf_data)
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="edupredict_report_card.pdf"'
     return response

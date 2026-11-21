@@ -1,8 +1,11 @@
 import io
 from datetime import datetime
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.platypus import HRFlowable, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 import panels.admin_audit_services as _audit_services
 from panels.admin_audit_services import get_portal_settings
-from reportlab.lib import colors
 
 _ORIG_GET_PORTAL_SETTINGS = get_portal_settings
 
@@ -19,9 +22,6 @@ def _resolve_pdf_branding(data):
         except Exception:
             pass
     return inst or "EduPredict Academic Portal", term or "Fall 2026"
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.platypus import HRFlowable, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
 def _safe_float(val, default=0.0):
