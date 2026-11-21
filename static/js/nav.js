@@ -2,7 +2,7 @@
   const CACHE_PREFIX = 'ep_page_cache:';
   const CACHE_TTL_MS = 45000;
   const GROUPS_KEY = 'edupredict_nav_groups';
-  const ACTIVE_CLS = ['bg-[var(--accent-soft)]', 'text-[var(--accent-primary)]', 'font-medium'];
+  const ACTIVE_CLS = ['is-active'];
   const INACTIVE_CLS = ['text-[var(--text-secondary)]', 'hover:bg-[var(--bg-elevated)]', 'hover:text-[var(--text-primary)]'];
   const memCache = new Map();
   const inFlight = new Map();

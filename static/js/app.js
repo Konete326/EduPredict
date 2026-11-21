@@ -335,7 +335,7 @@
       syncSidebarToggleA11y();
     });
   }
-  function reinitEduPredictUI() { closeAllModals(); closeNotificationDropdown(); if (typeof window.eduPredictCancelUpload === 'function') window.eduPredictCancelUpload(true); if (typeof window.resetEduPredictSubmitLocks === 'function') window.resetEduPredictSubmitLocks(); bindDynamicControls(); if (typeof window.initSmartAutomation === 'function') window.initSmartAutomation(); if (typeof window.initEduPredictWidgets === 'function') window.initEduPredictWidgets(); if (typeof window.initDotKpiCards === 'function') window.initDotKpiCards(); }
+  function reinitEduPredictUI() { closeAllModals(); closeNotificationDropdown(); if (typeof window.eduPredictCancelUpload === 'function') window.eduPredictCancelUpload(true); if (typeof window.resetEduPredictSubmitLocks === 'function') window.resetEduPredictSubmitLocks(); bindDynamicControls(); if (typeof window.initSmartAutomation === 'function') window.initSmartAutomation(); if (typeof window.initEduPredictWidgets === 'function') window.initEduPredictWidgets(); if (typeof window.initDotKpiCards === 'function') window.initDotKpiCards(); if (typeof window.initPageGuidesShell === 'function') window.initPageGuidesShell(); }
   function initShellBindings() { bindDocumentGlobalsOnce(); bindDynamicControls(); }
 
   restoreSidebarState();

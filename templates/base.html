@@ -62,7 +62,7 @@
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=12">
+  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=13">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased">
@@ -164,19 +164,19 @@
 
   {% include 'components/confirm_modal.html' %}
   {% include 'components/form_modal.html' %}
-  {% include 'components/theme_studio_modal.html' %}
+  {% if active_role == 'ADMIN' %}{% include 'components/theme_studio_modal.html' %}{% endif %}
   {% include 'components/page_guide_modal.html' %}
   {% include 'components/toast.html' %}
 
   {{ theme_prefs|json_script:"ep-theme-prefs-data" }}
   {{ theme_catalog|json_script:"ep-theme-catalog-data" }}
-  <script src="{% static 'js/app.js' %}?v=12"></script>
-  <script src="{% static 'js/dot_kpi.js' %}?v=12"></script>
-  <script src="{% static 'js/charts.js' %}?v=12"></script>
-  <script src="{% static 'js/nav.js' %}?v=12"></script>
-  <script src="{% static 'js/theme_studio.js' %}?v=12"></script>
-  <script src="{% static 'js/ui_widgets.js' %}?v=12"></script>
-  <script src="{% static 'js/page_guides.js' %}?v=12"></script>
+  <script src="{% static 'js/app.js' %}?v=13"></script>
+  <script src="{% static 'js/dot_kpi.js' %}?v=13"></script>
+  <script src="{% static 'js/charts.js' %}?v=13"></script>
+  <script src="{% static 'js/nav.js' %}?v=13"></script>
+  <script src="{% static 'js/theme_studio.js' %}?v=13"></script>
+  <script src="{% static 'js/ui_widgets.js' %}?v=13"></script>
+  <script src="{% static 'js/page_guides.js' %}?v=13"></script>
   <div id="page-extra-js">{% block extra_js %}{% endblock %}</div>
 </body>
 </html>

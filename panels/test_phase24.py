@@ -153,4 +153,29 @@ class Phase24IntegrationTests(TestCase):
             self.assertEqual(resp.status_code, 200)
             html = resp.content.decode("utf-8")
             self.assertIn("data-dot-kpi", html)
-            self.assertIn("data-dot-matrix", html)
+            self.assertIn("data-kpi-counter", html)
+            self.assertIn("data-kpi-filter", html)
+            self.assertNotIn("data-dot-matrix", html)
+
+    def test_phase60_visual_polish_shell_and_admin_only_theme_studio(self):
+        admin = self._login("ADMIN", user_id="USR-ADM-1")
+        r_admin = admin.get("/admin-panel/")
+        self.assertEqual(r_admin.status_code, 200)
+        h_admin = r_admin.content.decode("utf-8")
+        for m in ("data-topbar-breadcrumb", 'id="instant-help-popover"', 'id="command-search-modal"', "openCommandSearchModal()", "ep-nav-link", "is-active", "openThemeStudioModal()"):
+            self.assertIn(m, h_admin)
+
+        r_settings = admin.get("/admin-panel/settings/")
+        self.assertEqual(r_settings.status_code, 200)
+        self.assertIn("openThemeStudioModal()", r_settings.content.decode("utf-8"))
+
+        for role, uid, path in (("TEACHER", "USR-T1", "/teacher-panel/"), ("STUDENT", "USR-1003", "/student-panel/")):
+            client = self._login(role, user_id=uid, student_id="STD-2026-001" if role == "STUDENT" else None)
+            resp = client.get(path)
+            self.assertEqual(resp.status_code, 200)
+            html = resp.content.decode("utf-8")
+            self.assertIn("data-topbar-breadcrumb", html)
+            self.assertIn("ep-nav-link", html)
+            self.assertIn("is-active", html)
+            self.assertNotIn("openThemeStudioModal()", html)
+            self.assertNotIn('id="theme-studio-modal"', html)

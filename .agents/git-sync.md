@@ -61,39 +61,31 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "EduPredict Data Protection Team"
-active_branch_merged_to_main: "feature/decrypt-backup-command -> main"
-project_phase: "Phase 59 Complete: decrypt_backup Management Command"
+last_updated_by_agent: "Phase 60 (26A) Enterprise Visual Polish & Clean Shell Team"
+active_branch_merged_to_main: "feature/phase60-visual-polish-shell -> main"
+project_phase: "Phase 60 (26A) Complete: Visual Polish, Clean Clickable KPIs, Chart.js Defaults & Scroll-Aware Shell"
 
 completed_modules:
-  - "Phase 1-25: Core Shell, Auth/RBAC, Admin/Teacher/Student/Analyst Panels, Leakage-Free ML Evaluation, Admin Activity Logs & Portal Settings, Live Theme & Appearance Studio, Per-Panel Theme Isolation, /profile/, Ocean Blue Default, Cloudinary Avatars, Change Password Modal, Global Loading Lock, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Typewriter Page Guide Wizard Modal, Card-Grid User/Student/Teacher Directories, Modalized Upload/Quick Entry, Dot-Graph KPI Cards, Stepper Signup Wizard, Teacher Approval Guard & Official Student PDF Transcript."
-  - "Phase 26-50: Production Operations Runbook, Docker Containers, WhiteNoise Static Serving, Atlas Connection Pooling, Automated Backup CLI with Atomic Write, Retention Purging & Pre-Flight Disk Space Safety Check, Endpoint Rate Limiting with Retry-After, Production CSP & Permissions-Policy Headers, Sentry Before-Send Sanitization & Environment Tagging, Health Check Process Memory & O(1) Estimated Document Counts with 30s TTL Cache."
-  - "Phase 51: Linux Cgroup Container Memory Limit Telemetry:"
-      - "Updated core/views_health.py (226 lines, 0 comments): Added _get_cgroup_memory_limit_mb() inspecting cgroups v2 (/sys/fs/cgroup/memory.max) and cgroups v1 (/sys/fs/cgroup/memory/memory.limit_in_bytes) while ignoring unlimited/max thresholds; updated _build_memory_payload() to report container_limit_mb and container_usage_pct alongside rss_mb."
-      - "Updated panels/tests.py (359 lines, 0 comments): Added test_health_cgroup_container_memory_telemetry verifying cgroups v2 numeric parsing, container_usage_pct calculation, and 'max' unlimited handling (95/95 tests PASS)."
-  - "Phase 52: Backup CLI SHA-256 Integrity Checksum Manifest: export_backup.py (127 lines) writes <backup>.sha256 sidecar (hash + filename) after atomic write and prints digest; panels/tests.py (371 lines) adds test_export_backup_writes_sha256_checksum_manifest (96/96 tests PASS, UAT 7/7)."
-  - "Phase 53: Rate Limit Remaining Headers: core/decorators.py (152 lines) adds X-RateLimit-Limit and X-RateLimit-Remaining to success and 429 responses; panels/tests.py (389 lines) adds header test (97/97 tests PASS, UAT 7/7)."
-  - "Phase 54: Ops Tests Split: created core/test_ops.py (111 lines) with OperationsToolingTests (backup, rate-limit, cgroup tests moved); panels/tests.py now 345 lines, panels/test_uat.py now 332 lines; still 97/97 tests PASS, UAT 7/7."
-  - "Phase 55: verify_backup Command: core/management/commands/verify_backup.py (39 lines) validates a backup against its .sha256 sidecar (match, mismatch, missing file/manifest, malformed manifest raise CommandError); core/test_ops.py (125 lines) adds coverage (98/98 tests PASS, UAT 7/7)."
-  - "Phase 56: Rate Limit Docs: README.md (236 lines) adds Rate Limiting (Per-Worker Limits) section with X-RateLimit headers and workers x max_requests caveat, verify_backup usage, test count 98; panels/test_uat.py (339 lines) adds README docs test (99/99 tests PASS, UAT 7/7)."
-  - "Phase 57: README Health Sample Sync: README.md /health/ sample now matches live response (collections, cache.entries/status, memory with rss_mb and container fields, 30s count cache and ?fresh=1 note); panels/test_uat.py (350 lines) adds sample-vs-live key test (100/100 tests PASS, UAT 7/7)."
-  - "Phase 58: Backup Encryption: core/backup_crypto.py (26 lines, Fernet via BACKUP_ENCRYPTION_KEY); export_backup.py (141 lines) adds --encrypt writing <name>.enc plus sha256 of ciphertext and failing before any file is written if key is missing; verify_backup.py (46 lines) also checks .enc files decrypt; cryptography==50.0.2, cffi, pycparser added to requirements.txt; .env.example and README updated; core/test_ops.py (146 lines) adds roundtrip, missing-key and wrong-key tests (101/101 tests PASS, UAT 7/7)."
-  - "Phase 59: decrypt_backup Command: core/management/commands/decrypt_backup.py (55 lines) restores plain backup from .enc via BACKUP_ENCRYPTION_KEY, atomic write, refuses overwrite without --overwrite, guards missing file/non-.enc/wrong key without leaving partial output; README documents usage; core/test_ops.py (170 lines) adds coverage (102/102 tests PASS, UAT 7/7)."
+  - "Phase 1-59: Core Shell, Auth/RBAC, 4 Role Panels, Leakage-Free ML, Theme Studio, My Profile, Cloudinary Avatars, Notifications Feed, Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval Guard, Official PDF Transcript, Cgroup Health, Rate-Limit Headers, and Encrypted/Verified Backups."
+  - "Phase 60 (26A): Visual Polish & Clean Shell:"
+      - "CSS Depth & Tokens: Updated static/css/global.css (282 lines, 0 comments) with accent-color theming, translucent dark hairline borders (--border-subtle: rgba(255,255,255,0.08)), scroll-aware topbar backdrop blur (header.ep-topbar.is-scrolled), and .ep-nav-link.is-active 3px Ocean Blue left bar; removed synthetic dot-matrix CSS rules."
+      - "Clean Clickable KPIs: Simplified templates/components/metric_card.html (22 lines) to 3 clean rows (label + 14px muted icon, tabular-nums value, 6px status dot badge); updated static/js/dot_kpi.js (79 lines) with clickable/keyboard table filtering via input[data-table-search]."
+      - "Chart.js 6 Global Defaults: Updated static/js/charts.js (297 lines) with vertical grid hiding + light dashed horizontal grids, rounded bars (borderRadius: 6, maxBarThickness: 36), 72% cutout doughnuts + center total plugin, dark slate tooltips, top-right circle legends, and live themeChanged sync."
+      - "Scroll-Aware 4-Item Topbar, Ctrl+K Search, Instant Help & Slim Sidebar: Updated templates/components/topbar.html (104 lines) with Breadcrumb, Search Ctrl+K trigger, instant 0ms #instant-help-popover (3 bullets + 2 FAQs), Notification Bell, and Light/Dark + Profile pill; updated templates/components/page_guide_modal.html (55 lines) & static/js/page_guides.js (262 lines) with #command-search-modal (Ctrl+K) and 0ms guide text; updated templates/components/sidebar.html (195 lines) & static/js/nav.js (249 lines) with 3px .is-active highlight and Admin-only Theme Studio; bumped ?v=13 in base.html & auth.html."
 
 verification_results:
   - "manage.py check: 0 issues reported (exit 0)."
-  - "manage.py test: 95/95 tests PASSED (41.595s)."
-  - "manage.py verify_uat: 7/7 UAT steps PASSED (11.27s)."
-  - "node --check: all 9 JS scripts exited 0."
-  - "Zero comments audit: 0 comments across all modified files."
-  - "Line caps: views_health.py (226 <= 250), tests.py (359 <= 400)."
+  - "manage.py test: 103/103 tests PASSED (41.861s)."
+  - "manage.py verify_uat: 7/7 UAT steps PASSED (10.00s)."
+  - "node --check: all 9 JS scripts (analyst_evaluation.js, app.js, auth_wizard.js, charts.js, dot_kpi.js, nav.js, page_guides.js, theme_studio.js, ui_widgets.js) exited 0."
+  - "Static audit (14 modified files): 0 comments, all files <= 345 lines; .agents/rules/edupredict-rules.md 15,978 bytes (< 24,000)."
 
 active_routes_and_files:
-  - "core/views_health.py (226 lines) -> Health check with cgroup v1/v2 container memory limit & usage % telemetry"
-  - "panels/tests.py (359 lines) -> Unit tests including cgroup container memory telemetry verification"
+  - "static/css/global.css (282 lines), static/js/charts.js (297 lines), static/js/dot_kpi.js (79 lines), static/js/page_guides.js (262 lines), static/js/nav.js (249 lines), static/js/app.js (345 lines)"
+  - "templates/components/metric_card.html (22 lines), templates/components/topbar.html (104 lines), templates/components/sidebar.html (195 lines), templates/components/page_guide_modal.html (55 lines), templates/base.html (182 lines), templates/accounts/auth.html (313 lines)"
+  - "panels/test_phase24.py (181 lines), panels/test_phase25.py (142 lines)"
 
 pending_modules_in_order:
-  - "Phase 60 (26A): Visual Polish & Clean Shell (90/8/2 Depth, Clean Clickable KPIs, Chart.js 6 Global Defaults, Scroll-Aware 4-Item Topbar + Ctrl+K Search, Slim Sidebar 3px Active Bar, Admin-Only Theme Studio in Portal Settings, Instant 3-Bullet Help Popover)"
   - "Phase 61 (26B): Global Image Cropper (Cropper.js CDN + Ctrl+V Screenshot Paste + Avatar 1:1 Crop & Old Cloudinary Delete + Attachment Chips) & Admin Ticket Detail Drawer + Full-Screen Lightbox"
   - "Phase 62 (26C): Table-First Directories + [Table | Cards] Toggle + 1-Click Copy ID + Student 360 Slide-Over Drawer + Teacher Reject-with-Reason Workflow"
   - "Phase 63 (26D): Hyper-Automation (Zero-Click Auto-ML + Auto-Alert Escalation, Smart CSV Auto-Mapper + Preview, 1-Click Notify All High-Risk Students, visibilitychange Sync, Dynamic Institution/Term PDF Branding, Live LMS Stream Simulator) & Aptech Final Submission Pack"
