@@ -257,8 +257,9 @@
     const mobileCards = container ? container.querySelectorAll('[data-mobile-card][data-page-item]') : [];
     const cardMap = new Map();
     mobileCards.forEach((card) => {
+      const attrSid = (card && card.getAttribute ? (card.getAttribute('data-card-id') || '') : '').trim().toUpperCase();
       const hdrBox = card && card.children && card.children[0] ? ((card.children[0].querySelector ? card.children[0].querySelector('div.text-right') : null) || (card.children[0].children ? card.children[0].children[1] : null) || card.children[0]) : null;
-      const cSid = (hdrBox?.textContent || '').trim().toUpperCase();
+      const cSid = attrSid || (hdrBox?.textContent || '').trim().toUpperCase();
       if (cSid) cardMap.set(cSid, card);
     });
     table.querySelectorAll('tbody tr:not([data-empty-row])').forEach((tr, idx) => {

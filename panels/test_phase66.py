@@ -9,7 +9,7 @@ from django.contrib.auth.hashers import make_password
 from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
 import accounts.services as acc_svc
-from core.context_processors import global_context
+from core.context_processors import STATIC_ASSET_VERSION, global_context
 from core.db import DEFAULT_PORTAL_BRANDING, invalidate_cache, resolve_portal_branding
 import panels.admin_audit_services as audit_svc
 import panels.admin_seed as admin_seed
@@ -274,4 +274,56 @@ assert.ok(c2.children[7].querySelector('span.rounded-full').classList.contains('
         self.assertIn("analyst_evaluation.js?v=17", analyst_html)
         self.assertNotIn('analyst_evaluation.js?v=1"', analyst_html)
         self.assertEqual(re.findall(r"analyst_evaluation\.js\?v=(\d+)", analyst_html), ["17"])
+
+    def test_phase71_central_asset_version_and_mobile_data_card_id(self):
+        base_dir = Path(settings.BASE_DIR)
+        self.assertEqual(STATIC_ASSET_VERSION, "17")
+        req = RequestFactory().get("/")
+        req.session = {}
+        ctx = global_context(req)
+        self.assertEqual(ctx.get("asset_version"), STATIC_ASSET_VERSION)
+        for rel in ("templates/base.html", "templates/accounts/auth.html", "templates/panels/analyst_dashboard.html"):
+            src = (base_dir / rel).read_text(encoding="utf-8")
+            versions = re.findall(r"%\}\?v=(\d+)", src)
+            self.assertTrue(versions and all(v == STATIC_ASSET_VERSION for v in versions), rel)
+        dt_src = (base_dir / "templates" / "components" / "data_table.html").read_text(encoding="utf-8")
+        self.assertIn("data-card-id=", dt_src)
+        analyst = self._login_analyst()
+        self.assertEqual(analyst.post(reverse("analytics:stream_tick")).status_code, 200)
+        analyst_html = analyst.get(reverse("panels:analyst_dashboard")).content.decode("utf-8")
+        card_ids = re.findall(r'data-mobile-card[^>]*data-card-id="(STD-[^"]+)"', analyst_html)
+        self.assertTrue(len(card_ids) > 0)
+        node_script = r"""
+const fs = require('fs'), vm = require('vm'), assert = require('assert');
+class El {
+  constructor(t, a = {}, tx = '') { this.tag = t.toLowerCase(); this.attrs = { ...a }; this.children = []; this._text = String(tx); this.parentNode = null; this.parentElement = null; this.dataset = {}; this.style = {}; const cls = new Set((a.class || '').split(/\s+/).filter(Boolean)); this.classList = { add: (...x) => x.forEach((c) => c && cls.add(c)), remove: (...x) => x.forEach((c) => cls.delete(c)), contains: (c) => cls.has(c), toggle: (c, f) => { const on = f === undefined ? !cls.has(c) : Boolean(f); on ? cls.add(c) : cls.delete(c); return on; } }; }
+  append(...ns) { ns.forEach((n) => { n.parentNode = this; n.parentElement = this; this.children.push(n); }); } appendChild(n) { this.append(n); return n; } getAttribute(k) { return k in this.attrs ? String(this.attrs[k]) : null; } setAttribute(k, v) { this.attrs[k] = String(v); } removeAttribute(k) { delete this.attrs[k]; } hasAttribute(k) { return k in this.attrs; } addEventListener() {}
+  get cells() { return this.children.filter((c) => c.tag === 'td' || c.tag === 'th'); } get textContent() { return this.children.length ? this.children.map((c) => c.textContent).join('') : this._text; } set textContent(v) { this.children = []; this._text = v == null ? '' : String(v); }
+  closest(s) { for (let p = this; p; p = p.parentElement) if (s.trim().split(/\s+/).every((k) => mOne(p, k))) return p; return null; } querySelector(s) { return this.querySelectorAll(s)[0] || null; }
+  querySelectorAll(s) { const ps = s.split(',').map((x) => x.trim()).filter(Boolean), out = [], seen = new Set(); const w = (n) => n.children.forEach((c) => { if (ps.some((p) => mDesc(c, p, this)) && !seen.has(c)) { seen.add(c); out.push(c); } w(c); }); w(this); return out; }
+}
+const mOne = (el, tok) => { const re = /:not\(([^)]+)\)/g; let m; while ((m = re.exec(tok))) if (mOne(el, m[1])) return false; const b = tok.replace(re, ''), tm = b.match(/^[a-z0-9-]+/i); if (tm && el.tag !== tm[0].toLowerCase()) return false; for (const cm of b.matchAll(/\.([a-z0-9_-]+)/gi)) if (!el.classList.contains(cm[1])) return false; for (const am of b.matchAll(/\[([a-z0-9_-]+)(?:="([^"]*)")?\]/gi)) if (!(am[1] in el.attrs) || (am[2] !== undefined && String(el.attrs[am[1]]) !== am[2])) return false; return true; };
+const mDesc = (el, sel, root) => { const segs = sel.trim().split(/\s+/); if (!mOne(el, segs[segs.length - 1])) return false; let cur = el.parentElement; for (let i = segs.length - 2; i >= 0; i--) { while (cur && cur !== root && !mOne(cur, segs[i])) cur = cur.parentElement; if (!cur || (cur === root && !mOne(cur, segs[i]))) return false; cur = cur.parentElement; } return true; };
+const root = new El('html'), body = new El('body'), box = new El('div', { 'data-paginated-container': '', 'data-page-size': '5' }), tbl = new El('table', { id: 'analyst-predictions-table' }), tbody = new El('tbody'); root.append(body);
+const mkB = (t) => { const p = new El('span', { class: 'inline-flex' }); p.append(new El('span', { class: 'rounded-full bg-[var(--status-success)]' }), new El('span', {}, t)); return p; };
+const mkR = (s, r, a, tip) => { const tr = new El('tr', { 'data-page-item': '' }); [s, 'N', '2026-A', 'CS-101', '88.0%', '3.20', '3.10'].forEach((v) => tr.append(new El('td', {}, v))); const rT = new El('td'), aT = new El('td'); rT.append(mkB(r)); aT.append(mkB(a)); tr.append(rT, aT, new El('td', {}, tip)); return tr; };
+const mkC = (cid, hdrText, r, a, tip) => { const c = new El('div', { 'data-mobile-card': '', 'data-page-item': '', 'data-card-id': cid }); [hdrText, 'N', '2026-A', 'CS-101', '88.0%', '3.20', '3.10', { b: r }, { b: a }, tip].forEach((v) => { const rw = new El('div', { class: 'flex' }), bx = new El('div', { class: 'min-w-0 text-right' }); if (v && v.b) bx.append(mkB(v.b)); else bx.textContent = v; rw.append(new El('span', {}, 'L'), bx); c.append(rw); }); return c; };
+const tr1 = mkR('STD-1', 'LOW (15%)', 'Normal', 'Steady'), tr2 = mkR('STD-2', 'LOW (10%)', 'Normal', 'On track');
+const c1 = mkC('STD-1', 'STD-1 · VIP Badge', 'LOW (15%)', 'Normal', 'Steady'), c2 = mkC('STD-2', 'STD-2 · Honors', 'LOW (10%)', 'Normal', 'On track');
+tbody.append(tr1, tr2); tbl.append(tbody); box.append(tbl, c2, c1); body.append(box);
+const findId = (n, id) => { if (n.attrs.id === id) return n; for (const c of n.children) { const f = findId(c, id); if (f) return f; } return null; };
+const doc = { readyState: 'complete', cookie: '', documentElement: root, body, createElement: (t) => new El(t), addEventListener: () => {}, getElementById: (id) => findId(root, id), querySelector: (s) => root.querySelector(s), querySelectorAll: (s) => root.querySelectorAll(s) };
+const win = { innerWidth: 1280, addEventListener: () => {}, dispatchEvent: () => {}, setTimeout: () => 0, clearTimeout: () => {}, setInterval: () => 0, clearInterval: () => {}, requestAnimationFrame: (f) => f(), localStorage: { getItem: () => null, setItem: () => {} }, Event: function (t) { this.type = t; }, CustomEvent: function (t, d) { this.type = t; this.detail = d; }, document: doc }; win.window = win;
+const ctx = vm.createContext({ ...win, window: win, document: doc, console }); vm.runInContext(fs.readFileSync(process.argv[1], 'utf8'), ctx); vm.runInContext(fs.readFileSync(process.argv[2], 'utf8'), ctx);
+win.syncStreamPredictionTable([{ student_id: 'STD-1', attendance_pct: 61.5, predicted_gpa: 2.35, risk_level: 'HIGH', risk_text: 'HIGH (88%)', is_anomaly: true, tip: 'Urgent lab check' }]);
+[4, 6, 7, 8, 9].forEach((k, i) => {
+  const exp1 = ['61.5%', '2.35', 'HIGH (88%)', 'Flagged', 'Urgent lab check'][i];
+  const exp2 = ['88.0%', '3.10', 'LOW (10%)', 'Normal', 'On track'][i];
+  assert.strictEqual(tr1.cells[k].textContent, exp1);
+  assert.strictEqual(c1.children[k].querySelector('div.text-right').textContent, exp1);
+  assert.strictEqual(c2.children[k].querySelector('div.text-right').textContent, exp2);
+});
+"""
+        proc = subprocess.run(["node", "-e", node_script, str(base_dir / "static" / "js" / "app.js"), str(base_dir / "static" / "js" / "directory_ui.js")], capture_output=True, text=True, check=False)
+        self.assertEqual(proc.returncode, 0, msg=proc.stderr or proc.stdout)
 

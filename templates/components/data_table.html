@@ -60,7 +60,7 @@
 
   <div class="md:hidden space-y-3">
     {% for row in rows %}
-    <div data-mobile-card data-page-item class="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-sm">
+    <div data-mobile-card data-page-item{% if row %} data-card-id="{% if row.0.text is not None %}{{ row.0.text }}{% else %}{{ row.0 }}{% endif %}"{% endif %} class="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-sm">
       {% for cell in row %}
       {% with col_idx=forloop.counter0 %}
       {% if forloop.first %}

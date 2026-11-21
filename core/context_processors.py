@@ -2,6 +2,8 @@ from pymongo import DESCENDING
 from core.db import DEFAULT_PORTAL_BRANDING, check_db_health, get_cached, notifications_col, resolve_portal_branding
 from core.theme_services import get_theme_studio_catalog, get_user_theme_prefs
 
+STATIC_ASSET_VERSION = "17"
+
 
 def _resolve_global_branding(db_connected):
     if not db_connected:
@@ -83,4 +85,5 @@ def global_context(request):
         "portal_current_term": term_name,
         "theme_prefs": get_user_theme_prefs(request),
         "theme_catalog": get_theme_studio_catalog(),
+        "asset_version": STATIC_ASSET_VERSION,
     }
