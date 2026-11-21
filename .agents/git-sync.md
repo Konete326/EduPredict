@@ -61,30 +61,30 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 64 Portal Branding Sync & PDF Imports Team"
-active_branch_merged_to_main: "feature/phase64-portal-branding-sync -> main"
-project_phase: "Phase 64 Complete: Student Report HTML Portal Branding Sync & PEP 8 PDF Imports Cleanup"
+last_updated_by_agent: "Phase 65 Global Branding Context & Live Stream Charts Team"
+active_branch_merged_to_main: "feature/phase65-stream-charts-global-branding -> main"
+project_phase: "Phase 65 Complete: Global Cached Portal Branding Context & Live LMS Stream Chart Auto-Refresh"
 
 completed_modules:
-  - "Phase 1-63: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF Transcript, Cgroup Health Telemetry, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (60/26A), Image Cropper & Lightbox (61/26B), Table-First Directories & Student 360° Drawer (62/26C), Hyper-Automation, Live LMS Stream Simulator & Aptech Pack (63/26D)."
-  - "Phase 64: Portal Branding HTML/PDF Sync & PEP 8 PDF Imports Cleanup:"
-      - "panels/pdf_services.py (255 lines, 0 comments): moved all reportlab imports (letter, ParagraphStyle, getSampleStyleSheet, HRFlowable, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle) to the top import block before _ORIG_GET_PORTAL_SETTINGS and _resolve_pdf_branding(data)."
-      - "panels/views_student.py (237 lines, 0 comments): imported _resolve_pdf_branding; student_report(request) passes portal_institution_name and portal_current_term to panels/student_report.html ('Portal / Term' summary card); student_report_pdf(request) resolves and injects institution_name and current_term into pdf_data."
-      - "panels/test_phase25.py (370 lines, 0 comments): added test_phase64_portal_branding_html_sync_and_pdf_imports verifying custom system_settings branding in student_report HTML & PDF responses and AST-verifying top-only imports in panels/pdf_services.py."
+  - "Phase 1-64: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF & HTML Branding Sync, Cgroup Health Telemetry, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (60/26A), Image Cropper & Lightbox (61/26B), Table-First Directories & Student 360° Drawer (62/26C), Hyper-Automation, Live LMS Stream Simulator & Aptech Pack (63/26D), Student Report HTML Branding Sync & PEP 8 PDF Imports (64)."
+  - "Phase 65: Global Cached Portal Branding Context & Live Stream Chart Auto-Refresh:"
+      - "core/context_processors.py (92 lines, 0 comments): added _resolve_global_branding(db_connected) returning ('EduPredict Academic Portal', 'Fall 2026') when disconnected or on error and calling _resolve_pdf_branding({}) (backed by get_cached admin:settings TTL=30s) inside try/except when connected; global_context(request) now exposes portal_institution_name and portal_current_term across all routes."
+      - "analytics/stream_services.py (118 lines, 0 comments): simulate_lms_stream_tick(uploaded_by='Analyst') now returns low_risk_count, medium_risk_count, dropout_counts (LOW, MEDIUM, HIGH), and course_demand alongside events and predictions_generated."
+      - "templates/panels/analyst_dashboard.html (326 lines, 0 comments): initLiveStreamSimulator() -> render(data) updates Chart.getChart(document.getElementById('chart-dropout-doughnut')) and Chart.getChart(document.getElementById('chart-course-demand')) live with chart.update() on every stream tick."
+      - "panels/test_phase25.py (394 lines, 0 comments): added test_phase65_global_branding_and_live_stream_charts verifying disconnected fallback defaults, custom system_settings branding via RequestFactory + global_context and live GETs on teacher_dashboard & student_dashboard, live Chart.getChart wiring in analyst_dashboard HTML, and dropout_counts + course_demand JSON payload from analytics:stream_tick."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check: all 11 JS scripts (analyst_evaluation.js, app.js, auth_wizard.js, charts.js, directory_ui.js, dot_kpi.js, image_cropper.js, nav.js, page_guides.js, theme_studio.js, ui_widgets.js) exited 0."
-  - "manage.py test: Ran 110 tests in 52.738s (OK)."
-  - "manage.py verify_uat: 7/7 passed in 10.44s - System 100% Operational."
-  - "Static audit: panels/pdf_services.py (255 lines, 0 comments), panels/views_student.py (237 lines, 0 comments), panels/test_phase25.py (370 lines, 0 comments); .agents/rules/edupredict-rules.md 15,978 bytes (< 24,000); .env tracked."
+  - "manage.py test: Ran 111 tests in 54.085s (OK)."
+  - "manage.py verify_uat: UAT Results: 7/7 passed in 10.38s - System 100% Operational."
+  - "Static audit: core/context_processors.py (92 lines, 0 comments), analytics/stream_services.py (118 lines, 0 comments), templates/panels/analyst_dashboard.html (326 lines, 0 comments), panels/test_phase25.py (394 lines, 0 comments); .agents/rules/edupredict-rules.md 15,978 bytes (< 24,000); .env tracked."
 
 active_routes_and_files:
-  - "panels/pdf_services.py (255 lines), panels/views_student.py (237 lines), panels/test_phase25.py (370 lines)"
-  - "templates/panels/student_report.html (84 lines, Portal / Term card)"
+  - "core/context_processors.py (92 lines), analytics/stream_services.py (118 lines), templates/panels/analyst_dashboard.html (326 lines), panels/test_phase25.py (394 lines)"
 
 pending_modules_in_order:
-  - "All Planned Phases (Phases 1-64) Complete — Ready for Final Aptech Viva & Production Deployment."
+  - "All Planned Phases (Phases 1-65) Complete — Ready for Final Aptech Viva & Production Deployment."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

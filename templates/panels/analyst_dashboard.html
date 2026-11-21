@@ -277,6 +277,20 @@
         if (strip) strip.classList.remove('hidden');
         if (summaryEl) summaryEl.textContent = data.message || ('Streamed ' + (data.events_pushed || 0) + ' live events.');
         if (kpiEl) kpiEl.textContent = 'Preds ' + (data.predictions_generated || 0) + ' · High ' + (data.high_risk_count || 0) + ' · Anom ' + (data.anomalies_count || 0);
+        if (typeof Chart !== 'undefined' && typeof Chart.getChart === 'function') {
+          const riskChart = data.dropout_counts ? Chart.getChart(document.getElementById('chart-dropout-doughnut')) : null;
+          if (riskChart && riskChart.data && Array.isArray(riskChart.data.datasets) && riskChart.data.datasets[0]) {
+            riskChart.data.datasets[0].data = [data.dropout_counts.LOW || 0, data.dropout_counts.MEDIUM || 0, data.dropout_counts.HIGH || 0];
+            riskChart.update();
+          }
+          const demandChart = Array.isArray(data.course_demand) && data.course_demand.length ? Chart.getChart(document.getElementById('chart-course-demand')) : null;
+          if (demandChart && demandChart.data && Array.isArray(demandChart.data.datasets) && demandChart.data.datasets.length >= 2) {
+            demandChart.data.labels = data.course_demand.map((d) => d.course_code);
+            demandChart.data.datasets[0].data = data.course_demand.map((d) => d.current_enrolled);
+            demandChart.data.datasets[1].data = data.course_demand.map((d) => d.projected_demand);
+            demandChart.update();
+          }
+        }
         if (!eventsEl) return;
         eventsEl.textContent = '';
         (Array.isArray(data.events) ? data.events : []).forEach((ev) => {

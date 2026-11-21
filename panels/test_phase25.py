@@ -5,13 +5,14 @@ from pathlib import Path
 from unittest.mock import patch
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
-from django.test import Client, TestCase
+from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
 from sklearn.ensemble import RandomForestClassifier
 import accounts.services as acc_svc
 from analytics.data_pipeline import _normalize_column_name, ingest_dataset
 from analytics.ml_engine import run_prediction_pipeline
 from analytics.preprocessing import build_dropout_pipeline
+from core.context_processors import global_context
 from core.db import invalidate_cache
 import panels.admin_audit_services as audit_svc
 import panels.admin_seed as admin_seed
@@ -368,3 +369,26 @@ class Phase25IntegrationTests(TestCase):
         first_body_line = min(n.lineno for n in tree.body if not isinstance(n, (ast.Import, ast.ImportFrom)))
         import_lines = [n.lineno for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))]
         self.assertTrue(import_lines and all(ln < first_body_line for ln in import_lines))
+
+    def test_phase65_global_branding_and_live_stream_charts(self):
+        with patch("core.context_processors.check_db_health", return_value={"connected": False}):
+            off_ctx = global_context(RequestFactory().get(reverse("panels:teacher_dashboard")))
+        self.assertEqual((off_ctx["portal_institution_name"], off_ctx["portal_current_term"]), ("EduPredict Academic Portal", "Fall 2026"))
+
+        self.cols["system_settings"].insert_one({"setting_key": "portal_config", "institution_name": "Global Tech College", "current_term": "Winter 2027"})
+        invalidate_cache()
+        rf_ctx = global_context(RequestFactory().get(reverse("panels:teacher_dashboard")))
+        self.assertEqual((rf_ctx["portal_institution_name"], rf_ctx["portal_current_term"]), ("Global Tech College", "Winter 2027"))
+        for role, uid, sid, url_name in (("TEACHER", "USR-T65", None, "panels:teacher_dashboard"), ("STUDENT", "USR-S65", "STD-6501", "panels:student_dashboard")):
+            resp = self._login_role(role, user_id=uid, student_id=sid).get(reverse(url_name))
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual((resp.context["portal_institution_name"], resp.context["portal_current_term"]), ("Global Tech College", "Winter 2027"))
+
+        analyst = self._login_role("ANALYST", user_id="USR-AN65")
+        dash_html = analyst.get(reverse("panels:analyst_dashboard")).content.decode("utf-8")
+        self.assertIn("Chart.getChart(document.getElementById('chart-dropout-doughnut'))", dash_html)
+        self.assertIn("Chart.getChart(document.getElementById('chart-course-demand'))", dash_html)
+        tick_data = analyst.post(reverse("analytics:stream_tick")).json()
+        self.assertTrue(tick_data["ok"] and len(tick_data["events"]) >= 1 and tick_data["predictions_generated"] >= 1)
+        self.assertEqual(tick_data["dropout_counts"], {"LOW": tick_data["low_risk_count"], "MEDIUM": tick_data["medium_risk_count"], "HIGH": tick_data["high_risk_count"]})
+        self.assertTrue(tick_data["course_demand"] and "course_code" in tick_data["course_demand"][0])

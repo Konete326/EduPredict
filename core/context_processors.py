@@ -1,6 +1,22 @@
 from pymongo import DESCENDING
 from core.db import check_db_health, get_cached, notifications_col
 from core.theme_services import get_theme_studio_catalog, get_user_theme_prefs
+import panels.pdf_services as _pdf_services
+from panels.pdf_services import _resolve_pdf_branding
+
+_ORIG_RESOLVE_PDF_BRANDING = _resolve_pdf_branding
+DEFAULT_PORTAL_BRANDING = ("EduPredict Academic Portal", "Fall 2026")
+
+
+def _resolve_global_branding(db_connected):
+    if not db_connected:
+        return DEFAULT_PORTAL_BRANDING
+    try:
+        resolver = _resolve_pdf_branding if _resolve_pdf_branding is not _ORIG_RESOLVE_PDF_BRANDING else _pdf_services._resolve_pdf_branding
+        inst_name, term_name = resolver({})
+        return str(inst_name or DEFAULT_PORTAL_BRANDING[0]).strip() or DEFAULT_PORTAL_BRANDING[0], str(term_name or DEFAULT_PORTAL_BRANDING[1]).strip() or DEFAULT_PORTAL_BRANDING[1]
+    except Exception:
+        return DEFAULT_PORTAL_BRANDING
 
 
 def _build_notification_query(user_id, active_role, student_id=None):
@@ -57,20 +73,20 @@ def global_context(request):
 
     if db_connected and current_user:
         try:
-            unread_notifications, unread_notifications_count = _fetch_unread_notifications(
-                current_user,
-                active_role,
-            )
+            unread_notifications, unread_notifications_count = _fetch_unread_notifications(current_user, active_role)
         except Exception:
             unread_notifications = []
             unread_notifications_count = 0
 
+    inst_name, term_name = _resolve_global_branding(db_connected)
     return {
         "current_user": current_user,
         "active_role": active_role,
         "unread_notifications": unread_notifications,
         "unread_notifications_count": unread_notifications_count,
         "db_connected": db_connected,
+        "portal_institution_name": inst_name,
+        "portal_current_term": term_name,
         "theme_prefs": get_user_theme_prefs(request),
         "theme_catalog": get_theme_studio_catalog(),
     }

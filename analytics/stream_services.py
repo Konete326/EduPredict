@@ -99,13 +99,20 @@ def simulate_lms_stream_tick(uploaded_by="Analyst"):
 
     invalidate_cache()
     preds_gen = ml_res.get("predictions_generated", 0)
+    low_cnt = ml_res.get("low_risk_count", 0)
+    med_cnt = ml_res.get("medium_risk_count", 0)
+    high_cnt = ml_res.get("high_risk_count", 0)
     return {
         "ok": True,
         "status": "COMPLETED",
         "events_pushed": len(events),
         "events": events,
         "predictions_generated": preds_gen,
-        "high_risk_count": ml_res.get("high_risk_count", 0),
+        "low_risk_count": low_cnt,
+        "medium_risk_count": med_cnt,
+        "high_risk_count": high_cnt,
         "anomalies_count": ml_res.get("anomalies_count", 0),
+        "dropout_counts": {"LOW": low_cnt, "MEDIUM": med_cnt, "HIGH": high_cnt},
+        "course_demand": ml_res.get("course_demand", []),
         "message": f"Streamed {len(events)} live LMS events and refreshed {preds_gen} predictions.",
     }
