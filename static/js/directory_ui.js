@@ -253,22 +253,39 @@
       if (sid) evMap.set(sid, ev);
     });
     if (!evMap.size) return;
-    table.querySelectorAll('tbody tr:not([data-empty-row])').forEach((tr) => {
+    const container = table.closest ? table.closest('[data-paginated-container]') : null;
+    const mobileCards = container ? container.querySelectorAll('[data-mobile-card][data-page-item]') : [];
+    table.querySelectorAll('tbody tr:not([data-empty-row])').forEach((tr, idx) => {
       const sid = (tr.cells[0]?.textContent || '').trim().toUpperCase();
       const ev = sid ? evMap.get(sid) : null;
       if (!ev || tr.cells.length < 10) return;
       const rawAtt = ev.attendance_pct != null ? ev.attendance_pct : ev.attendance;
       const attNum = rawAtt != null && String(rawAtt).trim() !== '' && typeof rawAtt !== 'boolean' ? Number(rawAtt) : NaN;
-      if (Number.isFinite(attNum)) tr.cells[4].textContent = attNum.toFixed(1) + '%';
+      const attText = Number.isFinite(attNum) ? attNum.toFixed(1) + '%' : null;
       const gpaNum = ev.predicted_gpa != null && String(ev.predicted_gpa).trim() !== '' && typeof ev.predicted_gpa !== 'boolean' ? Number(ev.predicted_gpa) : NaN;
-      tr.cells[6].textContent = Number.isFinite(gpaNum) ? gpaNum.toFixed(2) : '-';
+      const gpaText = Number.isFinite(gpaNum) ? gpaNum.toFixed(2) : '-';
       const risk = String(ev.risk_level || '').trim().toUpperCase();
       const riskDot = risk === 'HIGH' ? 'bg-[var(--status-danger)]' : (risk === 'MEDIUM' ? 'bg-[var(--status-warning)]' : 'bg-[var(--status-success)]');
-      updateStreamCellBadge(tr.cells[7], riskDot, ev.risk_text || ev.risk_level || '');
+      const riskText = ev.risk_text || ev.risk_level || '';
       const isAnom = Boolean(ev.is_anomaly);
-      updateStreamCellBadge(tr.cells[8], isAnom ? 'bg-[var(--status-danger)]' : 'bg-[var(--status-success)]', isAnom ? 'Flagged' : 'Normal');
+      const anomDot = isAnom ? 'bg-[var(--status-danger)]' : 'bg-[var(--status-success)]';
+      const anomText = isAnom ? 'Flagged' : 'Normal';
+      if (attText !== null) tr.cells[4].textContent = attText;
+      tr.cells[6].textContent = gpaText;
+      updateStreamCellBadge(tr.cells[7], riskDot, riskText);
+      updateStreamCellBadge(tr.cells[8], anomDot, anomText);
       tr.cells[9].textContent = ev.tip || tr.cells[9].textContent;
+      const card = mobileCards[idx];
+      if (card && card.children.length >= 10) {
+        const valBox = (k) => { const row = card.children[k]; return row ? ((row.querySelector ? row.querySelector('div.text-right') : null) || (row.children ? row.children[1] : null)) : null; };
+        if (attText !== null && valBox(4)) valBox(4).textContent = attText;
+        if (valBox(6)) valBox(6).textContent = gpaText;
+        updateStreamCellBadge(valBox(7), riskDot, riskText);
+        updateStreamCellBadge(valBox(8), anomDot, anomText);
+        if (valBox(9)) valBox(9).textContent = ev.tip || valBox(9).textContent;
+      }
     });
+    if (container && container._paginationController && typeof container._paginationController.refreshSearchText === 'function') container._paginationController.refreshSearchText();
   }
 
   function initDirectoryUI() {

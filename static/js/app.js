@@ -217,7 +217,8 @@
       };
       if (prevBtn) prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage -= 1; renderPage(); } });
       if (nextBtn) nextBtn.addEventListener('click', () => { currentPage += 1; renderPage(); });
-      container._paginationController = { applySearch: (q) => { query = String(q || '').trim().toLowerCase(); currentPage = 1; renderPage(); }, sortEntries };
+      const refreshSearchText = () => { entries.forEach((e) => { e.searchText = e.nodes.map((n) => n.textContent || '').join(' ').toLowerCase(); }); if (query) renderPage(); };
+      container._paginationController = { applySearch: (q) => { query = String(q || '').trim().toLowerCase(); currentPage = 1; renderPage(); }, sortEntries, refreshSearchText };
       paginatedControllers.push(container._paginationController);
       renderPage();
     });

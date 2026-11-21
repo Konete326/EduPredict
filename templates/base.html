@@ -64,7 +64,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
-  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=16">
+  <link rel="stylesheet" href="{% static 'css/global.css' %}?v=17">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased">
@@ -174,15 +174,15 @@
 
   {{ theme_prefs|json_script:"ep-theme-prefs-data" }}
   {{ theme_catalog|json_script:"ep-theme-catalog-data" }}
-  <script src="{% static 'js/app.js' %}?v=16"></script>
-  <script src="{% static 'js/dot_kpi.js' %}?v=16"></script>
-  <script src="{% static 'js/charts.js' %}?v=16"></script>
-  <script src="{% static 'js/nav.js' %}?v=16"></script>
-  <script src="{% static 'js/theme_studio.js' %}?v=16"></script>
-  <script src="{% static 'js/ui_widgets.js' %}?v=16"></script>
-  <script src="{% static 'js/page_guides.js' %}?v=16"></script>
-  <script src="{% static 'js/image_cropper.js' %}?v=16"></script>
-  <script src="{% static 'js/directory_ui.js' %}?v=16"></script>
+  <script src="{% static 'js/app.js' %}?v=17"></script>
+  <script src="{% static 'js/dot_kpi.js' %}?v=17"></script>
+  <script src="{% static 'js/charts.js' %}?v=17"></script>
+  <script src="{% static 'js/nav.js' %}?v=17"></script>
+  <script src="{% static 'js/theme_studio.js' %}?v=17"></script>
+  <script src="{% static 'js/ui_widgets.js' %}?v=17"></script>
+  <script src="{% static 'js/page_guides.js' %}?v=17"></script>
+  <script src="{% static 'js/image_cropper.js' %}?v=17"></script>
+  <script src="{% static 'js/directory_ui.js' %}?v=17"></script>
   <div id="page-extra-js">{% block extra_js %}{% endblock %}</div>
 </body>
 </html>
