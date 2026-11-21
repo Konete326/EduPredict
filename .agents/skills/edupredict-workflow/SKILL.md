@@ -18,7 +18,7 @@ Before inspecting code or editing files, read all six project specification docu
 2. [srd.md](../../srd.md) — Architecture, RBAC, data pipeline, ML & NFR specs
 3. [trd.md](../../trd.md) — Stack, directory layout, MongoDB schemas, URL map, component contracts
 4. [design.md](../../design.md) — Theme tokens, app-shell-3, z-index stack, viewport-fit & mobile card-list rules
-5. [project-rules.md](../../project-rules.md) — All 20 mandatory engineering, UI/UX, role, caching, and communication rules
+5. [project-rules.md](../../project-rules.md) — All 23 mandatory engineering, UI/UX, role, caching, and communication rules (including Phases 60–63 Masterplan)
 6. [git-sync.md](../../git-sync.md) — Git automation, module isolation, and Section 4 Active Handover State
 
 ## 2. Pre-Task Git Routine
