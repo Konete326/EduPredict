@@ -194,20 +194,29 @@
       });
   }
 
+  function bindStudent360TriggerNode(targetEl, rawSid) {
+    if (!targetEl || targetEl.dataset.s360Bound === '1') return;
+    const sid = (rawSid || targetEl.textContent || '').trim();
+    if (!sid) return;
+    targetEl.dataset.s360Bound = '1'; targetEl.textContent = '';
+    const btn = mk('button', 'inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-[var(--accent-primary)] hover:underline');
+    btn.type = 'button'; btn.title = 'Open Student 360 summary';
+    btn.append(mk('span', '', sid), mk('i', 'fa-solid fa-up-right-from-square text-[10px] opacity-70'));
+    btn.addEventListener('click', () => openStudent360Drawer(sid));
+    targetEl.appendChild(btn);
+  }
+
   function bindAnalystStudent360Cells() {
     const table = byId('analyst-predictions-table');
     if (!table) return;
     table.querySelectorAll('tbody tr:not([data-empty-row])').forEach((tr) => {
-      const cell = tr.querySelector('td');
-      if (!cell || cell.dataset.s360Bound === '1') return;
-      const sid = (cell.textContent || '').trim();
-      if (!sid) return;
-      cell.dataset.s360Bound = '1'; cell.textContent = '';
-      const btn = mk('button', 'inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-[var(--accent-primary)] hover:underline');
-      btn.type = 'button'; btn.title = 'Open Student 360 summary';
-      btn.append(mk('span', '', sid), mk('i', 'fa-solid fa-up-right-from-square text-[10px] opacity-70'));
-      btn.addEventListener('click', () => openStudent360Drawer(sid));
-      cell.appendChild(btn);
+      bindStudent360TriggerNode(tr.querySelector('td'), tr.getAttribute ? tr.getAttribute('data-row-id') : '');
+    });
+    const container = table.closest ? table.closest('[data-paginated-container]') : null;
+    const mobileCards = container ? container.querySelectorAll('[data-mobile-card][data-page-item]') : [];
+    mobileCards.forEach((card) => {
+      const hdrBox = card && card.children && card.children[0] ? ((card.children[0].querySelector ? card.children[0].querySelector('div.text-right') : null) || (card.children[0].children ? card.children[0].children[1] : null)) : null;
+      bindStudent360TriggerNode(hdrBox, card && card.getAttribute ? card.getAttribute('data-card-id') : '');
     });
   }
 
@@ -263,7 +272,8 @@
       if (cSid) cardMap.set(cSid, card);
     });
     table.querySelectorAll('tbody tr:not([data-empty-row])').forEach((tr, idx) => {
-      const sid = (tr.cells[0]?.textContent || '').trim().toUpperCase();
+      const rowAttrSid = (tr && tr.getAttribute ? (tr.getAttribute('data-row-id') || '') : '').trim().toUpperCase();
+      const sid = rowAttrSid || (tr.cells[0]?.textContent || '').trim().toUpperCase();
       const ev = sid ? evMap.get(sid) : null;
       if (!ev || tr.cells.length < 10) return;
       const rawAtt = ev.attendance_pct != null ? ev.attendance_pct : ev.attendance;

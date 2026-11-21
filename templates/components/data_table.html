@@ -21,7 +21,7 @@
       {% endif %}
       <tbody class="divide-y divide-[var(--border-subtle)] tabular-nums">
         {% for row in rows %}
-        <tr data-page-item class="transition-colors hover:bg-[var(--bg-elevated)]">
+        <tr data-page-item{% if row %} data-row-id="{% if row.0.text is not None %}{{ row.0.text }}{% else %}{{ row.0 }}{% endif %}"{% endif %} class="transition-colors hover:bg-[var(--bg-elevated)]">
           {% for cell in row %}
           <td class="px-3.5 py-2.5 align-middle text-[var(--text-primary)] break-words max-w-[18rem]">
             {% if cell.status and cell.text is not None %}
