@@ -61,31 +61,29 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 69 Mobile Stream Cards Sync & Static Asset v17 Cache-Bust Team"
-active_branch_merged_to_main: "feature/phase69-mobile-stream-cards-v17 -> main"
-project_phase: "Phase 69 Complete: Mobile Stream Cards Sync, Pagination Search Refresh & v17 Cache-Bust"
+last_updated_by_agent: "Phase 70 Mobile Card ID-Matching & Unified Static Asset v17 Sync Team"
+active_branch_merged_to_main: "feature/phase70-mobile-id-match-asset-sync -> main"
+project_phase: "Phase 70 Complete: Mobile Card ID-Matching on Live Stream Updates & Unified v17 Static Asset Sync"
 
 completed_modules:
-  - "Phase 1-68: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF & HTML Branding Sync, Cgroup Health Telemetry, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (60/26A), Image Cropper & Lightbox (61/26B), Table-First Directories & Student 360° Drawer (62/26C), Hyper-Automation, Live LMS Stream Simulator & Aptech Pack (63/26D), Student Report HTML Branding Sync & PEP 8 PDF Imports (64), Global Cached Portal Branding Context & Live Stream Chart Auto-Refresh (65), Live Stream Scatter/KPI Sync & Core Branding Helper Refactor (66), Live KPI data-kpi-value Sync, SPA Init Hook & PDF Branding Delegation (67), SPA reinitEduPredictUI Stream Hook & Live Predictions Table Refresh (68)."
-  - "Phase 69: Mobile Stream Cards Sync, Pagination Search Refresh & v17 Cache-Bust:"
-      - "static/js/app.js (346 lines, 0 comments): exposed refreshSearchText on container._paginationController inside initPaginatedContainers() to rebuild entries[i].searchText from live DOM nodes and re-run renderPage() when an active search query exists."
-      - "static/js/directory_ui.js (317 lines, 0 comments): updated syncStreamPredictionTable(events) to sync [data-mobile-card][data-page-item] value boxes (indices 4, 6, 7 updateStreamCellBadge, 8 updateStreamCellBadge, 9 tip) alongside desktop table cells and invoke container._paginationController.refreshSearchText()."
-      - "templates/base.html (188 lines, 0 comments) & templates/accounts/auth.html (313 lines, 0 comments): bumped all local static CSS/JS asset query strings from ?v=16 to ?v=17 (0 ?v=16 references remaining)."
-      - "panels/test_phase25.py (394 lines, 0 comments): updated auth_wizard.js?v=16 assertion to auth_wizard.js?v=17."
-      - "panels/test_phase66.py (225 lines, 0 comments): added test_phase69_mobile_stream_cards_search_sync_and_v17_cache_bust running a Node VM DOM test on static/js/app.js + static/js/directory_ui.js (desktop tr + mobile [data-mobile-card] sync + refreshSearchText live search) and verifying ?v=17 / zero ?v=16 in templates and rendered analyst/auth responses."
+  - "Phase 1-69: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF & HTML Branding Sync, Cgroup Health Telemetry, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (60/26A), Image Cropper & Lightbox (61/26B), Table-First Directories & Student 360° Drawer (62/26C), Hyper-Automation, Live LMS Stream Simulator & Aptech Pack (63/26D), Student Report HTML Branding Sync & PEP 8 PDF Imports (64), Global Cached Portal Branding Context & Live Stream Chart Auto-Refresh (65), Live Stream Scatter/KPI Sync & Core Branding Helper Refactor (66), Live KPI data-kpi-value Sync, SPA Init Hook & PDF Branding Delegation (67), SPA reinitEduPredictUI Stream Hook & Live Predictions Table Refresh (68), Mobile Stream Cards Sync, Pagination Search Refresh & v17 Cache-Bust (69)."
+  - "Phase 70: Mobile Card ID-Matching on Live Stream Updates & Unified v17 Static Asset Sync:"
+      - "static/js/directory_ui.js (323 lines, 0 comments): updated syncStreamPredictionTable(events) to index mobileCards by student_id via cardMap built from each card's header value box (with fallback to mobileCards[idx]) so mobile cards update accurately even when desktop rows and mobile cards have different DOM order after column sorting."
+      - "templates/panels/analyst_dashboard.html (347 lines, 0 comments): unified analyst_evaluation.js query string from ?v=1 to ?v=17 to match all v17 static assets."
+      - "panels/test_phase66.py (277 lines, 0 comments): added test_phase70_mobile_card_id_matching_and_unified_v17_assets verifying reversed mobile card order ([c2, c1] vs [tr1, tr2]) updates c1 and leaves c2 untouched in Node VM, and confirming analyst_evaluation.js?v=17 with zero ?v=1 references in templates/panels/analyst_dashboard.html and rendered GET reverse('panels:analyst_dashboard')."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check: all 11 JS scripts (analyst_evaluation.js, app.js, auth_wizard.js, charts.js, directory_ui.js, dot_kpi.js, image_cropper.js, nav.js, page_guides.js, theme_studio.js, ui_widgets.js) exited 0."
-  - "manage.py test: Ran 116 tests in 63.210s (OK)."
-  - "manage.py verify_uat: UAT Results: 7/7 passed in 11.56s - System 100% Operational."
-  - "Static audit: static/js/app.js (346 lines, 0 comments), static/js/directory_ui.js (317 lines, 0 comments), templates/base.html (188 lines, 0 comments), templates/accounts/auth.html (313 lines, 0 comments), panels/test_phase25.py (394 lines, 0 comments), panels/test_phase66.py (225 lines, 0 comments); .agents/rules/edupredict-rules.md 15,978 bytes (< 24,000); .env tracked."
+  - "manage.py test: Ran 117 tests (OK)."
+  - "manage.py verify_uat: UAT Results: 7/7 passed - System 100% Operational."
+  - "Static audit: static/js/directory_ui.js (323 lines, 0 comments), templates/panels/analyst_dashboard.html (347 lines, 0 comments), panels/test_phase66.py (277 lines, 0 comments), panels/test_phase25.py (394 lines, 0 comments); .agents/rules/edupredict-rules.md 15,978 bytes (< 24,000); .env tracked."
 
 active_routes_and_files:
-  - "static/js/app.js (346 lines), static/js/directory_ui.js (317 lines), templates/base.html (188 lines), templates/accounts/auth.html (313 lines), panels/test_phase25.py (394 lines), panels/test_phase66.py (225 lines), .agents/git-sync.md"
+  - "static/js/directory_ui.js (323 lines), templates/panels/analyst_dashboard.html (347 lines), panels/test_phase66.py (277 lines), .agents/git-sync.md"
 
 pending_modules_in_order:
-  - "All Planned Phases (Phases 1-69) Complete — Ready for Final Aptech Viva & Production Deployment."
+  - "All Planned Phases (Phases 1-70) Complete — Ready for Final Aptech Viva & Production Deployment."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

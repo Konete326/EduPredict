@@ -255,6 +255,12 @@
     if (!evMap.size) return;
     const container = table.closest ? table.closest('[data-paginated-container]') : null;
     const mobileCards = container ? container.querySelectorAll('[data-mobile-card][data-page-item]') : [];
+    const cardMap = new Map();
+    mobileCards.forEach((card) => {
+      const hdrBox = card && card.children && card.children[0] ? ((card.children[0].querySelector ? card.children[0].querySelector('div.text-right') : null) || (card.children[0].children ? card.children[0].children[1] : null) || card.children[0]) : null;
+      const cSid = (hdrBox?.textContent || '').trim().toUpperCase();
+      if (cSid) cardMap.set(cSid, card);
+    });
     table.querySelectorAll('tbody tr:not([data-empty-row])').forEach((tr, idx) => {
       const sid = (tr.cells[0]?.textContent || '').trim().toUpperCase();
       const ev = sid ? evMap.get(sid) : null;
@@ -275,7 +281,7 @@
       updateStreamCellBadge(tr.cells[7], riskDot, riskText);
       updateStreamCellBadge(tr.cells[8], anomDot, anomText);
       tr.cells[9].textContent = ev.tip || tr.cells[9].textContent;
-      const card = mobileCards[idx];
+      const card = cardMap.get(sid) || mobileCards[idx];
       if (card && card.children.length >= 10) {
         const valBox = (k) => { const row = card.children[k]; return row ? ((row.querySelector ? row.querySelector('div.text-right') : null) || (row.children ? row.children[1] : null)) : null; };
         if (attText !== null && valBox(4)) valBox(4).textContent = attText;
