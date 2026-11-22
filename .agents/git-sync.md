@@ -61,29 +61,31 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 72 Desktop data-row-id & Mobile Student 360° Trigger Team"
-active_branch_merged_to_main: "feature/phase72-row-id-mobile-s360 -> main"
-project_phase: "Phase 72 Complete: Desktop Table Row data-row-id Attribute & Mobile Card Student 360° Trigger"
+last_updated_by_agent: "Phase 73 Hirael Login-03 Auth Showcase, Floating SVG Paths & Password Strength Meter Team"
+active_branch_merged_to_main: "feature/phase73-login03-auth-showcase -> main"
+project_phase: "Phase 73 Complete: Hirael Login-03 Split-Screen Auth Showcase, Floating SVG Paths & Password Strength Meter"
 
 completed_modules:
-  - "Phase 1-71: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF & HTML Branding Sync, Cgroup Health Telemetry, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (60/26A), Image Cropper & Lightbox (61/26B), Table-First Directories & Student 360° Drawer (62/26C), Hyper-Automation, Live LMS Stream Simulator & Aptech Pack (63/26D), Student Report HTML Branding Sync & PEP 8 PDF Imports (64), Global Cached Portal Branding Context & Live Stream Chart Auto-Refresh (65), Live Stream Scatter/KPI Sync & Core Branding Helper Refactor (66), Live KPI data-kpi-value Sync, SPA Init Hook & PDF Branding Delegation (67), SPA reinitEduPredictUI Stream Hook & Live Predictions Table Refresh (68), Mobile Stream Cards Sync, Pagination Search Refresh & v17 Cache-Bust (69), Mobile Card ID-Matching & Unified v17 Static Asset Sync (70), Central STATIC_ASSET_VERSION & Mobile data-card-id Attribute (71)."
-  - "Phase 72: Desktop Table Row data-row-id Attribute & Mobile Card Student 360° Trigger:"
-      - "templates/components/data_table.html (134 lines, 0 comments): added data-row-id attribute on desktop tbody tr[data-page-item] elements populated from the row's primary identifier cell (row.0.text or row.0)."
-      - "static/js/directory_ui.js (334 lines, 0 comments): added bindStudent360TriggerNode(targetEl, rawSid) so bindAnalystStudent360Cells() binds clickable Student 360° drawer triggers on both desktop tbody tr first cells (using data-row-id) and mobile [data-mobile-card] header value boxes (using data-card-id), and updated syncStreamPredictionTable(events) to prefer tr.getAttribute('data-row-id') before falling back to tr.cells[0]?.textContent."
-      - "panels/test_phase66.py (377 lines, 0 comments): added test_phase72_desktop_data_row_id_and_mobile_s360_trigger verifying data-row-id in data_table.html and rendered analyst_dashboard HTML, plus Node VM DOM verification of desktop & mobile Student 360° button triggers and data-row-id matching when tr.cells[0] contains noisy text."
+  - "Phase 1-72: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF & HTML Branding Sync, Cgroup Health Telemetry, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (60/26A), Image Cropper & Lightbox (61/26B), Table-First Directories & Student 360° Drawer (62/26C), Hyper-Automation, Live LMS Stream Simulator & Aptech Pack (63/26D), Student Report HTML Branding Sync & PEP 8 PDF Imports (64), Global Cached Portal Branding Context & Live Stream Chart Auto-Refresh (65), Live Stream Scatter/KPI Sync & Core Branding Helper Refactor (66), Live KPI data-kpi-value Sync, SPA Init Hook & PDF Branding Delegation (67), SPA reinitEduPredictUI Stream Hook & Live Predictions Table Refresh (68), Mobile Stream Cards Sync, Pagination Search Refresh & v17 Cache-Bust (69), Mobile Card ID-Matching & Unified v17 Static Asset Sync (70), Central STATIC_ASSET_VERSION & Mobile data-card-id Attribute (71), Desktop Table Row data-row-id & Mobile Card Student 360° Trigger (72)."
+  - "Phase 73: Hirael Login-03 Split-Screen Auth Showcase, Floating SVG Paths & Password Strength Meter:"
+      - "templates/accounts/auth.html (340 lines, 0 comments): upgraded to Login-03 split-screen showcase (data-slot='login', 'login-aside', 'login-main', 'login-panel', 'login-header'), animated #ep-floating-paths container, 3-bullet restraint cards, editorial blockquote, 4-bar #reg-password-strength meter, calm data-pending-approval-card, and ?v=17 asset query strings."
+      - "static/js/auth_wizard.js (235 lines, 0 comments): added initFloatingPaths() generating 72 animated SVG <path> elements inside #ep-floating-paths and window.evaluatePasswordStrength() driving the 4 [data-strength-bar] segments + #reg-password-strength-label across empty/short/weak/fair/good/strong states."
+      - "static/css/global.css (339 lines, 0 comments): added CSS variable-backed auth showcase animations and floating-path styling."
+      - "accounts/views.py (199 lines, 0 comments): added pending_teacher_approval=False to _render_auth() context and passed pending_teacher_approval=True on PENDING teacher registration in _handle_register()."
+      - "panels/test_phase73.py (136 lines, 0 comments): added Phase73AuthShowcaseTests verifying Login-03 slots, pending teacher approval status card, and Node VM execution of initFloatingPaths() (72 SVG paths) + evaluatePasswordStrength()."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check: all 11 JS scripts (analyst_evaluation.js, app.js, auth_wizard.js, charts.js, directory_ui.js, dot_kpi.js, image_cropper.js, nav.js, page_guides.js, theme_studio.js, ui_widgets.js) exited 0."
-  - "manage.py test: Ran 119 tests (OK)."
-  - "manage.py verify_uat: UAT Results: 7/7 passed - System 100% Operational."
-  - "Static audit: templates/components/data_table.html (134 lines, 0 comments), static/js/directory_ui.js (334 lines, 0 comments), panels/test_phase66.py (377 lines, 0 comments), panels/test_phase25.py (394 lines, 0 comments); .agents/rules/edupredict-rules.md 15,978 bytes (< 24,000); .env tracked."
+  - "manage.py test --verbosity=2: Ran 122 tests in 85.669s (OK)."
+  - "manage.py verify_uat: UAT Results: 7/7 passed in 9.82s - System 100% Operational."
+  - "Static audit: templates/accounts/auth.html (340/350), static/js/auth_wizard.js (235/350), static/css/global.css (339/350), accounts/views.py (199/250), panels/test_phase73.py (136/350), 0 comments/docstrings; .agents/rules/edupredict-rules.md 15,978 bytes (< 24,000); .env and .agents/* tracked in Git."
 
 active_routes_and_files:
-  - "templates/components/data_table.html (134 lines), static/js/directory_ui.js (334 lines), panels/test_phase66.py (377 lines), .agents/git-sync.md"
+  - "templates/accounts/auth.html (340 lines), static/js/auth_wizard.js (235 lines), static/css/global.css (339 lines), accounts/views.py (199 lines), panels/test_phase73.py (136 lines), .agents/git-sync.md"
 
 pending_modules_in_order:
-  - "All Planned Phases (Phases 1-72) Complete — Ready for Final Aptech Viva & Production Deployment."
+  - "All Planned Phases (Phases 1-73) Complete — Ready for Final Aptech Viva & Production Deployment."
 
 important_notes_for_next_agent:
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."

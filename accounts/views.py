@@ -38,7 +38,7 @@ def _get_live_stats():
     return get_cached("auth:live_stats", _fetch, ttl=60.0)
 
 
-def _render_auth(request, active_tab="login", login_email="", register_data=None):
+def _render_auth(request, active_tab="login", login_email="", register_data=None, pending_teacher_approval=False):
     stats = _get_live_stats()
     return render(
         request,
@@ -49,6 +49,7 @@ def _render_auth(request, active_tab="login", login_email="", register_data=None
             "login_email": login_email,
             "register_data": register_data or {},
             "live_predictions_count": stats.get("predictions_count", 50),
+            "pending_teacher_approval": bool(pending_teacher_approval),
         },
     )
 
@@ -147,7 +148,7 @@ def _handle_register(request):
             request,
             "Your teacher account was created and is waiting for Admin approval. You can sign in once an administrator approves it.",
         )
-        return _render_auth(request, active_tab="login", login_email=email)
+        return _render_auth(request, active_tab="login", login_email=email, pending_teacher_approval=True)
 
     session_user = serialize_session_user(user_doc)
     request.session["user"] = session_user

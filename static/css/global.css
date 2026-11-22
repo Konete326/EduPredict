@@ -194,6 +194,7 @@ html.theme-transitioning *::after {
   .ep-faq-panel { transition: none; }
   .ep-gradient-upload { animation: none; }
   .ep-drawer-panel { transition: none; }
+  .ep-auth-enter, .ep-floating-path, .ep-step-slide-next, .ep-step-slide-prev { animation: none; }
 }
 
 @media (min-width: 1024px) {
@@ -311,3 +312,28 @@ html.dark .ep-table-scroll-wrap {
 .is-drawer-open .ep-drawer-panel {
   transform: translateX(0);
 }
+@keyframes epAuthEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ep-auth-enter {
+  animation: epAuthEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes epPathFlow {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -380; }
+}
+.ep-floating-path {
+  stroke-dasharray: 260 120;
+  animation: epPathFlow var(--ep-path-dur, 24s) linear infinite;
+}
+@keyframes epStepSlideNext {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes epStepSlidePrev {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.ep-step-slide-next { animation: epStepSlideNext 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.ep-step-slide-prev { animation: epStepSlidePrev 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
