@@ -93,8 +93,15 @@ function initAuthStepper() {
   }
 
   function showStep(target) {
+    const prevStep = currentStep;
     currentStep = Math.max(0, Math.min(steps.length - 1, target));
-    steps.forEach(function (el, idx) { el.classList.toggle('hidden', idx !== currentStep); });
+    steps.forEach(function (el, idx) {
+      el.classList.remove('ep-step-slide-next', 'ep-step-slide-prev');
+      const isActive = idx === currentStep;
+      el.classList.toggle('hidden', !isActive);
+      if (isActive && target > prevStep) el.classList.add('ep-step-slide-next');
+      else if (isActive && target < prevStep) el.classList.add('ep-step-slide-prev');
+    });
     triggers.forEach(function (btn, idx) {
       const ind = btn.querySelector('.ep-step-indicator');
       const state = idx < currentStep ? 'complete' : (idx === currentStep ? 'current' : 'upcoming');
@@ -159,4 +166,70 @@ function initAuthStepper() {
   showStep(0);
 }
 
-document.addEventListener('DOMContentLoaded', function () { initCapsLockListeners(); initAuthStepper(); });
+function initFloatingPaths() {
+  const container = document.getElementById('ep-floating-paths') || document.querySelector('[data-floating-paths]');
+  if (!container) return;
+  const svgNs = 'http://www.w3.org/2000/svg';
+  container.textContent = '';
+  [1, -1].forEach(function (position) {
+    const svg = document.createElementNS(svgNs, 'svg');
+    svg.setAttribute('class', 'pointer-events-none absolute inset-0 h-full w-full text-[var(--accent-primary)]');
+    svg.setAttribute('viewBox', '0 0 696 316');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    for (let i = 0; i < 36; i++) {
+      const path = document.createElementNS(svgNs, 'path');
+      const xOff = i * 5 * position;
+      const yOff = i * 6;
+      const d = 'M-' + (380 - xOff) + ' -' + (189 + yOff) +
+        'C-' + (380 - xOff) + ' -' + (189 + yOff) + ' -' + (312 - xOff) + ' ' + (216 - yOff) + ' ' + (152 - xOff) + ' ' + (343 - yOff) +
+        'C' + (616 - xOff) + ' ' + (470 - yOff) + ' ' + (684 - xOff) + ' ' + (875 - yOff) + ' ' + (684 - xOff) + ' ' + (875 - yOff);
+      path.setAttribute('d', d);
+      path.setAttribute('stroke', 'currentColor');
+      path.setAttribute('stroke-width', String((0.5 + i * 0.03).toFixed(2)));
+      path.setAttribute('stroke-opacity', String((0.08 + i * 0.015).toFixed(3)));
+      path.setAttribute('class', 'ep-floating-path');
+      path.style.setProperty('--ep-path-dur', String(20 + (i % 7) * 3) + 's');
+      svg.appendChild(path);
+    }
+    container.appendChild(svg);
+  });
+}
+window.initFloatingPaths = initFloatingPaths;
+
+window.evaluatePasswordStrength = function (val) {
+  const s = typeof val === 'string' ? val : '';
+  if (s.length < 6) return { score: 0, label: 'Enter at least 6 characters' };
+  const checks = (s.length >= 8 ? 1 : 0) + (/[a-z]/.test(s) && /[A-Z]/.test(s) ? 1 : 0) + (/\d/.test(s) ? 1 : 0) + (/[^A-Za-z0-9]/.test(s) ? 1 : 0);
+  const score = Math.max(1, Math.min(4, checks || 1));
+  return { score: score, label: ['Enter at least 6 characters', 'Weak', 'Fair', 'Good', 'Strong'][score] };
+};
+
+function initPasswordStrengthMeter() {
+  const passInput = document.getElementById('reg-password');
+  const labelEl = document.getElementById('reg-password-strength-label');
+  const bars = Array.from(document.querySelectorAll('[data-strength-bar]'));
+  if (!passInput || !labelEl || !bars.length) return;
+  const palette = ['var(--border-subtle)', 'var(--status-danger)', 'var(--status-warning)', 'var(--accent-primary)', 'var(--status-success)'];
+  function update() {
+    const res = window.evaluatePasswordStrength(passInput.value);
+    const activeColor = palette[res.score] || palette[0];
+    bars.forEach(function (bar, idx) {
+      bar.style.backgroundColor = res.score >= (Number(bar.getAttribute('data-strength-bar')) || (idx + 1)) ? activeColor : 'var(--border-subtle)';
+    });
+    labelEl.textContent = res.label;
+    labelEl.style.color = res.score > 0 ? activeColor : 'var(--text-muted)';
+  }
+  passInput.addEventListener('input', update);
+  update();
+}
+window.initPasswordStrengthMeter = initPasswordStrengthMeter;
+
+function bootAuthWizard() {
+  initCapsLockListeners();
+  initAuthStepper();
+  initFloatingPaths();
+  initPasswordStrengthMeter();
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootAuthWizard);
+else bootAuthWizard();
