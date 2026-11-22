@@ -14,6 +14,7 @@ urlpatterns = [
     path('admin-panel/settings/', views_admin.admin_settings, name='admin_settings'),
     path('admin-panel/backup/', views_admin.admin_backup_export, name='admin_backup_export'),
     path('support/submit/', views_admin.submit_support_ticket, name='submit_support_ticket'),
+    path('notifications/', views_notifications.notifications_history_view, name='notifications_history'),
     path('notifications/mark-read/', views_admin.mark_notifications_read_view, name='mark_notifications_read'),
     path('notifications/feed/', views_notifications.notifications_feed_view, name='notifications_feed'),
     path('students/<str:student_id>/summary/', views_notifications.student_360_summary_view, name='student_360_summary'),

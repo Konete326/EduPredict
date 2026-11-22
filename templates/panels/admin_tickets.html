@@ -103,6 +103,24 @@
         </div>
       </form>
     </div>
+
+    <div class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-5 py-3">
+      <div class="flex flex-wrap items-center gap-1.5">
+        <button id="drawer-edit-reply-btn" type="button" title="Open reply modal" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+          <i class="fa-solid fa-pen-to-square text-[11px] text-[var(--accent-primary)]" aria-hidden="true"></i>
+          <span>Edit Modal</span>
+        </button>
+        <button id="drawer-delete-reply-btn" type="button" title="Remove admin reply" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--status-danger)] transition-colors hover:bg-[var(--bg-elevated)]">
+          <i class="fa-solid fa-comment-slash text-[11px]" aria-hidden="true"></i>
+          <span>Clear Reply</span>
+        </button>
+        <button id="drawer-toggle-status-btn" type="button" title="Toggle ticket status" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+          <i class="fa-solid fa-circle-check text-[11px] text-[var(--status-success)]" aria-hidden="true"></i>
+          <span>Toggle Resolve</span>
+        </button>
+      </div>
+      <button type="button" onclick="closeTicketDetailDrawer()" class="inline-flex items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">Close</button>
+    </div>
   </div>
 </div>
 {% endblock %}

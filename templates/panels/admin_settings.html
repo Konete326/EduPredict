@@ -1,169 +1,201 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
-  <div class="min-w-0 space-y-1">
+<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3.5 sm:px-5 shadow-sm">
+  <div class="min-w-0 space-y-0.5">
     <div class="flex items-center gap-2">
-      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">
-        <i class="fa-solid fa-sliders text-xs"></i>
-        <span>System Configuration</span>
+      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]">
+        <i class="fa-solid fa-sliders text-[10px]" aria-hidden="true"></i><span>System Configuration</span>
       </span>
+      <h2 class="text-base sm:text-lg font-bold tracking-tight text-[var(--text-primary)]">Portal Settings</h2>
     </div>
-    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Portal Settings</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Set active school terms, passing rules, dropout warning limits, and alert switches.</p>
+    <p class="text-xs text-[var(--text-secondary)]">Set active school terms, passing rules, dropout warning limits, alerts, and official portal theme.</p>
   </div>
-  <button type="button" onclick="openResetDefaultsModal()" title="Restore default portal settings" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs sm:text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
-    <i class="fa-solid fa-rotate-left text-xs text-[var(--status-danger)]"></i>
-    <span>Reset Defaults</span>
-  </button>
-</section>
-
-<section class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3 shadow-sm">
-  <div class="flex items-center gap-3 min-w-0">
-    <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--accent-soft)] text-[var(--accent-primary)]">
-      <i class="fa-solid fa-palette text-sm"></i>
-    </span>
-    <div class="min-w-0">
-      <div class="flex flex-wrap items-center gap-2">
-        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Theme &amp; Appearance Live Studio</h3>
-        <span class="inline-flex items-center rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-primary)]">Live Studio</span>
-      </div>
-      <p class="text-xs text-[var(--text-muted)]">Customize Light or OLED Dark mode, sidebar shell colors, brand accent, and spacing for this panel.</p>
-    </div>
+  <div class="flex flex-wrap items-center gap-2 shrink-0">
+    <button type="button" onclick="openThemeStudioModal()" title="Open Theme & Appearance Live Studio" class="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+      <i class="fa-solid fa-palette text-xs" aria-hidden="true"></i><span>Open Live Studio</span>
+    </button>
+    <button type="button" onclick="openResetDefaultsModal()" title="Restore default portal settings" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <i class="fa-solid fa-rotate-left text-xs text-[var(--status-danger)]" aria-hidden="true"></i><span>Reset Defaults</span>
+    </button>
   </div>
-  <button type="button" onclick="openThemeStudioModal()" title="Open Theme & Appearance Live Studio" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-3.5 py-2 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
-    <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
-    <span>Open Live Studio</span>
-  </button>
 </section>
 
 {% if db_error %}
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database message: {{ db_error }}
+  <i class="fa-solid fa-circle-exclamation mr-2" aria-hidden="true"></i>Database message: {{ db_error }}
 </div>
 {% endif %}
 
-<section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-  {% include 'components/metric_card.html' with title="Current Term" value=settings_kpis.current_term|default:"Fall 2026" badge=settings_kpis.default_batch|default:"2026-A" status="info" icon="fa-solid fa-calendar-days" %}
-  {% include 'components/metric_card.html' with title="Minimum Attendance" value=settings_kpis.min_attendance_pct|default:75|stringformat:"s"|add:"%" badge=settings_kpis.passing_gpa|default:"2.0"|stringformat:"s"|add:" passing GPA" status="success" icon="fa-solid fa-user-check" %}
-  {% include 'components/metric_card.html' with title="High Risk Limit" value=settings_kpis.high_risk_threshold|default:70|stringformat:"s"|add:"%" badge=settings_kpis.medium_risk_threshold|default:35|stringformat:"s"|add:"% medium limit" status="danger" icon="fa-solid fa-triangle-exclamation" %}
-  {% if settings_kpis.alerts_status == 'Paused' %}
-  {% include 'components/metric_card.html' with title="Auto Alerts" value=settings_kpis.alerts_status|default:"Paused" badge=settings_kpis.db_status|default:"Connected" status="warning" icon="fa-solid fa-bell-slash" %}
-  {% else %}
-  {% include 'components/metric_card.html' with title="Auto Alerts" value=settings_kpis.alerts_status|default:"Enabled" badge=settings_kpis.db_status|default:"Connected" status="success" icon="fa-solid fa-bell" %}
-  {% endif %}
-</section>
+<div role="tablist" aria-label="Portal settings tabs" class="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1.5 shadow-sm">
+  <button type="button" role="tab" aria-selected="true" data-settings-tab="general" class="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-semibold text-white transition-colors">
+    <i class="fa-solid fa-graduation-cap text-xs" aria-hidden="true"></i><span>Academic &amp; Risk Thresholds</span>
+  </button>
+  <button type="button" role="tab" aria-selected="false" data-settings-tab="alerts" class="inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+    <i class="fa-solid fa-bell text-xs" aria-hidden="true"></i><span>Auto-Alerts &amp; Permissions</span>
+  </button>
+  <button type="button" role="tab" aria-selected="false" data-settings-tab="summary" class="inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+    <i class="fa-solid fa-table-list text-xs" aria-hidden="true"></i><span>Active Summary &amp; Appearance</span>
+  </button>
+</div>
 
-<form method="post" action="{% url 'panels:admin_settings' %}" class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+<form id="admin-settings-form" method="post" action="{% url 'panels:admin_settings' %}" class="space-y-4">
   {% csrf_token %}
   <input type="hidden" name="action" value="save_settings">
 
-  <div class="xl:col-span-6 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 space-y-3.5">
-    <div>
-      <h3 class="text-sm sm:text-base font-semibold text-[var(--text-primary)]">Academic &amp; General Rules</h3>
-      <p class="text-xs text-[var(--text-muted)]">Basic portal identity, active school term, and minimum attendance rule.</p>
-    </div>
+  <div id="settings-panel-general" role="tabpanel" data-settings-panel="general" class="space-y-4">
+    <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {% include 'components/metric_card.html' with title="Current Term" value=settings_kpis.current_term|default:"Fall 2026" badge=settings_kpis.default_batch|default:"2026-A" status="info" icon="fa-solid fa-calendar-days" %}
+      {% include 'components/metric_card.html' with title="Minimum Attendance" value=settings_kpis.min_attendance_pct|default:75|stringformat:"s"|add:"%" badge=settings_kpis.passing_gpa|default:"2.0"|stringformat:"s"|add:" passing GPA" status="success" icon="fa-solid fa-user-check" %}
+      {% include 'components/metric_card.html' with title="High Risk Limit" value=settings_kpis.high_risk_threshold|default:70|stringformat:"s"|add:"%" badge=settings_kpis.medium_risk_threshold|default:35|stringformat:"s"|add:"% medium limit" status="danger" icon="fa-solid fa-triangle-exclamation" %}
+      {% if settings_kpis.alerts_status == 'Paused' %}
+      {% include 'components/metric_card.html' with title="Auto Alerts" value=settings_kpis.alerts_status|default:"Paused" badge=settings_kpis.db_status|default:"Connected" status="warning" icon="fa-solid fa-bell-slash" %}
+      {% else %}
+      {% include 'components/metric_card.html' with title="Auto Alerts" value=settings_kpis.alerts_status|default:"Enabled" badge=settings_kpis.db_status|default:"Connected" status="success" icon="fa-solid fa-bell" %}
+      {% endif %}
+    </section>
 
-    <div class="space-y-1">
-      <label for="setting-institution-name" class="block text-xs font-medium text-[var(--text-secondary)]">Portal Name</label>
-      <input id="setting-institution-name" name="institution_name" type="text" required value="{{ settings_data.institution_name|default:'EduPredict Academic Portal' }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
-    </div>
+    <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+      <div class="xl:col-span-6 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3 shadow-sm">
+        <div>
+          <h3 class="text-sm font-semibold text-[var(--text-primary)]">Academic &amp; General Rules</h3>
+          <p class="text-xs text-[var(--text-muted)]">Portal branding, active school term, and minimum attendance rule.</p>
+        </div>
+        <div class="space-y-1">
+          <label for="setting-institution-name" class="block text-xs font-medium text-[var(--text-secondary)]">Portal Name</label>
+          <input id="setting-institution-name" name="institution_name" type="text" required value="{{ settings_data.institution_name|default:'EduPredict Academic Portal' }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+        </div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div class="space-y-1">
+            <label for="setting-current-term" class="block text-xs font-medium text-[var(--text-secondary)]">Current Term</label>
+            <input id="setting-current-term" name="current_term" type="text" required value="{{ settings_data.current_term|default:'Fall 2026' }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+          </div>
+          <div class="space-y-1">
+            <label for="setting-default-batch" class="block text-xs font-medium text-[var(--text-secondary)]">Default Batch</label>
+            <input id="setting-default-batch" name="default_batch" type="text" required value="{{ settings_data.default_batch|default:'2026-A' }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div class="space-y-1">
+            <label for="setting-passing-gpa" class="block text-xs font-medium text-[var(--text-secondary)]">Passing GPA (0 - 4.0)</label>
+            <input id="setting-passing-gpa" name="passing_gpa" type="number" step="0.1" min="0" max="4" required value="{{ settings_data.passing_gpa|default:2.0 }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-sm tabular-nums text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+          </div>
+          <div class="space-y-1">
+            <label for="setting-min-attendance" class="block text-xs font-medium text-[var(--text-secondary)]">Minimum Attendance (%)</label>
+            <input id="setting-min-attendance" name="min_attendance_pct" type="number" min="0" max="100" required value="{{ settings_data.min_attendance_pct|default:75 }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-sm tabular-nums text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+          </div>
+        </div>
+      </div>
 
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <div class="space-y-1">
-        <label for="setting-current-term" class="block text-xs font-medium text-[var(--text-secondary)]">Current Term</label>
-        <input id="setting-current-term" name="current_term" type="text" required value="{{ settings_data.current_term|default:'Fall 2026' }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+      <div class="xl:col-span-6 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 flex flex-col justify-between gap-3 shadow-sm">
+        <div class="space-y-3">
+          <div>
+            <h3 class="text-sm font-semibold text-[var(--text-primary)]">ML Risk Thresholds</h3>
+            <p class="text-xs text-[var(--text-muted)]">Set warning cutoffs for dropout risk checks and sudden drop detection.</p>
+          </div>
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="space-y-1">
+              <label for="setting-high-risk" class="block text-xs font-medium text-[var(--text-secondary)]">High Risk (%)</label>
+              <input id="setting-high-risk" name="high_risk_threshold" type="number" min="10" max="100" required value="{{ settings_data.high_risk_threshold|default:70 }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-sm tabular-nums text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+            </div>
+            <div class="space-y-1">
+              <label for="setting-medium-risk" class="block text-xs font-medium text-[var(--text-secondary)]">Medium Risk (%)</label>
+              <input id="setting-medium-risk" name="medium_risk_threshold" type="number" min="5" max="95" required value="{{ settings_data.medium_risk_threshold|default:35 }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-sm tabular-nums text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+            </div>
+            <div class="space-y-1">
+              <label for="setting-anomaly-drop" class="block text-xs font-medium text-[var(--text-secondary)]">Sudden Drop (%)</label>
+              <input id="setting-anomaly-drop" name="anomaly_drop_pct" type="number" min="5" max="90" required value="{{ settings_data.anomaly_drop_pct|default:25 }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-sm tabular-nums text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2.5 text-xs">
+            <span class="text-[var(--text-secondary)]">Alerts: <strong class="text-[var(--text-primary)]">Student {% if settings_data.auto_student_alerts %}On{% else %}Off{% endif %}</strong> &middot; <strong class="text-[var(--text-primary)]">Teacher {% if settings_data.auto_teacher_alerts %}On{% else %}Off{% endif %}</strong></span>
+            <button type="button" onclick="switchSettingsTab('alerts')" class="font-semibold text-[var(--accent-primary)] hover:underline">Configure Alerts</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-3">
+          <p class="text-xs text-[var(--text-muted)]">Last saved by <span class="font-medium text-[var(--text-secondary)]">{{ settings_data.updated_by|default:"System Admin" }}</span>{% if settings_data.updated_at_str %} on {{ settings_data.updated_at_str }}{% endif %}</p>
+          <button type="submit" title="Save portal settings" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+            <i class="fa-solid fa-floppy-disk text-xs" aria-hidden="true"></i><span>Save Settings</span>
+          </button>
+        </div>
       </div>
-      <div class="space-y-1">
-        <label for="setting-default-batch" class="block text-xs font-medium text-[var(--text-secondary)]">Default Batch</label>
-        <input id="setting-default-batch" name="default_batch" type="text" required value="{{ settings_data.default_batch|default:'2026-A' }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <div class="space-y-1">
-        <label for="setting-passing-gpa" class="block text-xs font-medium text-[var(--text-secondary)]">Passing GPA (0 - 4.0)</label>
-        <input id="setting-passing-gpa" name="passing_gpa" type="number" step="0.1" min="0" max="4" required value="{{ settings_data.passing_gpa|default:2.0 }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm tabular-nums text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
-      </div>
-      <div class="space-y-1">
-        <label for="setting-min-attendance" class="block text-xs font-medium text-[var(--text-secondary)]">Minimum Attendance (%)</label>
-        <input id="setting-min-attendance" name="min_attendance_pct" type="number" min="0" max="100" required value="{{ settings_data.min_attendance_pct|default:75 }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm tabular-nums text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
-      </div>
-    </div>
+    </section>
   </div>
 
-  <div class="xl:col-span-6 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 flex flex-col justify-between gap-4">
-    <div class="space-y-3.5">
+  <div id="settings-panel-alerts" role="tabpanel" data-settings-panel="alerts" class="hidden space-y-4">
+    <section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 space-y-4 shadow-sm">
       <div>
-        <h3 class="text-sm sm:text-base font-semibold text-[var(--text-primary)]">Risk Limits &amp; Alert Rules</h3>
-        <p class="text-xs text-[var(--text-muted)]">Set warning cutoffs for dropout checks and choose who receives alerts.</p>
+        <h3 class="text-sm sm:text-base font-semibold text-[var(--text-primary)]">Automated Alert Switches &amp; Role Guardrails</h3>
+        <p class="text-xs text-[var(--text-muted)]">Choose who receives automatic notifications when attendance or risk warnings trigger.</p>
       </div>
-
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div class="space-y-1">
-          <label for="setting-high-risk" class="block text-xs font-medium text-[var(--text-secondary)]">High Risk (%)</label>
-          <input id="setting-high-risk" name="high_risk_threshold" type="number" min="10" max="100" required value="{{ settings_data.high_risk_threshold|default:70 }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm tabular-nums text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
-        </div>
-        <div class="space-y-1">
-          <label for="setting-medium-risk" class="block text-xs font-medium text-[var(--text-secondary)]">Medium Risk (%)</label>
-          <input id="setting-medium-risk" name="medium_risk_threshold" type="number" min="5" max="95" required value="{{ settings_data.medium_risk_threshold|default:35 }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm tabular-nums text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
-        </div>
-        <div class="space-y-1">
-          <label for="setting-anomaly-drop" class="block text-xs font-medium text-[var(--text-secondary)]">Sudden Drop (%)</label>
-          <input id="setting-anomaly-drop" name="anomaly_drop_pct" type="number" min="5" max="90" required value="{{ settings_data.anomaly_drop_pct|default:25 }}" class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm tabular-nums text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-        <label for="setting-student-alerts" class="flex items-start gap-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3 cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label for="setting-student-alerts" class="flex items-start gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-4 cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors">
           <input id="setting-student-alerts" name="auto_student_alerts" type="checkbox" value="on" {% if settings_data.auto_student_alerts %}checked{% endif %} class="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--border-subtle)] accent-[var(--accent-primary)] cursor-pointer">
-          <span class="min-w-0">
-            <span class="block text-xs font-semibold text-[var(--text-primary)]">Auto Student Alerts</span>
-            <span class="block text-[11px] text-[var(--text-muted)]">Warn students if risk goes up</span>
-          </span>
+          <span class="min-w-0"><span class="block text-sm font-semibold text-[var(--text-primary)]">Auto Student Alerts</span><span class="block mt-0.5 text-xs text-[var(--text-secondary)]">Warn students when attendance drops below minimum or risk rises.</span></span>
         </label>
-        <label for="setting-teacher-alerts" class="flex items-start gap-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3 cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors">
+        <label for="setting-teacher-alerts" class="flex items-start gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-4 cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors">
           <input id="setting-teacher-alerts" name="auto_teacher_alerts" type="checkbox" value="on" {% if settings_data.auto_teacher_alerts %}checked{% endif %} class="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--border-subtle)] accent-[var(--accent-primary)] cursor-pointer">
-          <span class="min-w-0">
-            <span class="block text-xs font-semibold text-[var(--text-primary)]">Auto Teacher Alerts</span>
-            <span class="block text-[11px] text-[var(--text-muted)]">Notify teachers on sudden drops</span>
-          </span>
+          <span class="min-w-0"><span class="block text-sm font-semibold text-[var(--text-primary)]">Auto Teacher Alerts</span><span class="block mt-0.5 text-xs text-[var(--text-secondary)]">Notify instructors when sudden performance drops or anomalies are flagged.</span></span>
         </label>
       </div>
-    </div>
-
-    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-3">
-      <p class="text-xs text-[var(--text-muted)]">
-        Last saved by <span class="font-medium text-[var(--text-secondary)]">{{ settings_data.updated_by|default:"System Admin" }}</span>{% if settings_data.updated_at_str %} on {{ settings_data.updated_at_str }}{% endif %}
-      </p>
-      <button type="submit" title="Save portal settings" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
-        <i class="fa-solid fa-floppy-disk text-xs"></i>
-        <span>Save Settings</span>
-      </button>
-    </div>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 text-xs">
+        <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3"><p class="font-semibold text-[var(--text-primary)]">Teacher Approval Guard</p><p class="mt-1 text-[var(--text-muted)]">New teacher self-signups stay pending until approved by Admin.</p></div>
+        <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3"><p class="font-semibold text-[var(--text-primary)]">Self-Action Protection</p><p class="mt-1 text-[var(--text-muted)]">Admins cannot delete, deactivate, or downgrade their active account.</p></div>
+        <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3"><p class="font-semibold text-[var(--text-primary)]">Admin-Only Theme Studio</p><p class="mt-1 text-[var(--text-muted)]">Brand tokens are governed from Portal Settings for consistent UI.</p></div>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-3">
+        <p class="text-xs text-[var(--text-muted)]">Academic &amp; Risk values stay preserved when saving from this tab.</p>
+        <button type="submit" title="Save portal settings" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+          <i class="fa-solid fa-floppy-disk text-xs" aria-hidden="true"></i><span>Save Settings</span>
+        </button>
+      </div>
+    </section>
   </div>
 </form>
 
-<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
-  {% include 'components/data_table.html' with table_id="admin-settings-table" table_title="Active Configuration Summary" headers=setting_headers rows=setting_rows page_size=5 empty_message="No settings configured." %}
-</section>
+<div id="settings-panel-summary" role="tabpanel" data-settings-panel="summary" class="hidden space-y-4">
+  <section class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3.5 shadow-sm">
+    <div class="flex items-center gap-3 min-w-0">
+      <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--accent-soft)] text-[var(--accent-primary)]"><i class="fa-solid fa-palette text-sm" aria-hidden="true"></i></span>
+      <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-2"><h3 class="text-sm font-semibold text-[var(--text-primary)]">Theme &amp; Appearance Live Studio</h3><span class="inline-flex items-center rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-primary)]">Live Studio</span></div>
+        <p class="text-xs text-[var(--text-muted)]">Customize Light or OLED Dark mode, sidebar shell colors, brand accent, and spacing for this panel.</p>
+      </div>
+    </div>
+    <button type="button" onclick="openThemeStudioModal()" title="Open Theme & Appearance Live Studio" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+      <i class="fa-solid fa-wand-magic-sparkles text-xs" aria-hidden="true"></i><span>Open Live Studio</span>
+    </button>
+  </section>
+  <section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 shadow-sm">
+    {% include 'components/data_table.html' with table_id="admin-settings-table" table_title="Active Configuration Summary" headers=setting_headers rows=setting_rows page_size=5 empty_message="No settings configured." %}
+  </section>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
   (function () {
     const adminSettingsUrl = "{% url 'panels:admin_settings' %}";
-
-    window.openResetDefaultsModal = function () {
-      window.openConfirmModal({
-        title: 'Reset Portal Settings',
-        message: 'Restore all academic rules, risk limits, and alert switches back to default values?',
-        confirmText: 'Reset Defaults',
-        onConfirmUrl: adminSettingsUrl,
-        fields: {
-          action: 'reset_defaults'
-        }
+    const activeCls = ['bg-[var(--accent-primary)]', 'text-white', 'font-semibold'];
+    const inactiveCls = ['text-[var(--text-secondary)]', 'font-medium', 'hover:bg-[var(--bg-elevated)]', 'hover:text-[var(--text-primary)]'];
+    window.switchSettingsTab = function (tabKey) {
+      document.querySelectorAll('[data-settings-tab]').forEach(function (btn) {
+        const active = btn.getAttribute('data-settings-tab') === tabKey;
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        activeCls.forEach(function (c) { btn.classList.toggle(c, active); });
+        inactiveCls.forEach(function (c) { btn.classList.toggle(c, !active); });
       });
+      document.querySelectorAll('[data-settings-panel]').forEach(function (panel) {
+        panel.classList.toggle('hidden', panel.getAttribute('data-settings-panel') !== tabKey);
+      });
+    };
+    document.querySelectorAll('[data-settings-tab]').forEach(function (btn) {
+      btn.addEventListener('click', function () { window.switchSettingsTab(btn.getAttribute('data-settings-tab')); });
+    });
+    const form = document.getElementById('admin-settings-form');
+    if (form) form.addEventListener('invalid', function () { window.switchSettingsTab('general'); }, true);
+    window.openResetDefaultsModal = function () {
+      window.openConfirmModal({ title: 'Reset Portal Settings', message: 'Restore all academic rules, risk limits, and alert switches back to default values?', confirmText: 'Reset Defaults', onConfirmUrl: adminSettingsUrl, fields: { action: 'reset_defaults' } });
     };
   })();
 </script>

@@ -16,6 +16,7 @@
     '/student-panel/notifications/': { title: 'Alerts & Support', bullets: ['Read alerts from teachers and Admin replies to your tickets.', 'Submit a new support request right from this page or sidebar.', 'Notifications sync automatically in the topbar bell.'], overview: 'Read system notifications, teacher alerts, and support replies.', howTo: '1. Review recent alerts and Admin replies.\n2. Submit feedback when you need assistance.', faqs: [{ q: 'How quickly do replies appear?', a: 'The bell refreshes alerts automatically every 15 seconds.' }, { q: 'Can Admins see my ticket?', a: 'Yes, Admin Help Tickets receives it immediately.' }] },
     '/analyst-panel/': { title: 'Analyst Workbench', bullets: ['Upload educational CSV/Excel datasets for automated cleaning.', 'Run Ridge, RandomForest, and IsolationForest ML predictions.', 'Filter predicted records and export clean analytics CSVs.'], overview: 'Clean datasets, train fast ML pipelines, and explore predictions.', howTo: '1. Upload a dataset CSV/Excel.\n2. Click Run Predictions to evaluate risk & GPA.\n3. Review charts and flagged anomalies.', faqs: [{ q: 'Are missing values handled cleanly?', a: 'Yes, numeric gaps use median and categorical use mode.' }, { q: 'Is evaluation leakage-free?', a: 'Yes, train/test splits stay strictly separated.' }] },
     '/analyst-panel/accuracy/': { title: 'Model Accuracy & Health', bullets: ['Inspect MAE, RMSE, precision, recall, F1, and confusion matrices.', 'Check dataset label coverage before trusting accuracy claims.', 'Re-run predictions from Workbench after uploading fresh labeled data.'], overview: 'Compare evaluation metrics and dataset health diagnostics.', howTo: '1. Check dataset coverage status.\n2. Inspect confusion matrix & regression MAE.\n3. Retrain after new labeled cohorts arrive.', faqs: [{ q: 'Why do unlabelled records show partial metrics?', a: 'True labels are needed for supervised accuracy scoring.' }, { q: 'Which algorithms are used?', a: 'RandomForest, Ridge Regression, and IsolationForest.' }] },
+    '/notifications/': { title: 'Notifications & Alert History', bullets: ['Browse all unread alerts, past notifications, and admin replies.', 'Filter between All, Unread, Read, and Admin Replies in one click.', 'Mark individual alerts or all notifications as read anytime.'], overview: 'View full alert history, academic warnings, and ticket replies.', howTo: '1. Switch filter tabs or use Search.\n2. Click Open to jump to the alert target page.\n3. Mark alerts read individually or all at once.', faqs: [{ q: 'Are read alerts preserved here?', a: 'Yes, read notifications stay accessible under Read History.' }, { q: 'Do Admin replies appear here?', a: 'Yes, check the Admin Replies filter tab.' }] },
     '/profile/': { title: 'My Profile & Security', bullets: ['Update your name, contact details, or profile picture safely.', 'Your assigned role badge stays read-only and protected.', 'Use Change Password to update credentials via secure modal.'], overview: 'Manage personal details, avatar, and password security.', howTo: '1. Edit contact details and save.\n2. Drop an image to update your avatar.\n3. Click Change Password for password updates.', faqs: [{ q: 'What image limit applies to avatars?', a: 'JPG, PNG, or WebP images up to 5 MB.' }, { q: 'Can I change my role here?', a: 'No, roles are protected by Admin RBAC.' }] }
   };
   const DEFAULT_GUIDE = {
@@ -157,12 +158,16 @@
     if (!box) return;
     const q = String(query || '').trim().toLowerCase();
     box.textContent = '';
-    const links = Array.from(document.querySelectorAll('#mobile-sidebar-drawer nav a[href]'));
+    const entries = Array.from(document.querySelectorAll('#mobile-sidebar-drawer nav a[href]')).map((a) => ({
+      label: a.textContent.trim(),
+      href: a.getAttribute('href')
+    })).concat([
+      { href: '/notifications/', label: 'Notifications & Alert History' },
+      { href: '/profile/', label: 'My Profile' }
+    ]);
     const seen = new Set();
     let count = 0;
-    links.forEach((a) => {
-      const label = a.textContent.trim();
-      const href = a.getAttribute('href');
+    entries.forEach(({ label, href }) => {
       if (!label || !href || seen.has(href)) return;
       if (q && label.toLowerCase().indexOf(q) === -1 && href.toLowerCase().indexOf(q) === -1) return;
       seen.add(href);
@@ -170,7 +175,6 @@
       const item = document.createElement('a');
       item.href = href;
       item.className = 'flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors';
-      item.innerHTML = '';
       const left = document.createElement('span');
       left.className = 'font-medium';
       left.textContent = label;
@@ -189,7 +193,7 @@
     }
   }
 
-  function openCommandSearchModal() {
+  function openCommandSearchModal(initialQuery) {
     const modal = byId('command-search-modal'), input = byId('command-search-input');
     if (!modal) return;
     closeInstantHelpPopover();
@@ -197,7 +201,8 @@
     if (typeof window.syncBodyScrollLock === 'function') window.syncBodyScrollLock();
     const pageSearch = document.querySelector('input[data-table-search]');
     if (input) {
-      if (pageSearch && pageSearch.value) input.value = pageSearch.value;
+      if (typeof initialQuery === 'string' && initialQuery) input.value = initialQuery;
+      else if (pageSearch && pageSearch.value) input.value = pageSearch.value;
       if (input.dataset.cmdBound !== '1') {
         input.dataset.cmdBound = '1';
         input.addEventListener('input', () => {

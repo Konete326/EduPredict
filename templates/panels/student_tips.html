@@ -31,6 +31,75 @@
   {% include 'components/metric_card.html' with title="Class Standing" value=class_standing_display badge="By marks in your batch" status="success" icon="fa-solid fa-ranking-star" %}
 </section>
 
+<section data-ep-marquee class="ep-marquee-wrap rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] py-2 px-3">
+  <div data-marquee-track class="ep-marquee-track items-center text-xs">
+    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 font-mono text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full bg-[var(--status-success)]"></span>Attendance {{ record.avg_attendance|default:0 }}%</span>
+    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 font-mono text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full bg-[var(--accent-primary)]"></span>Avg Marks {{ record.avg_marks|default:0 }}/100</span>
+    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 font-mono text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full bg-[var(--status-warning)]"></span>Study Hours {{ record.lms_hours_weekly|default:0 }}h/wk</span>
+    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 font-mono text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full bg-[var(--accent-primary)]"></span>Predicted GPA {{ record.predicted_gpa|default:"Pending" }}</span>
+    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 font-mono text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full {% if record.risk_level == 'HIGH' %}bg-[var(--status-danger)]{% elif record.risk_level == 'MEDIUM' %}bg-[var(--status-warning)]{% else %}bg-[var(--status-success)]{% endif %}"></span>Risk {{ record.risk_level|default:"PENDING" }}</span>
+    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 font-mono text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full bg-[var(--status-success)]"></span>Courses {{ record.courses|length }}</span>
+  </div>
+</section>
+
+<section id="orbit-goals-card" data-att="{{ record.avg_attendance|default:0 }}" data-hours="{{ record.lms_hours_weekly|default:0 }}" data-marks="{{ record.avg_marks|default:0 }}" tabindex="0" class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-center">
+    <div class="lg:col-span-4 flex flex-col items-center justify-center gap-2">
+      <div class="relative h-44 w-44">
+        <svg viewBox="0 0 180 180" class="h-full w-full" aria-label="Academic orbit goals">
+          <circle cx="90" cy="90" r="72" fill="none" stroke="var(--border-subtle)" stroke-width="8" opacity="0.45"></circle>
+          <circle cx="90" cy="90" r="54" fill="none" stroke="var(--border-subtle)" stroke-width="8" opacity="0.45"></circle>
+          <circle cx="90" cy="90" r="36" fill="none" stroke="var(--border-subtle)" stroke-width="8" opacity="0.45"></circle>
+          <circle data-orbit-ring="attendance" cx="90" cy="90" r="72" fill="none" stroke="var(--status-success)" stroke-width="11" stroke-linecap="round" transform="rotate(-90 90 90)" class="cursor-pointer transition-all duration-300"></circle>
+          <circle data-orbit-ring="study_hours" cx="90" cy="90" r="54" fill="none" stroke="var(--accent-primary)" stroke-width="8" stroke-linecap="round" transform="rotate(-90 90 90)" class="cursor-pointer transition-all duration-300"></circle>
+          <circle data-orbit-ring="coursework" cx="90" cy="90" r="36" fill="none" stroke="var(--status-warning)" stroke-width="8" stroke-linecap="round" transform="rotate(-90 90 90)" class="cursor-pointer transition-all duration-300"></circle>
+        </svg>
+        <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+          <span id="orbit-center-pct" class="font-mono text-xl font-bold tabular-nums text-[var(--text-primary)]">0%</span>
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Goal Score</span>
+        </div>
+      </div>
+    </div>
+    <div class="lg:col-span-8 min-w-0 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 class="text-sm font-semibold text-[var(--text-primary)]">Interactive Study Orbit Goals</h3>
+          <p class="text-xs text-[var(--text-muted)]">Select a ring or metric and adjust your personal weekly target</p>
+        </div>
+        <button id="orbit-reset-btn" type="button" class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">Reset</button>
+      </div>
+      <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <button type="button" data-orbit-goal="attendance" aria-pressed="true" class="flex flex-col gap-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5 text-left transition-colors hover:bg-[var(--bg-elevated)]">
+          <span class="flex items-center justify-between text-[11px] font-medium text-[var(--text-secondary)]"><span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[var(--status-success)]"></span>Attendance</span><span data-orbit-pct="attendance" class="font-mono font-semibold text-[var(--text-primary)]">0%</span></span>
+          <span data-orbit-val="attendance" class="font-mono text-xs font-semibold tabular-nums text-[var(--text-primary)]">0% / 85%</span>
+        </button>
+        <button type="button" data-orbit-goal="study_hours" aria-pressed="false" class="flex flex-col gap-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5 text-left transition-colors hover:bg-[var(--bg-elevated)]">
+          <span class="flex items-center justify-between text-[11px] font-medium text-[var(--text-secondary)]"><span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[var(--accent-primary)]"></span>Study Hours</span><span data-orbit-pct="study_hours" class="font-mono font-semibold text-[var(--text-primary)]">0%</span></span>
+          <span data-orbit-val="study_hours" class="font-mono text-xs font-semibold tabular-nums text-[var(--text-primary)]">0h / 8h</span>
+        </button>
+        <button type="button" data-orbit-goal="coursework" aria-pressed="false" class="flex flex-col gap-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5 text-left transition-colors hover:bg-[var(--bg-elevated)]">
+          <span class="flex items-center justify-between text-[11px] font-medium text-[var(--text-secondary)]"><span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[var(--status-warning)]"></span>Coursework</span><span data-orbit-pct="coursework" class="font-mono font-semibold text-[var(--text-primary)]">0%</span></span>
+          <span data-orbit-val="coursework" class="font-mono text-xs font-semibold tabular-nums text-[var(--text-primary)]">0% / 80%</span>
+        </button>
+      </div>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-12 items-center rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3">
+        <div class="sm:col-span-6 flex items-center justify-between gap-2">
+          <span id="orbit-active-label" class="text-xs font-semibold text-[var(--text-primary)]">Attendance Target %</span>
+          <div class="inline-flex items-center gap-1.5">
+            <button type="button" data-orbit-step="-1" aria-label="Decrease target" class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">-</button>
+            <span id="orbit-active-target" class="min-w-[3rem] text-center font-mono text-xs font-bold tabular-nums text-[var(--accent-primary)]">85%</span>
+            <button type="button" data-orbit-step="1" aria-label="Increase target" class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">+</button>
+          </div>
+        </div>
+        <div class="sm:col-span-6 space-y-1">
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">7-Day Consistency</p>
+          <div id="orbit-sparkline" class="flex items-end gap-1.5"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
   <div class="xl:col-span-7 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
     <h3 class="text-sm font-semibold text-[var(--text-primary)]">This Week's Tips</h3>

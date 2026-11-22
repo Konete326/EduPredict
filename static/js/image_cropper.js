@@ -158,8 +158,21 @@
   }
   const closeImageLightbox = () => { setLightboxZoom(false); syncModalState(byId('image-lightbox-modal'), false); };
 
+  function bindDrawerQuickActions() {
+    [['drawer-edit-reply-btn', 'openReplyTicketModal'], ['drawer-delete-reply-btn', 'openDeleteReplyModal'], ['drawer-toggle-status-btn', 'openToggleTicketModal']].forEach(([id, fnName]) => {
+      const el = byId(id);
+      if (el && el.dataset.bound !== '1') {
+        el.dataset.bound = '1';
+        el.addEventListener('click', () => { const btn = window._epActiveTicketBtn; closeTicketDetailDrawer(); if (typeof window[fnName] === 'function') window[fnName](btn); });
+      }
+    });
+  }
   function openTicketDetailDrawer(btn) {
     const drawer = byId('ticket-detail-drawer'), d = btn ? btn.dataset : {}; if (!drawer) return;
+    if (!drawer._epParent) drawer._epParent = drawer.parentElement;
+    if (document.body && drawer.parentElement !== document.body) document.body.appendChild(drawer);
+    window._epActiveTicketBtn = btn || null;
+    bindDrawerQuickActions();
     const status = String(d.status || 'OPEN').toUpperCase(), resolved = status === 'RESOLVED', stEl = byId('drawer-ticket-status');
     setText('drawer-ticket-id', d.ticketId || '-');
     if (stEl) { stEl.textContent = status; stEl.className = 'inline-flex items-center rounded-md border border-[var(--border-subtle)] px-2 py-0.5 text-[11px] font-semibold ' + (resolved ? 'bg-[var(--accent-soft)] text-[var(--status-success)]' : 'bg-[var(--bg-elevated)] text-[var(--status-warning)]'); }
@@ -176,15 +189,26 @@
         b.appendChild(im); attBox.appendChild(b);
       });
     }
-    const repBox = byId('drawer-ticket-reply-box'), replyText = String(d.adminReply || '').trim();
+    const repBox = byId('drawer-ticket-reply-box'), replyText = String(d.adminReply || '').trim(), delBtn = byId('drawer-delete-reply-btn');
     if (repBox) { repBox.classList.toggle('hidden', !replyText); setText('drawer-ticket-reply-text', replyText); setText('drawer-ticket-reply-meta', [d.repliedBy ? 'By ' + d.repliedBy : '', d.repliedAt || ''].filter(Boolean).join(' · ')); }
+    if (delBtn) delBtn.classList.toggle('hidden', !replyText);
     setVal('drawer-reply-ticket-id', d.ticketId || ''); setVal('drawer-reply-text', replyText);
     if (d.filterStatus !== undefined) setVal('drawer-reply-filter-status', d.filterStatus);
-    drawer.classList.remove('hidden'); drawer.setAttribute('aria-hidden', 'false'); if (document.body) document.body.classList.add('drawer-open');
+    drawer.classList.remove('hidden'); drawer.setAttribute('aria-hidden', 'false');
+    if (typeof window.syncBodyScrollLock === 'function') window.syncBodyScrollLock(); else if (document.body) document.body.classList.add('drawer-open', 'ep-overlay-blur');
   }
   function closeTicketDetailDrawer() {
-    const drawer = byId('ticket-detail-drawer'); if (drawer) { drawer.classList.add('hidden'); drawer.setAttribute('aria-hidden', 'true'); }
-    if (document.body) document.body.classList.remove('drawer-open'); if (typeof window.syncBodyScrollLock === 'function') window.syncBodyScrollLock();
+    const drawer = byId('ticket-detail-drawer');
+    if (drawer) {
+      drawer.classList.add('hidden'); drawer.setAttribute('aria-hidden', 'true');
+      if (drawer.parentElement === document.body && drawer._epParent) {
+        const connected = drawer._epParent.isConnected !== undefined ? drawer._epParent.isConnected : (!document.body.contains || document.body.contains(drawer._epParent));
+        if (connected) drawer._epParent.appendChild(drawer);
+        else if (drawer.remove) drawer.remove();
+        else if (drawer.parentElement && drawer.parentElement.removeChild) drawer.parentElement.removeChild(drawer);
+      }
+    }
+    if (typeof window.syncBodyScrollLock === 'function') window.syncBodyScrollLock(); else if (document.body) document.body.classList.remove('drawer-open', 'ep-overlay-blur');
   }
 
   function bindGlobalCropperEventsOnce() {

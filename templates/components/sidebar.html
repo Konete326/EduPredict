@@ -144,6 +144,10 @@
           <i class="fa-solid fa-id-badge w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">My Profile</span>
         </a>
+        <a href="{% url 'panels:notifications_history' %}" class="ep-nav-link flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:notifications_history' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-bell w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Alerts History</span>
+        </a>
         {% if active_role == 'ADMIN' %}
         <a href="{% url 'panels:admin_settings' %}" class="ep-nav-link flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors {% if request.resolver_match.view_name == 'panels:admin_settings' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-sliders w-5 text-center shrink-0 text-sm"></i>

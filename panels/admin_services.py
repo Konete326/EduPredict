@@ -34,28 +34,21 @@ def _generate_unique_ticket_id(col):
 
 
 def _is_self_target(existing, clean_uid, actor_user_id, actor_email):
-    if actor_user_id and clean_uid == str(actor_user_id).strip():
-        return True
     clean_actor_email = str(actor_email or "").strip().lower()
-    if clean_actor_email and str((existing or {}).get("email") or "").strip().lower() == clean_actor_email:
-        return True
-    return False
+    return bool((actor_user_id and clean_uid == str(actor_user_id).strip()) or (clean_actor_email and str((existing or {}).get("email") or "").strip().lower() == clean_actor_email))
 
 
 def _load_users(normalized):
     ensure_admin_seed_data()
     role_counts, users = {"ALL": 0, "ADMIN": 0, "TEACHER": 0, "STUDENT": 0, "ANALYST": 0, "PENDING": 0, "REJECTED": 0}, []
     for doc in users_col().find({}, {"_id": 0, "password_hash": 0}).sort("created_at", DESCENDING):
-        role = str(doc.get("role") or "").strip().upper()
-        is_active = bool(doc.get("is_active", True))
+        role, is_active = str(doc.get("role") or "").strip().upper(), bool(doc.get("is_active", True))
         approval_status = str(doc.get("approval_status") or ("APPROVED" if is_active else "INACTIVE")).upper()
         role_counts["ALL"] += 1
         if role in role_counts:
             role_counts[role] += 1
-        if approval_status == "PENDING":
-            role_counts["PENDING"] += 1
-        elif approval_status == "REJECTED":
-            role_counts["REJECTED"] += 1
+        if approval_status in ("PENDING", "REJECTED"):
+            role_counts[approval_status] += 1
         if normalized == "ALL" or (normalized in ("PENDING", "REJECTED") and approval_status == normalized) or role == normalized:
             users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "phone": str(doc.get("phone") or ""), "bio": str(doc.get("bio") or ""), "is_active": is_active, "approval_status": approval_status, "rejection_reason": str(doc.get("rejection_reason") or ""), "student_id": str(doc.get("student_id") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at"))})
     return users, role_counts
@@ -76,8 +69,7 @@ def _validate_user_input(full_name, email, role, department, batch):
         return None, "Please enter a valid email address."
     if clean_role not in VALID_ROLES:
         return None, "Select a valid role (ADMIN, TEACHER, STUDENT, or ANALYST)."
-    clean_dept = str(department or "").strip() or "General"
-    clean_batch = str(batch or "").strip() or ("2026-A" if clean_role == "STUDENT" else "ALL")
+    clean_dept, clean_batch = str(department or "").strip() or "General", str(batch or "").strip() or ("2026-A" if clean_role == "STUDENT" else "ALL")
     return (clean_name, clean_email, clean_role, clean_dept, clean_batch), None
 
 
@@ -121,11 +113,11 @@ def update_user_record(user_id, full_name, email, role, department, batch, passw
         return False, "You cannot change your own active ADMIN role."
     if col.find_one({"email": clean_email, "user_id": {"$ne": clean_uid}}, {"_id": 1}) is not None:
         return False, "Another user already uses this email address."
+    if password and len(password) < 6:
+        return False, "New password must be at least 6 characters long."
 
     updates = {"full_name": clean_name, "email": clean_email, "role": clean_role, "department": clean_dept, "batch": clean_batch}
     if password:
-        if len(password) < 6:
-            return False, "New password must be at least 6 characters long."
         updates["password_hash"] = make_password(password)
     if clean_role == "STUDENT" and not existing.get("student_id"):
         updates["student_id"] = generate_unique_student_id(student_records_col(), clean_uid)
@@ -144,8 +136,7 @@ def toggle_user_status(user_id, actor_user_id=None, actor_email="", actor_name="
         return None, "User record not found."
     new_state = not bool(existing.get("is_active", True))
     is_pending_approve = new_state and str(existing.get("approval_status") or "").upper() == "PENDING"
-    updates = {"is_active": True, "approval_status": "APPROVED"} if is_pending_approve else {"is_active": new_state}
-    col.update_one({"_id": existing["_id"]}, {"$set": updates})
+    col.update_one({"_id": existing["_id"]}, {"$set": {"is_active": True, "approval_status": "APPROVED"} if is_pending_approve else {"is_active": new_state}})
     if is_pending_approve:
         _audit("USERS", "APPROVE_USER", f"Approved teacher account {clean_uid}.", "SUCCESS", actor=actor_name)
         create_notification("Account Approved", "Your EduPredict Teacher account has been approved by Admin. You can sign in now.", severity="SUCCESS", target_user_id=clean_uid, category="APPROVAL")
@@ -190,6 +181,7 @@ def _course_fields(title, department, batch, instructor, credits, capacity, stat
     fb, clean_status = fallback or {}, str(status or "ACTIVE").strip().upper()
     return {"title": str(title or "").strip(), "department": str(department or "").strip() or fb.get("department") or "General", "batch": str(batch or "").strip() or fb.get("batch") or "2026-A", "instructor": str(instructor or "").strip() or fb.get("instructor") or "TBA", "credits": _safe_int(credits, 3, 1, 12), "capacity": _safe_int(capacity, 60, 1, 2000), "status": clean_status if clean_status in VALID_COURSE_STATUSES else "ACTIVE"}
 
+
 def create_course_record(course_code, title, department, batch, instructor, credits, capacity, status="ACTIVE", actor_name="System Admin"):
     clean_code, clean_title = str(course_code or "").strip().upper(), str(title or "").strip()
     if len(clean_code) < 2 or not clean_title:
@@ -212,8 +204,7 @@ def update_course_record(course_code, title, department, batch, instructor, cred
     existing = col.find_one({"course_code": clean_code})
     if existing is None:
         return False, "Course record not found."
-    updates = _course_fields(title, department, batch, instructor, credits, capacity, status, fallback=existing)
-    updates["updated_at"] = datetime.now(timezone.utc)
+    updates = {**_course_fields(title, department, batch, instructor, credits, capacity, status, fallback=existing), "updated_at": datetime.now(timezone.utc)}
     col.update_one({"_id": existing["_id"]}, {"$set": updates})
     _audit("COURSES", "UPDATE_COURSE", f"Updated course {clean_code} ({clean_title}).", "INFO", actor=actor_name)
     invalidate_cache()
@@ -257,12 +248,9 @@ def _clean_ticket_attachments(attachments, user_id):
             if val.lower().startswith(("https://", "http://", "data:image/")):
                 clean.append(val)
         elif item is not None:
-            if is_cloudinary_configured():
-                url, _ = upload_ticket_attachment(item, user_id, index=idx)
-                if url:
-                    clean.append(url)
-            elif fallback_uri := encode_image_data_uri(item):
-                clean.append(fallback_uri)
+            url = upload_ticket_attachment(item, user_id, index=idx)[0] if is_cloudinary_configured() else encode_image_data_uri(item)
+            if url:
+                clean.append(url)
     return clean[:3]
 
 
@@ -271,8 +259,7 @@ def create_ticket_record(user_id, user_name, role, subject, message, attachments
     if not clean_subject or not clean_message:
         return None, "Subject and message details are required."
     col, uid = support_tickets_col(), str(user_id or "")
-    clean_attachments = _clean_ticket_attachments(attachments, uid)
-    doc = {"ticket_id": _generate_unique_ticket_id(col), "user_id": uid, "user_name": str(user_name or "Portal User").strip() or "Portal User", "role": str(role or "USER").strip().upper(), "subject": clean_subject, "message": clean_message, "attachments": clean_attachments[:3], "status": "OPEN", "created_at": datetime.now(timezone.utc)}
+    doc = {"ticket_id": _generate_unique_ticket_id(col), "user_id": uid, "user_name": str(user_name or "Portal User").strip() or "Portal User", "role": str(role or "USER").strip().upper(), "subject": clean_subject, "message": clean_message, "attachments": _clean_ticket_attachments(attachments, uid)[:3], "status": "OPEN", "created_at": datetime.now(timezone.utc)}
     col.insert_one(doc)
     create_notification(f"New Ticket {doc['ticket_id']}: {clean_subject}", clean_message, severity="WARNING", target_role="ADMIN", category="TICKET", ticket_id=doc["ticket_id"], feedback_text=clean_message)
     _audit("TICKETS", "CREATE_TICKET", f"Support ticket {doc['ticket_id']} submitted by {doc['user_name']}: {clean_subject}", "WARNING", actor=doc["user_name"])
@@ -306,15 +293,12 @@ def delete_ticket_record(ticket_id, actor_name="System Admin"):
 
 def mark_notifications_read(user_doc):
     user = user_doc if isinstance(user_doc, dict) else {}
-    user_id = str(user.get("user_id") or "").strip()
-    student_id = str(user.get("student_id") or "").strip()
-    active_role = str(user.get("role") or "").strip().upper()
+    user_id, student_id, active_role = str(user.get("user_id") or "").strip(), str(user.get("student_id") or "").strip(), str(user.get("role") or "").strip().upper()
     if not user_id and not student_id and not active_role:
         return 0
     targets = [{"target_user_id": tid} for tid in dict.fromkeys(x for x in (user_id, student_id) if x)]
     for target_role in dict.fromkeys(r for r in (active_role, "ALL") if r):
-        targets.append({"target_role": target_role, "target_user_id": {"$in": [None, ""]}})
-        targets.append({"target_role": target_role, "target_user_id": {"$exists": False}})
+        targets.extend([{"target_role": target_role, "target_user_id": {"$in": [None, ""]}}, {"target_role": target_role, "target_user_id": {"$exists": False}}])
     modified = int(notifications_col().update_many({"is_read": False, "$or": targets}, {"$set": {"is_read": True}}).modified_count)
     invalidate_cache()
     return modified
@@ -325,31 +309,23 @@ def _action(label, icon, onclick, title, attrs, variant="default"):
 
 
 def build_user_table_data(users, filter_role, actor_user_id, actor_email=""):
-    headers = ["User ID", "Full Name", "Email", "Role", "Department", "Status", "Actions"]
-    role_status_map = {"ADMIN": "info", "ANALYST": "info", "TEACHER": "warning", "STUDENT": "success"}
-    clean_actor_email = str(actor_email or "").strip().lower()
-    rows = []
+    headers, role_status_map = ["User ID", "Full Name", "Email", "Role", "Department", "Status", "Actions"], {"ADMIN": "info", "ANALYST": "info", "TEACHER": "warning", "STUDENT": "success"}
+    clean_actor_email, rows = str(actor_email or "").strip().lower(), []
     for u in users:
         uid = u["user_id"]
         is_self = (actor_user_id and uid == actor_user_id) or (clean_actor_email and u["email"].strip().lower() == clean_actor_email)
-        edit_attrs = {"data-user-id": uid, "data-full-name": u["full_name"], "data-email": u["email"], "data-role": u["role"], "data-department": u["department"], "data-batch": u["batch"], "data-filter-role": filter_role}
-        if is_self:
-            edit_attrs["data-is-self"] = "true"
+        edit_attrs = {"data-user-id": uid, "data-full-name": u["full_name"], "data-email": u["email"], "data-role": u["role"], "data-department": u["department"], "data-batch": u["batch"], "data-filter-role": filter_role, **({"data-is-self": "true"} if is_self else {})}
         actions = [_action("Edit", "fa-solid fa-pen-to-square", "openEditUserModal(this)", f"Edit {u['full_name']}", edit_attrs)]
         if not is_self:
             lbl, ico = ("Deactivate", "fa-solid fa-user-slash") if u["is_active"] else ("Activate", "fa-solid fa-user-check")
-            actions.extend([
-                _action(lbl, ico, "openToggleUserModal(this)", f"{lbl} {u['full_name']}", {"data-user-id": uid, "data-full-name": u["full_name"], "data-is-active": "true" if u["is_active"] else "false", "data-filter-role": filter_role}),
-                _action("Delete", "fa-solid fa-trash", "openDeleteUserModal(this)", f"Delete {u['full_name']}", {"data-user-id": uid, "data-full-name": u["full_name"], "data-filter-role": filter_role}, variant="danger"),
-            ])
+            actions += [_action(lbl, ico, "openToggleUserModal(this)", f"{lbl} {u['full_name']}", {"data-user-id": uid, "data-full-name": u["full_name"], "data-is-active": "true" if u["is_active"] else "false", "data-filter-role": filter_role}), _action("Delete", "fa-solid fa-trash", "openDeleteUserModal(this)", f"Delete {u['full_name']}", {"data-user-id": uid, "data-full-name": u["full_name"], "data-filter-role": filter_role}, variant="danger")]
         display_name = f"{u['full_name']} (You)" if is_self else u["full_name"]
         rows.append([uid, display_name, u["email"], {"text": u["role"], "status": role_status_map.get(u["role"], "info")}, u["department"], {"text": "Active" if u["is_active"] else "Inactive", "status": "success" if u["is_active"] else "danger"}, {"actions": actions}])
     return headers, rows
 
 
 def build_course_table_data(courses, filter_dept):
-    headers = ["Code", "Course Title", "Department", "Batch", "Instructor", "Enrolled", "Status", "Actions"]
-    rows = []
+    headers, rows = ["Code", "Course Title", "Department", "Batch", "Instructor", "Enrolled", "Status", "Actions"], []
     for c in courses:
         actions = [_action("Edit", "fa-solid fa-pen-to-square", "openEditCourseModal(this)", f"Edit {c['course_code']}", {"data-course-code": c["course_code"], "data-title": c["title"], "data-department": c["department"], "data-batch": c["batch"], "data-instructor": c["instructor"], "data-credits": str(c["credits"]), "data-capacity": str(c["capacity"]), "data-status": c["status"], "data-filter-dept": filter_dept}), _action("Delete", "fa-solid fa-trash", "openDeleteCourseModal(this)", f"Delete {c['course_code']}", {"data-course-code": c["course_code"], "data-title": c["title"], "data-filter-dept": filter_dept}, variant="danger")]
         rows.append([c["course_code"], c["title"], c["department"], c["batch"], c["instructor"], f"{c['enrolled_count']} / {c['capacity']} ({c['fill_pct']}%)", {"text": c["status"], "status": "success" if c["status"] == "ACTIVE" else "warning"}, {"actions": actions}])
@@ -357,18 +333,17 @@ def build_course_table_data(courses, filter_dept):
 
 
 def build_ticket_table_data(tickets, filter_status):
-    headers = ["Ticket ID", "User", "Role", "Subject", "Status", "Date", "Actions"]
-    rows = []
+    headers, rows = ["Ticket ID", "User", "Role", "Subject", "Status", "Date", "Actions"], []
     for t in tickets:
         is_open, has_reply = t["status"] == "OPEN", bool(t.get("admin_reply"))
         lbl, ico = ("Resolve", "fa-solid fa-circle-check") if is_open else ("Reopen", "fa-solid fa-rotate-left")
-        attachments = [str(a) for a in (t.get("attachments") or []) if a]
-        created_at = t.get("created_at_str") or t.get("created_at", "")
-        detail_attrs = {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-message": t["message"], "data-admin-reply": t.get("admin_reply", ""), "data-status": t["status"], "data-filter-status": filter_status, "data-attachments": "|".join(attachments), "data-user-name": t.get("user_name", ""), "data-role": t.get("role", ""), "data-created-at": created_at, "data-replied-by": t.get("replied_by", ""), "data-replied-at": t.get("replied_at_str") or t.get("replied_at", "")}
-        actions = [_action("View", "fa-solid fa-eye", "openTicketDetailDrawer(this)", f"View {t['ticket_id']}", detail_attrs), _action("Edit Reply" if has_reply else "Reply", "fa-solid fa-reply", "openReplyTicketModal(this)", f"Reply to {t['ticket_id']}", detail_attrs, variant="primary")]
+        attachments, created_at = [str(a) for a in (t.get("attachments") or []) if a], t.get("created_at_str") or t.get("created_at", "")
+        base_attrs = {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-filter-status": filter_status}
+        detail_attrs = {**base_attrs, "data-message": t["message"], "data-admin-reply": t.get("admin_reply", ""), "data-status": t["status"], "data-attachments": "|".join(attachments), "data-user-name": t.get("user_name", ""), "data-role": t.get("role", ""), "data-created-at": created_at, "data-replied-by": t.get("replied_by", ""), "data-replied-at": t.get("replied_at_str") or t.get("replied_at", "")}
+        actions = [_action("View", "fa-solid fa-eye", "openTicketDetailDrawer(this)", f"View {t['ticket_id']}", detail_attrs), _action("Edit" if has_reply else "Reply", "fa-solid fa-reply", "openReplyTicketModal(this)", f"Reply to {t['ticket_id']}", detail_attrs, variant="primary")]
         if has_reply:
-            actions.append(_action("Delete Reply", "fa-solid fa-comment-slash", "openDeleteReplyModal(this)", f"Delete reply on {t['ticket_id']}", {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-filter-status": filter_status}, variant="danger"))
-        actions.extend([_action(lbl, ico, "openToggleTicketModal(this)", f"{lbl} {t['ticket_id']}", {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-status": t["status"], "data-filter-status": filter_status}), _action("Delete", "fa-solid fa-trash", "openDeleteTicketModal(this)", f"Delete {t['ticket_id']}", {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-filter-status": filter_status}, variant="danger")])
+            actions.append(_action("Clear", "fa-solid fa-comment-slash", "openDeleteReplyModal(this)", f"Delete reply on {t['ticket_id']}", base_attrs, variant="danger"))
+        actions.extend([_action(lbl, ico, "openToggleTicketModal(this)", f"{lbl} {t['ticket_id']}", {**base_attrs, "data-status": t["status"]}), _action("", "fa-solid fa-trash", "openDeleteTicketModal(this)", f"Delete ticket {t['ticket_id']}", {**base_attrs, "aria-label": f"Delete ticket {t['ticket_id']}"}, variant="danger")])
         subject_cell = (f"{t['subject']} (Replied)" if has_reply else t["subject"]) + (f" [{len(attachments)} img]" if attachments else "")
         rows.append([t["ticket_id"], t["user_name"], {"text": t["role"], "status": "info"}, subject_cell, {"text": t["status"], "status": "success" if t["status"] == "RESOLVED" else "warning"}, created_at, {"actions": actions}])
     return headers, rows

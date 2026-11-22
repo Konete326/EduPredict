@@ -54,7 +54,7 @@
       if (submitter) {
         submitter.dataset.epLocked = '1'; submitter.setAttribute('aria-busy', 'true');
         if (!submitter.disabled) {
-          if (submitter.tagName === 'BUTTON') { submitter.dataset.origHtml = submitter.innerHTML; submitter.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs" aria-hidden="true"></i><span>Processing...</span>'; }
+          if (submitter.tagName === 'BUTTON') { submitter.dataset.origHtml = submitter.innerHTML; submitter.innerHTML = '<span class="inline-flex items-center justify-center gap-2"><i class="fa-solid fa-spinner fa-spin text-xs" aria-hidden="true"></i><span>Processing...</span></span>'; }
           else { submitter.dataset.origVal = submitter.value; submitter.value = 'Processing...'; }
           submitter.disabled = true;
         }
@@ -252,8 +252,11 @@
   }
 
   function buildNotifItemNode(notif) {
-    const row = document.createElement('div');
-    row.className = 'flex items-start gap-2.5 px-4 py-3 hover:bg-[var(--bg-elevated)] transition-colors';
+    const row = document.createElement('a');
+    const rawUrl = String((notif && notif.target_url) || '').trim();
+    row.setAttribute('href', rawUrl.startsWith('/') && rawUrl.charAt(1) !== '/' ? rawUrl : '/notifications/');
+    row.setAttribute('data-notif-item', '');
+    row.className = 'flex items-start gap-2.5 px-4 py-2.5 hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer';
     const dot = document.createElement('span');
     const sev = String(notif.severity || '').toUpperCase();
     dot.className = 'mt-1 h-2 w-2 shrink-0 rounded-full ' + (sev === 'DANGER' ? 'bg-[var(--status-danger)]' : (sev === 'WARNING' ? 'bg-[var(--status-warning)]' : 'bg-[var(--accent-primary)]'));

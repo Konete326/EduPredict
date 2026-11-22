@@ -163,10 +163,12 @@
     const cleanId = String(sid || '').trim(), drawer = byId('student-360-drawer');
     if (!cleanId || !drawer) return;
     if (drawerCloseTimer) { clearTimeout(drawerCloseTimer); drawerCloseTimer = null; }
+    if (document.body && drawer.parentElement !== document.body) document.body.appendChild(drawer);
     const token = ++fetchSeq;
     drawer.classList.remove('is-drawer-open', 'hidden'); drawer.classList.add('flex'); drawer.setAttribute('aria-hidden', 'false');
     void drawer.offsetWidth; requestAnimationFrame(() => drawer.classList.add('is-drawer-open'));
     if (typeof window.syncBodyScrollLock === 'function') window.syncBodyScrollLock();
+    else if (document.body) document.body.classList.add('drawer-open', 'ep-overlay-blur');
     setText('s360-name', 'Student ' + cleanId);
     if (byId('s360-loading')) byId('s360-loading').classList.remove('hidden');
     if (byId('s360-error')) byId('s360-error').classList.add('hidden');
