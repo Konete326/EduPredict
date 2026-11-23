@@ -1,9 +1,19 @@
 import json
 import os
 import re
+import socket
 import urllib.error
 import urllib.request
-from core.ai_dom_actions import ROLE_PRD_CAPS, ROLE_ROUTES, build_dom_actions_and_poll, build_role_poll, evaluate_rbac_privacy_guard
+from core.ai_dom_actions import (
+    ROLE_PRD_CAPS,
+    ROLE_ROUTES,
+    build_dom_actions_and_poll,
+    build_role_poll,
+    describe_role_action_schema,
+    evaluate_rbac_privacy_guard,
+    sanitize_llm_dom_actions,
+    sanitize_llm_poll,
+)
 from core.db import courses_col, predictions_col, student_records_col, support_tickets_col
 
 
@@ -65,6 +75,25 @@ def _safe_float(val, default=0.0):
         return float(val)
     except (TypeError, ValueError):
         return default
+
+
+def _resolve_gemini_api_key():
+    key = (os.getenv("GEMINI_BACKEND_KEY_3") or os.getenv("GEMINI_API_KEY") or "").strip()
+    if key or os.name != "nt":
+        return key
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as reg_key:
+            for env_name in ("GEMINI_BACKEND_KEY_3", "GEMINI_API_KEY"):
+                try:
+                    val, _ = winreg.QueryValueEx(reg_key, env_name)
+                    if str(val or "").strip():
+                        return str(val).strip()
+                except OSError:
+                    continue
+    except Exception:
+        pass
+    return ""
 
 
 def detect_best_agent(message, current_agent_id=None):
@@ -162,20 +191,24 @@ def _build_gemini_contents(user_message, history=None):
     return contents or [{"role": "user", "parts": [{"text": clean_msg}]}]
 
 
-def call_gemini_flash(system_prompt, user_message, history=None):
-    api_key = (os.getenv("GEMINI_BACKEND_KEY_3") or os.getenv("GEMINI_API_KEY") or "").strip()
+def call_gemini_flash(system_prompt, user_message, history=None, json_mode=False):
+    api_key = _resolve_gemini_api_key()
     if not api_key:
         return None, "missing_api_key"
-    payload = {"system_instruction": {"parts": [{"text": str(system_prompt or "")}]}, "contents": _build_gemini_contents(user_message, history), "generationConfig": {"temperature": 0.35, "maxOutputTokens": 320}}
+    gen_cfg = {"temperature": 0.35, "maxOutputTokens": 650}
+    if json_mode:
+        gen_cfg["responseMimeType"] = "application/json"
+    payload = {"system_instruction": {"parts": [{"text": str(system_prompt or "")}]}, "contents": _build_gemini_contents(user_message, history), "generationConfig": gen_cfg}
     encoded = json.dumps(payload).encode("utf-8")
+    timeout_s = max(2.0, min(25.0, _safe_float(os.getenv("GEMINI_TIMEOUT_SECS"), 10.0)))
     primary_model = (os.getenv("GEMINI_CHAT_MODEL") or "gemini-flash-lite-latest").strip()
-    models = tuple(dict.fromkeys([primary_model, "gemini-flash-lite-latest", "gemini-flash-latest"]))
+    models = tuple(dict.fromkeys([primary_model, "gemini-flash-lite-latest", "gemini-3.5-flash-lite"]))
     last_error = "gemini_unavailable"
     for model in models:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         req = urllib.request.Request(url, data=encoded, headers={"Content-Type": "application/json"}, method="POST")
         try:
-            with urllib.request.urlopen(req, timeout=3.5) as resp:
+            with urllib.request.urlopen(req, timeout=timeout_s) as resp:
                 if getattr(resp, "status", 200) != 200:
                     last_error = f"{model}:http_{getattr(resp, 'status', 500)}"
                     continue
@@ -188,22 +221,46 @@ def call_gemini_flash(system_prompt, user_message, history=None):
                 last_error = f"{model}:empty_response"
         except urllib.error.HTTPError as exc:
             last_error = f"{model}:http_{exc.code}"
-        except urllib.error.URLError:
-            last_error = f"{model}:network_error"
+        except (socket.timeout, TimeoutError):
+            last_error = f"{model}:timeout"
+        except urllib.error.URLError as exc:
+            last_error = f"{model}:timeout" if isinstance(getattr(exc, "reason", None), (socket.timeout, TimeoutError)) else f"{model}:network_error"
         except Exception as exc:
             last_error = f"{model}:{type(exc).__name__}"
     return None, last_error
+
+
+def _parse_gemini_plan(raw_text):
+    text = str(raw_text or "").strip()
+    if not text:
+        return None
+    cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.I | re.S).strip()
+    if cleaned.startswith("{"):
+        try:
+            obj = json.loads(cleaned)
+            if isinstance(obj, dict) and str(obj.get("reply") or "").strip():
+                return {
+                    "structured": True,
+                    "reply": str(obj.get("reply")).strip(),
+                    "dom_actions": obj.get("dom_actions"),
+                    "poll": obj.get("poll"),
+                    "handoff_to": obj.get("handoff_to"),
+                }
+        except json.JSONDecodeError:
+            pass
+    return {"structured": False, "reply": text, "dom_actions": None, "poll": None, "handoff_to": None}
 
 
 def _build_fallback_reply(agent, ctx, dom_actions=None, poll=None):
     agent_id = agent["id"]
     if dom_actions:
         labels = ", ".join(a.get("label") or a.get("type") for a in dom_actions[:2])
-        if dom_actions[0].get("type") == "open_and_fill_form":
+        atype = dom_actions[0].get("type")
+        if atype == "open_and_fill_form":
             return f"Main {labels} open aur pre-fill kar raha hoon. Details check karke submit karein."
-        if dom_actions[0].get("type") == "redirect" and dom_actions[0].get("auto"):
+        if atype == "redirect" and dom_actions[0].get("auto"):
             return f"Main aapko {dom_actions[0].get('label', 'target page')} par le ja raha hoon."
-        if dom_actions[0].get("type") in ("filter_table", "click_element"):
+        if atype in ("filter_table", "click_element", "toggle_theme", "toggle_sidebar"):
             return f"Action ready hai: {labels}."
     if poll and not dom_actions:
         return f"{ctx['full_name']}, aapke {ctx['role']} portal ke quick options neeche poll mein maujood hain — kisi ek par click karein."
@@ -226,7 +283,7 @@ def _build_fallback_reply(agent, ctx, dom_actions=None, poll=None):
     return f"Portal support status ({ctx['role']}): aapke {ctx['tickets_total']} ticket(s) mein se {ctx['open_tickets_count']} open aur {ctx['resolved_tickets_count']} resolved hain. A4 PDF, profile, ya support actions ke liye quick buttons use karein."
 
 
-def handle_agent_dock_message(user_doc, agent_id, message, history=None):
+def handle_agent_dock_message(user_doc, agent_id, message, history=None, current_path=None):
     clean_msg = str(message or "").strip()
     if not clean_msg:
         return {"ok": False, "error": "Please type a message first."}
@@ -244,23 +301,41 @@ def handle_agent_dock_message(user_doc, agent_id, message, history=None):
             "blocked": True, "blocked_reason": blocked_reason, "engine": "rbac_guard", "ephemeral": True,
         }
     active_agent, handoff = detect_best_agent(clean_msg, agent_id)
+    det_actions, det_poll = build_dom_actions_and_poll(user, clean_msg, history=history)
+    mongo_ctx = _build_live_mongo_context(user)
+    path_note = str(current_path or "").strip()[:120] or "unknown"
+    system_prompt = (
+        f"You are {active_agent['name']}, {active_agent['role']} in EduPredict. Skills: {active_agent['skills']}. "
+        f"Current User Role: {role}. Current Path: {path_note}. {ROLE_PRD_CAPS.get(role, '')} "
+        f"{describe_role_action_schema(role)} "
+        "Respond ONLY as a JSON object with keys: "
+        '{"reply": string, "dom_actions": array, "poll": null | {"question": string, "options": [{"label": string, "prompt": string}]}, "handoff_to": null | "coach" | "analyst" | "ops" | "desk"}. '
+        "Match user's language naturally (Latin-script Roman Urdu only, never Arabic/Urdu script, if they write Roman Urdu; clear English if English; 2-4 concise sentences). "
+        "Use ONLY exact numbers from LIVE_DB_CONTEXT; never invent GPA, marks, attendance, or counts. Never reveal passwords, secrets, or cross-role data. "
+        "Emit dom_actions ONLY when user requests navigation, filtering, theme/sidebar toggle, clicking a portal action, or opening/filling a form; otherwise []. "
+        f"HINT_DOM_ACTIONS={json.dumps(det_actions, ensure_ascii=True)}. LIVE_DB_CONTEXT={json.dumps(mongo_ctx, ensure_ascii=True)}"
+    )
+    raw_reply, engine_info = call_gemini_flash(system_prompt, clean_msg, history=history, json_mode=True)
+    plan = _parse_gemini_plan(raw_reply) if raw_reply else None
+    if plan:
+        reply_text, engine_used = plan["reply"], engine_info
+        if plan["structured"]:
+            llm_actions = sanitize_llm_dom_actions(user, plan["dom_actions"])
+            llm_poll = sanitize_llm_poll(user, plan["poll"])
+            dom_actions = llm_actions if llm_actions else det_actions
+            poll = llm_poll if llm_poll is not None else (det_poll if not llm_actions else None)
+            if not handoff and plan.get("handoff_to"):
+                cand_id = resolve_agent_id(plan["handoff_to"], default="")
+                if cand_id in EDUPREDICT_AGENTS and cand_id != active_agent["id"]:
+                    active_agent, handoff = dict(EDUPREDICT_AGENTS[cand_id]), True
+        else:
+            dom_actions, poll = det_actions, det_poll
+    else:
+        dom_actions, poll = det_actions, det_poll
+        reply_text, engine_used = _build_fallback_reply(active_agent, mongo_ctx, dom_actions, poll), f"fallback:{engine_info}"
     from_agent = dict(EDUPREDICT_AGENTS[req_id]) if handoff else dict(active_agent)
     handoff_message = f"Main aapka yeh kaam {active_agent['name']} ({active_agent['role']}) ko assign kar raha hoon — woh {active_agent['skills']} ke specialist hain." if handoff else ""
     continue_prefix = f"Mujhe aapka task mil gaya hai ({task_preview}) — main yahan se start aur continue kar raha hoon:" if handoff else ""
-    dom_actions, poll = build_dom_actions_and_poll(user, clean_msg, history=history)
-    mongo_ctx = _build_live_mongo_context(user)
-    allowed_urls = ", ".join(u for u, _, _ in ROLE_ROUTES.get(role, ()))
-    actions_note = json.dumps(dom_actions, ensure_ascii=True) if dom_actions else "[]"
-    system_prompt = (
-        f"You are {active_agent['name']}, {active_agent['role']} in EduPredict. Skills: {active_agent['skills']}. "
-        f"Current User Role: {role}. {ROLE_PRD_CAPS.get(role, '')} Allowed routes: {allowed_urls}. "
-        "Reply concisely in helpful Roman Urdu and simple English (2 to 4 short sentences). "
-        "Use ONLY exact numbers from LIVE_DB_CONTEXT below. Never invent GPA, marks, attendance, or counts. "
-        "Never reveal passwords, secrets, or cross-role private data. "
-        f"ATTACHED_DOM_ACTIONS={actions_note}. LIVE_DB_CONTEXT={json.dumps(mongo_ctx, ensure_ascii=True)}"
-    )
-    reply_text, engine_info = call_gemini_flash(system_prompt, clean_msg, history=history)
-    reply_text, engine_used = (reply_text, engine_info) if reply_text else (_build_fallback_reply(active_agent, mongo_ctx, dom_actions, poll), f"fallback:{engine_info}")
     return {
         "ok": True, "handoff": handoff, "from_agent": from_agent, "active_agent": active_agent,
         "handoff_message": handoff_message, "task_preview": task_preview,

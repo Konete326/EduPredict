@@ -61,27 +61,28 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 77 Vercel Live Deployment & GitHub Auto-Sync Team"
-active_branch_merged_to_main: "feature/phase77-hf-deploy-cicd-docs -> main"
-project_phase: "Phase 77 Complete: Vercel Production Hosting Connected to GitHub main Auto-Deploy + Multi-Cloud Django Config"
+last_updated_by_agent: "Phase 78 Live Dynamic Gemini AI & Full-App Software-Control Action Planner Swarm"
+active_branch_merged_to_main: "main (direct verified release push)"
+project_phase: "Phase 78 Complete: Live Dynamic Gemini AI Dock + RBAC-Validated Full-App Software Control"
 
 completed_modules:
-  - "Phase 1-76: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications Feed & History (/notifications/), Admin Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF & HTML Branding Sync, Cgroup Health Telemetry, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (60/26A), Image Cropper & Lightbox (61/26B), Table-First Directories & Student 360° Drawer (62/26C), Hyper-Automation, Live LMS Stream Simulator & Aptech Pack (63/26D), Live Stream/KPI/PDF/Card-ID Sync (64-72), Hirael Login-03 Showcase (73), Glassmorphism Profile/Tabbed Settings/Drawer Blur/Zero-Glow Academic Widgets (74), Multi-Agent AI Dock/Real-Data Honesty/Monochrome A4 PDFs (75), and AI Specialist DPs/sessionStorage Continuity/RBAC-DOM Polls/Zero-UI A4 Print/Progress Watchdog (76)."
-  - "Phase 77: Vercel Production Hosting & GitHub Continuous Auto-Deploy:"
-      - "vercel.json, config/settings.py (175/350 lines), Dockerfile: configured Vercel WSGI entrypoint (config/wsgi.py, maxDuration: 60), default cloud ALLOWED_HOSTS & CSRF_TRUSTED_ORIGINS (.vercel.app, .onrender.com, .hf.space, etc.), SECURE_PROXY_SSL_HEADER, USE_X_FORWARDED_HOST, and updated container healthcheck port (7860) in Dockerfile + panels/test_uat.py."
-      - ".env, .env.example, panels/test_phase75.py (373/380 lines): scrubbed raw GEMINI_BACKEND_KEY_3 secret from tracked .env to pass GitHub GH013 Push Protection cleanly (runtime secrets supplied via Vercel Project Environment Variables)."
-      - ".github/workflows/django.yml, README.md, .agents/prd.md, .agents/trd.md, .agents/rules/edupredict-rules.md (19,091 bytes < 24,000): documented GitHub Konete326/EduPredict -> Vercel automatic live deployment on every main push (replacing Hugging Face Spaces), updated Admin credentials (admin@gmail.com / admin123), and audited all 13 static/js/*.js files in CI."
+  - "Phase 1-77: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF & HTML Branding Sync, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish (60-63), Live Stream/KPI/PDF/Card-ID Sync (64-72), Hirael Login-03 (73), Glassmorphism Profile/Tabbed Settings/Drawer Blur/Zero-Glow Academic Widgets (74), Multi-Agent AI Dock/Real-Data Honesty/Monochrome A4 PDFs (75), AI Specialist DPs/sessionStorage Continuity/RBAC-DOM Polls/Zero-UI A4 Print/Progress Watchdog (76), and Vercel Production Auto-Deploy on GitHub main (77)."
+  - "Phase 78: Live Dynamic Gemini AI & Full-App RBAC Software-Control Action Planner:"
+      - "core/ai_agent_services.py (345/350 lines, 0 comments/docstrings): added _resolve_gemini_api_key() (env + Windows HKCU Environment fallback while keeping tracked .env GH013-safe), fixed Gemini model chain (primary -> gemini-flash-lite-latest -> gemini-3.5-flash-lite, dropping failing gemini-flash-latest), increased timeout to 10.0s (GEMINI_TIMEOUT_SECS), enabled structured JSON mode (responseMimeType: application/json, maxOutputTokens: 650), and upgraded handle_agent_dock_message() to plan dynamic {reply, dom_actions, poll, handoff_to} matching user language (Roman Urdu or English)."
+      - "core/ai_dom_actions.py (331/350 lines, 0 comments/docstrings): added CLICK_ACTION_SPECS (print_a4_report, download_pdf, open_change_password, open_theme_studio, notify_high_risk, run_ml, simulate_stream, export_backup), toggle_theme, toggle_sidebar, describe_role_action_schema(), sanitize_llm_dom_actions(), and sanitize_llm_poll() with strict ROLE_ROUTES and RBAC privacy guard validation."
+      - "panels/views_notifications.py (112/250 lines, 0 comments/docstrings): wired optional current_path into handle_agent_dock_message()."
+      - "static/js/ai_agent_dock.js (339/350 lines, 0 comments) & templates/components/ai_message_dock.html (77/350 lines, 0 comments): added dynamic software-control executor for all 6 action types (redirect, filter_table, open_and_fill_form with 2.2s prefill highlight, click_element with cross-route pending queue, toggle_theme, toggle_sidebar), current_path POST payload, live #ep-dock-engine-badge (Live AI / Policy Guard / Offline Mode), and non-repetitive offline Retry control."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "node --check: all 13 JS scripts in static/js/*.js exited 0 (NODE_CHECK_OK)."
-  - "manage.py collectstatic --noinput --dry-run: 144 static files copied."
-  - "manage.py test --verbosity=2: Ran 136 tests in 78.939s (OK)."
-  - "manage.py verify_uat: UAT Results: 7/7 passed in 8.03s - System 100% Operational (Step 1 status=healthy, latency=661.82ms, Steps 2-7 PASS)."
-  - "Static audit: PY_AUDIT_ISSUES: [], USER_PROFILE_DIFF_EMPTY: True, .agents/rules/edupredict-rules.md 19,091 bytes (< 24,000), ENV_HAS_RAW_GEMINI False."
+  - "node --check: all 13 JS scripts in static/js/*.js exited 0 (ALL_JS_OK)."
+  - "Zero-comment & line-cap audit: core/ai_agent_services.py (345/350), core/ai_dom_actions.py (331/350), panels/views_notifications.py (112/250), static/js/ai_agent_dock.js (339/350), templates/components/ai_message_dock.html (77/350), panels/test_phase75.py (373/380), panels/test_phase76.py (365/380) — all 0 comments/docstrings; .env keeps GEMINI_BACKEND_KEY_3= blank."
+  - "Live Gemini dynamic test: Test 1 (STUDENT GPA advice -> engine=gemini-flash-lite-latest, live MongoDB GPA 3.41); Test 2 (ADMIN dark mode + prefilled create_course CS-405 Machine Learning -> engine=gemini-3.5-flash-lite, 2 validated dom_actions); Test 3 (STUDENT requesting admin create_user/export_backup -> engine=rbac_guard, blocked=True, dom_actions=[])."
+  - "manage.py test: Ran 136 tests in 100.347s (OK)."
+  - "manage.py verify_uat: UAT Results: 7/7 passed in 9.85s - System 100% Operational (Step 1 status=healthy, latency=616.11ms, Steps 2-7 PASS)."
 
 active_routes_and_files:
-  - "vercel.json, config/settings.py, config/wsgi.py, Dockerfile, README.md, .github/workflows/django.yml, .env, .env.example, panels/test_phase75.py, panels/test_uat.py, .agents/prd.md, .agents/trd.md, .agents/rules/edupredict-rules.md, .agents/git-sync.md"
+  - "core/ai_agent_services.py, core/ai_dom_actions.py, panels/views_notifications.py, static/js/ai_agent_dock.js, templates/components/ai_message_dock.html, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."
@@ -89,5 +90,5 @@ pending_modules_in_order:
 important_notes_for_next_agent:
   - "Project is connected from GitHub Konete326/EduPredict (main branch) to Vercel: every push to main automatically builds and deploys live on Vercel."
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
-  - "Never commit raw GEMINI_BACKEND_KEY_3 or API secrets into tracked .env; manage production secrets in Vercel Environment Variables."
+  - "Never commit raw GEMINI_BACKEND_KEY_3 or API secrets into tracked .env; manage production secrets in Vercel Environment Variables (local Windows fallback reads HKCU\\Environment)."
 ```

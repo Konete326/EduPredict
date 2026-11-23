@@ -107,5 +107,6 @@ def ai_agent_chat_view(request):
         payload = request.POST
     user = request.session.get("user") or {}
     history = payload.get("history") if isinstance(payload, dict) else None
-    res = handle_agent_dock_message(user, payload.get("agent_id"), payload.get("message"), history=history)
+    current_path = payload.get("current_path") if isinstance(payload, dict) else None
+    res = handle_agent_dock_message(user, payload.get("agent_id"), payload.get("message"), history=history, current_path=current_path)
     return JsonResponse(res, status=200 if res.get("ok") else 400)
