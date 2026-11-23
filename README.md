@@ -2,6 +2,9 @@
 
 EduPredict is an enterprise-grade academic analytics and early warning platform built with Python 3.12, Django (MVT architecture), MongoDB Atlas, Tailwind CSS, Vanilla JS, and ReportLab. It identifies student attrition patterns, predicts semester GPA, flags academic anomalies, and empowers educators with real-time intervention tools.
 
+- **GitHub Repository:** https://github.com/Konete326/EduPredict
+- **Live Hosting:** Deployed on **Vercel** (`vercel.json` + `config/wsgi.py`), automatically synced from GitHub `main` on every push.
+
 ---
 
 ## Key Capabilities & Role Panels
@@ -223,30 +226,31 @@ To restore a plain file from an encrypted backup (refuses to overwrite unless `-
 python manage.py decrypt_backup backups/<file>.json.enc
 ```
 
-### 4. Automated GitHub Actions CI Pipeline (`.github/workflows/django.yml`)
+### 4. Automated GitHub Actions CI & Vercel Auto-Deploy (`.github/workflows/django.yml`)
 Triggers on every push to `main`, `feature/**`, and pull requests targeting `main`:
 1. **Ubuntu Runner:** Python 3.12 + Node.js 20.
 2. **System Check:** `python manage.py check`.
-3. **JS Syntax Audit:** `node --check` across all 5 JavaScript scripts.
-4. **Unit Test Suite:** Full Django test runner execution.
+3. **JS Syntax Audit:** `node --check` across all 13 `static/js/*.js` scripts.
+4. **Unit Test Suite:** Full Django test runner execution (`python manage.py test`).
 5. **Multi-Role UAT:** `python manage.py verify_uat`.
 6. **Static Verification:** `python manage.py collectstatic --noinput --dry-run`.
+7. **Vercel Continuous Deployment:** Connected directly to `Konete326/EduPredict` (`main` branch) via Vercel Git integration (`vercel.json`), so every push to `main` automatically builds and deploys live.
 
 ### 5. Rate Limiting (Per-Worker Limits)
 Endpoints such as `/health/` use an in-memory rate limiter that returns `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and (on HTTP 429) `Retry-After`.
 
-> **Note:** Counters live in each worker process memory and are not shared. The Docker image runs gunicorn with 3 workers, so the effective limit per client IP can reach up to `workers x max_requests` (for example, 3 x 120 = 360 requests per minute on `/health/`). Use a shared store such as Redis, or a limit at the reverse proxy, if you need a strict global limit.
+> **Note:** Counters live in each worker process memory and are not shared. The Docker image runs gunicorn with 2 workers (`${PORT:-7860}`), so the effective limit per client IP can reach up to `workers x max_requests`. Use a shared store such as Redis, or a limit at the reverse proxy, if you need a strict global limit.
 
 ---
 
-## Default Seed Credentials
+## Default Admin & Role Onboarding Credentials
 
-| Role | Email | Password | Primary Route |
-| :--- | :--- | :--- | :--- |
-| **Admin** | `admin@edupredict.edu` | `Admin@123` | `/admin-panel/` |
-| **Teacher** | `teacher@edupredict.edu` | `Teacher@123` | `/teacher-panel/` |
-| **Student** | `student@edupredict.edu` | `Student@123` | `/student-panel/` |
-| **Analyst** | `analyst@edupredict.edu` | `Analyst@123` | `/analyst-panel/` |
+| Role | Email | Password | Primary Route | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| **Admin** | `admin@gmail.com` | `admin123` | `/admin-panel/` | Seeded automatically via `ADMIN_EMAIL` / `ADMIN_PASSWORD` |
+| **Student** | Self-Register | User-Chosen | `/student-panel/` | Instant onboarding at `/auth/` (`STUDENT-ID` auto/manual) |
+| **Teacher** | Self-Register / Admin Invite | User-Chosen | `/teacher-panel/` | Pending Admin approval in `/admin-panel/users/` |
+| **Analyst** | Created by Admin | Admin-Assigned | `/analyst-panel/` | Provisioned inside `/admin-panel/users/` |
 
 ---
 
@@ -254,9 +258,10 @@ Endpoints such as `/health/` use an in-memory rate limiter that returns `X-RateL
 
 When deploying with `DEBUG=False`:
 - `SECURE_BROWSER_XSS_FILTER` and `SECURE_CONTENT_TYPE_NOSNIFF` are active.
-- `X_FRAME_OPTIONS` is locked to `DENY`.
+- `X_FRAME_OPTIONS` is locked to `DENY` (and CSP permits Hugging Face frame embedding when hosted inside Spaces).
+- `SECURE_PROXY_SSL_HEADER` and `USE_X_FORWARDED_HOST` are configured for reverse proxies (HF Spaces, Render, Railway, Koyeb).
 - `SECURE_HSTS_SECONDS` defaults to 31,536,000 (1 year) with subdomains and preload enabled.
 - `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE` are enforced over HTTPS.
 - WhiteNoise automatically serves compressed and cached assets from `staticfiles/`.
-- Container native `HEALTHCHECK` monitors `http://localhost:8000/health/`.
+- Container native `HEALTHCHECK` monitors `http://localhost:7860/health/`.
 - Theme-aware custom `500.html` and `404.html` error pages prevent stack trace exposure.

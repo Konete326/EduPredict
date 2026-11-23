@@ -61,34 +61,33 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 74 Notifications History, Glassmorphism Profile, Tabbed Settings, Drawer Blur & Academic Widgets Team"
-active_branch_merged_to_main: "feature/phase74-profile-notifs-ux-charts -> main"
-project_phase: "Phase 74 Complete: Notifications History, Glassmorphism Portfolio Profile, Tabbed Portal Settings, Full-Viewport Drawer Blur, Compact Table Actions & Zero-Glow Academic Widgets"
+last_updated_by_agent: "Phase 77 Vercel Live Deployment & GitHub Auto-Sync Team"
+active_branch_merged_to_main: "feature/phase77-hf-deploy-cicd-docs -> main"
+project_phase: "Phase 77 Complete: Vercel Production Hosting Connected to GitHub main Auto-Deploy + Multi-Cloud Django Config"
 
 completed_modules:
-  - "Phase 1-73: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications Feed, Admin Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF & HTML Branding Sync, Cgroup Health Telemetry, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (60/26A), Image Cropper & Lightbox (61/26B), Table-First Directories & Student 360° Drawer (62/26C), Hyper-Automation, Live LMS Stream Simulator & Aptech Pack (63/26D), Live Stream/KPI/PDF/Card-ID Sync (64-72), and Hirael Login-03 Split-Screen Auth Showcase (73)."
-  - "Phase 74: Notifications History, Glassmorphism Profile, Tabbed Settings, Drawer Blur & Zero-Glow Academic Widgets:"
-      - "panels/notification_services.py (274/350 lines, 0 comments), panels/views_notifications.py (81/250 lines, 0 comments), panels/urls.py (34/350 lines, 0 comments), templates/panels/notifications_history.html (153/350 lines, 0 comments): added /notifications/ (panels:notifications_history) with ALL/UNREAD/READ/REPLIES tabs, normalized support ticket reply merging without duplicate ticket_ids, POST mark_one (ObjectId + ownership check) & mark_all, and _resolve_notification_target() target_url in /notifications/feed/."
-      - "templates/components/topbar.html (107/350 lines), templates/components/sidebar.html (199/350 lines), static/js/ui_widgets.js (345/350 lines), static/js/page_guides.js (267/350 lines), static/js/app.js (348/350 lines): clickable <a data-notif-item> dropdown alerts, #view-all-notifications-link, sidebar Alerts History link, #topbar-quick-search + openCommandSearchModal(initialQuery) fallback, inline-flex gap-2 spinner lock wrapper, and syncBodyScrollLock() ep-overlay-blur for modals and drawers."
-      - "templates/panels/user_profile.html (234/350 lines), templates/panels/admin_settings.html (202/350 lines), templates/panels/admin_tickets.html (199/350 lines), templates/components/data_table.html (134/350 lines), panels/admin_services.py (349/350 lines): Glassmorphism Portfolio /profile/ with modalized Edit/Avatar/FAQ/Change-Password, 3-tab 17-inch viewport-fit /admin-panel/settings/, flex-nowrap single-row table actions, compact ticket labels, and drawer quick actions."
-      - "static/css/global.css (265/350 lines), static/js/image_cropper.js (279/350 lines), static/js/directory_ui.js (336/350 lines), static/js/academic_widgets.js (245/350 lines), templates/base.html (189/350 lines), templates/panels/analyst_accuracy.html (207/350 lines), templates/panels/student_tips.html (149/350 lines), .agents/design.md (203 lines), .agents/rules/edupredict-rules.md (16,713 bytes): removed will-change: opacity, transform from .spa-page-enter, added document.body drawer portaling + ep-overlay-blur, and added zero-glow (shadowBlur = 0) Catmull-Rom Contour Strata, Interactive 3-Ring Orbit Goals, and prefers-reduced-motion Marquee widgets."
-      - "panels/test_phase74.py (364/400 lines, 0 comments): added 5 comprehensive Django + Node VM tests covering /notifications/, /profile/, /admin-panel/settings/, /admin-panel/tickets/, drawer blur/portaling, topbar search, spinner gap, and academic_widgets.js / ui_widgets.js."
+  - "Phase 1-76: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications Feed & History (/notifications/), Admin Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF & HTML Branding Sync, Cgroup Health Telemetry, Rate-Limit Headers, Encrypted/Verified Backups, Visual Polish (60/26A), Image Cropper & Lightbox (61/26B), Table-First Directories & Student 360° Drawer (62/26C), Hyper-Automation, Live LMS Stream Simulator & Aptech Pack (63/26D), Live Stream/KPI/PDF/Card-ID Sync (64-72), Hirael Login-03 Showcase (73), Glassmorphism Profile/Tabbed Settings/Drawer Blur/Zero-Glow Academic Widgets (74), Multi-Agent AI Dock/Real-Data Honesty/Monochrome A4 PDFs (75), and AI Specialist DPs/sessionStorage Continuity/RBAC-DOM Polls/Zero-UI A4 Print/Progress Watchdog (76)."
+  - "Phase 77: Vercel Production Hosting & GitHub Continuous Auto-Deploy:"
+      - "vercel.json, config/settings.py (175/350 lines), Dockerfile: configured Vercel WSGI entrypoint (config/wsgi.py, maxDuration: 60), default cloud ALLOWED_HOSTS & CSRF_TRUSTED_ORIGINS (.vercel.app, .onrender.com, .hf.space, etc.), SECURE_PROXY_SSL_HEADER, USE_X_FORWARDED_HOST, and updated container healthcheck port (7860) in Dockerfile + panels/test_uat.py."
+      - ".env, .env.example, panels/test_phase75.py (373/380 lines): scrubbed raw GEMINI_BACKEND_KEY_3 secret from tracked .env to pass GitHub GH013 Push Protection cleanly (runtime secrets supplied via Vercel Project Environment Variables)."
+      - ".github/workflows/django.yml, README.md, .agents/prd.md, .agents/trd.md, .agents/rules/edupredict-rules.md (19,091 bytes < 24,000): documented GitHub Konete326/EduPredict -> Vercel automatic live deployment on every main push (replacing Hugging Face Spaces), updated Admin credentials (admin@gmail.com / admin123), and audited all 13 static/js/*.js files in CI."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "node --check: all 12 JS scripts (academic_widgets.js, analyst_evaluation.js, app.js, auth_wizard.js, charts.js, directory_ui.js, dot_kpi.js, image_cropper.js, nav.js, page_guides.js, theme_studio.js, ui_widgets.js) exited 0."
-  - "manage.py test --verbosity=2: Ran 127 tests in 135.521s (OK)."
-  - "manage.py verify_uat: UAT Results: 7/7 passed in 17.28s - System 100% Operational."
-  - "Static audit: all 22 Phase 74 files within line caps (views_notifications.py 81/250, test_phase74.py 364/400, all others <= 349/350), 0 comments/docstrings; .agents/rules/edupredict-rules.md 16,713 bytes (< 24,000); .env and .agents/* tracked in Git."
+  - "node --check: all 13 JS scripts in static/js/*.js exited 0 (NODE_CHECK_OK)."
+  - "manage.py collectstatic --noinput --dry-run: 144 static files copied."
+  - "manage.py test --verbosity=2: Ran 136 tests in 78.939s (OK)."
+  - "manage.py verify_uat: UAT Results: 7/7 passed in 8.03s - System 100% Operational (Step 1 status=healthy, latency=661.82ms, Steps 2-7 PASS)."
+  - "Static audit: PY_AUDIT_ISSUES: [], USER_PROFILE_DIFF_EMPTY: True, .agents/rules/edupredict-rules.md 19,091 bytes (< 24,000), ENV_HAS_RAW_GEMINI False."
 
 active_routes_and_files:
-  - "/notifications/ (panels:notifications_history), /notifications/feed/, /profile/, /admin-panel/settings/, /admin-panel/tickets/, /analyst-panel/accuracy/, /student-panel/tips/, panels/test_phase74.py, .agents/git-sync.md"
+  - "vercel.json, config/settings.py, config/wsgi.py, Dockerfile, README.md, .github/workflows/django.yml, .env, .env.example, panels/test_phase75.py, panels/test_uat.py, .agents/prd.md, .agents/trd.md, .agents/rules/edupredict-rules.md, .agents/git-sync.md"
 
 pending_modules_in_order:
-  - "All Planned Phases (Phases 1-74) Complete — Ready for Final Aptech Viva & Production Deployment."
+  - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."
 
 important_notes_for_next_agent:
+  - "Project is connected from GitHub Konete326/EduPredict (main branch) to Vercel: every push to main automatically builds and deploys live on Vercel."
   - "Always run pre-task git checkout main && git pull origin main && git checkout -B feature/<module> && git merge main and post-task commit/merge/push to main."
-  - "Keep role navigation strictly isolated across all panels per Rule 20; preserve get_cached TTL keys, invalidate_cache on mutations, and scoped ep_theme_prefs:<user_id>:<role> isolation."
-  - "Always track .env, .agents/*, and docs/aptech_submission/* in Git."
+  - "Never commit raw GEMINI_BACKEND_KEY_3 or API secrets into tracked .env; manage production secrets in Vercel Environment Variables."
 ```

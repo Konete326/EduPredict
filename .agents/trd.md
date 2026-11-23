@@ -34,6 +34,8 @@ edupredict/
 │   ├── decorators.py               # @role_required & @login_required_custom guards
 │   ├── context_processors.py       # Global notifications, role & theme context
 │   ├── cloudinary_services.py      # Cloudinary avatar validation & 320x320 upload helper
+│   ├── ai_agent_services.py        # Multi-Agent AI Dock routing, Mongo context & Gemini Flash
+│   ├── ai_dom_actions.py           # PRD-aware DOM automation, RBAC guards & interactive polls
 │   └── theme_services.py           # Per-user/per-panel theme, login sync & profile/password updates
 ├── accounts/                       # Auth & User Session App
 │   ├── services.py                 # Auth, registration, session serialization
@@ -73,6 +75,7 @@ edupredict/
 │   │   ├── confirm_modal.html      # Global Custom Confirm & Coming Soon Modals
 │   │   ├── form_modal.html         # Global Reusable Add/Edit/Change-Password Modal
 │   │   ├── theme_studio_modal.html # Theme & Appearance Live Studio Modal
+│   │   ├── ai_message_dock.html    # Multi-Agent WhatsApp Zig-Zag AI Message Dock
 │   │   ├── gradient_file_uploader.html # Animated drag/drop uploader + preview & progress bar
 │   │   ├── faq_pro.html            # Live search & animated accordion FAQ widget
 │   │   ├── data_table.html         # Global Wrapped Desktop Table + Mobile Stacked Cards
@@ -95,8 +98,13 @@ edupredict/
 │       ├── theme_studio.js         # Ocean Blue Theme Studio & 1.2s Cancelable Auto-Upload
 │       ├── ui_widgets.js           # Top Progress Bar, Submit Lock, FaqPro & Gradient Uploaders
 │       ├── charts.js               # Theme-aware Chart.js helper functions
+│       ├── academic_widgets.js     # Zero-glow Contour Strata, Orbit Goals & Marquee widgets
+│       ├── ai_agent_dock.js        # Ephemeral Multi-Agent Zig-Zag UI & auto-handoff handler
 │       └── analyst_evaluation.js   # Evaluation chart & diagnostics renderer
-├── .env.example                    # Template for MONGODB_URI, SECRET_KEY & CLOUDINARY_* keys
+├── .github/workflows/django.yml    # GitHub Actions CI validation workflow
+├── vercel.json                     # Vercel Python WSGI configuration (config/wsgi.py, maxDuration: 60)
+├── Dockerfile                      # Multi-stage Python 3.12 container on ${PORT:-7860}
+├── .env.example                    # Template for MONGODB_URI, SECRET_KEY, CLOUDINARY_* & GEMINI_BACKEND_KEY_3
 ├── requirements.txt                # Pinned latest stable packages
 └── manage.py
 ```
@@ -122,7 +130,9 @@ Every route must be cleanly named so templates only use `{% url 'route_name' %}`
 - `/profile/` -> `panels:user_profile` (Shared `My Profile & Settings` page for all logged-in roles)
 - `/theme/preferences/` -> `panels:theme_preferences` (GET/POST per-user & per-panel Theme Studio persistence + reset)
 - `/support/submit/` -> `panels:submit_support_ticket` (Non-Admin support submission)
+- `/notifications/` -> `panels:notifications_history` (Compact 17" viewport-fit alert & reply history)
 - `/notifications/mark-read/` -> `panels:mark_notifications_read`
+- `/ai-agents/chat/` -> `panels:ai_agent_chat` (Ephemeral Multi-Agent AI Message Dock GET/POST API)
 - `/admin-panel/` -> `panels:admin_dashboard`
 - `/admin-panel/users/` -> `panels:admin_users`
 - `/admin-panel/courses/` -> `panels:admin_courses`
@@ -159,3 +169,9 @@ Every route must be cleanly named so templates only use `{% url 'route_name' %}`
   - **Phase 61 (26B — Global Image Cropper & Lightbox):** `templates/components/image_cropper_modal.html` (`Cropper.js` CDN) for Profile Avatar (1:1 circle + old Cloudinary cleanup) and Support Ticket Screenshots (`Ctrl+V` paste + Free/16:9/4:3 crop + Attachment Chips stored via Cloudinary URLs on `support_tickets.attachments`), plus Admin Ticket Detail Drawer & Full-Screen Lightbox.
   - **Phase 62 (26C — Table-First Directories, Student 360° & Teacher Reject):** Default 5–6 column Compact Table + `[Table | Cards]` toggle + 1-click Copy ID on Users/Students, `GET /students/<student_id>/summary/` Student 360° Slide-Over Drawer, and Admin `"Reject with Reason"` (`approval_status="REJECTED"`, `rejection_reason`, `REJECT_USER` audit).
   - **Phase 63 (26D — Hyper-Automation & Aptech Pack):** Zero-click Auto-ML (`RandomForest(n_estimators=50, n_jobs=-1)`) + Auto-Alert escalation, Smart CSV Auto-Mapper + 3-row preview, 1-click `"Notify All High-Risk Students"`, `visibilitychange` instant notification refresh, dynamic `institution_name`/`current_term` from `get_portal_settings()` in `panels/pdf_services.py`, Analyst `"Simulate Live LMS Stream"` (`POST /analyst-panel/stream-tick/`, 5s interval), and Aptech Final Submission Pack (`docs/aptech_submission/`).
+- **Phase 75 (Multi-Agent AI Dock, Real-Data Honesty, A4 PDFs & 17" Viewport-Fit):**
+  - **Multi-Agent AI Message Dock (`core/ai_agent_services.py`, `ai_message_dock.html`, `ai_agent_dock.js`, `/ai-agents/chat/`):** 4 named specialists (`Dr. Amina`, `Prof. Zain`, `Sara`, `Bilal`) rendered with WhatsApp-style Zig-Zag bubbles, automatic specialist handoff with `task_preview`, strictly ephemeral memory-only sessions (zero saved chat history), `GEMINI_BACKEND_KEY_3` (`gemini-flash-lite-latest`), and zero sparkle icons.
+  - **Zero Dummy Data & Real-Data Charts:** `accounts/services.py` and `panels/admin_services.py` never insert dummy `student_records` on signup/user creation; `analytics/model_health.py` emits real `contour_series`, and `static/js/academic_widgets.js` renders honest empty states (`"No live course records available yet"`, `0%` + flat `12%` neutral orbit sparkline) when live records are absent.
+  - **Authentic A4 Monochrome PDFs & Print CSS:** `panels/pdf_services.py` renders formal black-on-white `A4` Registrar transcripts and class rosters (never copying web UI cards), paired with `@media print` in `static/css/global.css`.
+  - **Single Desktop Toggle & 17" Viewport-Fit Layouts:** `#mobile-sidebar-close` carries `lg:hidden` so desktop displays only the topbar toggle; `user_profile.html` (`/profile/`) stays untouched; `/notifications/`, `/student-panel/`, `/student-panel/tips/`, and `/analyst-panel/accuracy/` fit 17" desktop screens cleanly via compact rows and 2-tab layouts.
+- **Phase 77 (Vercel Live Hosting & GitHub Auto-Sync):** Connected to `https://github.com/Konete326/EduPredict` (`main` branch) and deployed on **Vercel** (`vercel.json` -> `config/wsgi.py`) with automatic live deployments on every GitHub `main` push (not Hugging Face Spaces), cloud `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS`/`SECURE_PROXY_SSL_HEADER` in `config/settings.py`, and blank `GEMINI_BACKEND_KEY_3=` in tracked `.env` (`GH013` safe).

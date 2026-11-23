@@ -34,11 +34,9 @@ jobs:
 
     - name: JavaScript Syntax Validation
       run: |
-        node --check static/js/app.js
-        node --check static/js/nav.js
-        node --check static/js/charts.js
-        node --check static/js/theme_studio.js
-        node --check static/js/analyst_evaluation.js
+        for f in static/js/*.js; do
+          node --check "$f"
+        done
 
     - name: Run Django Tests
       run: |

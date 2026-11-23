@@ -17,6 +17,7 @@ urlpatterns = [
     path('notifications/', views_notifications.notifications_history_view, name='notifications_history'),
     path('notifications/mark-read/', views_admin.mark_notifications_read_view, name='mark_notifications_read'),
     path('notifications/feed/', views_notifications.notifications_feed_view, name='notifications_feed'),
+    path('ai-agents/chat/', views_notifications.ai_agent_chat_view, name='ai_agent_chat'),
     path('students/<str:student_id>/summary/', views_notifications.student_360_summary_view, name='student_360_summary'),
     path('teacher-panel/', views_teacher.teacher_dashboard, name='teacher_dashboard'),
     path('teacher-panel/students/', views_teacher.teacher_students, name='teacher_students'),

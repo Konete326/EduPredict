@@ -170,6 +170,7 @@
   {% include 'components/page_guide_modal.html' %}
   {% include 'components/image_cropper_modal.html' %}
   {% include 'components/student_360_drawer.html' %}
+  {% if active_role %}{% include 'components/ai_message_dock.html' %}{% endif %}
   {% include 'components/toast.html' %}
 
   {{ theme_prefs|json_script:"ep-theme-prefs-data" }}
@@ -181,6 +182,7 @@
   <script src="{% static 'js/theme_studio.js' %}?v=17"></script>
   <script src="{% static 'js/ui_widgets.js' %}?v=17"></script>
   <script src="{% static 'js/academic_widgets.js' %}?v=17"></script>
+  <script src="{% static 'js/ai_agent_dock.js' %}?v=17"></script>
   <script src="{% static 'js/page_guides.js' %}?v=17"></script>
   <script src="{% static 'js/image_cropper.js' %}?v=17"></script>
   <script src="{% static 'js/directory_ui.js' %}?v=17"></script>

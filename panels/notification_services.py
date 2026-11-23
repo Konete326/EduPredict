@@ -40,32 +40,36 @@ def _resolve_notification_target(doc, role_key=""):
     message = str(item.get("message") or "").strip()
     cat_title = f"{category} {title}".upper()
     text_blob = f"{title} {message}".upper()
-    if role == "ADMIN" and ("TICKET" in cat_title or "FEEDBACK" in cat_title):
-        return "/admin-panel/tickets/"
-    if category == "FEEDBACK_REPLY":
-        if role == "STUDENT":
-            return "/student-panel/notifications/"
-        if role == "ADMIN":
+    if role == "ADMIN":
+        if any(kw in cat_title or kw in text_blob for kw in ("TICKET", "FEEDBACK", "REPLY")):
             return "/admin-panel/tickets/"
-        return "/notifications/"
-    if role == "TEACHER" and severity in ("WARNING", "DANGER"):
-        return "/teacher-panel/alerts/"
-    if role == "STUDENT" and any(kw in text_blob for kw in ("GPA", "MARKS", "PREDICTION", "RISK")):
-        return "/student-panel/report/"
-    return "/notifications/"
+        if any(kw in cat_title or kw in text_blob for kw in ("APPROVAL", "TEACHER", "USER")):
+            return "/admin-panel/users/"
+        if any(kw in cat_title for kw in ("LOG", "AUDIT", "BACKUP")):
+            return "/admin-panel/logs/"
+        return "/admin-panel/"
+    if role == "TEACHER":
+        if severity in ("WARNING", "DANGER") or any(kw in cat_title or kw in text_blob for kw in ("ALERT", "DROP", "RISK", "ATTENDANCE")):
+            return "/teacher-panel/alerts/"
+        if any(kw in text_blob for kw in ("MARKS", "CSV", "GPA", "STUDENT")):
+            return "/teacher-panel/students/"
+        return "/teacher-panel/"
+    if role == "STUDENT":
+        if any(kw in text_blob for kw in ("GPA", "MARKS", "PREDICTION", "RISK", "REPORT", "GRADE", "ATTENDANCE")):
+            return "/student-panel/report/"
+        if any(kw in text_blob for kw in ("TIP", "STUDY", "GOAL")):
+            return "/student-panel/tips/"
+        if category == "FEEDBACK_REPLY" or any(kw in cat_title for kw in ("TICKET", "REPLY")):
+            return "/student-panel/notifications/"
+        return "/student-panel/"
+    if role == "ANALYST":
+        if any(kw in text_blob for kw in ("ACCURACY", "MODEL", "HEALTH", "MAE", "ANOMALY")):
+            return "/analyst-panel/accuracy/"
+        return "/analyst-panel/"
+    return "/student-panel/"
 
 
-def create_notification(
-    title,
-    message,
-    severity="INFO",
-    target_role="",
-    target_user_id="",
-    category="SYSTEM",
-    ticket_id="",
-    feedback_text="",
-    reply_text="",
-):
+def create_notification(title, message, severity="INFO", target_role="", target_user_id="", category="SYSTEM", ticket_id="", feedback_text="", reply_text=""):
     doc = {
         "title": str(title or "").strip(),
         "message": str(message or "").strip(),
@@ -121,6 +125,12 @@ def _sort_stamp(val):
     if isinstance(val, datetime):
         dt = val if val.tzinfo is not None else val.replace(tzinfo=timezone.utc)
         return dt.timestamp()
+    if isinstance(val, str) and val.strip():
+        try:
+            dt = datetime.fromisoformat(val.strip().replace("Z", "+00:00"))
+            return (dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)).timestamp()
+        except ValueError:
+            return 0.0
     return 0.0
 
 
