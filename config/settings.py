@@ -79,9 +79,12 @@ ASGI_APPLICATION = 'config.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': Path('/tmp/db.sqlite3') if os.getenv('VERCEL') else (BASE_DIR / 'db.sqlite3'),
     }
 }
+
+if os.getenv('VERCEL'):
+    SESSION_ENGINE = os.getenv('SESSION_ENGINE', 'django.contrib.sessions.backends.signed_cookies')
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -105,8 +108,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATIC_ROOT.mkdir(parents=True, exist_ok=True)
+STATIC_ROOT = Path('/tmp/staticfiles') if os.getenv('VERCEL') else (BASE_DIR / 'staticfiles')
+try:
+    STATIC_ROOT.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass
 STORAGES = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
