@@ -2,7 +2,9 @@ import time
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views.decorators.debug import sensitive_post_parameters
 from accounts.services import (
     SELF_REGISTER_ROLES,
@@ -11,7 +13,7 @@ from accounts.services import (
     register_user,
     serialize_session_user,
 )
-from core.db import get_cached, predictions_col
+from core.db import get_cached, predictions_col, users_col
 from core.decorators import get_dashboard_route
 from core.theme_services import sync_theme_prefs_on_login
 
@@ -144,9 +146,14 @@ def _handle_register(request):
         return _render_auth(request, active_tab="register", register_data=register_data)
 
     if str(user_doc.get("approval_status") or "").strip().upper() == "PENDING":
+        request.session["pending_approval"] = {
+            "user_id": user_doc.get("user_id"),
+            "email": email,
+            "full_name": full_name,
+        }
         messages.warning(
             request,
-            "Your teacher account was created and is waiting for Admin approval. You can sign in once an administrator approves it.",
+            "Your teacher account was created and is waiting for Admin approval. This page will sign you in automatically once approved.",
         )
         return _render_auth(request, active_tab="login", login_email=email, pending_teacher_approval=True)
 
@@ -158,6 +165,35 @@ def _handle_register(request):
     return redirect(get_dashboard_route(session_user["role"]))
 
 
+def _complete_pending_login(request, user_doc):
+    request.session.pop("pending_approval", None)
+    session_user = serialize_session_user(user_doc)
+    request.session["user"] = session_user
+    sync_theme_prefs_on_login(request, user_doc)
+    messages.success(request, f"Account approved! Welcome, {session_user['full_name'] or session_user['email']}.")
+    return get_dashboard_route(session_user["role"])
+
+
+def _fetch_pending_state(request):
+    pending = request.session.get("pending_approval")
+    if not isinstance(pending, dict) or not pending.get("user_id"):
+        return "NONE", None, ""
+    try:
+        user_doc = users_col().find_one({"user_id": pending.get("user_id")})
+    except Exception:
+        return "PENDING", None, pending.get("email", "")
+    if not user_doc:
+        request.session.pop("pending_approval", None)
+        return "NONE", None, ""
+    status = str(user_doc.get("approval_status") or "").strip().upper()
+    if user_doc.get("is_active") and status != "PENDING":
+        return "APPROVED", user_doc, pending.get("email", "")
+    if status == "REJECTED":
+        request.session.pop("pending_approval", None)
+        return "REJECTED", user_doc, pending.get("email", "")
+    return "PENDING", user_doc, pending.get("email", "")
+
+
 @sensitive_post_parameters("password", "confirm_password")
 def auth_view(request):
     user = request.session.get("user")
@@ -165,6 +201,10 @@ def auth_view(request):
         role = str(user.get("role") or "").strip().upper()
         if role in VALID_ROLES:
             return redirect(get_dashboard_route(role))
+
+    if request.method == "GET" and request.GET.get("reset_pending") == "1":
+        request.session.pop("pending_approval", None)
+        return redirect("accounts:auth_view")
 
     if request.method == "POST":
         action = (request.POST.get("action") or "").strip().lower()
@@ -175,7 +215,27 @@ def auth_view(request):
         messages.error(request, "Unsupported authentication request.")
         return _render_auth(request, active_tab="login")
 
+    state, user_doc, pending_email = _fetch_pending_state(request)
+    if state == "APPROVED":
+        return redirect(_complete_pending_login(request, user_doc))
+    if state == "REJECTED":
+        reason = str((user_doc or {}).get("rejection_reason") or "Please contact your administrator.").strip()
+        messages.error(request, f"Teacher approval request was declined: {reason}")
+        return _render_auth(request, active_tab="login", login_email=pending_email)
+    if state == "PENDING":
+        return _render_auth(request, active_tab="login", login_email=pending_email, pending_teacher_approval=True)
+
     return _render_auth(request, active_tab="login")
+
+
+def approval_status_view(request):
+    state, user_doc, _ = _fetch_pending_state(request)
+    if state == "APPROVED":
+        route = _complete_pending_login(request, user_doc)
+        return JsonResponse({"status": "APPROVED", "redirect_url": reverse(route)})
+    if state == "REJECTED":
+        return JsonResponse({"status": "REJECTED", "reason": str((user_doc or {}).get("rejection_reason") or "").strip()})
+    return JsonResponse({"status": state})
 
 
 def logout_view(request):

@@ -225,11 +225,33 @@ function initPasswordStrengthMeter() {
 }
 window.initPasswordStrengthMeter = initPasswordStrengthMeter;
 
+function initPendingApprovalPoll() {
+  const card = document.getElementById('teacher-pending-status-card');
+  if (!card || card.classList.contains('hidden')) return;
+  const statusUrl = card.getAttribute('data-approval-status-url');
+  if (!statusUrl) return;
+  const poll = function () {
+    fetch(statusUrl, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) {
+        if (!data) return;
+        if (data.status === 'APPROVED' && data.redirect_url) {
+          window.location.href = data.redirect_url;
+        } else if (data.status === 'REJECTED') {
+          window.location.reload();
+        }
+      })
+      .catch(function () {});
+  };
+  window.setInterval(poll, 5000);
+}
+
 function bootAuthWizard() {
   initCapsLockListeners();
   initAuthStepper();
   initFloatingPaths();
   initPasswordStrengthMeter();
+  initPendingApprovalPoll();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootAuthWizard);
 else bootAuthWizard();
