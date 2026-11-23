@@ -1,18 +1,7 @@
 from pymongo import DESCENDING
 from analytics.ml_engine import _resolve_runtime_settings
-from core.db import (
-    courses_col,
-    get_cached,
-    notifications_col,
-    predictions_col,
-    student_records_col,
-)
-from panels.student_alert_services import (
-    _alert_targets,
-    _load_recent_alerts,
-    get_student_alerts_context,
-    mark_alert_read,
-)
+from core.db import courses_col, get_cached, notifications_col, predictions_col, student_records_col, users_col
+from panels.student_alert_services import _alert_targets, _load_recent_alerts, get_student_alerts_context, mark_alert_read
 
 
 def _safe_float(val, default=0.0):
@@ -24,23 +13,11 @@ def _safe_float(val, default=0.0):
 
 def _empty_record(student_id):
     return {
-        "student_id": student_id,
-        "full_name": "",
-        "batch": "",
-        "records": [],
-        "courses": [],
-        "avg_attendance": 0.0,
-        "avg_marks": 0.0,
-        "avg_assignment": 0.0,
-        "lms_hours_weekly": 0.0,
-        "previous_gpa": 0.0,
-        "predicted_gpa": None,
-        "risk_level": "PENDING",
-        "risk_score": None,
-        "is_anomaly": False,
-        "anomaly_reason": "",
-        "recommendation": "",
-        "generated_at": None,
+        "student_id": student_id, "full_name": "", "batch": "", "department": "",
+        "records": [], "courses": [], "avg_attendance": 0.0, "avg_marks": 0.0,
+        "avg_assignment": 0.0, "lms_hours_weekly": 0.0, "previous_gpa": 0.0,
+        "predicted_gpa": None, "risk_level": "PENDING", "risk_score": None,
+        "is_anomaly": False, "anomaly_reason": "", "recommendation": "", "generated_at": None,
     }
 
 
@@ -99,7 +76,9 @@ def _batch_rank(student_id, batch, student_avg_marks, docs=None):
     return {"rank": better + 1, "total": len(peer_totals)}
 
 
-def _build_tips(record, prediction, class_avg_marks, class_avg_att, min_att=75.0):
+def _build_tips(record, prediction, class_avg_marks, class_avg_att, min_att=75.0, has_records=True):
+    if not has_records or ("courses" in record and not record.get("courses")):
+        return []
     tips = []
     att = record["avg_attendance"]
     marks = record["avg_marks"]
@@ -156,6 +135,12 @@ def _build_tips(record, prediction, class_avg_marks, class_avg_att, min_att=75.0
 
 
 def _build_insight(record, rank):
+    if not record.get("courses"):
+        return {
+            "summary": "No course marks or attendance records have been uploaded for your Student ID yet. Your personal AI insights will appear once your teacher uploads class marks.",
+            "status": "info",
+            "points": [],
+        }
     risk = record["risk_level"]
     att = record["avg_attendance"]
     gpa = record["predicted_gpa"]
@@ -211,6 +196,20 @@ def _load_student_overview(student_id, user_id, role):
         record["avg_assignment"] = round(sum(c["assignment_score"] for c in course_rows) / n, 1)
         record["lms_hours_weekly"] = course_rows[0]["lms_hours_weekly"]
         record["previous_gpa"] = round(_safe_float(primary.get("previous_gpa")), 2)
+    else:
+        user_doc = None
+        try:
+            ucol = users_col()
+            if student_id:
+                user_doc = ucol.find_one({"student_id": student_id}, {"_id": 0, "full_name": 1, "batch": 1, "department": 1})
+            if not user_doc and user_id:
+                user_doc = ucol.find_one({"user_id": user_id}, {"_id": 0, "full_name": 1, "batch": 1, "department": 1})
+        except Exception:
+            user_doc = None
+        if isinstance(user_doc, dict):
+            record["full_name"] = str(user_doc.get("full_name") or "")
+            record["batch"] = str(user_doc.get("batch") or "")
+            record["department"] = str(user_doc.get("department") or "")
 
     if prediction:
         raw_gpa = prediction.get("predicted_gpa")
@@ -224,7 +223,7 @@ def _load_student_overview(student_id, user_id, role):
         record["generated_at"] = gen.strftime("%Y-%m-%d %H:%M") if hasattr(gen, "strftime") else None
 
     course_codes = [x["course_code"] for x in record["courses"] if x.get("course_code")]
-    batch_docs = _fetch_batch_docs(record["batch"], course_codes=course_codes) if (record["batch"] or course_codes) else []
+    batch_docs = _fetch_batch_docs(record["batch"], course_codes=course_codes) if (record["courses"] and (record["batch"] or course_codes)) else []
     class_stats = _course_class_stats(record["batch"], docs=batch_docs)
     subject_rows = []
     chart_labels, chart_mine, chart_class = [], [], []
@@ -253,10 +252,10 @@ def _load_student_overview(student_id, user_id, role):
         chart_mine.append(course["internal_marks"])
         chart_class.append(avg["marks"])
 
-    rank = _batch_rank(student_id, record["batch"], record["avg_marks"], docs=batch_docs) if record["batch"] else None
+    rank = _batch_rank(student_id, record["batch"], record["avg_marks"], docs=batch_docs) if (record["courses"] and record["batch"]) else None
     avg_marks_all = _safe_float(_batch_class_average(record["batch"], docs=batch_docs))
     avg_att_all = _safe_float(_batch_class_attendance(record["batch"], docs=batch_docs))
-    tips = _build_tips(record, prediction, avg_marks_all, avg_att_all, min_att=min_att)
+    tips = _build_tips(record, prediction, avg_marks_all, avg_att_all, min_att=min_att, has_records=bool(record["courses"]))
     insight = _build_insight(record, rank)
 
     unread_alerts = notifications_col().count_documents({"is_read": False, "$or": _alert_targets(student_id, user_id, role)})
@@ -299,19 +298,8 @@ def get_student_overview_context(student_id, user_id, role):
 
 
 def build_report_export_rows(record, subject_rows):
-    rows = []
-    for s in subject_rows:
-        rows.append([
-            record["full_name"] or record["student_id"],
-            record["student_id"],
-            record["batch"] or "-",
-            s["course_code"],
-            f"{s['my_marks']:.1f}",
-            f"{s['class_marks']:.1f}",
-            f"{s['my_attendance']:.1f}",
-            f"{s['class_attendance']:.1f}",
-            f"{record['predicted_gpa']:.2f}" if record["predicted_gpa"] is not None else "-",
-            record["risk_level"],
-            s["status"]["text"],
-        ])
-    return rows
+    gpa_str = f"{record['predicted_gpa']:.2f}" if record["predicted_gpa"] is not None else "-"
+    return [
+        [record["full_name"] or record["student_id"], record["student_id"], record["batch"] or "-", s["course_code"], f"{s['my_marks']:.1f}", f"{s['class_marks']:.1f}", f"{s['my_attendance']:.1f}", f"{s['class_attendance']:.1f}", gpa_str, record["risk_level"], s["status"]["text"]]
+        for s in subject_rows
+    ]

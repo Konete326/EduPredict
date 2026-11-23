@@ -93,8 +93,6 @@ def create_user_record(full_name, email, password, role, department, batch, acto
     except DuplicateKeyError:
         return None, "A user with this email already exists."
 
-    if student_id and student_records_col().find_one({"student_id": student_id}, {"_id": 1}) is None:
-        student_records_col().insert_one({"student_id": student_id, "full_name": clean_name, "batch": clean_batch, "course_code": "CS-101", "attendance_pct": 85.0, "internal_marks": 75.0, "assignment_score": 80.0, "lms_hours_weekly": 10.0, "previous_gpa": 3.2, "updated_at": datetime.now(timezone.utc)})
     _audit("USERS", "CREATE_USER", f"Created user {clean_name} ({user_id}, {clean_role}).", "SUCCESS", actor=actor_name)
     invalidate_cache()
     return doc, None

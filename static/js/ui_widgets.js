@@ -1,17 +1,18 @@
 (function () {
-  let progressFadeTimer = null, progressResetTimer = null, globalsBound = false;
+  let progressFadeTimer = null, progressResetTimer = null, progressWatchdogTimer = null, progressActive = false, globalsBound = false;
   const progressBar = () => document.getElementById('ep-top-progress');
 
   const EduPredictProgress = {
     start() {
       const bar = progressBar(); if (!bar) return;
-      clearTimeout(progressFadeTimer); clearTimeout(progressResetTimer);
+      clearTimeout(progressFadeTimer); clearTimeout(progressResetTimer); clearTimeout(progressWatchdogTimer); progressActive = true;
       bar.style.transitionDuration = '0ms'; bar.style.width = '0%'; bar.style.opacity = '1'; void bar.offsetWidth;
       bar.style.transitionDuration = ''; bar.style.width = '72%';
+      progressWatchdogTimer = setTimeout(() => EduPredictProgress.done(), 4000);
     },
     done() {
       const bar = progressBar(); if (!bar) return;
-      clearTimeout(progressFadeTimer); clearTimeout(progressResetTimer);
+      clearTimeout(progressFadeTimer); clearTimeout(progressResetTimer); clearTimeout(progressWatchdogTimer); progressActive = false;
       bar.style.opacity = '1'; bar.style.width = '100%';
       progressFadeTimer = setTimeout(() => { bar.style.opacity = '0'; progressResetTimer = setTimeout(() => { bar.style.width = '0%'; }, 220); }, 180);
     }
@@ -63,7 +64,10 @@
       if (form._epLockTimer) clearTimeout(form._epLockTimer);
       form._epLockTimer = setTimeout(() => { resetSubmitLocks(form); EduPredictProgress.done(); }, 12000);
     }, false);
-    window.addEventListener('pageshow', () => { resetSubmitLocks(); const bar = progressBar(); if (bar) { bar.style.opacity = '0'; bar.style.width = '0%'; } });
+    const resetStuckProgress = () => { resetSubmitLocks(); if (progressActive || (progressBar() && progressBar().style.opacity === '1')) EduPredictProgress.done(); };
+    window.addEventListener('pageshow', () => { clearTimeout(progressWatchdogTimer); progressActive = false; resetSubmitLocks(); const bar = progressBar(); if (bar) { bar.style.opacity = '0'; bar.style.width = '0%'; } });
+    window.addEventListener('beforeprint', () => EduPredictProgress.done());
+    ['afterprint', 'focus', 'popstate'].forEach((ev) => window.addEventListener(ev, () => { if (ev === 'afterprint' || !window._epSpaPending) resetStuckProgress(); }));
   }
 
   function renderHighlightedText(el, rawText, query) {

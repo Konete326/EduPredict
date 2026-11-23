@@ -1,51 +1,32 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
-  <div class="min-w-0 space-y-1">
-    <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">
-      <i class="fa-solid fa-bell text-xs" aria-hidden="true"></i><span>Alert Center</span>
-    </span>
-    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Notifications &amp; Alert History</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Review unread alerts, past notifications, and admin ticket replies in one place.</p>
+<section class="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3 shadow-sm">
+  <div class="min-w-0 space-y-0.5">
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]"><i class="fa-solid fa-bell text-[10px]" aria-hidden="true"></i><span>Alert Center</span></span>
+      <span class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">Total {{ tab_counts.ALL|default:0 }} &middot; Unread {{ tab_counts.UNREAD|default:0 }} &middot; Replies {{ tab_counts.REPLIES|default:0 }}</span>
+    </div>
+    <h2 class="text-base sm:text-lg font-bold tracking-tight text-[var(--text-primary)]">Notifications &amp; Alert History</h2>
+    <p class="text-xs text-[var(--text-secondary)]">Review unread alerts, past notifications, and admin ticket replies in one place.</p>
   </div>
   <form method="post" action="{% url 'panels:notifications_history' %}" class="shrink-0">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="mark_all">
-    <button type="submit" title="Mark all notifications as read" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
-      <i class="fa-solid fa-check-double text-xs" aria-hidden="true"></i><span>Mark All Read</span>
-    </button>
+    {% csrf_token %}<input type="hidden" name="action" value="mark_all"><input type="hidden" name="tab" value="{{ active_tab|default:'ALL' }}">
+    <button type="submit" title="Mark all notifications as read" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm"><i class="fa-solid fa-check-double text-xs" aria-hidden="true"></i><span>Mark All Read</span></button>
   </form>
 </section>
 
 {% if db_error %}
-<div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-  <i class="fa-solid fa-circle-exclamation mr-2" aria-hidden="true"></i>Database message: {{ db_error }}
-</div>
+<div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2 text-xs text-[var(--status-danger)]"><i class="fa-solid fa-circle-exclamation mr-1.5" aria-hidden="true"></i>Database message: {{ db_error }}</div>
 {% endif %}
 
-<section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-  {% include 'components/metric_card.html' with title="Total Alerts" value=tab_counts.ALL|default:0 badge="All history" status="info" icon="fa-solid fa-bell" %}
-  {% include 'components/metric_card.html' with title="Unread Alerts" value=tab_counts.UNREAD|default:0 badge="Needs review" status="warning" icon="fa-solid fa-envelope" %}
-  {% include 'components/metric_card.html' with title="Read History" value=tab_counts.READ|default:0 badge="Acknowledged" status="success" icon="fa-solid fa-check-double" %}
-  {% include 'components/metric_card.html' with title="Admin Replies" value=tab_counts.REPLIES|default:0 badge="Support updates" status="info" icon="fa-solid fa-reply" %}
-</section>
-
-<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
-  <div class="flex flex-wrap items-center justify-between gap-2.5">
-    <div class="flex flex-wrap items-center gap-2">
-      <a href="{% url 'panels:notifications_history' %}?tab=ALL" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if active_tab == 'ALL' or not active_tab %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-        <span>All</span><span class="tabular-nums opacity-85">({{ tab_counts.ALL|default:0 }})</span>
-      </a>
-      <a href="{% url 'panels:notifications_history' %}?tab=UNREAD" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if active_tab == 'UNREAD' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-        <span>Unread</span><span class="tabular-nums opacity-85">({{ tab_counts.UNREAD|default:0 }})</span>
-      </a>
-      <a href="{% url 'panels:notifications_history' %}?tab=READ" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if active_tab == 'READ' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-        <span>Read</span><span class="tabular-nums opacity-85">({{ tab_counts.READ|default:0 }})</span>
-      </a>
-      <a href="{% url 'panels:notifications_history' %}?tab=REPLIES" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if active_tab == 'REPLIES' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-        <span>Admin Replies</span><span class="tabular-nums opacity-85">({{ tab_counts.REPLIES|default:0 }})</span>
-      </a>
+<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 space-y-2.5">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div class="flex flex-wrap items-center gap-1.5">
+      <a href="{% url 'panels:notifications_history' %}?tab=ALL" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if active_tab == 'ALL' or not active_tab %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}"><span>All</span><span class="tabular-nums opacity-85">({{ tab_counts.ALL|default:0 }})</span></a>
+      <a href="{% url 'panels:notifications_history' %}?tab=UNREAD" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if active_tab == 'UNREAD' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}"><span>Unread</span><span class="tabular-nums opacity-85">({{ tab_counts.UNREAD|default:0 }})</span></a>
+      <a href="{% url 'panels:notifications_history' %}?tab=READ" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if active_tab == 'READ' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}"><span>Read</span><span class="tabular-nums opacity-85">({{ tab_counts.READ|default:0 }})</span></a>
+      <a href="{% url 'panels:notifications_history' %}?tab=REPLIES" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if active_tab == 'REPLIES' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}"><span>Admin Replies</span><span class="tabular-nums opacity-85">({{ tab_counts.REPLIES|default:0 }})</span></a>
     </div>
     <div class="relative w-full sm:w-64">
       <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]" aria-hidden="true"></i>
@@ -53,58 +34,38 @@
     </div>
   </div>
 
-  <div id="notifications-history-container" data-paginated-container data-page-size="5" class="space-y-2.5">
+  <div id="notifications-history-container" data-paginated-container data-page-size="4" class="space-y-2">
     <div class="hidden md:block overflow-x-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
       <table data-searchable-table class="w-full border-collapse text-left text-sm">
         <thead class="sticky top-0 z-10 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
           <tr>
-            <th scope="col" class="whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Status</th>
-            <th scope="col" class="whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Category</th>
-            <th scope="col" class="whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Notification &amp; Reply</th>
-            <th scope="col" class="whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Date</th>
-            <th scope="col" class="whitespace-nowrap px-3.5 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Actions</th>
+            <th scope="col" class="whitespace-nowrap px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Status</th>
+            <th scope="col" class="whitespace-nowrap px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Category</th>
+            <th scope="col" class="whitespace-nowrap px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Notification &amp; Reply</th>
+            <th scope="col" class="whitespace-nowrap px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Date</th>
+            <th scope="col" class="whitespace-nowrap px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-[var(--border-subtle)] tabular-nums">
           {% for item in notifications_items %}
           <tr data-page-item class="transition-colors hover:bg-[var(--bg-elevated)]">
-            <td class="whitespace-nowrap px-3.5 py-2.5 align-middle">
-              <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 text-xs font-medium {% if item.is_read %}text-[var(--text-muted)]{% else %}text-[var(--text-primary)] font-semibold{% endif %}">
-                <span class="h-1.5 w-1.5 rounded-full {% if item.is_read %}bg-[var(--text-muted)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span>
-                <span>{% if item.is_read %}Read{% else %}Unread{% endif %}</span>
-              </span>
-            </td>
-            <td class="whitespace-nowrap px-3.5 py-2.5 align-middle">
-              <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
-                <span class="h-1.5 w-1.5 rounded-full {% if item.severity == 'DANGER' %}bg-[var(--status-danger)]{% elif item.severity == 'WARNING' %}bg-[var(--status-warning)]{% elif item.severity == 'SUCCESS' %}bg-[var(--status-success)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span>
-                <span>{{ item.severity|default:"INFO" }} &middot; {{ item.category|default:"SYSTEM" }}</span>
-              </span>
-            </td>
-            <td class="px-3.5 py-2.5 align-middle max-w-[26rem] break-words">
+            <td class="whitespace-nowrap px-3 py-2 align-middle"><span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 text-xs font-medium {% if item.is_read %}text-[var(--text-muted)]{% else %}text-[var(--text-primary)] font-semibold{% endif %}"><span class="h-1.5 w-1.5 rounded-full {% if item.is_read %}bg-[var(--text-muted)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span><span>{% if item.is_read %}Read{% else %}Unread{% endif %}</span></span></td>
+            <td class="whitespace-nowrap px-3 py-2 align-middle"><span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full {% if item.severity == 'DANGER' %}bg-[var(--status-danger)]{% elif item.severity == 'WARNING' %}bg-[var(--status-warning)]{% elif item.severity == 'SUCCESS' %}bg-[var(--status-success)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span><span>{{ item.severity|default:"INFO" }} &middot; {{ item.category|default:"SYSTEM" }}</span></span></td>
+            <td class="px-3 py-2 align-middle max-w-[26rem] break-words">
               <p class="text-xs font-semibold text-[var(--text-primary)]">{{ item.title|default:"Alert" }}</p>
               <p class="mt-0.5 text-xs text-[var(--text-secondary)]">{{ item.message }}</p>
-              {% if item.feedback_text or item.reply_text %}
-              <div class="mt-1.5 space-y-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2 text-[11px]">
-                {% if item.feedback_text %}<p class="italic text-[var(--text-muted)]">"{{ item.feedback_text }}"</p>{% endif %}
-                {% if item.reply_text %}<p class="text-[var(--text-primary)]"><span class="font-semibold text-[var(--accent-primary)]">Admin Reply:</span> {{ item.reply_text }}</p>{% endif %}
-              </div>
-              {% endif %}
+              {% if item.feedback_text or item.reply_text %}<div class="mt-1 space-y-0.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-[11px]">{% if item.feedback_text %}<p class="italic text-[var(--text-muted)]">"{{ item.feedback_text }}"</p>{% endif %}{% if item.reply_text %}<p class="text-[var(--text-primary)]"><span class="font-semibold text-[var(--accent-primary)]">Admin Reply:</span> {{ item.reply_text }}</p>{% endif %}</div>{% endif %}
             </td>
-            <td class="whitespace-nowrap px-3.5 py-2.5 align-middle font-mono text-xs text-[var(--text-muted)]">{{ item.created_at_str|default:"-" }}</td>
-            <td class="whitespace-nowrap px-3.5 py-2.5 align-middle">
+            <td class="whitespace-nowrap px-3 py-2 align-middle font-mono text-xs text-[var(--text-muted)]">{{ item.created_at_str|default:"-" }}</td>
+            <td class="whitespace-nowrap px-3 py-2 align-middle">
               <div class="flex flex-nowrap items-center justify-end gap-1 whitespace-nowrap">
-                <a href="{{ item.target_url|default:'/notifications/' }}" class="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-arrow-up-right-from-square text-[10px]" aria-hidden="true"></i><span>Open</span></a>
-                {% if not item.is_read and item.id %}
-                <form method="post" action="{% url 'panels:notifications_history' %}" class="inline">
-                  {% csrf_token %}<input type="hidden" name="action" value="mark_one"><input type="hidden" name="notification_id" value="{{ item.id }}">
-                  <button type="submit" class="inline-flex shrink-0 items-center gap-1 rounded-md bg-[var(--accent-primary)] px-2 py-1 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"><i class="fa-solid fa-check text-[10px]" aria-hidden="true"></i><span>Mark Read</span></button>
-                </form>
-                {% endif %}
+                <button type="button" data-notif-open onclick="openNotifDetailModal(this)" data-title="{{ item.title|default:'Alert' }}" data-message="{{ item.message|default:'' }}" data-severity="{{ item.severity|default:'INFO' }}" data-category="{{ item.category|default:'SYSTEM' }}" data-status="{% if item.is_read %}Read{% else %}Unread{% endif %}" data-date="{{ item.created_at_str|default:'-' }}" data-feedback="{{ item.feedback_text|default:'' }}" data-reply="{{ item.reply_text|default:'' }}" data-target-url="{{ item.target_url|default:'/student-panel/' }}" class="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-arrow-up-right-from-square text-[10px]" aria-hidden="true"></i><span>Open</span></button>
+                {% if not item.is_read and item.id %}<form method="post" action="{% url 'panels:notifications_history' %}" class="inline">{% csrf_token %}<input type="hidden" name="action" value="mark_one"><input type="hidden" name="notification_id" value="{{ item.id }}"><input type="hidden" name="tab" value="{{ active_tab|default:'ALL' }}"><button type="submit" class="inline-flex shrink-0 items-center gap-1 rounded-md bg-[var(--accent-primary)] px-2 py-1 text-[11px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"><i class="fa-solid fa-check text-[10px]" aria-hidden="true"></i><span>Mark Read</span></button></form>{% endif %}
               </div>
             </td>
           </tr>
           {% empty %}
-          <tr data-empty-row><td colspan="5" class="px-4 py-8 text-center text-sm text-[var(--text-muted)]">No notifications found in this view.</td></tr>
+          <tr data-empty-row><td colspan="5" class="px-4 py-6 text-center text-sm text-[var(--text-muted)]">No notifications found in this view.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -112,34 +73,27 @@
 
     <div class="md:hidden space-y-2.5">
       {% for item in notifications_items %}
-      <div data-mobile-card data-page-item class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 space-y-2 shadow-sm">
+      <div data-mobile-card data-page-item class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 space-y-2 shadow-sm">
         <div class="flex items-center justify-between gap-2">
           <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold {% if item.is_read %}text-[var(--text-muted)]{% else %}text-[var(--accent-primary)]{% endif %}"><span class="h-1.5 w-1.5 rounded-full {% if item.is_read %}bg-[var(--text-muted)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span><span>{% if item.is_read %}Read{% else %}Unread{% endif %}</span></span>
-          <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full {% if item.severity == 'DANGER' %}bg-[var(--status-danger)]{% elif item.severity == 'WARNING' %}bg-[var(--status-warning)]{% elif item.severity == 'SUCCESS' %}bg-[var(--status-success)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span><span>{{ item.severity|default:"INFO" }} &middot; {{ item.category|default:"SYSTEM" }}</span></span>
+          <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">{{ item.severity|default:"INFO" }} &middot; {{ item.category|default:"SYSTEM" }}</span>
         </div>
         <div><p class="text-sm font-semibold text-[var(--text-primary)]">{{ item.title|default:"Alert" }}</p><p class="mt-0.5 text-xs text-[var(--text-secondary)]">{{ item.message }}</p></div>
-        {% if item.feedback_text or item.reply_text %}
-        <div class="space-y-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5 text-[11px]">
-          {% if item.feedback_text %}<p class="italic text-[var(--text-muted)]">"{{ item.feedback_text }}"</p>{% endif %}
-          {% if item.reply_text %}<p class="text-[var(--text-primary)]"><span class="font-semibold text-[var(--accent-primary)]">Admin Reply:</span> {{ item.reply_text }}</p>{% endif %}
-        </div>
-        {% endif %}
+        {% if item.feedback_text or item.reply_text %}<div class="space-y-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2 text-[11px]">{% if item.feedback_text %}<p class="italic text-[var(--text-muted)]">"{{ item.feedback_text }}"</p>{% endif %}{% if item.reply_text %}<p class="text-[var(--text-primary)]"><span class="font-semibold text-[var(--accent-primary)]">Admin Reply:</span> {{ item.reply_text }}</p>{% endif %}</div>{% endif %}
         <div class="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border-subtle)] pt-2">
           <span class="font-mono text-[11px] text-[var(--text-muted)]">{{ item.created_at_str|default:"-" }}</span>
           <div class="flex items-center gap-1.5">
-            <a href="{{ item.target_url|default:'/notifications/' }}" class="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]">Open</a>
-            {% if not item.is_read and item.id %}
-            <form method="post" action="{% url 'panels:notifications_history' %}" class="inline">{% csrf_token %}<input type="hidden" name="action" value="mark_one"><input type="hidden" name="notification_id" value="{{ item.id }}"><button type="submit" class="inline-flex items-center gap-1 rounded-md bg-[var(--accent-primary)] px-2.5 py-1 text-xs font-medium text-white">Mark Read</button></form>
-            {% endif %}
+            <button type="button" data-notif-open onclick="openNotifDetailModal(this)" data-title="{{ item.title|default:'Alert' }}" data-message="{{ item.message|default:'' }}" data-severity="{{ item.severity|default:'INFO' }}" data-category="{{ item.category|default:'SYSTEM' }}" data-status="{% if item.is_read %}Read{% else %}Unread{% endif %}" data-date="{{ item.created_at_str|default:'-' }}" data-feedback="{{ item.feedback_text|default:'' }}" data-reply="{{ item.reply_text|default:'' }}" data-target-url="{{ item.target_url|default:'/student-panel/' }}" class="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]">Open</button>
+            {% if not item.is_read and item.id %}<form method="post" action="{% url 'panels:notifications_history' %}" class="inline">{% csrf_token %}<input type="hidden" name="action" value="mark_one"><input type="hidden" name="notification_id" value="{{ item.id }}"><input type="hidden" name="tab" value="{{ active_tab|default:'ALL' }}"><button type="submit" class="inline-flex items-center gap-1 rounded-md bg-[var(--accent-primary)] px-2.5 py-1 text-xs font-medium text-white">Mark Read</button></form>{% endif %}
           </div>
         </div>
       </div>
       {% empty %}
-      <div data-empty-row class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-8 text-center text-sm text-[var(--text-muted)]">No notifications found in this view.</div>
+      <div data-empty-row class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-6 text-center text-sm text-[var(--text-muted)]">No notifications found in this view.</div>
       {% endfor %}
     </div>
 
-    <div data-search-empty class="hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-6 text-center text-xs text-[var(--text-muted)]">No matching alerts found.</div>
+    <div data-search-empty class="hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-5 text-center text-xs text-[var(--text-muted)]">No matching alerts found.</div>
     <div data-pagination-bar class="hidden flex-wrap items-center justify-between gap-2 pt-1 text-xs text-[var(--text-muted)]">
       <span data-pagination-info class="tabular-nums"></span>
       <div class="flex items-center gap-1.5">
@@ -150,4 +104,66 @@
     </div>
   </div>
 </section>
+
+<div id="notification-detail-modal" data-ep-modal class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="notif-detail-title" aria-hidden="true">
+  <div data-modal-backdrop="notification-detail-modal" class="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"></div>
+  <div class="relative z-10 flex min-h-full w-full items-center justify-center pointer-events-none">
+    <div class="pointer-events-auto relative w-full max-w-lg mx-auto my-auto flex flex-col rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden max-h-[90vh]">
+      <div class="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--border-subtle)] px-5 py-3.5 bg-[var(--bg-surface)]">
+        <div class="min-w-0 space-y-1.5">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span id="notif-detail-status" class="inline-flex items-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-muted)]">Read</span>
+            <span id="notif-detail-badge" class="inline-flex items-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">INFO &middot; SYSTEM</span>
+            <span id="notif-detail-date" class="font-mono text-[11px] text-[var(--text-muted)]">-</span>
+          </div>
+          <h3 id="notif-detail-title" class="text-base font-bold text-[var(--text-primary)] break-words">Alert Details</h3>
+        </div>
+        <button type="button" onclick="closeNotifDetailModal()" aria-label="Close alert modal" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-xmark text-sm" aria-hidden="true"></i></button>
+      </div>
+      <div class="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+        <p id="notif-detail-message" class="text-sm leading-relaxed text-[var(--text-secondary)] whitespace-pre-line break-words"></p>
+        <div id="notif-detail-thread" class="hidden space-y-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3 text-xs">
+          <div id="notif-detail-feedback-wrap" class="hidden space-y-0.5"><p class="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Your Feedback</p><p id="notif-detail-feedback" class="italic text-[var(--text-secondary)] whitespace-pre-line break-words"></p></div>
+          <div id="notif-detail-reply-wrap" class="hidden space-y-0.5"><p class="text-[11px] font-semibold uppercase tracking-wider text-[var(--accent-primary)]">Admin Reply</p><p id="notif-detail-reply" class="text-[var(--text-primary)] whitespace-pre-line break-words"></p></div>
+        </div>
+      </div>
+      <div class="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--border-subtle)] px-5 py-3 bg-[var(--bg-surface)]">
+        <button type="button" onclick="closeNotifDetailModal()" class="inline-flex items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">Close</button>
+        <a id="notif-detail-target-link" href="/student-panel/" onclick="closeNotifDetailModal()" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm"><span>Go to Related Page</span><i class="fa-solid fa-arrow-right text-[11px]" aria-hidden="true"></i></a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const g = (id) => document.getElementById(id);
+    window.openNotifDetailModal = function (btn) {
+      const m = g('notification-detail-modal');
+      if (!m || !btn) return;
+      const unread = (btn.getAttribute('data-status') || '').toLowerCase() === 'unread', fb = (btn.getAttribute('data-feedback') || '').trim(), rp = (btn.getAttribute('data-reply') || '').trim();
+      if (g('notif-detail-title')) g('notif-detail-title').textContent = btn.getAttribute('data-title') || 'Alert';
+      if (g('notif-detail-message')) g('notif-detail-message').textContent = btn.getAttribute('data-message') || 'No additional message details.';
+      if (g('notif-detail-badge')) g('notif-detail-badge').textContent = (btn.getAttribute('data-severity') || 'INFO').toUpperCase() + ' \u00b7 ' + (btn.getAttribute('data-category') || 'SYSTEM').toUpperCase();
+      if (g('notif-detail-date')) g('notif-detail-date').textContent = btn.getAttribute('data-date') || '-';
+      if (g('notif-detail-status')) { g('notif-detail-status').textContent = unread ? 'Unread' : 'Read'; g('notif-detail-status').className = 'inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold ' + (unread ? 'border-[var(--accent-primary)] bg-[var(--accent-soft)] text-[var(--accent-primary)]' : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-muted)]'); }
+      if (g('notif-detail-feedback')) g('notif-detail-feedback').textContent = fb;
+      if (g('notif-detail-reply')) g('notif-detail-reply').textContent = rp;
+      if (g('notif-detail-feedback-wrap')) g('notif-detail-feedback-wrap').classList.toggle('hidden', !fb);
+      if (g('notif-detail-reply-wrap')) { g('notif-detail-reply-wrap').classList.toggle('hidden', !rp); g('notif-detail-reply-wrap').classList.toggle('border-t', Boolean(fb && rp)); g('notif-detail-reply-wrap').classList.toggle('pt-2', Boolean(fb && rp)); }
+      if (g('notif-detail-thread')) g('notif-detail-thread').classList.toggle('hidden', !(fb || rp));
+      if (g('notif-detail-target-link')) g('notif-detail-target-link').setAttribute('href', btn.getAttribute('data-target-url') || '/student-panel/');
+      m.classList.remove('hidden'); m.classList.add('flex'); m.setAttribute('aria-hidden', 'false');
+      if (typeof window.syncBodyScrollLock === 'function') window.syncBodyScrollLock();
+    };
+    window.closeNotifDetailModal = function () {
+      const m = g('notification-detail-modal');
+      if (!m) return;
+      m.classList.add('hidden'); m.classList.remove('flex'); m.setAttribute('aria-hidden', 'true');
+      if (typeof window.syncBodyScrollLock === 'function') window.syncBodyScrollLock();
+    };
+  })();
+</script>
 {% endblock %}

@@ -145,7 +145,7 @@ class StaticFilesAndProductionConfigTests(TestCase):
         self.assertIn("edupredict", df_content)
         self.assertIn("compileall", df_content)
         self.assertIn("HEALTHCHECK", df_content)
-        self.assertIn("http://localhost:8000/health/", df_content)
+        self.assertIn("http://localhost:7860/health/", df_content)
         self.assertNotIn("#", df_content)
         compose_content = compose.read_text(encoding="utf-8")
         self.assertIn("8000:8000", compose_content)

@@ -182,26 +182,6 @@ def register_user(full_name, email, password, role, department, batch, phone="",
     except DuplicateKeyError:
         return None, "An account with this email already exists."
 
-    if normalized_role == "STUDENT" and student_id:
-        records_col = student_records_col()
-        if records_col.find_one({"student_id": student_id}, {"_id": 1}) is None:
-            records_col.insert_one(
-                {
-                    "student_id": student_id,
-                    "full_name": full_name.strip(),
-                    "batch": resolved_batch,
-                    "course_code": "CS-101",
-                    "attendance_pct": 85.0,
-                    "internal_marks": 75.0,
-                    "assignment_score": 80.0,
-                    "lms_hours_weekly": 10.0,
-                    "previous_gpa": 3.2,
-                    "updated_at": datetime.now(timezone.utc),
-                }
-            )
-        invalidate_cache("analyst:")
-        invalidate_cache("teacher:")
-
     if is_pending_teacher:
         try:
             notifications_col().insert_one(

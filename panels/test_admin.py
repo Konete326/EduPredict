@@ -136,7 +136,7 @@ class AdminLogsAndSettingsTests(_AdminTestBase):
         self.assertNotIn('data-coming-title="Activity Logs"', html)
         self.assertNotIn('data-coming-title="Settings"', html)
         self.assertIn('id="mobile-sidebar-close"', html)
-        self.assertNotIn('id="mobile-sidebar-close" type="button" title="Hide menu" class="lg:hidden', html)
+        self.assertIn('id="mobile-sidebar-close" type="button" title="Hide menu" class="lg:hidden', html)
         data_resp = client.get(reverse("panels:admin_logs"), {"category": "DATA"})
         self.assertEqual(data_resp.status_code, 200)
         self.assertIn("fall_2026.csv", data_resp.content.decode("utf-8"))

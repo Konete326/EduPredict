@@ -80,14 +80,16 @@
   }
 
   function getSpaUrl(link) {
-    if (!link || link.hasAttribute('data-coming-soon') || link.hasAttribute('data-no-spa') || link.hasAttribute('download')) return null;
+    if (!link || link.hasAttribute('data-coming-soon') || link.hasAttribute('data-no-spa') || link.hasAttribute('data-no-loading') || link.hasAttribute('data-no-lock') || link.hasAttribute('download')) return null;
     if (link.target && link.target !== '_self') return null;
     const raw = (link.getAttribute('href') || '').trim();
     if (!raw || raw.startsWith('#') || raw.startsWith('mailto:') || raw.startsWith('tel:') || raw.startsWith('javascript:')) return null;
     let url;
     try { url = new URL(link.href, window.location.href); } catch (e) { return null; }
     if (url.origin !== window.location.origin) return null;
-    if (url.pathname.startsWith('/auth') || url.pathname.includes('/backup/') || url.searchParams.has('export')) return null;
+    const path = url.pathname.toLowerCase();
+    const cleanPath = normPath(path);
+    if (path.startsWith('/auth') || path.includes('/backup/') || path.includes('download') || path.includes('export') || cleanPath.endsWith('-pdf') || cleanPath.endsWith('.pdf') || cleanPath.endsWith('.csv') || url.searchParams.has('export')) return null;
     return url;
   }
 
@@ -165,20 +167,12 @@
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const nextShell = doc.getElementById('app-shell-main');
     const curShell = document.getElementById('app-shell-main');
-    if (!nextShell || !curShell) { window.location.assign(targetUrl.href); return; }
-    if ((curShell.dataset.activeRole || '') !== (nextShell.dataset.activeRole || '')) {
-      clearPageCache();
-      window.location.assign(targetUrl.href);
-      return;
-    }
+    if (!nextShell || !curShell) { if (window.EduPredictProgress) window.EduPredictProgress.done(); window.location.assign(targetUrl.href); return; }
+    if ((curShell.dataset.activeRole || '') !== (nextShell.dataset.activeRole || '')) { clearPageCache(); if (window.EduPredictProgress) window.EduPredictProgress.done(); window.location.assign(targetUrl.href); return; }
     document.title = doc.title || document.title;
     curShell.innerHTML = nextShell.innerHTML;
     const mainEl = curShell.querySelector('main');
-    if (mainEl) {
-      mainEl.classList.remove('spa-page-enter');
-      void mainEl.offsetWidth;
-      mainEl.classList.add('spa-page-enter');
-    }
+    if (mainEl) { mainEl.classList.remove('spa-page-enter'); void mainEl.offsetWidth; mainEl.classList.add('spa-page-enter'); }
     if (pushState) history.pushState({ spaUrl: targetUrl.href }, '', targetUrl.href);
     syncActiveSidebarLink(targetUrl);
     if (typeof window.reinitEduPredictUI === 'function') window.reinitEduPredictUI();
@@ -190,16 +184,19 @@
   function navigateTo(targetUrl, options) {
     const opts = options || {};
     const token = ++navId;
+    window._epSpaPending = token;
     if (window.EduPredictProgress) window.EduPredictProgress.start();
     return fetchPageHtml(targetUrl, Boolean(opts.bypassCache))
       .then((res) => {
+        if (window._epSpaPending === token) window._epSpaPending = 0;
         if (token !== navId) return;
-        if (res.redirect) { clearPageCache(); window.location.assign(res.redirect); return; }
+        if (res.redirect) { clearPageCache(); if (window.EduPredictProgress) window.EduPredictProgress.done(); window.location.assign(res.redirect); return; }
         const finalUrl = new URL(res.finalUrl || targetUrl.href, window.location.href);
         if (targetUrl.hash && !finalUrl.hash) finalUrl.hash = targetUrl.hash;
         applyPageSwap(res.html, finalUrl, opts.pushState !== false);
       })
       .catch(() => {
+        if (window._epSpaPending === token) window._epSpaPending = 0;
         if (window.EduPredictProgress) window.EduPredictProgress.done();
         if (token === navId) window.location.assign(targetUrl.href);
       });

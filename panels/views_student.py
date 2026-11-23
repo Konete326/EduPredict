@@ -168,7 +168,8 @@ def student_report_pdf(request):
     pdf_data = {**data, "institution_name": inst_name, "current_term": term_name} if isinstance(data, dict) else data
     pdf_bytes = generate_student_report_card_pdf(pdf_data)
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="edupredict_report_card.pdf"'
+    disp = "inline" if request.GET.get("inline") == "1" else "attachment"
+    response["Content-Disposition"] = f'{disp}; filename="edupredict_report_card.pdf"'
     return response
 
 

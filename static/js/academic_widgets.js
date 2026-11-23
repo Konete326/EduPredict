@@ -6,9 +6,7 @@
     { key: 'coursework', label: 'Coursework Score %', unit: '%', def: 80, step: 5, min: 40, max: 100, r: 36 }
   ];
   let globalsBound = false, resizeTimer = null, contourRenderer = null;
-
-  const byId = (id) => document.getElementById(id);
-  const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+  const byId = (id) => document.getElementById(id), clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
   function readCssVar(name, fallback) {
     if (typeof getComputedStyle !== 'function' || !document.documentElement) return fallback;
@@ -21,16 +19,26 @@
   }
 
   function parseContourSeries() {
-    const fallbackLabels = ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5', 'Wk 6', 'Wk 7', 'Wk 8'];
     let raw = {};
     const node = byId('accuracy-contour-data');
     if (node) { try { raw = JSON.parse(node.textContent || '{}') || {}; } catch (e) { raw = {}; } }
     const ps = raw.portal_settings || {}, minAtt = Number(ps.min_attendance_pct || 75), highCut = Number(ps.high_risk_threshold || 70), medCut = Number(ps.medium_risk_threshold || 35);
-    if (Array.isArray(raw.weeks) && raw.weeks.length >= 2) return { labels: raw.weeks.map((w, i) => String(w.label || ('Wk ' + (i + 1)))), values: raw.weeks.map((w) => clamp(Number(w.value ?? w.score ?? 75), 0, 100)), minAtt, highCut, medCut };
-    if (Array.isArray(raw.labels) && Array.isArray(raw.values) && raw.values.length >= 2) return { labels: raw.labels.map(String), values: raw.values.map((v) => clamp(Number(v), 0, 100)), minAtt, highCut, medCut };
-    const kpis = raw.kpis || {}, stab = Number(kpis.stable_share), agree = Number(kpis.risk_agreement), cov = Number(kpis.coverage_pct);
-    const anchor = Number.isFinite(stab) && stab > 0 ? stab : (Number.isFinite(agree) && agree > 0 ? agree : (Number.isFinite(cov) && cov > 0 ? clamp(cov * 0.88, 68, 95) : 82));
-    return { labels: fallbackLabels, values: [-9, -6, -7, -3, -1, 2, 5, 4].map((d) => Math.round(clamp(anchor + d, 42, 98) * 10) / 10), minAtt, highCut, medCut };
+    const cs = raw.contour_series;
+    if (cs && Array.isArray(cs.labels) && Array.isArray(cs.values) && cs.labels.length >= 2 && cs.values.length >= 2) {
+      const len = Math.min(cs.labels.length, cs.values.length);
+      return { hasData: true, labels: cs.labels.slice(0, len).map(String), values: cs.values.slice(0, len).map((v) => clamp(Number(v) || 0, 0, 100)), minAtt, highCut, medCut };
+    }
+    if (Array.isArray(raw.weeks) && raw.weeks.length >= 2) return { hasData: true, labels: raw.weeks.map((w, i) => String(w.label || ('Wk ' + (i + 1)))), values: raw.weeks.map((w) => clamp(Number(w.value ?? w.score ?? 0), 0, 100)), minAtt, highCut, medCut };
+    const rawVals = Array.isArray(raw.values) ? raw.values : (Array.isArray(raw.mine) ? raw.mine : null);
+    if (Array.isArray(raw.labels) && rawVals && raw.labels.length >= 2 && rawVals.length >= 2) {
+      const len = Math.min(raw.labels.length, rawVals.length);
+      return { hasData: true, labels: raw.labels.slice(0, len).map(String), values: rawVals.slice(0, len).map((v) => clamp(Number(v) || 0, 0, 100)), minAtt, highCut, medCut };
+    }
+    if (Array.isArray(raw.demand) && raw.demand.length >= 2) {
+      const maxProj = Math.max(1, ...raw.demand.map((d) => Number(d.projected_demand || d.current_enrolled || 0)));
+      return { hasData: true, labels: raw.demand.map((d) => String(d.course_code || '')), values: raw.demand.map((d) => clamp(Math.round((Number(d.projected_demand || d.current_enrolled || 0) / maxProj) * 1000) / 10, 0, 100)), minAtt, highCut, medCut };
+    }
+    return { hasData: false, labels: [], values: [], minAtt, highCut, medCut };
   }
 
   function catmullRomTrace(ctx, pts, minY, maxY) {
@@ -55,88 +63,73 @@
     const series = parseContourSeries(), rangeEl = byId('contour-strata-range'), strataValEl = byId('contour-strata-val');
     const tooltipEl = byId('contour-tooltip'), pinStatusEl = byId('contour-pin-status');
     let hoverIdx = null, pinnedIdx = null, strata = clamp(parseInt(rangeEl ? rangeEl.value : '7', 10) || 7, 4, 10), lastPts = [];
-
-    const sumMean = series.values.reduce((a, b) => a + b, 0) / series.values.length;
+    const sumMean = series.hasData ? series.values.reduce((a, b) => a + b, 0) / series.values.length : 0;
     let peakIdx = 0;
-    series.values.forEach((v, idx) => { if (v > series.values[peakIdx]) peakIdx = idx; });
-    if (byId('contour-stat-mean')) byId('contour-stat-mean').textContent = sumMean.toFixed(1) + '%';
-    if (byId('contour-stat-peak')) byId('contour-stat-peak').textContent = series.labels[peakIdx] + ' (' + series.values[peakIdx].toFixed(1) + '%)';
+    if (series.hasData) series.values.forEach((v, idx) => { if (v > series.values[peakIdx]) peakIdx = idx; });
+    if (byId('contour-stat-mean')) byId('contour-stat-mean').textContent = series.hasData ? (sumMean.toFixed(1) + '%') : '-';
+    if (byId('contour-stat-peak')) byId('contour-stat-peak').textContent = series.hasData ? (series.labels[peakIdx] + ' (' + series.values[peakIdx].toFixed(1) + '%)') : '-';
     if (byId('contour-stat-cutoffs')) byId('contour-stat-cutoffs').textContent = 'Att ' + series.minAtt + '% / High ' + series.highCut + '%';
     if (strataValEl) strataValEl.textContent = String(strata);
+    if (pinStatusEl && !series.hasData) pinStatusEl.textContent = 'At least 2 live courses required for contour strata';
 
     function updateTooltip() {
       if (!tooltipEl) return;
-      if (hoverIdx === null || !lastPts[hoverIdx]) { tooltipEl.classList.add('hidden'); return; }
+      if (!series.hasData || hoverIdx === null || !lastPts[hoverIdx]) { tooltipEl.classList.add('hidden'); return; }
       const pt = lastPts[hoverIdx], val = series.values[hoverIdx], deltaMean = val - sumMean;
       tooltipEl.textContent = '';
-      const hdr = document.createElement('div');
-      hdr.className = 'font-semibold text-[var(--text-primary)]';
-      hdr.textContent = series.labels[hoverIdx] + ' · ' + val.toFixed(1) + '%';
-      const sub = document.createElement('div');
+      const hdr = document.createElement('div'), sub = document.createElement('div');
+      hdr.className = 'font-semibold text-[var(--text-primary)]'; hdr.textContent = series.labels[hoverIdx] + ' · ' + val.toFixed(1) + '%';
       sub.className = 'text-[10px] font-mono text-[var(--text-muted)]';
       sub.textContent = 'Mean: ' + (deltaMean >= 0 ? '+' : '') + deltaMean.toFixed(1) + '%' + (pinnedIdx !== null && pinnedIdx !== hoverIdx ? ' | vs ' + series.labels[pinnedIdx] + ': ' + ((val - series.values[pinnedIdx]) >= 0 ? '+' : '') + (val - series.values[pinnedIdx]).toFixed(1) + '%' : '');
-      tooltipEl.append(hdr, sub);
-      tooltipEl.classList.remove('hidden');
+      tooltipEl.append(hdr, sub); tooltipEl.classList.remove('hidden');
       const boxW = canvas.parentElement ? canvas.parentElement.clientWidth : 360;
       tooltipEl.style.left = Math.round(clamp(pt.x + (pt.x > boxW * 0.65 ? -175 : 10), 6, Math.max(8, boxW - 185))) + 'px';
       tooltipEl.style.top = Math.round(clamp(pt.y - 42, 6, 130)) + 'px';
     }
 
     function draw() {
-      const wrap = canvas.parentElement, w = Math.max(240, (wrap && wrap.clientWidth) || canvas.clientWidth || 560), h = Math.max(150, (wrap && wrap.clientHeight) || canvas.clientHeight || 192);
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const wrap = canvas.parentElement, w = Math.max(240, (wrap && wrap.clientWidth) || canvas.clientWidth || 560), h = Math.max(140, (wrap && wrap.clientHeight) || canvas.clientHeight || 176), dpr = Math.min(2, window.devicePixelRatio || 1);
       canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
-      ctx.clearRect(0, 0, w, h);
-
-      const t = getTokens(), padL = 38, padR = 14, padT = 16, padB = 26, plotW = Math.max(80, w - padL - padR), plotH = Math.max(60, h - padT - padB);
-      const yMin = 30, yMax = 100, toY = (v) => padT + ((yMax - clamp(v, yMin, yMax)) / (yMax - yMin)) * plotH;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.clearRect(0, 0, w, h);
+      const t = getTokens();
+      if (!series.hasData) {
+        lastPts = []; ctx.save(); ctx.fillStyle = t.textMuted; ctx.font = "500 12px 'Inter', ui-sans-serif, system-ui, sans-serif";
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('No live course records available yet', w / 2, h / 2); ctx.restore();
+        return;
+      }
+      const padL = 38, padR = 14, padT = 16, padB = 26, plotW = Math.max(80, w - padL - padR), plotH = Math.max(60, h - padT - padB), yMin = 30, yMax = 100, toY = (v) => padT + ((yMax - clamp(v, yMin, yMax)) / (yMax - yMin)) * plotH;
       ctx.font = "500 10px 'JetBrains Mono', ui-monospace, monospace";
       [40, 60, 80, 100].forEach((tick) => {
-        const y = toY(tick);
-        ctx.save(); ctx.strokeStyle = t.borderSubtle; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
-        ctx.fillStyle = t.textMuted; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-        ctx.fillText(tick + '%', padL - 6, y); ctx.restore();
+        const y = toY(tick); ctx.save(); ctx.strokeStyle = t.borderSubtle; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+        ctx.fillStyle = t.textMuted; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(tick + '%', padL - 6, y); ctx.restore();
       });
-
       const pts = series.values.map((val, i) => ({ x: padL + (i / Math.max(1, series.values.length - 1)) * plotW, y: toY(val) }));
       lastPts = pts;
       pts.forEach((p, i) => {
         const active = i === hoverIdx || i === pinnedIdx;
-        ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = active ? t.accentPrimary : t.borderSubtle;
-        ctx.globalAlpha = active ? 0.8 : 0.65; ctx.lineWidth = active ? 1.4 : 1;
+        ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = active ? t.accentPrimary : t.borderSubtle; ctx.globalAlpha = active ? 0.8 : 0.65; ctx.lineWidth = active ? 1.4 : 1;
         ctx.beginPath(); ctx.moveTo(p.x, padT); ctx.lineTo(p.x, padT + plotH); ctx.stroke();
-        ctx.setLineDash([]); ctx.globalAlpha = 1; ctx.fillStyle = active ? t.textPrimary : t.textMuted;
-        ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(series.labels[i], p.x, padT + plotH + 7); ctx.restore();
+        ctx.setLineDash([]); ctx.globalAlpha = 1; ctx.fillStyle = active ? t.textPrimary : t.textMuted; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(series.labels[i], p.x, padT + plotH + 7); ctx.restore();
       });
-
       const cutY = toY(series.minAtt);
-      ctx.save(); ctx.setLineDash([5, 4]); ctx.strokeStyle = t.statusWarning; ctx.globalAlpha = 0.7; ctx.lineWidth = 1.25;
-      ctx.beginPath(); ctx.moveTo(padL, cutY); ctx.lineTo(w - padR, cutY); ctx.stroke(); ctx.restore();
-
+      ctx.save(); ctx.setLineDash([5, 4]); ctx.strokeStyle = t.statusWarning; ctx.globalAlpha = 0.7; ctx.lineWidth = 1.25; ctx.beginPath(); ctx.moveTo(padL, cutY); ctx.lineTo(w - padR, cutY); ctx.stroke(); ctx.restore();
       for (let layer = 1; layer <= strata; layer += 1) {
         const ratio = layer / strata, layerPts = series.values.map((val, i) => ({ x: pts[i].x, y: toY(yMin + (val - yMin) * ratio) }));
         ctx.save(); ctx.shadowBlur = 0; ctx.strokeStyle = layer === strata ? t.accentPrimary : (ratio >= 0.7 ? t.statusSuccess : t.accentPrimary);
-        ctx.globalAlpha = layer === strata ? 1 : (0.14 + ratio * 0.42); ctx.lineWidth = layer === strata ? 2.25 : 1.15;
-        catmullRomTrace(ctx, layerPts, padT, padT + plotH); ctx.restore();
+        ctx.globalAlpha = layer === strata ? 1 : (0.14 + ratio * 0.42); ctx.lineWidth = layer === strata ? 2.25 : 1.15; catmullRomTrace(ctx, layerPts, padT, padT + plotH); ctx.restore();
       }
       if (hoverIdx !== null && pts[hoverIdx]) {
-        ctx.save(); ctx.setLineDash([3, 3]); ctx.strokeStyle = t.accentPrimary; ctx.globalAlpha = 0.45; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(padL, pts[hoverIdx].y); ctx.lineTo(w - padR, pts[hoverIdx].y); ctx.stroke(); ctx.restore();
+        ctx.save(); ctx.setLineDash([3, 3]); ctx.strokeStyle = t.accentPrimary; ctx.globalAlpha = 0.45; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(padL, pts[hoverIdx].y); ctx.lineTo(w - padR, pts[hoverIdx].y); ctx.stroke(); ctx.restore();
       }
       pts.forEach((p, i) => {
-        ctx.save(); ctx.shadowBlur = 0; ctx.fillStyle = i === pinnedIdx ? t.statusWarning : t.accentPrimary;
-        ctx.strokeStyle = t.bgSurface; ctx.lineWidth = 1.8;
+        ctx.save(); ctx.shadowBlur = 0; ctx.fillStyle = i === pinnedIdx ? t.statusWarning : t.accentPrimary; ctx.strokeStyle = t.bgSurface; ctx.lineWidth = 1.8;
         ctx.beginPath(); ctx.arc(p.x, p.y, (i === hoverIdx || i === pinnedIdx) ? 5 : 3.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore();
       });
     }
 
-    contourRenderer = draw;
-    draw();
+    contourRenderer = draw; draw();
     if (canvas.dataset.contourBound !== '1') {
       canvas.dataset.contourBound = '1';
       const nearestIndex = (clientX) => {
@@ -145,12 +138,13 @@
         lastPts.forEach((p, i) => { const d = Math.abs(p.x - rx); if (d < dist) { dist = d; best = i; } });
         return best;
       };
-      canvas.addEventListener('mousemove', (e) => { const idx = nearestIndex(e.clientX); if (idx !== hoverIdx) { hoverIdx = idx; draw(); } updateTooltip(); });
-      canvas.addEventListener('mouseleave', () => { hoverIdx = null; draw(); updateTooltip(); });
+      canvas.addEventListener('mousemove', (e) => { if (!series.hasData || !lastPts.length) return; const idx = nearestIndex(e.clientX); if (idx !== hoverIdx) { hoverIdx = idx; draw(); } updateTooltip(); });
+      canvas.addEventListener('mouseleave', () => { hoverIdx = null; if (series.hasData) draw(); updateTooltip(); });
       canvas.addEventListener('click', (e) => {
+        if (!series.hasData || !lastPts.length) return;
         const idx = nearestIndex(e.clientX);
         pinnedIdx = pinnedIdx === idx ? null : idx;
-        if (pinStatusEl) pinStatusEl.textContent = pinnedIdx === null ? 'Click any week node to pin & compare' : ('Pinned: ' + series.labels[pinnedIdx] + ' (' + series.values[pinnedIdx].toFixed(1) + '%)');
+        if (pinStatusEl) pinStatusEl.textContent = pinnedIdx === null ? 'Click any node to pin & compare' : ('Pinned: ' + series.labels[pinnedIdx] + ' (' + series.values[pinnedIdx].toFixed(1) + '%)');
         draw(); updateTooltip();
       });
     }
@@ -164,7 +158,7 @@
     const card = byId('orbit-goals-card');
     if (!card) return;
     const actuals = { attendance: clamp(parseFloat(card.getAttribute('data-att')) || 0, 0, 100), study_hours: Math.max(0, parseFloat(card.getAttribute('data-hours')) || 0), coursework: clamp(parseFloat(card.getAttribute('data-marks')) || 0, 0, 100) };
-    const defaultTargets = { attendance: 85, study_hours: 8, coursework: 80 };
+    const allZero = actuals.attendance === 0 && actuals.study_hours === 0 && actuals.coursework === 0, defaultTargets = { attendance: 85, study_hours: 8, coursework: 80 };
     let state = { selected: 'attendance', targets: Object.assign({}, defaultTargets) };
     try {
       const saved = JSON.parse(localStorage.getItem(ORBIT_KEY) || 'null');
@@ -187,7 +181,7 @@
         if (valEl) valEl.textContent = (d.key === 'study_hours' ? actual.toFixed(1) : Math.round(actual)) + d.unit + ' / ' + target + d.unit;
         if (pctEl) pctEl.textContent = pct + '%';
       });
-      if (byId('orbit-center-pct')) byId('orbit-center-pct').textContent = Math.round(totalPct / ORBIT_DEFS.length) + '%';
+      if (byId('orbit-center-pct')) byId('orbit-center-pct').textContent = (allZero ? 0 : Math.round(totalPct / ORBIT_DEFS.length)) + '%';
       const activeDef = ORBIT_DEFS.find((d) => d.key === state.selected) || ORBIT_DEFS[0];
       if (byId('orbit-active-label')) byId('orbit-active-label').textContent = activeDef.label;
       if (byId('orbit-active-target')) byId('orbit-active-target').textContent = state.targets[activeDef.key] + activeDef.unit;
@@ -196,9 +190,9 @@
         spark.textContent = '';
         const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'], weights = [0.84, 0.92, 0.88, 1.0, 0.95, 0.78, 0.9], selPct = Math.round(clamp((actuals[activeDef.key] / Math.max(state.targets[activeDef.key], 1)) * 100, 0, 100));
         days.forEach((day, idx) => {
-          const barPct = clamp(Math.round(selPct * weights[idx]), 12, 100), col = document.createElement('div'), track = document.createElement('div'), fill = document.createElement('div'), lbl = document.createElement('span');
-          col.className = 'flex flex-1 flex-col items-center gap-1'; track.className = 'flex h-10 w-full items-end rounded bg-[var(--bg-elevated)] p-0.5';
-          fill.className = 'w-full rounded-sm transition-all duration-200 ' + (barPct >= 80 ? 'bg-[var(--status-success)]' : (barPct >= 55 ? 'bg-[var(--accent-primary)]' : 'bg-[var(--status-warning)]'));
+          const barPct = allZero ? 12 : clamp(Math.round(selPct * weights[idx]), 12, 100), col = document.createElement('div'), track = document.createElement('div'), fill = document.createElement('div'), lbl = document.createElement('span');
+          col.className = 'flex flex-1 flex-col items-center gap-1'; track.className = 'flex h-8 w-full items-end rounded bg-[var(--bg-elevated)] p-0.5';
+          fill.className = 'w-full rounded-sm transition-all duration-200 ' + (allZero ? 'bg-[var(--border-subtle)]' : (barPct >= 80 ? 'bg-[var(--status-success)]' : (barPct >= 55 ? 'bg-[var(--accent-primary)]' : 'bg-[var(--status-warning)]')));
           fill.style.height = barPct + '%'; lbl.className = 'text-[9px] font-mono text-[var(--text-muted)]'; lbl.textContent = day;
           track.appendChild(fill); col.append(track, lbl); spark.appendChild(col);
         });

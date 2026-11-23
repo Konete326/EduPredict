@@ -1,3 +1,4 @@
+import math
 from pymongo import DESCENDING
 import pandas as pd
 from analytics.ml_engine import FEATURE_COLUMNS, _resolve_runtime_settings, compute_course_demand
@@ -6,7 +7,8 @@ from core.db import datasets_log_col, get_cached, predictions_col, student_recor
 
 def _safe_float(val, default=0.0):
     try:
-        return float(val)
+        num = float(val)
+        return num if math.isfinite(num) else default
     except (TypeError, ValueError):
         return default
 
@@ -82,6 +84,28 @@ def _load_model_health():
 
     anomaly_rate = round(anomaly_count / total_preds * 100.0, 1) if total_preds else 0.0
     demand = compute_course_demand(pd.DataFrame(records)) if records else []
+    course_stats = {}
+    for rec in records:
+        code = str(rec.get("course_code") or "").strip().upper()
+        if not code:
+            continue
+        bucket = course_stats.setdefault(code, {"att": 0.0, "marks": 0.0, "count": 0})
+        bucket["att"] += max(0.0, min(100.0, _safe_float(rec.get("attendance_pct"))))
+        bucket["marks"] += max(0.0, min(100.0, _safe_float(rec.get("internal_marks"))))
+        bucket["count"] += 1
+    if len(course_stats) >= 2:
+        c_labels, c_values, c_att, c_marks = [], [], [], []
+        for code in sorted(course_stats):
+            bucket = course_stats[code]
+            avg_att = round(bucket["att"] / bucket["count"], 1)
+            avg_marks = round(bucket["marks"] / bucket["count"], 1)
+            c_labels.append(code)
+            c_att.append(avg_att)
+            c_marks.append(avg_marks)
+            c_values.append(round((avg_att + avg_marks) / 2.0, 1))
+        contour_series = {"labels": c_labels, "values": c_values, "attendance": c_att, "marks": c_marks}
+    else:
+        contour_series = {"labels": [], "values": []}
 
     return {
         "kpis": {
@@ -102,6 +126,7 @@ def _load_model_health():
         "risk_counts": risk_counts,
         "error_buckets": buckets,
         "demand": demand,
+        "contour_series": contour_series,
         "uploads": {"count": upload_count, "rows_processed": rows_processed},
         "portal_settings": portal_settings,
     }
@@ -119,6 +144,7 @@ def get_analyst_accuracy_page_context():
         "risk_counts": {"LOW": 0, "MEDIUM": 0, "HIGH": 0},
         "error_buckets": {"excellent": 0, "acceptable": 0, "large": 0},
         "demand": [],
+        "contour_series": {"labels": [], "values": []},
         "uploads": {"count": 0, "rows_processed": 0},
         "portal_settings": _resolve_runtime_settings(persist=False),
     }
