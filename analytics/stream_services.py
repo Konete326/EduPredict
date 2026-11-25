@@ -89,11 +89,13 @@ def simulate_lms_stream_tick(uploaded_by="Analyst"):
             events.append({
                 "student_id": sid,
                 "full_name": str(rec.get("full_name") or sid),
+                "batch": str(rec.get("batch") or "2026-A").strip() or "2026-A",
                 "course_code": str(rec.get("course_code") or "CS-101").upper(),
                 "event_type": event_type,
                 "attendance_pct": new_att,
                 "attendance": new_att,
                 "internal_marks": new_marks,
+                "previous_gpa": round(_safe_float(rec.get("previous_gpa"), 3.0), 2),
                 "lms_hours_weekly": new_lms,
                 "risk_level": "HIGH" if is_dip else "LOW",
                 "is_anomaly": is_dip,

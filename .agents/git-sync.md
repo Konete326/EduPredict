@@ -61,26 +61,26 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 88 Stream Chip Tooltips & Empty Predictions Hydration Swarm"
-active_branch_merged_to_main: "feature/phase88-stream-chip-tooltips-empty-pred-sync -> main"
-project_phase: "Phase 88 Complete: Live Stream Event Chip Tooltips & Empty Predictions Table Auto-Hydration"
+last_updated_by_agent: "Phase 89 Stream Batch/GPA Payload & Tab Pause Guard Swarm"
+active_branch_merged_to_main: "feature/phase89-stream-batch-gpa-tab-guard -> main"
+project_phase: "Phase 89 Complete: Stream Event Real batch/previous_gpa Payload & Background Tab Pause Guard"
 
 completed_modules:
-  - "Phase 1-87: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact, Provably Hero & Interactive 3D Testimonial Globe, Live Recent Uploads Stream Log Sync (85), Empty-State Recent Uploads Row Creation & Public Asset Version Sync (86), and Live Stream Prediction Tip Tooltip Refresh & Recent Uploads Item Count Badge Sync (87)."
-  - "Phase 88: Live Stream Event Chip Tooltips & Empty Predictions Table Auto-Hydration:"
-      - "static/js/directory_ui.js (348 lines, 0 comments): updated syncStreamPredictionTable(events) to detect when #analyst-predictions-table starts in empty state ([data-empty-row]), remove [data-empty-row], dynamically hydrate 10-cell desktop tr[data-page-item][data-row-id] rows and 10-row mobile div[data-mobile-card][data-page-item][data-card-id] cards, populate prediction metrics/badges/tips, update [data-table-count-badge], re-bind Student 360° buttons via bindAnalystStudent360Cells(), and refresh pagination search index."
-      - "templates/panels/analyst_dashboard.html (346 lines, 0 comments): added chip.title = 'Open Student 360 summary' and aria-label on live stream event chips."
-      - "panels/test_phase66.py (399 lines, 0 comments): extended test_phase85_live_stream_recent_uploads_log_sync to verify live stream event chip tooltips/aria-labels and Node VM empty-state #analyst-predictions-table auto-hydration + Student 360° trigger binding + search index rebuild."
+  - "Phase 1-88: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact, Provably Hero & Interactive 3D Testimonial Globe, Live Recent Uploads Stream Log Sync (85), Empty-State Recent Uploads Row Creation & Public Asset Version Sync (86), Live Stream Tip Tooltip Refresh & Count Badge Sync (87), and Stream Event Chip Tooltips & Empty Predictions Auto-Hydration (88)."
+  - "Phase 89: Stream Event Real batch/previous_gpa Payload & Background Tab Pause Guard:"
+      - "analytics/stream_services.py (166 lines, 0 comments): added real batch and previous_gpa fields from student_records to each event object returned by simulate_lms_stream_tick()."
+      - "templates/panels/analyst_dashboard.html (348 lines, 0 comments): guarded initLiveStreamSimulator tick() with document.visibilityState === 'hidden' and added a single-instance visibilitychange resume listener."
+      - "panels/test_phase66.py (399 lines, 0 comments): extended test_phase85_live_stream_recent_uploads_log_sync to assert real batch and previous_gpa in stream_tick events, visibilityState/visibilitychange guards, and Node VM empty-state #analyst-predictions-table hydration with real batch (2026-B) and previous_gpa (3.45)."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check: all JS scripts in static/js/*.js exited 0."
-  - "Zero-comment & line-cap audit: static/js/directory_ui.js (348 lines), templates/panels/analyst_dashboard.html (346 lines), panels/test_phase66.py (399 lines) — 0 comments."
+  - "Zero-comment & line-cap audit: analytics/stream_services.py (166 lines), templates/panels/analyst_dashboard.html (348 lines), panels/test_phase66.py (399 lines) — 0 comments."
   - "manage.py test panels.test_phase66: Ran 9 tests (OK)."
   - "manage.py verify_uat: UAT Results 7/7 passed - System 100% Operational."
 
 active_routes_and_files:
-  - "static/js/directory_ui.js (348 lines), templates/panels/analyst_dashboard.html (346 lines), panels/test_phase66.py (399 lines), .agents/git-sync.md"
+  - "analytics/stream_services.py (166 lines), templates/panels/analyst_dashboard.html (348 lines), panels/test_phase66.py (399 lines), .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

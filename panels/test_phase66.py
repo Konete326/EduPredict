@@ -326,10 +326,8 @@ assert.ok(deskBtn && deskBtn.title === 'Open Student 360 summary' && deskBtn.tex
 assert.ok(mobBtn && mobBtn.title === 'Open Student 360 summary' && mobBtn.textContent === 'STD-1');
 tr1.cells[0].textContent = 'STD-1 · Flag';
 win.syncStreamPredictionTable([{ student_id: 'STD-1', attendance_pct: 59.0, predicted_gpa: 2.15, risk_level: 'HIGH', risk_text: 'HIGH (91%)', is_anomaly: true, tip: 'Counseling required' }]);
-assert.strictEqual(tr1.cells[4].textContent, '59.0%');
-assert.strictEqual(tr1.cells[9].textContent, 'Counseling required');
-assert.strictEqual(c1.children[4].querySelector('div.text-right').textContent, '59.0%');
-assert.strictEqual(c1.children[9].querySelector('div.text-right').textContent, 'Counseling required');
+assert.strictEqual(tr1.cells[4].textContent, '59.0%'); assert.strictEqual(tr1.cells[9].textContent, 'Counseling required');
+assert.strictEqual(c1.children[4].querySelector('div.text-right').textContent, '59.0%'); assert.strictEqual(c1.children[9].querySelector('div.text-right').textContent, 'Counseling required');
 """
         proc2 = subprocess.run(["node", "-e", node_script, str(base_dir / "static" / "js" / "app.js"), str(base_dir / "static" / "js" / "directory_ui.js")], capture_output=True, text=True, check=False)
         self.assertEqual(proc2.returncode, 0, msg=proc2.stderr or proc2.stdout)
@@ -339,12 +337,15 @@ assert.strictEqual(c1.children[9].querySelector('div.text-right').textContent, '
         analyst = self._login_analyst()
         resp = analyst.post(reverse("analytics:stream_tick"))
         self.assertEqual(resp.status_code, 200)
-        dlog = resp.json().get("dataset_log")
+        payload = resp.json()
+        dlog, evs = payload.get("dataset_log"), payload.get("events")
         self.assertIsInstance(dlog, dict)
-        self.assertEqual(dlog.get("filename"), "live_lms_stream_tick")
-        self.assertEqual(dlog.get("status"), "COMPLETED")
-        self.assertEqual(dlog.get("missing_values_fixed"), 0)
-        self.assertEqual(dlog.get("rows_processed"), resp.json().get("events_pushed"))
+        self.assertTrue(isinstance(evs, list) and len(evs) > 0)
+        for ev in evs:
+            self.assertTrue(bool(str(ev.get("batch") or "").strip()))
+            self.assertIsInstance(ev.get("previous_gpa"), (int, float))
+        self.assertEqual((dlog.get("filename"), dlog.get("status"), dlog.get("missing_values_fixed")), ("live_lms_stream_tick", "COMPLETED", 0))
+        self.assertEqual(dlog.get("rows_processed"), payload.get("events_pushed"))
         self.assertRegex(str(dlog.get("uploaded_at") or ""), r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$")
         html = analyst.get(reverse("panels:analyst_dashboard")).content.decode("utf-8")
         self.assertIn("window.syncStreamDatasetLogsTable(data.dataset_log)", html)
@@ -354,6 +355,8 @@ assert.strictEqual(c1.children[9].querySelector('div.text-right').textContent, '
         self.assertNotIn("!td.getAttribute('title')", ad_src)
         self.assertIn("chip.title = 'Open Student 360 summary'", ad_src)
         self.assertIn("Open Student 360 summary for ", ad_src)
+        self.assertIn("document.visibilityState === 'hidden'", ad_src)
+        self.assertIn("visibilitychange", ad_src)
         for rel in ("templates/public/_base.html", "templates/public/landing.html"):
             src = (base_dir / rel).read_text(encoding="utf-8")
             versions = re.findall(r"%\}\?v=(\d+)", src)
@@ -377,22 +380,19 @@ const eBox = new El('div', { 'data-paginated-container': '', 'data-page-size': '
 eTbody.append(new El('tr', { 'data-empty-row': '' }, 'No upload logs yet.')); eTbl.append(eTbody); eMob.append(new El('div', { 'data-empty-row': '' }, 'No upload logs yet.')); eBox.append(eBadge, eTbl, eMob); body.append(eBox);
 win.reinitEduPredictUI(); assert.strictEqual(eBox.querySelectorAll('[data-empty-row]').length, 2); assert.strictEqual(eBox.querySelectorAll('[data-page-item]').length, 0);
 win.syncStreamDatasetLogsTable({ filename: 'live_lms_stream_tick', rows_processed: 4, missing_values_fixed: 0, status: 'COMPLETED', uploaded_at: '2026-11-25 14:20' });
-assert.strictEqual(eBox.querySelectorAll('[data-empty-row]').length, 0);
-assert.strictEqual(eBox.querySelector('[data-table-count-badge]').textContent, '1 items'); assert.ok(!eBox.querySelector('[data-table-count-badge]').classList.contains('hidden'));
+assert.strictEqual(eBox.querySelectorAll('[data-empty-row]').length, 0); assert.strictEqual(eBox.querySelector('[data-table-count-badge]').textContent, '1 items'); assert.ok(!eBox.querySelector('[data-table-count-badge]').classList.contains('hidden'));
 const newTr = eTbody.querySelector('tr[data-page-item]'), newCard = eMob.querySelector('[data-mobile-card][data-page-item]');
-assert.ok(newTr && newTr.getAttribute('data-row-id') === 'live_lms_stream_tick' && newTr.cells.length === 5);
-assert.ok(newCard && newCard.getAttribute('data-card-id') === 'live_lms_stream_tick' && newCard.children.length === 5);
+assert.ok(newTr && newTr.getAttribute('data-row-id') === 'live_lms_stream_tick' && newTr.cells.length === 5 && newCard && newCard.getAttribute('data-card-id') === 'live_lms_stream_tick' && newCard.children.length === 5);
 ['live_lms_stream_tick', '4', '0', 'COMPLETED', '2026-11-25 14:20'].forEach((exp, k) => { assert.strictEqual(newTr.cells[k].textContent, exp); assert.strictEqual(newCard.children[k].querySelector('div.text-right').textContent, exp); });
-eBox._paginationController.applySearch('live_lms_stream_tick'); assert.ok(!newTr.classList.contains('hidden') && !newCard.classList.contains('hidden'));
-eBox.remove();
+eBox._paginationController.applySearch('live_lms_stream_tick'); assert.ok(!newTr.classList.contains('hidden') && !newCard.classList.contains('hidden')); eBox.remove();
 const pBox = new El('div', { 'data-paginated-container': '', 'data-page-size': '5' }), pBadge = new El('span', { 'data-table-count-badge': '', class: 'hidden' }, '0 items'), pTbl = new El('table', { id: 'analyst-predictions-table' }), pTbody = new El('tbody'), pMob = new El('div', { class: 'md:hidden' });
 pTbody.append(new El('tr', { 'data-empty-row': '' }, 'No prediction results yet.')); pTbl.append(pTbody); pMob.append(new El('div', { 'data-empty-row': '' }, 'No prediction results yet.')); pBox.append(pBadge, pTbl, pMob); body.append(pBox);
-win.reinitEduPredictUI(); win.syncStreamPredictionTable([{ student_id: 'STD-9', full_name: 'Zara', course_code: 'CS-101', attendance_pct: 64.0, predicted_gpa: 2.45, risk_level: 'HIGH', risk_text: 'HIGH (82%)', is_anomaly: true, tip: 'Check attendance' }]);
+win.reinitEduPredictUI(); win.syncStreamPredictionTable([{ student_id: 'STD-9', full_name: 'Zara', batch: '2026-B', course_code: 'CS-101', attendance_pct: 64.0, previous_gpa: 3.45, predicted_gpa: 2.45, risk_level: 'HIGH', risk_text: 'HIGH (82%)', is_anomaly: true, tip: 'Check attendance' }]);
 assert.strictEqual(pBox.querySelectorAll('[data-empty-row]').length, 0); assert.strictEqual(pBadge.textContent, '1 items'); assert.ok(!pBadge.classList.contains('hidden'));
 const pTr = pTbody.querySelector('tr[data-page-item]'), pCard = pMob.querySelector('[data-mobile-card][data-page-item]');
 assert.ok(pTr && pTr.getAttribute('data-row-id') === 'STD-9' && pTr.cells.length === 10 && pTr.cells[0].querySelector('button')?.title === 'Open Student 360 summary');
 assert.ok(pCard && pCard.getAttribute('data-card-id') === 'STD-9' && pCard.children.length === 10 && pCard.children[0].querySelector('button')?.title === 'Open Student 360 summary');
-['STD-9', 'Zara', '2026-A', 'CS-101', '64.0%', '3.00', '2.45', 'HIGH (82%)', 'Flagged', 'Check attendance'].forEach((exp, k) => { assert.strictEqual(pTr.cells[k].textContent, exp); assert.strictEqual(pCard.children[k].querySelector('div.text-right').textContent, exp); });
+['STD-9', 'Zara', '2026-B', 'CS-101', '64.0%', '3.45', '2.45', 'HIGH (82%)', 'Flagged', 'Check attendance'].forEach((exp, k) => { assert.strictEqual(pTr.cells[k].textContent, exp); assert.strictEqual(pCard.children[k].querySelector('div.text-right').textContent, exp); });
 pBox._paginationController.applySearch('STD-9'); assert.ok(!pTr.classList.contains('hidden') && !pCard.classList.contains('hidden'));
 """
         proc = subprocess.run(["node", "-e", node_script, str(base_dir / "static" / "js" / "app.js"), str(base_dir / "static" / "js" / "directory_ui.js")], capture_output=True, text=True, check=False)

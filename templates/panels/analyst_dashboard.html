@@ -318,7 +318,7 @@
       };
       const tick = () => {
         if (!document.getElementById('live-stream-toggle-btn')) { stop(true); return; }
-        if (inFlight) return;
+        if (document.visibilityState === 'hidden' || inFlight) return;
         inFlight = true;
         const csrf = getCsrf();
         fetch(url, { method: 'POST', credentials: 'same-origin', headers: Object.assign({ 'X-Requested-With': 'XMLHttpRequest' }, csrf ? { 'X-CSRFToken': csrf } : {}) })
@@ -327,6 +327,8 @@
           .catch((e) => { stop(true); if (typeof window.showToast === 'function') window.showToast(e && e.message ? e.message : 'Live stream failed.', 'warning'); })
           .finally(() => { inFlight = false; });
       };
+      window._epAnalystStreamTick = tick;
+      if (!window._epAnalystStreamVisBound) { window._epAnalystStreamVisBound = true; document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && window._epAnalystStreamTimer && document.getElementById('live-stream-toggle-btn') && typeof window._epAnalystStreamTick === 'function') window._epAnalystStreamTick(); }); }
       btn.addEventListener('click', () => { if (window._epAnalystStreamTimer) { stop(false); return; } setUi(true); if (strip) strip.classList.remove('hidden'); if (typeof window.showToast === 'function') window.showToast('Live LMS stream started (5s interval).', 'info'); tick(); window._epAnalystStreamTimer = setInterval(tick, 5000); });
       if (hideBtn && strip) hideBtn.addEventListener('click', () => strip.classList.add('hidden'));
     }
