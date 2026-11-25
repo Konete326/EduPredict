@@ -14,7 +14,7 @@
       <thead class="sticky top-0 z-10 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
         <tr>
           {% for header in headers %}
-          <th scope="col" class="whitespace-nowrap px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{% if header.label %}{{ header.label }}{% else %}{{ header }}{% endif %}</th>
+          <th scope="col" class="whitespace-nowrap px-2.5 py-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">{% if header.label %}{{ header.label }}{% else %}{{ header }}{% endif %}</th>
           {% endfor %}
         </tr>
       </thead>
@@ -23,7 +23,7 @@
         {% for row in rows %}
         <tr data-page-item{% if row %} data-row-id="{% if row.0.text is not None %}{{ row.0.text }}{% else %}{{ row.0 }}{% endif %}"{% endif %} class="transition-colors hover:bg-[var(--bg-elevated)]">
           {% for cell in row %}
-          <td class="px-3.5 py-2.5 align-middle text-[var(--text-primary)] {% if cell.actions or forloop.first %}whitespace-nowrap{% else %}break-words max-w-[18rem]{% endif %}">
+          <td class="px-2.5 py-2 align-middle text-[var(--text-primary)] {% if cell.actions or cell.status or forloop.first %}whitespace-nowrap{% else %}break-words max-w-[13rem]{% endif %}">
             {% if cell.status and cell.text is not None %}
             <span class="inline-flex whitespace-nowrap items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
               <span class="h-1.5 w-1.5 rounded-full {% if cell.status == 'success' %}bg-[var(--status-success)]{% elif cell.status == 'warning' %}bg-[var(--status-warning)]{% elif cell.status == 'danger' or cell.status == 'error' %}bg-[var(--status-danger)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span>
@@ -32,7 +32,7 @@
             {% elif cell.actions %}
             <div class="flex flex-nowrap items-center justify-end gap-1 whitespace-nowrap">
               {% for act in cell.actions %}
-              <button type="button"{% if act.onclick %} onclick="{{ act.onclick }}"{% endif %}{% if act.title %} title="{{ act.title }}"{% endif %}{% if act.attrs %}{% for k, v in act.attrs.items %} {{ k }}="{{ v }}"{% endfor %}{% endif %} class="inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors {% if act.variant == 'danger' %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]{% elif act.variant == 'primary' %}border-transparent bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]{% else %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+              <button type="button"{% if act.onclick %} onclick="{{ act.onclick }}"{% endif %}{% if act.title %} title="{{ act.title }}"{% endif %}{% if act.attrs %}{% for k, v in act.attrs.items %} {{ k }}="{{ v }}"{% endfor %}{% endif %} class="inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-1 text-[11px] font-medium transition-colors {% if act.variant == 'danger' %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]{% elif act.variant == 'primary' %}border-transparent bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]{% else %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
                 {% if act.icon %}<i class="{{ act.icon }} text-[11px]" aria-hidden="true"></i>{% endif %}
                 {% if act.label %}<span>{{ act.label }}</span>{% endif %}
               </button>

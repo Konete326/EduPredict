@@ -6,7 +6,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from core.decorators import get_dashboard_route, login_required_custom, role_required
 from panels.admin_audit_services import VALID_LOG_CATEGORIES, clear_manual_audit_logs, export_activity_logs_csv, get_default_admin_logs_context, get_default_portal_settings_context, get_portal_settings, list_activity_logs, record_audit_log, reset_portal_settings, update_portal_settings
 from panels.admin_seed import get_default_admin_overview_context
-from panels.admin_services import build_backup_payload, build_course_table_data, build_ticket_table_data, build_user_table_data, create_course_record, create_ticket_record, create_user_record, delete_course_record, delete_ticket_record, delete_user_record, get_admin_overview_context, list_courses_with_stats, list_tickets, list_users, mark_notifications_read, reject_teacher_account, toggle_ticket_status, toggle_user_status, update_course_record, update_user_record
+from panels.admin_services import build_backup_payload, build_course_table_data, build_ticket_table_data, build_user_table_data, create_course_record, create_ticket_record, create_user_record, delete_course_record, delete_ticket_record, delete_user_record, get_admin_overview_context, list_active_teachers, list_courses_with_stats, list_tickets, list_users, mark_notifications_read, reject_teacher_account, toggle_ticket_status, toggle_user_status, update_course_record, update_user_record
 from panels.directory_card_services import build_admin_user_cards
 from panels.notification_services import delete_ticket_reply, reply_to_ticket
 
@@ -54,10 +54,10 @@ def admin_users(request):
         action, user_id, full_name, actor = _param(request, "action").lower(), _param(request, "user_id"), request.POST.get("full_name") or request.POST.get("name"), _actor_name(request)
         try:
             if action == "create":
-                created, err = create_user_record(full_name, request.POST.get("email"), request.POST.get("password"), request.POST.get("role"), request.POST.get("department"), request.POST.get("batch"), actor_name=actor)
+                created, err = create_user_record(full_name, request.POST.get("email"), request.POST.get("password"), request.POST.get("role"), request.POST.get("department"), request.POST.get("batch"), actor_name=actor, program_level=request.POST.get("program_level") or "")
                 _flash_result(request, created is not None, err, f"User {created['full_name']} ({created['user_id']}) created." if created else "")
             elif action == "update":
-                ok, err = update_user_record(user_id, full_name, request.POST.get("email"), request.POST.get("role"), request.POST.get("department"), request.POST.get("batch"), request.POST.get("password") or "", actor_user_id=actor_id, actor_email=actor_email, actor_name=actor)
+                ok, err = update_user_record(user_id, full_name, request.POST.get("email"), request.POST.get("role"), request.POST.get("department"), request.POST.get("batch"), request.POST.get("password") or "", actor_user_id=actor_id, actor_email=actor_email, actor_name=actor, program_level=request.POST.get("program_level"))
                 _flash_result(request, ok, err, f"User {user_id} updated.")
             elif action == "toggle":
                 new_state, err = toggle_user_status(user_id, actor_user_id=actor_id, actor_email=actor_email, actor_name=actor)
@@ -90,10 +90,10 @@ def admin_courses(request):
         action, code, actor = _param(request, "action").lower(), _param(request, "course_code").upper(), _actor_name(request)
         try:
             if action == "create":
-                created, err = create_course_record(code, request.POST.get("title"), request.POST.get("department"), request.POST.get("batch"), request.POST.get("instructor"), request.POST.get("credits"), request.POST.get("capacity"), request.POST.get("status") or "ACTIVE", actor_name=actor)
+                created, err = create_course_record(code, request.POST.get("title"), request.POST.get("department"), request.POST.get("batch"), request.POST.get("instructor"), request.POST.get("credits"), request.POST.get("capacity"), request.POST.get("status") or "ACTIVE", actor_name=actor, instructor_id=request.POST.get("instructor_id") or "", instructor_email=request.POST.get("instructor_email") or "", program_level=request.POST.get("program_level") or "")
                 _flash_result(request, created is not None, err, f"Course {created['course_code']} added." if created else "")
             elif action == "update":
-                ok, err = update_course_record(code, request.POST.get("title"), request.POST.get("department"), request.POST.get("batch"), request.POST.get("instructor"), request.POST.get("credits"), request.POST.get("capacity"), request.POST.get("status") or "ACTIVE", actor_name=actor)
+                ok, err = update_course_record(code, request.POST.get("title"), request.POST.get("department"), request.POST.get("batch"), request.POST.get("instructor"), request.POST.get("credits"), request.POST.get("capacity"), request.POST.get("status") or "ACTIVE", actor_name=actor, instructor_id=request.POST.get("instructor_id") or "", instructor_email=request.POST.get("instructor_email") or "", program_level=request.POST.get("program_level") or "")
                 _flash_result(request, ok, err, f"Course {code} updated.")
             elif action == "delete":
                 ok, err = delete_course_record(code, actor_name=actor)
@@ -103,13 +103,14 @@ def admin_courses(request):
         except Exception as exc:
             messages.error(request, f"Course error: {exc}")
         return _redirect_with_filter("panels:admin_courses", "department", filter_dept)
-    courses, departments, dept_counts, db_error = [], [], {"ALL": 0}, None
+    courses, departments, dept_counts, teacher_options, db_error = [], [], {"ALL": 0}, [], None
     try:
         courses, departments, dept_counts = list_courses_with_stats(filter_dept)
+        teacher_options = list_active_teachers()
     except Exception as exc:
         db_error = str(exc)
     course_headers, course_rows = build_course_table_data(courses, filter_dept)
-    return render(request, "panels/admin_courses.html", {"page_title": "Courses", "active_role": "ADMIN", "courses": courses, "course_headers": course_headers, "course_rows": course_rows, "departments": departments, "dept_counts": dept_counts, "selected_dept": filter_dept, "db_error": db_error})
+    return render(request, "panels/admin_courses.html", {"page_title": "Courses", "active_role": "ADMIN", "courses": courses, "course_headers": course_headers, "course_rows": course_rows, "departments": departments, "dept_counts": dept_counts, "teacher_options": teacher_options, "selected_dept": filter_dept, "db_error": db_error})
 
 
 @role_required(["ADMIN"])

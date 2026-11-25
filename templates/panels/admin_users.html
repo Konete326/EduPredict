@@ -73,10 +73,18 @@
       { value: 'ANALYST', label: 'Data Analyst' },
       { value: 'ADMIN', label: 'Admin' }
     ];
+    const programLevelOptions = [
+      { value: 'School / Junior', label: 'School / Junior' },
+      { value: 'College / Intermediate', label: 'College / Intermediate' },
+      { value: 'BS / Undergraduate', label: 'BS / Undergraduate' },
+      { value: 'MS / Graduate', label: 'MS / Graduate' },
+      { value: '', label: 'Not Applicable (Staff)' }
+    ];
 
     window.openCreateUserModal = function () {
-      const defaultRole = selectedRole !== 'ALL' ? selectedRole : 'STUDENT';
+      const defaultRole = selectedRole !== 'ALL' && selectedRole !== 'PENDING' && selectedRole !== 'REJECTED' ? selectedRole : 'STUDENT';
       const defaultBatch = defaultRole === 'STUDENT' ? '2026-A' : 'ALL';
+      const defaultProgramLevel = defaultRole === 'STUDENT' ? 'BS / Undergraduate' : '';
       window.openFormModal({
         title: 'Add User',
         actionUrl: adminUsersUrl,
@@ -87,8 +95,9 @@
           { name: 'email', label: 'Email', type: 'email', placeholder: 'user@edupredict.edu', required: true },
           { name: 'password', label: 'Password', type: 'password', value: 'edupredict123', placeholder: 'At least 6 characters', required: true },
           { name: 'role', label: 'Role', type: 'select', options: roleOptions, value: defaultRole, required: true },
+          { name: 'program_level', label: 'Program / Level', type: 'select', options: programLevelOptions, value: defaultProgramLevel },
           { name: 'department', label: 'Department', type: 'text', value: 'Computer Science', placeholder: 'Computer Science' },
-          { name: 'batch', label: 'Batch', type: 'text', value: defaultBatch, placeholder: '2026-A or ALL' }
+          { name: 'batch', label: 'Batch / Class', type: 'text', value: defaultBatch, placeholder: '2026-A, Grade 10, or ALL' }
         ]
       });
       const form = document.getElementById('form-modal-element');
@@ -96,6 +105,7 @@
       const nameInput = form.querySelector('[name="full_name"]');
       const emailInput = form.querySelector('[name="email"]');
       const roleSelect = form.querySelector('[name="role"]');
+      const programLevelSelect = form.querySelector('[name="program_level"]');
       const batchInput = form.querySelector('[name="batch"]');
       let emailEdited = false;
       if (emailInput) {
@@ -114,6 +124,9 @@
       if (roleSelect && batchInput) {
         roleSelect.addEventListener('change', function () {
           batchInput.value = roleSelect.value === 'STUDENT' ? '2026-A' : 'ALL';
+          if (programLevelSelect) {
+            programLevelSelect.value = roleSelect.value === 'STUDENT' ? (programLevelSelect.value || 'BS / Undergraduate') : '';
+          }
         });
       }
     };
@@ -127,6 +140,7 @@
             { name: 'role_display', label: 'Role (Protected)', type: 'text', value: 'ADMIN (Active Self Account — Protected)', readonly: true }
           ]
         : [{ name: 'role', label: 'Role', type: 'select', options: roleOptions, value: d.role || 'STUDENT', required: true }];
+      const editProgramLevel = d.programLevel !== undefined ? d.programLevel : (d.role === 'STUDENT' ? 'BS / Undergraduate' : '');
       window.openFormModal({
         title: 'Edit User (' + (d.userId || '') + ')',
         actionUrl: adminUsersUrl,
@@ -137,8 +151,9 @@
           { name: 'full_name', label: 'Full Name', type: 'text', value: d.fullName || '', required: true },
           { name: 'email', label: 'Email', type: 'email', value: d.email || '', required: true },
           ...roleFields,
+          { name: 'program_level', label: 'Program / Level', type: 'select', options: programLevelOptions, value: editProgramLevel },
           { name: 'department', label: 'Department', type: 'text', value: d.department || 'General' },
-          { name: 'batch', label: 'Batch', type: 'text', value: d.batch || 'ALL' },
+          { name: 'batch', label: 'Batch / Class', type: 'text', value: d.batch || 'ALL' },
           { name: 'password', label: 'New Password (optional)', type: 'password', placeholder: 'Leave blank to keep current password' }
         ]
       });

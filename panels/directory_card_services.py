@@ -47,12 +47,13 @@ def build_admin_user_cards(users, filter_role, actor_user_id, actor_email=""):
         role = str(u.get("role") or "USER").upper()
         dept = str(u.get("department") or "General")
         batch = str(u.get("batch") or "ALL")
+        program_level = str(u.get("program_level") or ("BS / Undergraduate" if role == "STUDENT" else ""))
         is_active = bool(u.get("is_active", True))
         approval_status = str(u.get("approval_status") or ("APPROVED" if is_active else "INACTIVE")).upper()
         is_pending = approval_status == "PENDING"
         is_rejected = approval_status == "REJECTED"
         is_self = (clean_actor_id and uid == clean_actor_id) or (clean_actor_email and email.strip().lower() == clean_actor_email)
-        edit_attrs = {"data-user-id": uid, "data-full-name": full_name, "data-email": email, "data-role": role, "data-department": dept, "data-batch": batch, "data-filter-role": filter_role}
+        edit_attrs = {"data-user-id": uid, "data-full-name": full_name, "data-email": email, "data-role": role, "data-department": dept, "data-batch": batch, "data-program-level": program_level, "data-filter-role": filter_role}
         if is_self:
             edit_attrs["data-is-self"] = "true"
         actions = [_action("Edit", "fa-solid fa-pen-to-square", "openEditUserModal(this)", f"Edit {full_name}", edit_attrs)]
@@ -89,8 +90,9 @@ def build_admin_user_cards(users, filter_role, actor_user_id, actor_email=""):
             "meta": [
                 {"label": "Role", "value": role},
                 {"label": "Dept", "value": dept},
-                {"label": "Batch", "value": batch},
+                {"label": "Batch", "value": f"{batch} · {program_level}" if program_level else batch},
                 {"label": "Joined", "value": u.get("created_at_str") or "-"},
+                {"label": "Level", "value": program_level or "-"},
             ],
             "actions": actions,
         })

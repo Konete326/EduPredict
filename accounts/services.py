@@ -4,10 +4,27 @@ import uuid
 from datetime import datetime, timezone
 from django.contrib.auth.hashers import check_password, make_password
 from pymongo.errors import DuplicateKeyError
-from core.db import ensure_indexes, invalidate_cache, notifications_col, student_records_col, users_col
+from core.db import (
+    courses_col,
+    ensure_indexes,
+    get_cached,
+    invalidate_cache,
+    notifications_col,
+    predictions_col,
+    resolve_portal_branding,
+    student_records_col,
+    support_tickets_col,
+    users_col,
+)
 
 VALID_ROLES = ("ADMIN", "TEACHER", "STUDENT", "ANALYST")
 SELF_REGISTER_ROLES = ("STUDENT", "TEACHER", "ANALYST")
+PROGRAM_LEVELS = (
+    "School / Junior",
+    "College / Intermediate",
+    "BS / Undergraduate",
+    "MS / Graduate",
+)
 
 _INDEXES_ENSURED = False
 _INDEX_LOCK = threading.Lock()
@@ -87,6 +104,7 @@ def serialize_session_user(user_doc):
         "role": role,
         "department": str(user_doc.get("department") or ""),
         "batch": str(user_doc.get("batch") or ""),
+        "program_level": str(user_doc.get("program_level") or ""),
         "phone": str(user_doc.get("phone") or ""),
         "bio": str(user_doc.get("bio") or ""),
         "avatar_url": str(user_doc.get("avatar_url") or ""),
@@ -141,7 +159,7 @@ def authenticate_user(email, password):
     return user_doc, None
 
 
-def register_user(full_name, email, password, role, department, batch, phone="", bio=""):
+def register_user(full_name, email, password, role, department, batch, phone="", bio="", program_level=""):
     normalized_role = str(role or "").strip().upper()
     if normalized_role not in SELF_REGISTER_ROLES:
         return None, "Administrator accounts can only be created by an existing Admin."
@@ -153,6 +171,8 @@ def register_user(full_name, email, password, role, department, batch, phone="",
 
     resolved_department = department.strip() or "General"
     resolved_batch = batch.strip() or ("2026" if normalized_role == "STUDENT" else "ALL")
+    raw_level = str(program_level or "").strip()
+    resolved_program_level = raw_level if raw_level in PROGRAM_LEVELS else ""
     user_id = generate_unique_user_id(col)
     is_pending_teacher = normalized_role == "TEACHER"
 
@@ -164,6 +184,7 @@ def register_user(full_name, email, password, role, department, batch, phone="",
         "role": normalized_role,
         "department": resolved_department,
         "batch": resolved_batch,
+        "program_level": resolved_program_level,
         "phone": str(phone or "").strip(),
         "bio": str(bio or "").strip(),
         "is_active": not is_pending_teacher,
@@ -201,4 +222,112 @@ def register_user(full_name, email, password, role, department, batch, phone="",
 
     invalidate_cache("admin:")
     invalidate_cache("soon:")
+    invalidate_cache("public:")
     return user_doc, None
+
+
+def _safe_count(col_fn):
+    try:
+        return max(int(col_fn().count_documents({})), 0)
+    except Exception:
+        return 0
+
+
+def get_public_portal_metrics():
+    def _fetch():
+        inst_name, current_term = resolve_portal_branding(db_connected=True)
+        return {
+            "institution_name": inst_name,
+            "current_term": current_term,
+            "users_count": _safe_count(users_col),
+            "courses_count": _safe_count(courses_col),
+            "records_count": _safe_count(student_records_col),
+            "predictions_count": _safe_count(predictions_col),
+        }
+
+    return get_cached("public:portal_metrics", _fetch, ttl=60.0)
+
+
+def get_public_admin_contact():
+    def _fetch():
+        inst_name, current_term = resolve_portal_branding(db_connected=True)
+        admin_doc = None
+        try:
+            admin_doc = users_col().find_one(
+                {"role": "ADMIN", "is_active": True},
+                {"_id": 0, "full_name": 1, "email": 1, "department": 1, "phone": 1},
+            )
+            if admin_doc is None:
+                admin_doc = users_col().find_one(
+                    {"role": "ADMIN"},
+                    {"_id": 0, "full_name": 1, "email": 1, "department": 1, "phone": 1},
+                )
+        except Exception:
+            admin_doc = None
+        doc = admin_doc if isinstance(admin_doc, dict) else {}
+        return {
+            "institution_name": inst_name,
+            "current_term": current_term,
+            "full_name": str(doc.get("full_name") or "System Administrator").strip() or "System Administrator",
+            "email": str(doc.get("email") or "admin@gmail.com").strip() or "admin@gmail.com",
+            "department": str(doc.get("department") or "Administration").strip() or "Administration",
+            "phone": str(doc.get("phone") or "").strip(),
+        }
+
+    return get_cached("public:admin_contact", _fetch, ttl=60.0)
+
+
+def _generate_public_ticket_id(col):
+    base = 1001 + int(col.count_documents({}))
+    for offset in range(25):
+        candidate = f"TCK-{base + offset}"
+        if col.find_one({"ticket_id": candidate}, {"_id": 1}) is None:
+            return candidate
+    return f"TCK-{uuid.uuid4().hex[:6].upper()}"
+
+
+def create_public_contact_ticket(name, email, subject, message):
+    clean_name = str(name or "").strip()
+    clean_email = str(email or "").strip().lower()
+    clean_subject = str(subject or "").strip()
+    clean_message = str(message or "").strip()
+    if not clean_name or not clean_email or not clean_subject or not clean_message:
+        return None, "All fields are required."
+    try:
+        col = support_tickets_col()
+        ticket_id = _generate_public_ticket_id(col)
+        now = datetime.now(timezone.utc)
+        doc = {
+            "ticket_id": ticket_id,
+            "user_id": "GUEST",
+            "user_name": clean_name,
+            "email": clean_email,
+            "role": "GUEST",
+            "subject": clean_subject,
+            "message": f"[Public Contact: {clean_email}] {clean_message}",
+            "attachments": [],
+            "status": "OPEN",
+            "source": "PUBLIC_CONTACT",
+            "created_at": now,
+        }
+        col.insert_one(doc)
+        try:
+            notifications_col().insert_one(
+                {
+                    "title": f"New Contact {ticket_id}: {clean_subject}",
+                    "message": f"{clean_name} ({clean_email}): {clean_message}",
+                    "severity": "WARNING",
+                    "category": "TICKET",
+                    "target_role": "ADMIN",
+                    "ticket_id": ticket_id,
+                    "is_read": False,
+                    "created_at": now,
+                }
+            )
+            invalidate_cache("notifs:")
+        except Exception:
+            pass
+        invalidate_cache("admin:")
+        return doc, None
+    except Exception:
+        return None, "Unable to save your inquiry right now. Please try again."

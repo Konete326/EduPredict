@@ -43,13 +43,23 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ teacher_options|json_script:"admin-teacher-options" }}
 <script>
   (function () {
     const adminCoursesUrl = "{% url 'panels:admin_courses' %}";
     const selectedDept = "{{ selected_dept|escapejs }}";
+    const teacherNode = document.getElementById('admin-teacher-options');
+    const teacherOptions = teacherNode ? JSON.parse(teacherNode.textContent || '[]') : [];
     const courseStatusOptions = [
       { value: 'ACTIVE', label: 'Active' },
       { value: 'ARCHIVED', label: 'Archived' }
+    ];
+    const programLevelOptions = [
+      { value: '', label: 'All / General' },
+      { value: 'School / Junior', label: 'School / Junior' },
+      { value: 'College / Intermediate', label: 'College / Intermediate' },
+      { value: 'BS / Undergraduate', label: 'BS / Undergraduate' },
+      { value: 'MS / Graduate', label: 'MS / Graduate' }
     ];
     const deptPrefixMap = {
       CS: 'Computer Science',
@@ -58,6 +68,52 @@
       EE: 'Electrical Engineering',
       BBA: 'Business'
     };
+
+    function findTeacherById(uid) {
+      return teacherOptions.find(function (t) { return t.user_id === uid; }) || null;
+    }
+
+    function buildTeacherFields(selectedId, selectedName, selectedEmail) {
+      if (!teacherOptions.length) {
+        return [{ name: 'instructor', label: 'Teacher', type: 'text', value: selectedName || 'TBA', placeholder: 'Dr. Ayesha Khan', required: true }];
+      }
+      let matched = selectedId ? findTeacherById(selectedId) : null;
+      if (!matched && selectedName) {
+        const lower = String(selectedName).trim().toLowerCase();
+        matched = teacherOptions.find(function (t) { return String(t.full_name || '').trim().toLowerCase() === lower; }) || null;
+      }
+      const opts = teacherOptions.map(function (t) {
+        return { value: t.user_id, label: t.full_name + (t.department ? ' (' + t.department + ')' : '') };
+      });
+      if (!matched && selectedName && selectedName !== 'TBA') {
+        opts.unshift({ value: '', label: selectedName + ' (Custom)' });
+      } else if (!matched && !selectedName) {
+        matched = teacherOptions[0];
+      }
+      const initId = matched ? matched.user_id : (opts[0] ? opts[0].value : '');
+      const initName = matched ? matched.full_name : (selectedName || 'TBA');
+      const initEmail = matched ? matched.email : (selectedEmail || '');
+      return [
+        { type: 'hidden', name: 'instructor', value: initName },
+        { type: 'hidden', name: 'instructor_email', value: initEmail },
+        { name: 'instructor_id', label: 'Assigned Teacher', type: 'select', options: opts, value: initId }
+      ];
+    }
+
+    function bindTeacherSync(form, isDeptEdited) {
+      const selectEl = form.querySelector('[name="instructor_id"]');
+      const nameEl = form.querySelector('[name="instructor"]');
+      const emailEl = form.querySelector('[name="instructor_email"]');
+      const deptEl = form.querySelector('[name="department"]');
+      if (!selectEl) return;
+      selectEl.addEventListener('change', function () {
+        const t = findTeacherById(selectEl.value);
+        if (!t) return;
+        if (nameEl) nameEl.value = t.full_name || '';
+        if (emailEl) emailEl.value = t.email || '';
+        if (deptEl && !isDeptEdited() && t.department) deptEl.value = t.department;
+      });
+    }
 
     function inferDepartmentFromCode(code) {
       const m = String(code || '').trim().toUpperCase().match(/^([A-Z]+)/);
@@ -88,8 +144,9 @@
           { name: 'course_code', label: 'Course Code', type: 'text', value: suggestedCode, placeholder: 'CS-306', required: true },
           { name: 'title', label: 'Course Name', type: 'text', placeholder: 'Cloud Systems', required: true },
           { name: 'department', label: 'Department', type: 'text', value: defaultDept, required: true },
+          { name: 'program_level', label: 'Program / Level', type: 'select', options: programLevelOptions, value: '' },
           { name: 'batch', label: 'Batch', type: 'text', value: '2026-A', required: true },
-          { name: 'instructor', label: 'Teacher', type: 'text', value: 'Dr. Ayesha Khan', placeholder: 'Dr. Ayesha Khan', required: true },
+          ...buildTeacherFields('', '', ''),
           { name: 'credits', label: 'Credits', type: 'number', value: '3', required: true },
           { name: 'capacity', label: 'Total Seats', type: 'number', value: '60', required: true },
           { name: 'status', label: 'Status', type: 'select', options: courseStatusOptions, value: 'ACTIVE' }
@@ -113,6 +170,7 @@
           if (inferred) deptInput.value = inferred;
         });
       }
+      bindTeacherSync(form, function () { return deptEdited; });
     };
 
     window.openEditCourseModal = function (btn) {
@@ -126,13 +184,16 @@
           { type: 'hidden', name: 'filter_dept', value: d.filterDept || selectedDept },
           { name: 'title', label: 'Course Name', type: 'text', value: d.title || '', required: true },
           { name: 'department', label: 'Department', type: 'text', value: d.department || 'General', required: true },
+          { name: 'program_level', label: 'Program / Level', type: 'select', options: programLevelOptions, value: d.programLevel || '' },
           { name: 'batch', label: 'Batch', type: 'text', value: d.batch || '2026-A', required: true },
-          { name: 'instructor', label: 'Teacher', type: 'text', value: d.instructor || 'TBA', required: true },
+          ...buildTeacherFields(d.instructorId || '', d.instructor || '', d.instructorEmail || ''),
           { name: 'credits', label: 'Credits', type: 'number', value: d.credits || '3', required: true },
           { name: 'capacity', label: 'Total Seats', type: 'number', value: d.capacity || '60', required: true },
           { name: 'status', label: 'Status', type: 'select', options: courseStatusOptions, value: d.status || 'ACTIVE' }
         ]
       });
+      const form = document.getElementById('form-modal-element');
+      if (form) bindTeacherSync(form, function () { return true; });
     };
 
     window.openDeleteCourseModal = function (btn) {

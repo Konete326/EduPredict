@@ -10,6 +10,9 @@ from accounts.services import (
     SELF_REGISTER_ROLES,
     VALID_ROLES,
     authenticate_user,
+    create_public_contact_ticket,
+    get_public_admin_contact,
+    get_public_portal_metrics,
     register_user,
     serialize_session_user,
 )
@@ -24,7 +27,36 @@ def root_redirect(request):
         role = str(user.get("role") or "").strip().upper()
         if role in VALID_ROLES:
             return redirect(get_dashboard_route(role))
-    return redirect("accounts:auth_view")
+    return render(request, "public/landing.html", {"page_title": "Academic Performance & Early-Alert Portal", "metrics": get_public_portal_metrics()})
+
+
+def about_view(request):
+    return render(request, "public/about.html", {"page_title": "About EduPredict", "metrics": get_public_portal_metrics()})
+
+
+def contact_view(request):
+    form_data = {}
+    if request.method == "POST":
+        name = (request.POST.get("name") or "").strip()
+        email = (request.POST.get("email") or "").strip().lower()
+        subject = (request.POST.get("subject") or "").strip()
+        message = (request.POST.get("message") or "").strip()
+        form_data = {"name": name, "email": email, "subject": subject, "message": message}
+        if not name or not subject or not message:
+            messages.error(request, "Name, subject, and message are required.")
+        else:
+            try:
+                validate_email(email)
+            except ValidationError:
+                messages.error(request, "Please enter a valid email address.")
+            else:
+                ticket_doc, error = create_public_contact_ticket(name, email, subject, message)
+                if error or ticket_doc is None:
+                    messages.error(request, error or "Unable to submit your inquiry right now.")
+                else:
+                    messages.success(request, f"Inquiry {ticket_doc['ticket_id']} received. Our admin team will review it shortly.")
+                    return redirect("accounts:contact_view")
+    return render(request, "public/contact.html", {"page_title": "Contact & Support", "admin_contact": get_public_admin_contact(), "form_data": form_data})
 
 
 def _get_live_stats():
@@ -36,7 +68,7 @@ def _get_live_stats():
                 cnt = int(col.count_documents({}))
             return {"predictions_count": max(cnt, 0)}
         except Exception:
-            return {"predictions_count": 50}
+            return {"predictions_count": 0}
     return get_cached("auth:live_stats", _fetch, ttl=60.0)
 
 
@@ -50,7 +82,7 @@ def _render_auth(request, active_tab="login", login_email="", register_data=None
             "active_tab": active_tab,
             "login_email": login_email,
             "register_data": register_data or {},
-            "live_predictions_count": stats.get("predictions_count", 50),
+            "live_predictions_count": stats.get("predictions_count", 0),
             "pending_teacher_approval": bool(pending_teacher_approval),
         },
     )
@@ -62,24 +94,20 @@ def _handle_login(request):
     if not email or not password:
         messages.error(request, "Email and password are required.")
         return _render_auth(request, active_tab="login", login_email=email)
-
     try:
         user_doc, error = authenticate_user(email, password)
     except Exception:
         time.sleep(0.05)
         messages.error(request, "Unable to connect to the database. Please try again.")
         return _render_auth(request, active_tab="login", login_email=email)
-
     if error or user_doc is None:
         time.sleep(0.05)
         messages.error(request, error or "Invalid email or password.")
         return _render_auth(request, active_tab="login", login_email=email)
-
     session_user = serialize_session_user(user_doc)
     request.session["user"] = session_user
     sync_theme_prefs_on_login(request, user_doc)
-    display_name = session_user["full_name"] or session_user["email"]
-    messages.success(request, f"Welcome back, {display_name}!")
+    messages.success(request, f"Welcome back, {session_user['full_name'] or session_user['email']}!")
     return redirect(get_dashboard_route(session_user["role"]))
 
 
@@ -91,77 +119,43 @@ def _handle_register(request):
     role = (request.POST.get("role") or "").strip().upper()
     department = (request.POST.get("department") or "").strip()
     batch = (request.POST.get("batch") or "").strip()
+    program_level = (request.POST.get("program_level") or "").strip()
     phone = (request.POST.get("phone") or "").strip()
     bio = (request.POST.get("bio") or "").strip()
-
-    register_data = {
-        "full_name": full_name,
-        "email": email,
-        "role": role,
-        "department": department,
-        "batch": batch,
-        "phone": phone,
-        "bio": bio,
-    }
-
+    register_data = {"full_name": full_name, "email": email, "role": role, "department": department, "batch": batch, "program_level": program_level, "phone": phone, "bio": bio}
     if not full_name:
         messages.error(request, "Full name is required.")
         return _render_auth(request, active_tab="register", register_data=register_data)
-
     try:
         validate_email(email)
     except ValidationError:
         messages.error(request, "Please enter a valid email address.")
         return _render_auth(request, active_tab="register", register_data=register_data)
-
     if len(password) < 6:
         messages.error(request, "Password must be at least 6 characters long.")
         return _render_auth(request, active_tab="register", register_data=register_data)
-
     if password != confirm_password:
         messages.error(request, "Passwords do not match.")
         return _render_auth(request, active_tab="register", register_data=register_data)
-
     if role not in SELF_REGISTER_ROLES:
         messages.error(request, "Select Student, Teacher, or Data Analyst. Admin accounts are managed internally.")
         return _render_auth(request, active_tab="register", register_data=register_data)
-
     try:
-        user_doc, error = register_user(
-            full_name=full_name,
-            email=email,
-            password=password,
-            role=role,
-            department=department,
-            batch=batch,
-            phone=phone,
-            bio=bio,
-        )
+        user_doc, error = register_user(full_name=full_name, email=email, password=password, role=role, department=department, batch=batch, phone=phone, bio=bio, program_level=program_level)
     except Exception:
         messages.error(request, "Unable to complete registration right now. Please try again.")
         return _render_auth(request, active_tab="register", register_data=register_data)
-
     if error or user_doc is None:
         messages.error(request, error or "Registration failed.")
         return _render_auth(request, active_tab="register", register_data=register_data)
-
     if str(user_doc.get("approval_status") or "").strip().upper() == "PENDING":
-        request.session["pending_approval"] = {
-            "user_id": user_doc.get("user_id"),
-            "email": email,
-            "full_name": full_name,
-        }
-        messages.warning(
-            request,
-            "Your teacher account was created and is waiting for Admin approval. This page will sign you in automatically once approved.",
-        )
+        request.session["pending_approval"] = {"user_id": user_doc.get("user_id"), "email": email, "full_name": full_name}
+        messages.warning(request, "Your teacher account was created and is waiting for Admin approval. This page will sign you in automatically once approved.")
         return _render_auth(request, active_tab="login", login_email=email, pending_teacher_approval=True)
-
     session_user = serialize_session_user(user_doc)
     request.session["user"] = session_user
     sync_theme_prefs_on_login(request, user_doc)
-    display_name = session_user["full_name"] or session_user["email"]
-    messages.success(request, f"Account created! Welcome, {display_name}.")
+    messages.success(request, f"Account created! Welcome, {session_user['full_name'] or session_user['email']}.")
     return redirect(get_dashboard_route(session_user["role"]))
 
 
@@ -201,11 +195,9 @@ def auth_view(request):
         role = str(user.get("role") or "").strip().upper()
         if role in VALID_ROLES:
             return redirect(get_dashboard_route(role))
-
     if request.method == "GET" and request.GET.get("reset_pending") == "1":
         request.session.pop("pending_approval", None)
         return redirect("accounts:auth_view")
-
     if request.method == "POST":
         action = (request.POST.get("action") or "").strip().lower()
         if action == "login":
@@ -214,7 +206,6 @@ def auth_view(request):
             return _handle_register(request)
         messages.error(request, "Unsupported authentication request.")
         return _render_auth(request, active_tab="login")
-
     state, user_doc, pending_email = _fetch_pending_state(request)
     if state == "APPROVED":
         return redirect(_complete_pending_login(request, user_doc))
@@ -224,15 +215,14 @@ def auth_view(request):
         return _render_auth(request, active_tab="login", login_email=pending_email)
     if state == "PENDING":
         return _render_auth(request, active_tab="login", login_email=pending_email, pending_teacher_approval=True)
-
-    return _render_auth(request, active_tab="login")
+    requested_tab = (request.GET.get("tab") or "").strip().lower()
+    return _render_auth(request, active_tab="register" if requested_tab == "register" else "login")
 
 
 def approval_status_view(request):
     state, user_doc, _ = _fetch_pending_state(request)
     if state == "APPROVED":
-        route = _complete_pending_login(request, user_doc)
-        return JsonResponse({"status": "APPROVED", "redirect_url": reverse(route)})
+        return JsonResponse({"status": "APPROVED", "redirect_url": reverse(_complete_pending_login(request, user_doc))})
     if state == "REJECTED":
         return JsonResponse({"status": "REJECTED", "reason": str((user_doc or {}).get("rejection_reason") or "").strip()})
     return JsonResponse({"status": state})
@@ -248,12 +238,4 @@ def error_404(request, exception=None):
     session = getattr(request, "session", None)
     user = session.get("user") if session is not None else None
     active_role = user.get("role") if isinstance(user, dict) else None
-    return render(
-        request,
-        "404.html",
-        {
-            "page_title": "Page Not Found",
-            "active_role": active_role,
-        },
-        status=404,
-    )
+    return render(request, "404.html", {"page_title": "Page Not Found", "active_role": active_role}, status=404)

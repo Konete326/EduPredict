@@ -63,7 +63,7 @@
 
       <div class="relative z-10 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <a data-slot="login-home" href="{% url 'accounts:auth_view' %}" class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] transition-colors">
+          <a data-slot="login-home" href="{% url 'root' %}" class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] transition-colors">
             <i class="fa-solid fa-chevron-left text-[10px]" aria-hidden="true"></i>
             <span>Home</span>
           </a>
@@ -231,9 +231,23 @@
                   <input id="reg-batch" name="batch" type="text" required value="{{ register_data.batch|default:'' }}" placeholder="2026-A" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
                 </div>
               </div>
-              <div class="space-y-1">
-                <label for="reg-phone" class="block text-xs font-medium text-[var(--text-secondary)]">Phone (Optional)</label>
-                <input id="reg-phone" name="phone" type="tel" value="{{ register_data.phone|default:'' }}" placeholder="+92 300 0000000" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+              <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                <div class="space-y-1">
+                  <label for="reg-program-level" class="block text-xs font-medium text-[var(--text-secondary)]">Program Level</label>
+                  {% with selected_level=register_data.program_level|default:"" %}
+                  <select id="reg-program-level" name="program_level" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+                    <option value="">Select level (optional)</option>
+                    <option value="School / Junior" {% if selected_level == 'School / Junior' %}selected{% endif %}>School / Junior</option>
+                    <option value="College / Intermediate" {% if selected_level == 'College / Intermediate' %}selected{% endif %}>College / Intermediate</option>
+                    <option value="BS / Undergraduate" {% if selected_level == 'BS / Undergraduate' %}selected{% endif %}>BS / Undergraduate</option>
+                    <option value="MS / Graduate" {% if selected_level == 'MS / Graduate' %}selected{% endif %}>MS / Graduate</option>
+                  </select>
+                  {% endwith %}
+                </div>
+                <div class="space-y-1">
+                  <label for="reg-phone" class="block text-xs font-medium text-[var(--text-secondary)]">Phone (Optional)</label>
+                  <input id="reg-phone" name="phone" type="tel" value="{{ register_data.phone|default:'' }}" placeholder="+92 300 0000000" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+                </div>
               </div>
               <div class="space-y-1">
                 <label for="reg-bio" class="block text-xs font-medium text-[var(--text-secondary)]">Bio (Optional)</label>

@@ -15,6 +15,7 @@ from panels.phase62_services import reject_teacher_account
 
 VALID_TICKET_STATUSES = ("OPEN", "RESOLVED")
 VALID_COURSE_STATUSES = ("ACTIVE", "ARCHIVED")
+VALID_PROGRAM_LEVELS = ("School / Junior", "College / Intermediate", "BS / Undergraduate", "MS / Graduate")
 
 
 def _audit(category, action, summary, severity="INFO", actor="System Admin"):
@@ -22,7 +23,6 @@ def _audit(category, action, summary, severity="INFO", actor="System Admin"):
         record_audit_log(actor, "ADMIN", category, action, summary, severity=severity, source="SYSTEM")
     except Exception:
         pass
-
 
 def _generate_unique_ticket_id(col):
     base = 1001 + col.count_documents({})
@@ -32,11 +32,9 @@ def _generate_unique_ticket_id(col):
             return candidate
     return f"TKT-{uuid.uuid4().hex[:6].upper()}"
 
-
 def _is_self_target(existing, clean_uid, actor_user_id, actor_email):
     clean_actor_email = str(actor_email or "").strip().lower()
     return bool((actor_user_id and clean_uid == str(actor_user_id).strip()) or (clean_actor_email and str((existing or {}).get("email") or "").strip().lower() == clean_actor_email))
-
 
 def _load_users(normalized):
     ensure_admin_seed_data()
@@ -50,14 +48,12 @@ def _load_users(normalized):
         if approval_status in ("PENDING", "REJECTED"):
             role_counts[approval_status] += 1
         if normalized == "ALL" or (normalized in ("PENDING", "REJECTED") and approval_status == normalized) or role == normalized:
-            users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "phone": str(doc.get("phone") or ""), "bio": str(doc.get("bio") or ""), "is_active": is_active, "approval_status": approval_status, "rejection_reason": str(doc.get("rejection_reason") or ""), "student_id": str(doc.get("student_id") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at"))})
+            users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "program_level": str(doc.get("program_level") or ("BS / Undergraduate" if role == "STUDENT" else "")), "phone": str(doc.get("phone") or ""), "bio": str(doc.get("bio") or ""), "is_active": is_active, "approval_status": approval_status, "rejection_reason": str(doc.get("rejection_reason") or ""), "student_id": str(doc.get("student_id") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at"))})
     return users, role_counts
-
 
 def list_users(role_filter="ALL"):
     normalized = str(role_filter or "ALL").strip().upper()
     return get_cached(f"admin:users:{normalized}", lambda: _load_users(normalized), ttl=30.0)
-
 
 def _validate_user_input(full_name, email, role, department, batch):
     clean_name, clean_email, clean_role = str(full_name or "").strip(), str(email or "").strip().lower(), str(role or "").strip().upper()
@@ -72,8 +68,7 @@ def _validate_user_input(full_name, email, role, department, batch):
     clean_dept, clean_batch = str(department or "").strip() or "General", str(batch or "").strip() or ("2026-A" if clean_role == "STUDENT" else "ALL")
     return (clean_name, clean_email, clean_role, clean_dept, clean_batch), None
 
-
-def create_user_record(full_name, email, password, role, department, batch, actor_name="System Admin"):
+def create_user_record(full_name, email, password, role, department, batch, actor_name="System Admin", program_level=""):
     ensure_accounts_indexes_once()
     parsed, err = _validate_user_input(full_name, email, role, department, batch)
     if err:
@@ -87,7 +82,8 @@ def create_user_record(full_name, email, password, role, department, batch, acto
 
     user_id = generate_unique_user_id(col)
     student_id = generate_unique_student_id(student_records_col(), user_id) if clean_role == "STUDENT" else None
-    doc = {"user_id": user_id, "full_name": clean_name, "email": clean_email, "password_hash": make_password(password), "role": clean_role, "department": clean_dept, "batch": clean_batch, "is_active": True, "created_at": datetime.now(timezone.utc), **({"student_id": student_id} if student_id else {})}
+    clean_level = str(program_level or "").strip() or ("BS / Undergraduate" if clean_role == "STUDENT" else "")
+    doc = {"user_id": user_id, "full_name": clean_name, "email": clean_email, "password_hash": make_password(password), "role": clean_role, "department": clean_dept, "batch": clean_batch, "is_active": True, "created_at": datetime.now(timezone.utc), **({"program_level": clean_level} if clean_level else {}), **({"student_id": student_id} if student_id else {})}
     try:
         col.insert_one(doc)
     except DuplicateKeyError:
@@ -97,8 +93,7 @@ def create_user_record(full_name, email, password, role, department, batch, acto
     invalidate_cache()
     return doc, None
 
-
-def update_user_record(user_id, full_name, email, role, department, batch, password="", actor_user_id=None, actor_email="", actor_name="System Admin"):
+def update_user_record(user_id, full_name, email, role, department, batch, password="", actor_user_id=None, actor_email="", actor_name="System Admin", program_level=None):
     col, clean_uid = users_col(), str(user_id or "").strip()
     existing = col.find_one({"user_id": clean_uid})
     if existing is None:
@@ -115,6 +110,11 @@ def update_user_record(user_id, full_name, email, role, department, batch, passw
         return False, "New password must be at least 6 characters long."
 
     updates = {"full_name": clean_name, "email": clean_email, "role": clean_role, "department": clean_dept, "batch": clean_batch}
+    if program_level is not None:
+        clean_level = str(program_level or "").strip()
+        updates["program_level"] = clean_level or ("BS / Undergraduate" if clean_role == "STUDENT" else "")
+    elif clean_role == "STUDENT" and not existing.get("program_level"):
+        updates["program_level"] = "BS / Undergraduate"
     if password:
         updates["password_hash"] = make_password(password)
     if clean_role == "STUDENT" and not existing.get("student_id"):
@@ -123,7 +123,6 @@ def update_user_record(user_id, full_name, email, role, department, batch, passw
     _audit("USERS", "UPDATE_USER", f"Updated user {clean_uid} ({clean_role}).", "INFO", actor=actor_name)
     invalidate_cache()
     return True, None
-
 
 def toggle_user_status(user_id, actor_user_id=None, actor_email="", actor_name="System Admin"):
     clean_uid, col = str(user_id or "").strip(), users_col()
@@ -143,7 +142,6 @@ def toggle_user_status(user_id, actor_user_id=None, actor_email="", actor_name="
     invalidate_cache()
     return new_state, None
 
-
 def delete_user_record(user_id, actor_user_id=None, actor_email="", actor_name="System Admin"):
     clean_uid, col = str(user_id or "").strip(), users_col()
     existing = col.find_one({"user_id": clean_uid}, {"_id": 1, "email": 1})
@@ -155,6 +153,8 @@ def delete_user_record(user_id, actor_user_id=None, actor_email="", actor_name="
         return True, None
     return False, "User record not found."
 
+def list_active_teachers():
+    return get_cached("admin:active_teachers", lambda: [{"user_id": str(d.get("user_id") or ""), "full_name": str(d.get("full_name") or ""), "email": str(d.get("email") or ""), "department": str(d.get("department") or "General")} for d in users_col().find({"role": "TEACHER", "is_active": True}, {"_id": 0, "user_id": 1, "full_name": 1, "email": 1, "department": 1}).sort("full_name", ASCENDING)], ttl=30.0)
 
 def _load_courses_with_stats(clean_dept):
     ensure_admin_seed_data()
@@ -165,36 +165,44 @@ def _load_courses_with_stats(clean_dept):
         cap, enrolled = _safe_int(doc.get("capacity"), 60, 1, 2000), enrolled_map.get(code, 0)
         dept_counts["ALL"] += 1
         dept_counts[dept] = dept_counts.get(dept, 0) + 1
-        all_courses.append({"course_code": code, "title": str(doc.get("title") or ""), "department": dept, "batch": str(doc.get("batch") or "2026-A"), "instructor": str(doc.get("instructor") or "TBA"), "credits": _safe_int(doc.get("credits"), 3, 1, 12), "capacity": cap, "enrolled_count": enrolled, "fill_pct": min(100, round((enrolled * 100) / cap)) if cap else 0, "status": str(doc.get("status") or "ACTIVE").upper(), "created_at_str": _format_dt(doc.get("created_at"))})
+        all_courses.append({"course_code": code, "title": str(doc.get("title") or ""), "department": dept, "batch": str(doc.get("batch") or "2026-A"), "program_level": str(doc.get("program_level") or ""), "instructor": str(doc.get("instructor") or "TBA"), "instructor_id": str(doc.get("instructor_id") or ""), "instructor_email": str(doc.get("instructor_email") or ""), "credits": _safe_int(doc.get("credits"), 3, 1, 12), "capacity": cap, "enrolled_count": enrolled, "fill_pct": min(100, round((enrolled * 100) / cap)) if cap else 0, "status": str(doc.get("status") or "ACTIVE").upper(), "created_at_str": _format_dt(doc.get("created_at"))})
     departments = sorted([d for d in dept_counts if d != "ALL"])
     return (all_courses if clean_dept == "ALL" else [c for c in all_courses if c["department"] == clean_dept]), departments, dept_counts
-
 
 def list_courses_with_stats(dept_filter="ALL"):
     clean_dept = str(dept_filter or "ALL").strip()
     return get_cached(f"admin:courses:{clean_dept}", lambda: _load_courses_with_stats(clean_dept), ttl=30.0)
 
+def _resolve_course_teacher(instructor, instructor_id, instructor_email, fallback=None):
+    fb = fallback or {}
+    clean_iid, clean_name, clean_email = str(instructor_id or "").strip(), str(instructor or "").strip(), str(instructor_email or "").strip()
+    if clean_iid:
+        teacher = users_col().find_one({"user_id": clean_iid, "role": "TEACHER"}, {"_id": 0, "full_name": 1, "email": 1})
+        if teacher:
+            clean_name = clean_name or str(teacher.get("full_name") or "").strip()
+            clean_email = clean_email or str(teacher.get("email") or "").strip()
+    return clean_name or fb.get("instructor") or "TBA", clean_iid, clean_email
 
-def _course_fields(title, department, batch, instructor, credits, capacity, status, fallback=None):
+def _course_fields(title, department, batch, instructor, credits, capacity, status, fallback=None, instructor_id="", instructor_email="", program_level=""):
     fb, clean_status = fallback or {}, str(status or "ACTIVE").strip().upper()
-    return {"title": str(title or "").strip(), "department": str(department or "").strip() or fb.get("department") or "General", "batch": str(batch or "").strip() or fb.get("batch") or "2026-A", "instructor": str(instructor or "").strip() or fb.get("instructor") or "TBA", "credits": _safe_int(credits, 3, 1, 12), "capacity": _safe_int(capacity, 60, 1, 2000), "status": clean_status if clean_status in VALID_COURSE_STATUSES else "ACTIVE"}
+    t_name, t_id, t_email = _resolve_course_teacher(instructor, instructor_id, instructor_email, fb)
+    clean_level = str(program_level or "").strip()
+    return {"title": str(title or "").strip(), "department": str(department or "").strip() or fb.get("department") or "General", "batch": str(batch or "").strip() or fb.get("batch") or "2026-A", "instructor": t_name, "instructor_id": t_id, "instructor_email": t_email, **({"program_level": clean_level} if clean_level else {}), "credits": _safe_int(credits, 3, 1, 12), "capacity": _safe_int(capacity, 60, 1, 2000), "status": clean_status if clean_status in VALID_COURSE_STATUSES else "ACTIVE"}
 
-
-def create_course_record(course_code, title, department, batch, instructor, credits, capacity, status="ACTIVE", actor_name="System Admin"):
+def create_course_record(course_code, title, department, batch, instructor, credits, capacity, status="ACTIVE", actor_name="System Admin", instructor_id="", instructor_email="", program_level=""):
     clean_code, clean_title = str(course_code or "").strip().upper(), str(title or "").strip()
     if len(clean_code) < 2 or not clean_title:
         return None, "Course code and title are required."
     col = courses_col()
     if col.find_one({"course_code": clean_code}, {"_id": 1}) is not None:
         return None, f"Course {clean_code} already exists."
-    doc = {"course_code": clean_code, "created_at": datetime.now(timezone.utc), **_course_fields(title, department, batch, instructor, credits, capacity, status)}
+    doc = {"course_code": clean_code, "created_at": datetime.now(timezone.utc), **_course_fields(title, department, batch, instructor, credits, capacity, status, instructor_id=instructor_id, instructor_email=instructor_email, program_level=program_level)}
     col.insert_one(doc)
     _audit("COURSES", "CREATE_COURSE", f"Added course {clean_code} ({clean_title}).", "SUCCESS", actor=actor_name)
     invalidate_cache()
     return doc, None
 
-
-def update_course_record(course_code, title, department, batch, instructor, credits, capacity, status="ACTIVE", actor_name="System Admin"):
+def update_course_record(course_code, title, department, batch, instructor, credits, capacity, status="ACTIVE", actor_name="System Admin", instructor_id="", instructor_email="", program_level=""):
     clean_code, clean_title = str(course_code or "").strip().upper(), str(title or "").strip()
     if not clean_code or not clean_title:
         return False, "Course code and title are required."
@@ -202,7 +210,7 @@ def update_course_record(course_code, title, department, batch, instructor, cred
     existing = col.find_one({"course_code": clean_code})
     if existing is None:
         return False, "Course record not found."
-    updates = {**_course_fields(title, department, batch, instructor, credits, capacity, status, fallback=existing), "updated_at": datetime.now(timezone.utc)}
+    updates = {**_course_fields(title, department, batch, instructor, credits, capacity, status, fallback=existing, instructor_id=instructor_id, instructor_email=instructor_email, program_level=program_level), "updated_at": datetime.now(timezone.utc)}
     col.update_one({"_id": existing["_id"]}, {"$set": updates})
     _audit("COURSES", "UPDATE_COURSE", f"Updated course {clean_code} ({clean_title}).", "INFO", actor=actor_name)
     invalidate_cache()
@@ -216,7 +224,6 @@ def delete_course_record(course_code, actor_name="System Admin"):
         invalidate_cache()
         return True, None
     return False, "Course record not found."
-
 
 def _load_tickets(clean_status):
     ensure_admin_seed_data()
@@ -235,7 +242,6 @@ def list_tickets(status_filter="ALL"):
     clean_status = str(status_filter or "ALL").strip().upper()
     return get_cached(f"admin:tickets:{clean_status}", lambda: _load_tickets(clean_status), ttl=30.0)
 
-
 def _clean_ticket_attachments(attachments, user_id):
     clean = []
     for idx, item in enumerate(attachments or []):
@@ -251,7 +257,6 @@ def _clean_ticket_attachments(attachments, user_id):
                 clean.append(url)
     return clean[:3]
 
-
 def create_ticket_record(user_id, user_name, role, subject, message, attachments=None):
     clean_subject, clean_message = str(subject or "").strip(), str(message or "").strip()
     if not clean_subject or not clean_message:
@@ -263,7 +268,6 @@ def create_ticket_record(user_id, user_name, role, subject, message, attachments
     _audit("TICKETS", "CREATE_TICKET", f"Support ticket {doc['ticket_id']} submitted by {doc['user_name']}: {clean_subject}", "WARNING", actor=doc["user_name"])
     invalidate_cache()
     return doc, None
-
 
 def toggle_ticket_status(ticket_id, actor_name="System Admin"):
     col = support_tickets_col()
@@ -279,7 +283,6 @@ def toggle_ticket_status(ticket_id, actor_name="System Admin"):
     invalidate_cache()
     return new_status, None
 
-
 def delete_ticket_record(ticket_id, actor_name="System Admin"):
     clean_tid = str(ticket_id or "").strip()
     if support_tickets_col().delete_one({"ticket_id": clean_tid}).deleted_count:
@@ -287,7 +290,6 @@ def delete_ticket_record(ticket_id, actor_name="System Admin"):
         invalidate_cache()
         return True, None
     return False, "Support ticket not found."
-
 
 def mark_notifications_read(user_doc):
     user = user_doc if isinstance(user_doc, dict) else {}
@@ -301,10 +303,8 @@ def mark_notifications_read(user_doc):
     invalidate_cache()
     return modified
 
-
 def _action(label, icon, onclick, title, attrs, variant="default"):
     return {"label": label, "icon": icon, "variant": variant, "title": title, "onclick": onclick, "attrs": attrs}
-
 
 def build_user_table_data(users, filter_role, actor_user_id, actor_email=""):
     headers, role_status_map = ["User ID", "Full Name", "Email", "Role", "Department", "Status", "Actions"], {"ADMIN": "info", "ANALYST": "info", "TEACHER": "warning", "STUDENT": "success"}
@@ -312,7 +312,7 @@ def build_user_table_data(users, filter_role, actor_user_id, actor_email=""):
     for u in users:
         uid = u["user_id"]
         is_self = (actor_user_id and uid == actor_user_id) or (clean_actor_email and u["email"].strip().lower() == clean_actor_email)
-        edit_attrs = {"data-user-id": uid, "data-full-name": u["full_name"], "data-email": u["email"], "data-role": u["role"], "data-department": u["department"], "data-batch": u["batch"], "data-filter-role": filter_role, **({"data-is-self": "true"} if is_self else {})}
+        edit_attrs = {"data-user-id": uid, "data-full-name": u["full_name"], "data-email": u["email"], "data-role": u["role"], "data-department": u["department"], "data-batch": u["batch"], "data-program-level": u.get("program_level", ""), "data-filter-role": filter_role, **({"data-is-self": "true"} if is_self else {})}
         actions = [_action("Edit", "fa-solid fa-pen-to-square", "openEditUserModal(this)", f"Edit {u['full_name']}", edit_attrs)]
         if not is_self:
             lbl, ico = ("Deactivate", "fa-solid fa-user-slash") if u["is_active"] else ("Activate", "fa-solid fa-user-check")
@@ -321,14 +321,13 @@ def build_user_table_data(users, filter_role, actor_user_id, actor_email=""):
         rows.append([uid, display_name, u["email"], {"text": u["role"], "status": role_status_map.get(u["role"], "info")}, u["department"], {"text": "Active" if u["is_active"] else "Inactive", "status": "success" if u["is_active"] else "danger"}, {"actions": actions}])
     return headers, rows
 
-
 def build_course_table_data(courses, filter_dept):
     headers, rows = ["Code", "Course Title", "Department", "Batch", "Instructor", "Enrolled", "Status", "Actions"], []
     for c in courses:
-        actions = [_action("Edit", "fa-solid fa-pen-to-square", "openEditCourseModal(this)", f"Edit {c['course_code']}", {"data-course-code": c["course_code"], "data-title": c["title"], "data-department": c["department"], "data-batch": c["batch"], "data-instructor": c["instructor"], "data-credits": str(c["credits"]), "data-capacity": str(c["capacity"]), "data-status": c["status"], "data-filter-dept": filter_dept}), _action("Delete", "fa-solid fa-trash", "openDeleteCourseModal(this)", f"Delete {c['course_code']}", {"data-course-code": c["course_code"], "data-title": c["title"], "data-filter-dept": filter_dept}, variant="danger")]
-        rows.append([c["course_code"], c["title"], c["department"], c["batch"], c["instructor"], f"{c['enrolled_count']} / {c['capacity']} ({c['fill_pct']}%)", {"text": c["status"], "status": "success" if c["status"] == "ACTIVE" else "warning"}, {"actions": actions}])
+        actions = [_action("Edit", "fa-solid fa-pen-to-square", "openEditCourseModal(this)", f"Edit {c['course_code']}", {"data-course-code": c["course_code"], "data-title": c["title"], "data-department": c["department"], "data-batch": c["batch"], "data-program-level": c.get("program_level", ""), "data-instructor": c["instructor"], "data-instructor-id": c.get("instructor_id", ""), "data-instructor-email": c.get("instructor_email", ""), "data-credits": str(c["credits"]), "data-capacity": str(c["capacity"]), "data-status": c["status"], "data-filter-dept": filter_dept}), _action("Delete", "fa-solid fa-trash", "openDeleteCourseModal(this)", f"Delete {c['course_code']}", {"data-course-code": c["course_code"], "data-title": c["title"], "data-filter-dept": filter_dept}, variant="danger")]
+        batch_cell = f"{c['batch']} ({c['program_level']})" if c.get("program_level") else c["batch"]
+        rows.append([c["course_code"], c["title"], c["department"], batch_cell, c["instructor"], f"{c['enrolled_count']} / {c['capacity']} ({c['fill_pct']}%)", {"text": c["status"], "status": "success" if c["status"] == "ACTIVE" else "warning"}, {"actions": actions}])
     return headers, rows
-
 
 def build_ticket_table_data(tickets, filter_status):
     headers, rows = ["Ticket ID", "User", "Role", "Subject", "Status", "Date", "Actions"], []
