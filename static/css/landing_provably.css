@@ -11,6 +11,10 @@
   --cv-mx: 50%;
   --cv-my: 35%;
 }
+.cv-hero p,
+#feedback blockquote {
+  text-wrap: pretty;
+}
 .cv-grid {
   position: absolute;
   inset: 0;
@@ -32,11 +36,16 @@
   width: 1px;
   height: 76px;
   background: linear-gradient(to bottom, transparent, var(--accent-primary), transparent);
-  opacity: 0.45;
-  animation: cv-grid-pulse 7.5s linear infinite;
+  opacity: 0;
 }
-.cv-grid-line:nth-child(3) .cv-pulse { animation-delay: 2.2s; animation-duration: 9s; }
-.cv-grid-line:nth-child(6) .cv-pulse { animation-delay: 4.5s; animation-duration: 8.2s; }
+@media (prefers-reduced-motion: no-preference) {
+  .cv-pulse {
+    opacity: 0.45;
+    animation: cv-grid-pulse 7.5s linear infinite;
+  }
+  .cv-grid-line:nth-child(3) .cv-pulse { animation-delay: 2.2s; animation-duration: 9s; }
+  .cv-grid-line:nth-child(6) .cv-pulse { animation-delay: 4.5s; animation-duration: 8.2s; }
+}
 @keyframes cv-grid-pulse {
   0% { transform: translateY(-20%); opacity: 0; }
   15% { opacity: 0.55; }
@@ -122,10 +131,13 @@
 .cv-sweep {
   position: relative;
   overflow: hidden;
-  transition: transform 160ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
-.cv-sweep:hover { transform: translateY(-1px); }
-.cv-sweep:active { transform: translateY(0); }
+@media (prefers-reduced-motion: no-preference) {
+  .cv-sweep { transition: transform 160ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+  .cv-sweep:hover { transform: translateY(-1px); }
+  .cv-sweep:active { transform: translateY(0); }
+}
 .cv-stats-card {
   border: 1px solid var(--border-subtle);
   background-color: var(--bg-canvas);
@@ -165,20 +177,11 @@
   transition: transform 340ms cubic-bezier(0.22, 1, 0.36, 1), opacity 260ms ease, border-color 220ms ease, box-shadow 260ms ease;
 }
 .cv-cert-card:active { cursor: grabbing; }
-.cv-cert-card[data-pos="0"] {
-  z-index: 3;
-  transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-  opacity: 1;
-  box-shadow: 0 16px 32px -14px rgba(15, 23, 42, 0.22);
-}
+.cv-cert-card[data-pos="0"] { z-index: 3; transform: translate3d(0, 0, 0) rotate(0deg) scale(1); opacity: 1; box-shadow: 0 16px 32px -14px rgba(15, 23, 42, 0.22); }
 .cv-cert-card[data-pos="0"]:hover { border-color: var(--accent-primary); }
 .cv-cert-card[data-pos="1"] { z-index: 2; transform: translate3d(10px, 12px, 0) rotate(2.2deg) scale(0.96); opacity: 0.88; }
 .cv-cert-card[data-pos="2"] { z-index: 1; transform: translate3d(18px, 22px, 0) rotate(4.2deg) scale(0.92); opacity: 0.68; }
-.cv-cert-stage.is-stamped .cv-cert-stamp {
-  border-color: var(--status-success);
-  color: var(--status-success);
-  background-color: var(--bg-elevated);
-}
+.cv-cert-stage.is-stamped .cv-cert-stamp { border-color: var(--status-success); color: var(--status-success); background-color: var(--bg-elevated); }
 .cv-wax-seal {
   position: relative;
   width: 112px;
@@ -191,13 +194,7 @@
   --sx: 50%;
   --sy: 35%;
 }
-.cv-wax-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-  transition: transform 540ms cubic-bezier(0.22, 1, 0.36, 1);
-}
+.cv-wax-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 540ms cubic-bezier(0.22, 1, 0.36, 1); }
 .cv-wax-seal.is-flipped .cv-wax-inner { transform: rotateY(180deg); }
 .cv-wax-face {
   position: absolute;
@@ -222,6 +219,53 @@
   box-shadow: 0 0 0 4px var(--accent-soft), 0 10px 24px -10px rgba(37, 99, 235, 0.28);
 }
 .cv-wax-back { transform: rotateY(180deg); background: var(--bg-elevated); }
+dialog.cv-modal {
+  margin: auto;
+  width: min(28rem, calc(100vw - 2rem));
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.35);
+  overscroll-behavior: contain;
+  opacity: 0;
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.24s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+@media (prefers-reduced-motion: no-preference) {
+  dialog.cv-modal { transform: scale(0.94); }
+}
+dialog.cv-modal[open]:where(:not([data-closing])) {
+  opacity: 1;
+  @starting-style { opacity: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  dialog.cv-modal[open]:where(:not([data-closing])) {
+    transform: scale(1);
+    @starting-style { transform: scale(0.94); }
+  }
+}
+dialog.cv-modal::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background-color: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(4px);
+  transition-property: background-color, display, overlay;
+  transition-duration: 0.24s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+dialog.cv-modal[open]:where(:not([data-closing]))::backdrop {
+  background-color: rgba(15, 23, 42, 0.55);
+  @starting-style { background-color: rgba(0, 0, 0, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  dialog.cv-modal, dialog.cv-modal::backdrop { transition-duration: 0.1s; }
+  .cv-bar, .cv-cert-card, .cv-wax-inner, .cv-toggle-knob { transition-duration: 0.05s; }
+}
 .ep-globe-stage {
   position: relative;
   width: 100%;
@@ -251,20 +295,18 @@
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 4px var(--accent-soft), 0 8px 18px rgba(37, 99, 235, 0.28);
 }
-.ep-globe-pin.is-active::after {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  border-radius: 9999px;
-  border: 1.5px solid var(--accent-primary);
-  animation: ep-pin-ping 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
-  pointer-events: none;
+@media (prefers-reduced-motion: no-preference) {
+  .ep-globe-pin.is-active::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 9999px;
+    border: 1.5px solid var(--accent-primary);
+    animation: ep-pin-ping 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+    pointer-events: none;
+  }
 }
 @keyframes ep-pin-ping {
   0% { transform: scale(0.95); opacity: 0.75; }
   80%, 100% { transform: scale(1.45); opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .cv-pulse, .ep-globe-pin.is-active::after { animation: none !important; }
-  .cv-bar, .cv-cert-card, .cv-wax-inner, .cv-toggle-knob { transition: none !important; }
 }

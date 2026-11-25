@@ -1,35 +1,8 @@
 (function () {
   const CREDENTIALS = [
-    {
-      id: 'CERT-CS101-8821',
-      program: 'BS / Computer Science',
-      course: 'CS-101 · Intro to Computer Science',
-      student: 'STD-2026-001 · Amina Tariq',
-      gpa: '3.82',
-      risk: 'LOW RISK',
-      term: 'Fall 2026',
-      issuer: 'Registrar & Dr. Ayesha Khan'
-    },
-    {
-      id: 'CERT-DS301-4419',
-      program: 'BS / Data Analytics',
-      course: 'DS-301 · Applied Data Analytics',
-      student: 'STD-2026-014 · Bilal Ahmed',
-      gpa: '3.64',
-      risk: 'LOW RISK',
-      term: 'Fall 2026',
-      issuer: 'Registrar & Prof. Zain Malik'
-    },
-    {
-      id: 'CERT-SE210-1904',
-      program: 'BS / Software Engineering',
-      course: 'SE-210 · Software Engineering',
-      student: 'STD-2026-029 · Sara Noor',
-      gpa: '3.41',
-      risk: 'LOW RISK',
-      term: 'Fall 2026',
-      issuer: 'Registrar & Dr. Omar Raza'
-    }
+    { id: 'CERT-CS101-8821', program: 'BS / Computer Science', course: 'CS-101 · Intro to Computer Science', student: 'STD-2026-001 · Amina Tariq', gpa: '3.82', risk: 'LOW RISK', term: 'Fall 2026', issuer: 'Registrar & Dr. Ayesha Khan' },
+    { id: 'CERT-DS301-4419', program: 'BS / Data Analytics', course: 'DS-301 · Applied Data Analytics', student: 'STD-2026-014 · Bilal Ahmed', gpa: '3.64', risk: 'LOW RISK', term: 'Fall 2026', issuer: 'Registrar & Prof. Zain Malik' },
+    { id: 'CERT-SE210-1904', program: 'BS / Software Engineering', course: 'SE-210 · Software Engineering', student: 'STD-2026-029 · Sara Noor', gpa: '3.41', risk: 'LOW RISK', term: 'Fall 2026', issuer: 'Registrar & Dr. Omar Raza' }
   ];
 
   function initProvablyHero() {
@@ -51,10 +24,43 @@
     const hintEl = document.getElementById('cv-hero-hint');
 
     const dialog = document.getElementById('cv-credential-dialog');
-    const dlgPanel = document.getElementById('cv-credential-panel');
     const dlgClose = document.getElementById('cv-dialog-close');
     const dlgCopy = document.getElementById('cv-dialog-copy');
     const dlgVerify = document.getElementById('cv-dialog-verify');
+    let supportsDisplayTransition;
+
+    const canTransitionDisplay = () => {
+      if (supportsDisplayTransition !== undefined) return supportsDisplayTransition;
+      if (!window.CSS || !window.CSS.supports || !window.CSS.supports('transition-behavior', 'allow-discrete') || !document.body) {
+        return false;
+      }
+      const probe = document.createElement('div');
+      probe.style.cssText = 'transition: display 1s allow-discrete !important; display: block;';
+      document.body.appendChild(probe);
+      window.getComputedStyle(probe).display;
+      probe.style.display = 'none';
+      supportsDisplayTransition = window.getComputedStyle(probe).display === 'block';
+      probe.remove();
+      return supportsDisplayTransition;
+    };
+
+    const closeTopLayer = async (el) => {
+      if (!el || !el.open) return;
+      const supportsTopExit = window.CSS && window.CSS.supports && window.CSS.supports('overlay', 'auto') && canTransitionDisplay();
+      if (!supportsTopExit) {
+        el.setAttribute('data-closing', '');
+        const anims = typeof el.getAnimations === 'function' ? el.getAnimations({ subtree: true }) : [];
+        if (anims.length > 0) {
+          await Promise.race([
+            Promise.allSettled(anims.map((a) => a.finished)),
+            new Promise((r) => window.setTimeout(r, 600))
+          ]);
+        }
+        if (!el.hasAttribute('data-closing')) return;
+        el.removeAttribute('data-closing');
+      }
+      el.close();
+    };
 
     const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const targetCount = parseInt((statsCount && statsCount.getAttribute('data-target-count')) || '62', 10) || 62;
@@ -217,16 +223,12 @@
       setField('cv-dlg-term', cred.term);
       setField('cv-dlg-issuer', cred.issuer);
       if (dlgCopy) dlgCopy.textContent = 'Copy Verification ID';
-      dialog.classList.remove('hidden');
-      dialog.classList.add('flex');
-      document.body.classList.add('modal-open');
+      dialog.removeAttribute('data-closing');
+      if (!dialog.open) dialog.showModal();
     };
 
     const closeDialog = () => {
-      if (!dialog) return;
-      dialog.classList.add('hidden');
-      dialog.classList.remove('flex');
-      document.body.classList.remove('modal-open');
+      if (dialog && dialog.open) closeTopLayer(dialog);
     };
 
     if (certStack && certCards.length) {
@@ -271,21 +273,27 @@
     if (certNext) certNext.addEventListener('click', () => cycleCert(1));
 
     if (dialog) {
-      let backdropDown = false;
-      dialog.addEventListener('pointerdown', (e) => { backdropDown = e.target === dialog; });
-      dialog.addEventListener('click', (e) => { if (backdropDown && e.target === dialog) closeDialog(); backdropDown = false; });
+      dialog.addEventListener('cancel', (e) => {
+        e.preventDefault();
+        closeDialog();
+      });
+      if (!('closedBy' in HTMLDialogElement.prototype)) {
+        dialog.addEventListener('click', (e) => {
+          if (e.target !== dialog) return;
+          const r = dialog.getBoundingClientRect();
+          const inside = r.top <= e.clientY && e.clientY <= r.top + r.height && r.left <= e.clientX && e.clientX <= r.left + r.width;
+          if (!inside) closeDialog();
+        });
+      }
       if (dlgClose) dlgClose.addEventListener('click', closeDialog);
       if (dlgVerify) dlgVerify.addEventListener('click', () => setVerified(!verified, true));
       if (dlgCopy) {
         dlgCopy.addEventListener('click', () => {
           const text = activeDialogCred.id + ' · ' + activeDialogCred.course + ' · GPA ' + activeDialogCred.gpa;
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).catch(() => {});
-          }
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(() => {});
           dlgCopy.textContent = 'Copied to Clipboard';
         });
       }
-      if (dlgPanel) dlgPanel.addEventListener('click', (e) => e.stopPropagation());
     }
 
     if (waxSeal) {
@@ -310,7 +318,6 @@
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        if (dialog && !dialog.classList.contains('hidden')) closeDialog();
         if (waxSeal && waxSeal.classList.contains('is-flipped')) waxSeal.classList.remove('is-flipped');
         return;
       }
