@@ -114,7 +114,7 @@
         const active = i === hoverIdx || i === pinnedIdx;
         ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = active ? t.accentPrimary : t.borderSubtle; ctx.globalAlpha = active ? 0.8 : 0.65; ctx.lineWidth = active ? 1.4 : 1;
         ctx.beginPath(); ctx.moveTo(p.x, padT); ctx.lineTo(p.x, padT + plotH); ctx.stroke();
-        ctx.setLineDash([]); ctx.globalAlpha = 1; ctx.fillStyle = active ? t.textPrimary : t.textMuted; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(series.labels[i], p.x, padT + plotH + 7); ctx.restore();
+        ctx.setLineDash([]); ctx.globalAlpha = 1; ctx.fillStyle = active ? t.textPrimary : t.textMuted; ctx.textAlign = i === pts.length - 1 ? 'right' : (i === 0 ? 'left' : 'center'); ctx.textBaseline = 'top'; ctx.fillText(series.labels[i], p.x, padT + plotH + 7); ctx.restore();
       });
       const cutY = toY(series.minAtt);
       ctx.save(); ctx.setLineDash([5, 4]); ctx.strokeStyle = t.statusWarning; ctx.globalAlpha = 0.7; ctx.lineWidth = 1.25; ctx.beginPath(); ctx.moveTo(padL, cutY); ctx.lineTo(w - padR, cutY); ctx.stroke(); ctx.restore();
