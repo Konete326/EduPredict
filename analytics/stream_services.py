@@ -151,5 +151,14 @@ def simulate_lms_stream_tick(uploaded_by="Analyst"):
         "avg_predicted_gpa": avg_predicted_gpa, "scatter_points": scatter_points,
         "dropout_counts": {"LOW": low_cnt, "MEDIUM": med_cnt, "HIGH": high_cnt},
         "course_demand": ml_res.get("course_demand", []),
+        "dataset_log": {
+            "filename": "live_lms_stream_tick",
+            "uploaded_by": uploaded_by or "Analyst",
+            "mode": "STREAM_TICK",
+            "rows_processed": len(events),
+            "missing_values_fixed": 0,
+            "status": "COMPLETED",
+            "uploaded_at": now.strftime("%Y-%m-%d %H:%M"),
+        },
         "message": f"Streamed {len(events)} live LMS events and refreshed {preds_gen} predictions.",
     }

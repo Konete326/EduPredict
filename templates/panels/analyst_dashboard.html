@@ -301,6 +301,7 @@
           }
         }
         if (typeof window.syncStreamPredictionTable === 'function') window.syncStreamPredictionTable(data.events);
+        if (typeof window.syncStreamDatasetLogsTable === 'function' && data.dataset_log) window.syncStreamDatasetLogsTable(data.dataset_log);
         applyPredictionTipTooltips();
         if (!eventsEl) return;
         eventsEl.textContent = '';

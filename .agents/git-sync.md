@@ -61,25 +61,27 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 82 Provably Hero & Interactive Testimonial Globe"
-active_branch_merged_to_main: "main (verified release push)"
-project_phase: "Phase 82 Complete: Provably Verification-Wave Hero & Interactive 3D Testimonial Globe on Public Landing Page"
+last_updated_by_agent: "Phase 85 Live Recent Uploads Stream Log Sync Swarm"
+active_branch_merged_to_main: "feature/phase73-v18-cache-stream-logs -> main"
+project_phase: "Phase 85 Complete: Live Recent Uploads Stream Log Sync on Analyst LMS Stream Ticks"
 
 completed_modules:
-  - "Phase 1-81: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact."
-  - "Phase 84: 21st.dev Curated Themes & Per-Theme Text Contrast Tokens:"
-      - "core/theme_services.py (<= 355), static/js/theme_studio.js (<= 315), templates/components/theme_studio_modal.html (<= 250): added 6 curated 21st.dev themes (Meridian Blue, Harbor Blue, Claude Linen, Catppuccin, Respec Mint, Sage Studio) with matched accent/shell sync + per-preset text_primary, text_secondary, text_muted, and border_subtle tokens for both Light and Dark modes, plus a Text Contrast live preview card."
+  - "Phase 1-84: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact, Provably Hero & Interactive 3D Testimonial Globe."
+  - "Phase 85: Live Recent Uploads Stream Log Sync:"
+      - "analytics/stream_services.py (164 lines, 0 comments): added dataset_log dictionary (filename: live_lms_stream_tick, uploaded_by, mode: STREAM_TICK, rows_processed, missing_values_fixed: 0, status: COMPLETED, uploaded_at) to simulate_lms_stream_tick return payload."
+      - "static/js/directory_ui.js (347 lines, 0 comments): added and exported window.syncStreamDatasetLogsTable(logEntry) to live-sync #dataset-logs-table desktop row (data-row-id, cells 0..4, status badge dot/label), mobile [data-mobile-card] (data-card-id, value boxes 0..4, status badge dot/label), and refresh pagination search index."
+      - "templates/panels/analyst_dashboard.html (346 lines, 0 comments): invoked window.syncStreamDatasetLogsTable(data.dataset_log) in initLiveStreamSimulator render(data) callback."
+      - "panels/test_phase66.py (384 lines, 0 comments): refactored shared _NODE_DOM_PRELUDE and added test_phase85_live_stream_recent_uploads_log_sync."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check: all JS scripts in static/js/*.js exited 0."
-  - "Zero-comment & line-cap audit: all 5 files <= 350 lines with 0 comments."
-  - "manage.py test: Ran 136 tests (OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed."
-  - "Browser QA (1280x800 & 375x812 Light/Dark): 0 console errors, 0 CSP errors, 0 HTTP 4xx/5xx, 0px mobile overflow, Provably switch/V-key/modal/wax-seal & Testimonial Globe pins/drag/prev-next verified."
+  - "Zero-comment & line-cap audit: analytics/stream_services.py (164 lines), static/js/directory_ui.js (347 lines), templates/panels/analyst_dashboard.html (346 lines), panels/test_phase66.py (384 lines) — 0 comments."
+  - "manage.py test: all unit tests passed (OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed - System 100% Operational."
 
 active_routes_and_files:
-  - "templates/public/_base.html, templates/public/landing.html, static/css/landing_provably.css, static/js/landing_provably.js, static/js/landing_globe.js, .agents/git-sync.md"
+  - "analytics/stream_services.py (164 lines), static/js/directory_ui.js (347 lines), templates/panels/analyst_dashboard.html (346 lines), panels/test_phase66.py (384 lines), .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

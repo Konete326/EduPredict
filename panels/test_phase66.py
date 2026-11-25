@@ -17,6 +17,20 @@ from panels.pdf_services import _resolve_pdf_branding
 from panels.test_admin import _MemCol
 
 
+_NODE_DOM_PRELUDE = r"""
+const fs = require('fs'), vm = require('vm'), assert = require('assert');
+class El {
+  constructor(t, a = {}, tx = '') { this.tag = t.toLowerCase(); this.attrs = { ...a }; this.children = []; this._text = String(tx); this.parentNode = null; this.parentElement = null; this.dataset = {}; this.style = {}; this.listeners = {}; const cls = new Set((a.class || '').split(/\s+/).filter(Boolean)); this.classList = { add: (...x) => x.forEach((c) => c && cls.add(c)), remove: (...x) => x.forEach((c) => cls.delete(c)), contains: (c) => cls.has(c), toggle: (c, f) => { const on = f === undefined ? !cls.has(c) : Boolean(f); on ? cls.add(c) : cls.delete(c); return on; } }; }
+  append(...ns) { ns.forEach((n) => { n.parentNode = this; n.parentElement = this; this.children.push(n); }); } appendChild(n) { this.append(n); return n; } getAttribute(k) { return k in this.attrs ? String(this.attrs[k]) : null; } setAttribute(k, v) { this.attrs[k] = String(v); } removeAttribute(k) { delete this.attrs[k]; } hasAttribute(k) { return k in this.attrs; } addEventListener(ev, fn) { (this.listeners[ev] = this.listeners[ev] || []).push(fn); }
+  get cells() { return this.children.filter((c) => c.tag === 'td' || c.tag === 'th'); } get textContent() { return this.children.length ? this.children.map((c) => c.textContent).join('') : this._text; } set textContent(v) { this.children = []; this._text = v == null ? '' : String(v); }
+  closest(s) { for (let p = this; p; p = p.parentElement) if (s.trim().split(/\s+/).every((k) => mOne(p, k))) return p; return null; } querySelector(s) { return this.querySelectorAll(s)[0] || null; }
+  querySelectorAll(s) { const ps = s.split(',').map((x) => x.trim()).filter(Boolean), out = [], seen = new Set(); const w = (n) => n.children.forEach((c) => { if (ps.some((p) => mDesc(c, p, this)) && !seen.has(c)) { seen.add(c); out.push(c); } w(c); }); w(this); return out; }
+}
+const mOne = (el, tok) => { const re = /:not\(([^)]+)\)/g; let m; while ((m = re.exec(tok))) if (mOne(el, m[1])) return false; const b = tok.replace(re, ''), tm = b.match(/^[a-z0-9-]+/i); if (tm && el.tag !== tm[0].toLowerCase()) return false; for (const cm of b.matchAll(/\.([a-z0-9_-]+)/gi)) if (!el.classList.contains(cm[1])) return false; for (const am of b.matchAll(/\[([a-z0-9_-]+)(?:="([^"]*)")?\]/gi)) if (!(am[1] in el.attrs) || (am[2] !== undefined && String(el.attrs[am[1]]) !== am[2])) return false; return true; };
+const mDesc = (el, sel, root) => { const segs = sel.trim().split(/\s+/); if (!mOne(el, segs[segs.length - 1])) return false; let cur = el.parentElement; for (let i = segs.length - 2; i >= 0; i--) { while (cur && cur !== root && !mOne(cur, segs[i])) cur = cur.parentElement; if (!cur || (cur === root && !mOne(cur, segs[i]))) return false; cur = cur.parentElement; } return true; };
+"""
+
+
 class Phase66IntegrationTests(TestCase):
     def setUp(self):
         invalidate_cache()
@@ -181,17 +195,7 @@ class Phase66IntegrationTests(TestCase):
         self.assertIn("[data-mobile-card]", dir_js)
         self.assertIn("refreshSearchText()", dir_js)
 
-        node_script = r"""
-const fs = require('fs'), vm = require('vm'), assert = require('assert');
-class El {
-  constructor(t, a = {}, tx = '') { this.tag = t.toLowerCase(); this.attrs = { ...a }; this.children = []; this._text = String(tx); this.parentNode = null; this.parentElement = null; this.dataset = {}; this.style = {}; const cls = new Set((a.class || '').split(/\s+/).filter(Boolean)); this.classList = { add: (...x) => x.forEach((c) => c && cls.add(c)), remove: (...x) => x.forEach((c) => cls.delete(c)), contains: (c) => cls.has(c), toggle: (c, f) => { const on = f === undefined ? !cls.has(c) : Boolean(f); on ? cls.add(c) : cls.delete(c); return on; } }; }
-  append(...ns) { ns.forEach((n) => { n.parentNode = this; n.parentElement = this; this.children.push(n); }); } appendChild(n) { this.append(n); return n; } getAttribute(k) { return k in this.attrs ? String(this.attrs[k]) : null; } setAttribute(k, v) { this.attrs[k] = String(v); } removeAttribute(k) { delete this.attrs[k]; } hasAttribute(k) { return k in this.attrs; } addEventListener() {}
-  get cells() { return this.children.filter((c) => c.tag === 'td' || c.tag === 'th'); } get textContent() { return this.children.length ? this.children.map((c) => c.textContent).join('') : this._text; } set textContent(v) { this.children = []; this._text = v == null ? '' : String(v); }
-  closest(s) { for (let p = this; p; p = p.parentElement) if (s.trim().split(/\s+/).every((k) => mOne(p, k))) return p; return null; } querySelector(s) { return this.querySelectorAll(s)[0] || null; }
-  querySelectorAll(s) { const ps = s.split(',').map((x) => x.trim()).filter(Boolean), out = [], seen = new Set(); const w = (n) => n.children.forEach((c) => { if (ps.some((p) => mDesc(c, p, this)) && !seen.has(c)) { seen.add(c); out.push(c); } w(c); }); w(this); return out; }
-}
-const mOne = (el, tok) => { const re = /:not\(([^)]+)\)/g; let m; while ((m = re.exec(tok))) if (mOne(el, m[1])) return false; const b = tok.replace(re, ''), tm = b.match(/^[a-z0-9-]+/i); if (tm && el.tag !== tm[0].toLowerCase()) return false; for (const cm of b.matchAll(/\.([a-z0-9_-]+)/gi)) if (!el.classList.contains(cm[1])) return false; for (const am of b.matchAll(/\[([a-z0-9_-]+)(?:="([^"]*)")?\]/gi)) if (!(am[1] in el.attrs) || (am[2] !== undefined && String(el.attrs[am[1]]) !== am[2])) return false; return true; };
-const mDesc = (el, sel, root) => { const segs = sel.trim().split(/\s+/); if (!mOne(el, segs[segs.length - 1])) return false; let cur = el.parentElement; for (let i = segs.length - 2; i >= 0; i--) { while (cur && cur !== root && !mOne(cur, segs[i])) cur = cur.parentElement; if (!cur || (cur === root && !mOne(cur, segs[i]))) return false; cur = cur.parentElement; } return true; };
+        node_script = _NODE_DOM_PRELUDE + r"""
 const root = new El('html'), body = new El('body'), box = new El('div', { 'data-paginated-container': '', 'data-page-size': '5' }), tbl = new El('table', { id: 'analyst-predictions-table' }), tbody = new El('tbody'); root.append(body);
 const mkB = (t) => { const p = new El('span', { class: 'inline-flex' }); p.append(new El('span', { class: 'rounded-full bg-[var(--status-success)]' }), new El('span', {}, t)); return p; };
 const mkR = (s, r, a, tip) => { const tr = new El('tr', { 'data-page-item': '' }); [s, 'N', '2026-A', 'CS-101', '88.0%', '3.20', '3.10'].forEach((v) => tr.append(new El('td', {}, v))); const rT = new El('td'), aT = new El('td'); rT.append(mkB(r)); aT.append(mkB(a)); tr.append(rT, aT, new El('td', {}, tip)); return tr; };
@@ -230,17 +234,7 @@ box._paginationController.applySearch('urgent lab check'); assert.ok(!tr1.classL
         self.assertIn("cardMap", dir_js)
         self.assertIn("cardMap.get(sid)", dir_js)
 
-        node_script = r"""
-const fs = require('fs'), vm = require('vm'), assert = require('assert');
-class El {
-  constructor(t, a = {}, tx = '') { this.tag = t.toLowerCase(); this.attrs = { ...a }; this.children = []; this._text = String(tx); this.parentNode = null; this.parentElement = null; this.dataset = {}; this.style = {}; const cls = new Set((a.class || '').split(/\s+/).filter(Boolean)); this.classList = { add: (...x) => x.forEach((c) => c && cls.add(c)), remove: (...x) => x.forEach((c) => cls.delete(c)), contains: (c) => cls.has(c), toggle: (c, f) => { const on = f === undefined ? !cls.has(c) : Boolean(f); on ? cls.add(c) : cls.delete(c); return on; } }; }
-  append(...ns) { ns.forEach((n) => { n.parentNode = this; n.parentElement = this; this.children.push(n); }); } appendChild(n) { this.append(n); return n; } getAttribute(k) { return k in this.attrs ? String(this.attrs[k]) : null; } setAttribute(k, v) { this.attrs[k] = String(v); } removeAttribute(k) { delete this.attrs[k]; } hasAttribute(k) { return k in this.attrs; } addEventListener() {}
-  get cells() { return this.children.filter((c) => c.tag === 'td' || c.tag === 'th'); } get textContent() { return this.children.length ? this.children.map((c) => c.textContent).join('') : this._text; } set textContent(v) { this.children = []; this._text = v == null ? '' : String(v); }
-  closest(s) { for (let p = this; p; p = p.parentElement) if (s.trim().split(/\s+/).every((k) => mOne(p, k))) return p; return null; } querySelector(s) { return this.querySelectorAll(s)[0] || null; }
-  querySelectorAll(s) { const ps = s.split(',').map((x) => x.trim()).filter(Boolean), out = [], seen = new Set(); const w = (n) => n.children.forEach((c) => { if (ps.some((p) => mDesc(c, p, this)) && !seen.has(c)) { seen.add(c); out.push(c); } w(c); }); w(this); return out; }
-}
-const mOne = (el, tok) => { const re = /:not\(([^)]+)\)/g; let m; while ((m = re.exec(tok))) if (mOne(el, m[1])) return false; const b = tok.replace(re, ''), tm = b.match(/^[a-z0-9-]+/i); if (tm && el.tag !== tm[0].toLowerCase()) return false; for (const cm of b.matchAll(/\.([a-z0-9_-]+)/gi)) if (!el.classList.contains(cm[1])) return false; for (const am of b.matchAll(/\[([a-z0-9_-]+)(?:="([^"]*)")?\]/gi)) if (!(am[1] in el.attrs) || (am[2] !== undefined && String(el.attrs[am[1]]) !== am[2])) return false; return true; };
-const mDesc = (el, sel, root) => { const segs = sel.trim().split(/\s+/); if (!mOne(el, segs[segs.length - 1])) return false; let cur = el.parentElement; for (let i = segs.length - 2; i >= 0; i--) { while (cur && cur !== root && !mOne(cur, segs[i])) cur = cur.parentElement; if (!cur || (cur === root && !mOne(cur, segs[i]))) return false; cur = cur.parentElement; } return true; };
+        node_script = _NODE_DOM_PRELUDE + r"""
 const root = new El('html'), body = new El('body'), box = new El('div', { 'data-paginated-container': '', 'data-page-size': '5' }), tbl = new El('table', { id: 'analyst-predictions-table' }), tbody = new El('tbody'); root.append(body);
 const mkB = (t) => { const p = new El('span', { class: 'inline-flex' }); p.append(new El('span', { class: 'rounded-full bg-[var(--status-success)]' }), new El('span', {}, t)); return p; };
 const mkR = (s, r, a, tip) => { const tr = new El('tr', { 'data-page-item': '' }); [s, 'N', '2026-A', 'CS-101', '88.0%', '3.20', '3.10'].forEach((v) => tr.append(new El('td', {}, v))); const rT = new El('td'), aT = new El('td'); rT.append(mkB(r)); aT.append(mkB(a)); tr.append(rT, aT, new El('td', {}, tip)); return tr; };
@@ -293,17 +287,7 @@ assert.ok(c2.children[7].querySelector('span.rounded-full').classList.contains('
         analyst_html = analyst.get(reverse("panels:analyst_dashboard")).content.decode("utf-8")
         card_ids = re.findall(r'data-mobile-card[^>]*data-card-id="(STD-[^"]+)"', analyst_html)
         self.assertTrue(len(card_ids) > 0)
-        node_script = r"""
-const fs = require('fs'), vm = require('vm'), assert = require('assert');
-class El {
-  constructor(t, a = {}, tx = '') { this.tag = t.toLowerCase(); this.attrs = { ...a }; this.children = []; this._text = String(tx); this.parentNode = null; this.parentElement = null; this.dataset = {}; this.style = {}; const cls = new Set((a.class || '').split(/\s+/).filter(Boolean)); this.classList = { add: (...x) => x.forEach((c) => c && cls.add(c)), remove: (...x) => x.forEach((c) => cls.delete(c)), contains: (c) => cls.has(c), toggle: (c, f) => { const on = f === undefined ? !cls.has(c) : Boolean(f); on ? cls.add(c) : cls.delete(c); return on; } }; }
-  append(...ns) { ns.forEach((n) => { n.parentNode = this; n.parentElement = this; this.children.push(n); }); } appendChild(n) { this.append(n); return n; } getAttribute(k) { return k in this.attrs ? String(this.attrs[k]) : null; } setAttribute(k, v) { this.attrs[k] = String(v); } removeAttribute(k) { delete this.attrs[k]; } hasAttribute(k) { return k in this.attrs; } addEventListener() {}
-  get cells() { return this.children.filter((c) => c.tag === 'td' || c.tag === 'th'); } get textContent() { return this.children.length ? this.children.map((c) => c.textContent).join('') : this._text; } set textContent(v) { this.children = []; this._text = v == null ? '' : String(v); }
-  closest(s) { for (let p = this; p; p = p.parentElement) if (s.trim().split(/\s+/).every((k) => mOne(p, k))) return p; return null; } querySelector(s) { return this.querySelectorAll(s)[0] || null; }
-  querySelectorAll(s) { const ps = s.split(',').map((x) => x.trim()).filter(Boolean), out = [], seen = new Set(); const w = (n) => n.children.forEach((c) => { if (ps.some((p) => mDesc(c, p, this)) && !seen.has(c)) { seen.add(c); out.push(c); } w(c); }); w(this); return out; }
-}
-const mOne = (el, tok) => { const re = /:not\(([^)]+)\)/g; let m; while ((m = re.exec(tok))) if (mOne(el, m[1])) return false; const b = tok.replace(re, ''), tm = b.match(/^[a-z0-9-]+/i); if (tm && el.tag !== tm[0].toLowerCase()) return false; for (const cm of b.matchAll(/\.([a-z0-9_-]+)/gi)) if (!el.classList.contains(cm[1])) return false; for (const am of b.matchAll(/\[([a-z0-9_-]+)(?:="([^"]*)")?\]/gi)) if (!(am[1] in el.attrs) || (am[2] !== undefined && String(el.attrs[am[1]]) !== am[2])) return false; return true; };
-const mDesc = (el, sel, root) => { const segs = sel.trim().split(/\s+/); if (!mOne(el, segs[segs.length - 1])) return false; let cur = el.parentElement; for (let i = segs.length - 2; i >= 0; i--) { while (cur && cur !== root && !mOne(cur, segs[i])) cur = cur.parentElement; if (!cur || (cur === root && !mOne(cur, segs[i]))) return false; cur = cur.parentElement; } return true; };
+        node_script = _NODE_DOM_PRELUDE + r"""
 const root = new El('html'), body = new El('body'), box = new El('div', { 'data-paginated-container': '', 'data-page-size': '5' }), tbl = new El('table', { id: 'analyst-predictions-table' }), tbody = new El('tbody'); root.append(body);
 const mkB = (t) => { const p = new El('span', { class: 'inline-flex' }); p.append(new El('span', { class: 'rounded-full bg-[var(--status-success)]' }), new El('span', {}, t)); return p; };
 const mkR = (s, r, a, tip) => { const tr = new El('tr', { 'data-page-item': '' }); [s, 'N', '2026-A', 'CS-101', '88.0%', '3.20', '3.10'].forEach((v) => tr.append(new El('td', {}, v))); const rT = new El('td'), aT = new El('td'); rT.append(mkB(r)); aT.append(mkB(a)); tr.append(rT, aT, new El('td', {}, tip)); return tr; };
@@ -341,17 +325,7 @@ win.syncStreamPredictionTable([{ student_id: 'STD-1', attendance_pct: 61.5, pred
         row_ids = re.findall(r'<tr\s+data-page-item[^>]*data-row-id="(STD-[^"]+)"', analyst_html)
         self.assertTrue(len(row_ids) > 0)
 
-        node_script = r"""
-const fs = require('fs'), vm = require('vm'), assert = require('assert');
-class El {
-  constructor(t, a = {}, tx = '') { this.tag = t.toLowerCase(); this.attrs = { ...a }; this.children = []; this._text = String(tx); this.parentNode = null; this.parentElement = null; this.dataset = {}; this.style = {}; this.listeners = {}; const cls = new Set((a.class || '').split(/\s+/).filter(Boolean)); this.classList = { add: (...x) => x.forEach((c) => c && cls.add(c)), remove: (...x) => x.forEach((c) => cls.delete(c)), contains: (c) => cls.has(c), toggle: (c, f) => { const on = f === undefined ? !cls.has(c) : Boolean(f); on ? cls.add(c) : cls.delete(c); return on; } }; }
-  append(...ns) { ns.forEach((n) => { n.parentNode = this; n.parentElement = this; this.children.push(n); }); } appendChild(n) { this.append(n); return n; } getAttribute(k) { return k in this.attrs ? String(this.attrs[k]) : null; } setAttribute(k, v) { this.attrs[k] = String(v); } removeAttribute(k) { delete this.attrs[k]; } hasAttribute(k) { return k in this.attrs; } addEventListener(ev, fn) { (this.listeners[ev] = this.listeners[ev] || []).push(fn); }
-  get cells() { return this.children.filter((c) => c.tag === 'td' || c.tag === 'th'); } get textContent() { return this.children.length ? this.children.map((c) => c.textContent).join('') : this._text; } set textContent(v) { this.children = []; this._text = v == null ? '' : String(v); }
-  closest(s) { for (let p = this; p; p = p.parentElement) if (s.trim().split(/\s+/).every((k) => mOne(p, k))) return p; return null; } querySelector(s) { return this.querySelectorAll(s)[0] || null; }
-  querySelectorAll(s) { const ps = s.split(',').map((x) => x.trim()).filter(Boolean), out = [], seen = new Set(); const w = (n) => n.children.forEach((c) => { if (ps.some((p) => mDesc(c, p, this)) && !seen.has(c)) { seen.add(c); out.push(c); } w(c); }); w(this); return out; }
-}
-const mOne = (el, tok) => { const re = /:not\(([^)]+)\)/g; let m; while ((m = re.exec(tok))) if (mOne(el, m[1])) return false; const b = tok.replace(re, ''), tm = b.match(/^[a-z0-9-]+/i); if (tm && el.tag !== tm[0].toLowerCase()) return false; for (const cm of b.matchAll(/\.([a-z0-9_-]+)/gi)) if (!el.classList.contains(cm[1])) return false; for (const am of b.matchAll(/\[([a-z0-9_-]+)(?:="([^"]*)")?\]/gi)) if (!(am[1] in el.attrs) || (am[2] !== undefined && String(el.attrs[am[1]]) !== am[2])) return false; return true; };
-const mDesc = (el, sel, root) => { const segs = sel.trim().split(/\s+/); if (!mOne(el, segs[segs.length - 1])) return false; let cur = el.parentElement; for (let i = segs.length - 2; i >= 0; i--) { while (cur && cur !== root && !mOne(cur, segs[i])) cur = cur.parentElement; if (!cur || (cur === root && !mOne(cur, segs[i]))) return false; cur = cur.parentElement; } return true; };
+        node_script = _NODE_DOM_PRELUDE + r"""
 const root = new El('html'), body = new El('body'), box = new El('div', { 'data-paginated-container': '', 'data-page-size': '5' }), tbl = new El('table', { id: 'analyst-predictions-table' }), tbody = new El('tbody'); root.append(body);
 const mkB = (t) => { const p = new El('span', { class: 'inline-flex' }); p.append(new El('span', { class: 'rounded-full bg-[var(--status-success)]' }), new El('span', {}, t)); return p; };
 const mkR = (rid, cellTxt, r, a, tip) => { const tr = new El('tr', { 'data-page-item': '', 'data-row-id': rid }); [cellTxt, 'N', '2026-A', 'CS-101', '88.0%', '3.20', '3.10'].forEach((v) => tr.append(new El('td', {}, v))); const rT = new El('td'), aT = new El('td'); rT.append(mkB(r)); aT.append(mkB(a)); tr.append(rT, aT, new El('td', {}, tip)); return tr; };
@@ -374,4 +348,37 @@ assert.strictEqual(c1.children[9].querySelector('div.text-right').textContent, '
 """
         proc2 = subprocess.run(["node", "-e", node_script, str(base_dir / "static" / "js" / "app.js"), str(base_dir / "static" / "js" / "directory_ui.js")], capture_output=True, text=True, check=False)
         self.assertEqual(proc2.returncode, 0, msg=proc2.stderr or proc2.stdout)
+
+    def test_phase85_live_stream_recent_uploads_log_sync(self):
+        base_dir = Path(settings.BASE_DIR)
+        analyst = self._login_analyst()
+        resp = analyst.post(reverse("analytics:stream_tick"))
+        self.assertEqual(resp.status_code, 200)
+        dlog = resp.json().get("dataset_log")
+        self.assertIsInstance(dlog, dict)
+        self.assertEqual(dlog.get("filename"), "live_lms_stream_tick")
+        self.assertEqual(dlog.get("status"), "COMPLETED")
+        self.assertEqual(dlog.get("missing_values_fixed"), 0)
+        self.assertEqual(dlog.get("rows_processed"), resp.json().get("events_pushed"))
+        self.assertRegex(str(dlog.get("uploaded_at") or ""), r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$")
+        html = analyst.get(reverse("panels:analyst_dashboard")).content.decode("utf-8")
+        self.assertIn("window.syncStreamDatasetLogsTable(data.dataset_log)", html)
+        node_script = _NODE_DOM_PRELUDE + r"""
+const root = new El('html'), body = new El('body'), box = new El('div', { 'data-paginated-container': '', 'data-page-size': '5' }), tbl = new El('table', { id: 'dataset-logs-table' }), tbody = new El('tbody'); root.append(body);
+const mkB = (t) => { const p = new El('span', { class: 'inline-flex' }); p.append(new El('span', { class: 'rounded-full bg-[var(--status-danger)]' }), new El('span', {}, t)); return p; };
+const tr1 = new El('tr', { 'data-page-item': '', 'data-row-id': 'old.csv' }); ['old.csv', '60', '2'].forEach((v) => tr1.append(new El('td', {}, v))); const sTd = new El('td'); sTd.append(mkB('PENDING')); tr1.append(sTd, new El('td', {}, '2026-11-20 08:00'));
+const c1 = new El('div', { 'data-mobile-card': '', 'data-page-item': '', 'data-card-id': 'old.csv' }); ['old.csv', '60', '2', { b: 'PENDING' }, '2026-11-20 08:00'].forEach((v) => { const rw = new El('div', { class: 'flex' }), bx = new El('div', { class: 'min-w-0 text-right' }); if (v && v.b) bx.append(mkB(v.b)); else bx.textContent = v; rw.append(new El('span', {}, 'L'), bx); c1.append(rw); });
+tbody.append(tr1); tbl.append(tbody); box.append(tbl, c1); body.append(box);
+const findId = (n, id) => { if (n.attrs.id === id) return n; for (const c of n.children) { const f = findId(c, id); if (f) return f; } return null; };
+const doc = { readyState: 'complete', cookie: '', documentElement: root, body, createElement: (t) => new El(t), addEventListener: () => {}, getElementById: (id) => findId(root, id), querySelector: (s) => root.querySelector(s), querySelectorAll: (s) => root.querySelectorAll(s) };
+const win = { innerWidth: 1280, addEventListener: () => {}, dispatchEvent: () => {}, setTimeout: () => 0, clearTimeout: () => {}, setInterval: () => 0, clearInterval: () => {}, requestAnimationFrame: (f) => f(), localStorage: { getItem: () => null, setItem: () => {} }, Event: function (t) { this.type = t; }, CustomEvent: function (t, d) { this.type = t; this.detail = d; }, document: doc }; win.window = win;
+const ctx = vm.createContext({ ...win, window: win, document: doc, console }); vm.runInContext(fs.readFileSync(process.argv[1], 'utf8'), ctx); vm.runInContext(fs.readFileSync(process.argv[2], 'utf8'), ctx);
+win.syncStreamDatasetLogsTable({ filename: 'live_lms_stream_tick', rows_processed: 3, missing_values_fixed: 0, status: 'COMPLETED', uploaded_at: '2026-11-25 14:05' });
+assert.strictEqual(tr1.getAttribute('data-row-id'), 'live_lms_stream_tick'); assert.strictEqual(c1.getAttribute('data-card-id'), 'live_lms_stream_tick');
+['live_lms_stream_tick', '3', '0', 'COMPLETED', '2026-11-25 14:05'].forEach((exp, k) => { assert.strictEqual(tr1.cells[k].textContent, exp); assert.strictEqual(c1.children[k].querySelector('div.text-right').textContent, exp); });
+box._paginationController.applySearch('live_lms_stream_tick'); assert.ok(!tr1.classList.contains('hidden') && !c1.classList.contains('hidden'));
+"""
+        proc = subprocess.run(["node", "-e", node_script, str(base_dir / "static" / "js" / "app.js"), str(base_dir / "static" / "js" / "directory_ui.js")], capture_output=True, text=True, check=False)
+        self.assertEqual(proc.returncode, 0, msg=proc.stderr or proc.stdout)
+
 

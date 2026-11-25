@@ -307,6 +307,17 @@
     if (container && container._paginationController && typeof container._paginationController.refreshSearchText === 'function') container._paginationController.refreshSearchText();
   }
 
+  function syncStreamDatasetLogsTable(logEntry) {
+    const table = byId('dataset-logs-table');
+    if (!table || !logEntry || typeof logEntry !== 'object') return;
+    const fname = String(logEntry.filename || 'live_lms_stream_tick'), rowsCnt = String(logEntry.rows_processed != null ? logEntry.rows_processed : 0), fixedCnt = String(logEntry.missing_values_fixed != null ? logEntry.missing_values_fixed : 0), statusText = String(logEntry.status || 'COMPLETED').toUpperCase(), dateText = String(logEntry.uploaded_at || '-');
+    const dotCls = statusText === 'COMPLETED' ? 'bg-[var(--status-success)]' : 'bg-[var(--status-danger)]', firstTr = table.querySelector('tbody tr:not([data-empty-row])');
+    if (firstTr && firstTr.cells.length >= 5) { if (firstTr.setAttribute) firstTr.setAttribute('data-row-id', fname); firstTr.cells[0].textContent = fname; firstTr.cells[1].textContent = rowsCnt; firstTr.cells[2].textContent = fixedCnt; updateStreamCellBadge(firstTr.cells[3], dotCls, statusText); firstTr.cells[4].textContent = dateText; }
+    const container = table.closest ? table.closest('[data-paginated-container]') : null, firstCard = container ? container.querySelector('[data-mobile-card][data-page-item]') : null;
+    if (firstCard && firstCard.children.length >= 5) { if (firstCard.setAttribute) firstCard.setAttribute('data-card-id', fname); const valBox = (k) => { const row = firstCard.children[k]; return row ? ((row.querySelector ? row.querySelector('div.text-right') : null) || (row.children ? row.children[1] : null)) : null; }; if (valBox(0)) valBox(0).textContent = fname; if (valBox(1)) valBox(1).textContent = rowsCnt; if (valBox(2)) valBox(2).textContent = fixedCnt; updateStreamCellBadge(valBox(3), dotCls, statusText); if (valBox(4)) valBox(4).textContent = dateText; }
+    if (container && container._paginationController && typeof container._paginationController.refreshSearchText === 'function') container._paginationController.refreshSearchText();
+  }
+
   function initDirectoryUI() {
     bindGlobalsOnce();
     document.querySelectorAll('[data-directory-cards]').forEach((container) => {
@@ -330,7 +341,7 @@
     window.reinitEduPredictUI = wrapped;
   }
 
-  Object.assign(window, { initDirectoryUI, setDirectoryView, openStudent360Drawer, closeStudent360Drawer, copyTextToClipboard, syncStreamPredictionTable });
+  Object.assign(window, { initDirectoryUI, setDirectoryView, openStudent360Drawer, closeStudent360Drawer, copyTextToClipboard, syncStreamPredictionTable, syncStreamDatasetLogsTable });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDirectoryUI);
   else initDirectoryUI();
 })();
