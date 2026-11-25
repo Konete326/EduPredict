@@ -50,6 +50,19 @@ def _fetch_unread_notifications(current_user, active_role):
     return get_cached(f"notifs:{user_id}:{student_id}:{role_key}", 20.0, _loader)
 
 
+def _user_initials(current_user):
+    if not isinstance(current_user, dict):
+        return "EP"
+    name = str(current_user.get("full_name") or "").strip()
+    parts = [p for p in name.split() if p]
+    if len(parts) >= 2:
+        return f"{parts[0][0]}{parts[-1][0]}".upper()
+    if len(parts) == 1:
+        return parts[0][:2].upper()
+    email = str(current_user.get("email") or "EP").strip()
+    return email[:2].upper()
+
+
 def global_context(request):
     session = getattr(request, "session", None)
     raw_user = session.get("user") if session is not None else None
@@ -77,6 +90,7 @@ def global_context(request):
     inst_name, term_name = _resolve_global_branding(db_connected)
     return {
         "current_user": current_user,
+        "user_initials": _user_initials(current_user),
         "active_role": active_role,
         "unread_notifications": unread_notifications,
         "unread_notifications_count": unread_notifications_count,

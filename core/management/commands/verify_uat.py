@@ -5,7 +5,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.test import Client
 from django.urls import reverse
-from core.db import support_tickets_col, users_col
+from core.db import notifications_col, support_tickets_col, users_col
 
 
 class Command(BaseCommand):
@@ -72,7 +72,7 @@ class Command(BaseCommand):
                 "department": "Administration",
                 "batch": "ALL",
                 "phone": "03001234567",
-                "bio": "UAT Verified Admin",
+                "bio": "Academic Portal Administrator",
             },
         )
         if prof_resp.status_code not in (200, 302):
@@ -180,6 +180,8 @@ class Command(BaseCommand):
         if not updated_tkt or updated_tkt.get("status") != "RESOLVED":
             raise CommandError("Support ticket status was not updated to RESOLVED")
         support_tickets_col().delete_one({"ticket_id": tkt_id})
+        notifications_col().delete_many({"ticket_id": tkt_id})
+        notifications_col().delete_many({"message": {"$regex": "Simulated UAT message"}})
         theme_get = student_client.get(reverse("panels:theme_preferences"))
         if theme_get.status_code != 200 or not theme_get.json().get("ok"):
             raise CommandError(f"Theme preferences GET failed with status {theme_get.status_code}")

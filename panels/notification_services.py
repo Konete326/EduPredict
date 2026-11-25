@@ -190,11 +190,14 @@ def list_notifications_history(current_user, filter_tab="ALL"):
 
         entries.sort(key=lambda pair: pair[0], reverse=True)
         all_items = [pair[1] for pair in entries[:80]]
+        total_unread_db = int(notifications_col().count_documents({"is_read": False, "$or": targets}))
+        total_read_db = int(notifications_col().count_documents({"is_read": True, "$or": targets}))
+        total_replies = sum(1 for it in all_items if it["category"] == "FEEDBACK_REPLY" or bool(it["reply_text"]))
         counts = {
-            "ALL": len(all_items),
-            "UNREAD": sum(1 for it in all_items if not it["is_read"]),
-            "READ": sum(1 for it in all_items if it["is_read"]),
-            "REPLIES": sum(1 for it in all_items if it["category"] == "FEEDBACK_REPLY" or bool(it["reply_text"])),
+            "ALL": max(len(all_items), total_unread_db + total_read_db),
+            "UNREAD": total_unread_db,
+            "READ": max(sum(1 for it in all_items if it["is_read"]), total_read_db),
+            "REPLIES": total_replies,
         }
         if tab == "UNREAD":
             filtered = [it for it in all_items if not it["is_read"]]

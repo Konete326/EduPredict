@@ -23,7 +23,7 @@
         {% for row in rows %}
         <tr data-page-item{% if row %} data-row-id="{% if row.0.text is not None %}{{ row.0.text }}{% else %}{{ row.0 }}{% endif %}"{% endif %} class="transition-colors hover:bg-[var(--bg-elevated)]">
           {% for cell in row %}
-          <td class="px-3.5 py-2.5 align-middle text-[var(--text-primary)] {% if cell.actions %}whitespace-nowrap{% else %}break-words max-w-[18rem]{% endif %}">
+          <td class="px-3.5 py-2.5 align-middle text-[var(--text-primary)] {% if cell.actions or forloop.first %}whitespace-nowrap{% else %}break-words max-w-[18rem]{% endif %}">
             {% if cell.status and cell.text is not None %}
             <span class="inline-flex whitespace-nowrap items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
               <span class="h-1.5 w-1.5 rounded-full {% if cell.status == 'success' %}bg-[var(--status-success)]{% elif cell.status == 'warning' %}bg-[var(--status-warning)]{% elif cell.status == 'danger' or cell.status == 'error' %}bg-[var(--status-danger)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span>
