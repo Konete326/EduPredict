@@ -308,7 +308,7 @@
         (Array.isArray(data.events) ? data.events : []).forEach((ev) => {
           const sid = String(ev.student_id || 'Student'), risk = String(ev.risk_level || 'UPDATED').toUpperCase(), attVal = ev.attendance_pct != null ? ev.attendance_pct : ev.attendance;
           const chip = document.createElement('button'), dot = document.createElement('span'), txt = document.createElement('span');
-          chip.type = 'button'; chip.className = 'inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-[11px] font-mono text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors';
+          chip.type = 'button'; chip.title = 'Open Student 360 summary'; chip.setAttribute('aria-label', 'Open Student 360 summary for ' + sid); chip.className = 'inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-[11px] font-mono text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors';
           dot.className = 'h-1.5 w-1.5 rounded-full ' + (risk === 'HIGH' ? 'bg-[var(--status-danger)]' : (risk === 'MEDIUM' ? 'bg-[var(--status-warning)]' : (risk === 'LOW' ? 'bg-[var(--status-success)]' : 'bg-[var(--accent-primary)]')));
           txt.textContent = sid + ' · ' + risk + (attVal != null ? ' · ' + Number(attVal).toFixed(1) + '%' : '');
           chip.append(dot, txt);

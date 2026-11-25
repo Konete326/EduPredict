@@ -61,27 +61,26 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 87 Live Tip Tooltip & Count Badge Sync Swarm"
-active_branch_merged_to_main: "feature/phase87-tip-tooltip-count-badge -> main"
-project_phase: "Phase 87 Complete: Live Stream Prediction Tip Tooltip Refresh & Recent Uploads Item Count Badge Sync"
+last_updated_by_agent: "Phase 88 Stream Chip Tooltips & Empty Predictions Hydration Swarm"
+active_branch_merged_to_main: "feature/phase88-stream-chip-tooltips-empty-pred-sync -> main"
+project_phase: "Phase 88 Complete: Live Stream Event Chip Tooltips & Empty Predictions Table Auto-Hydration"
 
 completed_modules:
-  - "Phase 1-86: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact, Provably Hero & Interactive 3D Testimonial Globe, Live Recent Uploads Stream Log Sync (85), and Empty-State Recent Uploads Row Creation & Public Asset Version Sync (86)."
-  - "Phase 87: Live Stream Prediction Tip Tooltip Refresh & Recent Uploads Item Count Badge Sync:"
-      - "templates/components/data_table.html (132 lines, 0 comments): added data-table-count-badge attribute on the header items counter span (toggling hidden when rows is empty) so live stream updates can unhide and sync the item count."
-      - "static/js/directory_ui.js (349 lines, 0 comments): updated syncStreamDatasetLogsTable(logEntry) to sync [data-table-count-badge] textContent and unhide it when rows exist."
-      - "templates/panels/analyst_dashboard.html (346 lines, 0 comments): updated applyPredictionTipTooltips() to unconditionally refresh td.setAttribute('title', text) on every live stream tick."
-      - "panels/test_phase66.py (387 lines, 0 comments): extended test_phase85_live_stream_recent_uploads_log_sync to verify data-table-count-badge, unconditional tip tooltip refresh, and Node VM empty-state count badge unhiding."
+  - "Phase 1-87: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact, Provably Hero & Interactive 3D Testimonial Globe, Live Recent Uploads Stream Log Sync (85), Empty-State Recent Uploads Row Creation & Public Asset Version Sync (86), and Live Stream Prediction Tip Tooltip Refresh & Recent Uploads Item Count Badge Sync (87)."
+  - "Phase 88: Live Stream Event Chip Tooltips & Empty Predictions Table Auto-Hydration:"
+      - "static/js/directory_ui.js (348 lines, 0 comments): updated syncStreamPredictionTable(events) to detect when #analyst-predictions-table starts in empty state ([data-empty-row]), remove [data-empty-row], dynamically hydrate 10-cell desktop tr[data-page-item][data-row-id] rows and 10-row mobile div[data-mobile-card][data-page-item][data-card-id] cards, populate prediction metrics/badges/tips, update [data-table-count-badge], re-bind Student 360° buttons via bindAnalystStudent360Cells(), and refresh pagination search index."
+      - "templates/panels/analyst_dashboard.html (346 lines, 0 comments): added chip.title = 'Open Student 360 summary' and aria-label on live stream event chips."
+      - "panels/test_phase66.py (399 lines, 0 comments): extended test_phase85_live_stream_recent_uploads_log_sync to verify live stream event chip tooltips/aria-labels and Node VM empty-state #analyst-predictions-table auto-hydration + Student 360° trigger binding + search index rebuild."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check: all JS scripts in static/js/*.js exited 0."
-  - "Zero-comment & line-cap audit: templates/components/data_table.html (132 lines), static/js/directory_ui.js (349 lines), templates/panels/analyst_dashboard.html (346 lines), panels/test_phase66.py (387 lines) — 0 comments."
+  - "Zero-comment & line-cap audit: static/js/directory_ui.js (348 lines), templates/panels/analyst_dashboard.html (346 lines), panels/test_phase66.py (399 lines) — 0 comments."
   - "manage.py test panels.test_phase66: Ran 9 tests (OK)."
   - "manage.py verify_uat: UAT Results 7/7 passed - System 100% Operational."
 
 active_routes_and_files:
-  - "templates/components/data_table.html (132 lines), static/js/directory_ui.js (349 lines), templates/panels/analyst_dashboard.html (346 lines), panels/test_phase66.py (387 lines), .agents/git-sync.md"
+  - "static/js/directory_ui.js (348 lines), templates/panels/analyst_dashboard.html (346 lines), panels/test_phase66.py (399 lines), .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

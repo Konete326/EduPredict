@@ -231,30 +231,35 @@
 
   function updateStreamCellBadge(cell, dotCls, labelText) {
     if (!cell) return;
-    const dot = cell.querySelector('span.rounded-full');
-    const pill = dot ? dot.parentElement : cell.querySelector('span');
-    const lbl = pill ? Array.from(pill.children).find((el) => el !== dot) : null;
-    if (dot) {
-      dot.classList.remove('bg-[var(--status-success)]', 'bg-[var(--status-warning)]', 'bg-[var(--status-danger)]', 'bg-[var(--accent-primary)]');
-      dot.classList.add(dotCls);
-    }
-    if (lbl) lbl.textContent = labelText;
-    else if (pill && !dot) pill.textContent = labelText;
-    else if (!pill) cell.textContent = labelText;
+    const dot = cell.querySelector('span.rounded-full'), pill = dot ? dot.parentElement : cell.querySelector('span'), lbl = pill ? Array.from(pill.children).find((el) => el !== dot) : null;
+    if (dot) { dot.classList.remove('bg-[var(--status-success)]', 'bg-[var(--status-warning)]', 'bg-[var(--status-danger)]', 'bg-[var(--accent-primary)]'); dot.classList.add(dotCls); }
+    if (lbl) lbl.textContent = labelText; else if (pill && !dot) pill.textContent = labelText; else if (!pill) cell.textContent = labelText;
   }
-
   function syncStreamPredictionTable(events) {
     const table = byId('analyst-predictions-table');
     if (!table || !Array.isArray(events) || !events.length) return;
     const evMap = new Map();
-    events.forEach((ev) => {
-      const sid = String(ev && ev.student_id ? ev.student_id : '').trim().toUpperCase();
-      if (sid) evMap.set(sid, ev);
-    });
+    events.forEach((ev) => { const sid = String(ev && ev.student_id ? ev.student_id : '').trim().toUpperCase(); if (sid) evMap.set(sid, ev); });
     if (!evMap.size) return;
     const container = table.closest ? table.closest('[data-paginated-container]') : null;
-    const mobileCards = container ? container.querySelectorAll('[data-mobile-card][data-page-item]') : [];
-    const cardMap = new Map();
+    if (!table.querySelector('tbody tr:not([data-empty-row])')) {
+      const mobileWrap = container && container.querySelectorAll ? (Array.from(container.querySelectorAll('[data-empty-row]')).find((el) => el.tagName !== 'TR')?.parentElement || (container.querySelector ? container.querySelector('.md\\:hidden') : null)) : null, tbody = table.querySelector('tbody') || table;
+      if ((container || table).querySelectorAll) (container || table).querySelectorAll('[data-empty-row]').forEach((el) => { if (el.remove) el.remove(); else if (el.parentNode) el.parentNode.removeChild(el); });
+      const mkBadge = () => { const p = mk('span', 'inline-flex whitespace-nowrap items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]'); p.append(mk('span', 'h-1.5 w-1.5 rounded-full bg-[var(--status-success)]'), mk('span', '', '')); return p; };
+      evMap.forEach((ev, sid) => {
+        const tr = mk('tr', 'transition-colors hover:bg-[var(--bg-elevated)]'), vals = [sid, String(ev.full_name || sid), String(ev.batch || '2026-A'), String(ev.course_code || 'CS-101'), '0.0%', String(ev.previous_gpa != null ? Number(ev.previous_gpa).toFixed(2) : '3.00'), '-', null, null, ''];
+        tr.setAttribute('data-page-item', ''); tr.setAttribute('data-row-id', sid);
+        vals.forEach((v, i) => { const td = mk('td', 'px-2.5 py-2 align-middle text-[var(--text-primary)] ' + (i === 0 || i === 7 || i === 8 ? 'whitespace-nowrap' : 'break-words max-w-[13rem]')); if (i === 7 || i === 8) td.appendChild(mkBadge()); else td.textContent = v; tr.appendChild(td); });
+        if (!tr.cells) tr.cells = tr.children;
+        if (tbody && tbody.appendChild) tbody.appendChild(tr);
+        if (mobileWrap && mobileWrap.appendChild) {
+          const card = mk('div', 'overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-sm'); card.setAttribute('data-mobile-card', ''); card.setAttribute('data-page-item', ''); card.setAttribute('data-card-id', sid);
+          ['Student ID', 'Name', 'Batch', 'Course', 'Attendance', 'Prev GPA', 'Pred. GPA', 'Dropout Risk', 'Unusual Drop', 'Support Tip'].forEach((lbl, i) => { const r = mk('div', i === 0 ? 'flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3.5 py-2.5' : ('flex items-start justify-between gap-3 px-3.5 py-2 text-xs' + (i > 1 ? ' border-t border-[var(--border-subtle)]' : ''))), v = mk('div', 'min-w-0 text-right ' + (i === 0 ? 'text-sm font-bold' : 'font-medium') + ' text-[var(--text-primary)] break-words'); if (i === 7 || i === 8) v.appendChild(mkBadge()); else v.textContent = vals[i]; r.append(mk('span', 'shrink-0 font-semibold uppercase tracking-wider text-[11px] text-[var(--text-muted)]', lbl), v); card.appendChild(r); });
+          mobileWrap.appendChild(card);
+        }
+      });
+    }
+    const mobileCards = container ? container.querySelectorAll('[data-mobile-card][data-page-item]') : [], cardMap = new Map();
     mobileCards.forEach((card) => {
       const attrSid = (card && card.getAttribute ? (card.getAttribute('data-card-id') || '') : '').trim().toUpperCase();
       const hdrBox = card && card.children && card.children[0] ? ((card.children[0].querySelector ? card.children[0].querySelector('div.text-right') : null) || (card.children[0].children ? card.children[0].children[1] : null) || card.children[0]) : null;
@@ -262,26 +267,17 @@
       if (cSid) cardMap.set(cSid, card);
     });
     table.querySelectorAll('tbody tr:not([data-empty-row])').forEach((tr, idx) => {
-      const rowAttrSid = (tr && tr.getAttribute ? (tr.getAttribute('data-row-id') || '') : '').trim().toUpperCase();
-      const sid = rowAttrSid || (tr.cells[0]?.textContent || '').trim().toUpperCase();
-      const ev = sid ? evMap.get(sid) : null;
-      if (!ev || tr.cells.length < 10) return;
-      const rawAtt = ev.attendance_pct != null ? ev.attendance_pct : ev.attendance;
-      const attNum = rawAtt != null && String(rawAtt).trim() !== '' && typeof rawAtt !== 'boolean' ? Number(rawAtt) : NaN;
-      const attText = Number.isFinite(attNum) ? attNum.toFixed(1) + '%' : null;
-      const gpaNum = ev.predicted_gpa != null && String(ev.predicted_gpa).trim() !== '' && typeof ev.predicted_gpa !== 'boolean' ? Number(ev.predicted_gpa) : NaN;
-      const gpaText = Number.isFinite(gpaNum) ? gpaNum.toFixed(2) : '-';
-      const risk = String(ev.risk_level || '').trim().toUpperCase();
-      const riskDot = risk === 'HIGH' ? 'bg-[var(--status-danger)]' : (risk === 'MEDIUM' ? 'bg-[var(--status-warning)]' : 'bg-[var(--status-success)]');
-      const riskText = ev.risk_text || ev.risk_level || '';
-      const isAnom = Boolean(ev.is_anomaly);
-      const anomDot = isAnom ? 'bg-[var(--status-danger)]' : 'bg-[var(--status-success)]';
-      const anomText = isAnom ? 'Flagged' : 'Normal';
-      if (attText !== null) tr.cells[4].textContent = attText;
-      tr.cells[6].textContent = gpaText;
-      updateStreamCellBadge(tr.cells[7], riskDot, riskText);
-      updateStreamCellBadge(tr.cells[8], anomDot, anomText);
-      tr.cells[9].textContent = ev.tip || tr.cells[9].textContent;
+      const cells = tr.cells || tr.children, rowAttrSid = (tr && tr.getAttribute ? (tr.getAttribute('data-row-id') || '') : '').trim().toUpperCase(), sid = rowAttrSid || (cells[0]?.textContent || '').trim().toUpperCase(), ev = sid ? evMap.get(sid) : null;
+      if (!ev || !cells || cells.length < 10) return;
+      const rawAtt = ev.attendance_pct != null ? ev.attendance_pct : ev.attendance, attNum = rawAtt != null && String(rawAtt).trim() !== '' && typeof rawAtt !== 'boolean' ? Number(rawAtt) : NaN, attText = Number.isFinite(attNum) ? attNum.toFixed(1) + '%' : null;
+      const gpaNum = ev.predicted_gpa != null && String(ev.predicted_gpa).trim() !== '' && typeof ev.predicted_gpa !== 'boolean' ? Number(ev.predicted_gpa) : NaN, gpaText = Number.isFinite(gpaNum) ? gpaNum.toFixed(2) : '-';
+      const risk = String(ev.risk_level || '').trim().toUpperCase(), riskDot = risk === 'HIGH' ? 'bg-[var(--status-danger)]' : (risk === 'MEDIUM' ? 'bg-[var(--status-warning)]' : 'bg-[var(--status-success)]'), riskText = ev.risk_text || ev.risk_level || '';
+      const isAnom = Boolean(ev.is_anomaly), anomDot = isAnom ? 'bg-[var(--status-danger)]' : 'bg-[var(--status-success)]', anomText = isAnom ? 'Flagged' : 'Normal';
+      if (attText !== null) cells[4].textContent = attText;
+      cells[6].textContent = gpaText;
+      updateStreamCellBadge(cells[7], riskDot, riskText);
+      updateStreamCellBadge(cells[8], anomDot, anomText);
+      cells[9].textContent = ev.tip || cells[9].textContent;
       const card = cardMap.get(sid) || mobileCards[idx];
       if (card && card.children.length >= 10) {
         const valBox = (k) => { const row = card.children[k]; return row ? ((row.querySelector ? row.querySelector('div.text-right') : null) || (row.children ? row.children[1] : null)) : null; };
@@ -292,6 +288,9 @@
         if (valBox(9)) valBox(9).textContent = ev.tip || valBox(9).textContent;
       }
     });
+    const countEl = container && container.querySelector ? container.querySelector('[data-table-count-badge]') : null, rowCnt = table.querySelectorAll ? table.querySelectorAll('tbody tr:not([data-empty-row])').length : 0;
+    if (countEl && rowCnt > 0) { countEl.textContent = rowCnt + ' items'; if (countEl.classList) countEl.classList.remove('hidden'); }
+    bindAnalystStudent360Cells();
     if (container && container._paginationController && typeof container._paginationController.refreshSearchText === 'function') container._paginationController.refreshSearchText();
   }
   function syncStreamDatasetLogsTable(logEntry) {
