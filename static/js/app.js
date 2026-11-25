@@ -200,7 +200,7 @@
         if (currentPage > totalPages) currentPage = totalPages;
         const startIdx = (currentPage - 1) * pageSize, endIdx = Math.min(startIdx + pageSize, total), visibleSet = new Set(matched.slice(startIdx, endIdx));
         entries.forEach((e) => e.nodes.forEach((n) => n.classList.toggle('hidden', !visibleSet.has(e))));
-        if (searchEmptyEl) searchEmptyEl.classList.toggle('hidden', total > 0 || rowCount === 0);
+        if (searchEmptyEl) searchEmptyEl.classList.toggle('hidden', total > 0 || entries.length === 0);
         if (infoEl) infoEl.textContent = total ? ('Showing ' + (startIdx + 1) + '-' + endIdx + ' of ' + total) : 'Showing 0 of 0';
         if (indicatorEl) indicatorEl.textContent = 'Page ' + currentPage + ' of ' + totalPages;
         if (prevBtn) prevBtn.disabled = currentPage <= 1;
@@ -216,7 +216,7 @@
       };
       if (prevBtn) prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage -= 1; renderPage(); } });
       if (nextBtn) nextBtn.addEventListener('click', () => { currentPage += 1; renderPage(); });
-      const refreshSearchText = () => { entries.forEach((e) => { e.searchText = e.nodes.map((n) => n.textContent || '').join(' ').toLowerCase(); }); if (query) renderPage(); };
+      const refreshSearchText = () => { if (!entries.length) { const dR = Array.from(container.querySelectorAll('tbody tr[data-page-item]')), mC = Array.from(container.querySelectorAll('[data-mobile-card][data-page-item]')), n = Math.max(dR.length, mC.length); for (let i = 0; i < n; i++) entries.push({ nodes: [dR[i], mC[i]].filter(Boolean), searchText: '' }); } entries.forEach((e) => { e.searchText = e.nodes.map((n) => n.textContent || '').join(' ').toLowerCase(); }); renderPage(); };
       container._paginationController = { applySearch: (q) => { query = String(q || '').trim().toLowerCase(); currentPage = 1; renderPage(); }, sortEntries, refreshSearchText };
       paginatedControllers.push(container._paginationController);
       renderPage();

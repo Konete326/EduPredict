@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %}Early Academic Risk &amp; Analytics{% endblock %}
 {% block extra_head %}
-  <link rel="stylesheet" href="{% static 'css/landing_provably.css' %}?v=20">
+  <link rel="stylesheet" href="{% static 'css/landing_provably.css' %}?v=18">
 {% endblock %}
 {% block content %}
 <section id="cv-hero" class="cv-hero">
@@ -283,6 +283,6 @@
 {% block extra_js %}
   {{ landing_showcase.credentials|json_script:"ep-landing-credentials-data" }}
   {{ landing_showcase.testimonials|json_script:"ep-landing-testimonials-data" }}
-  <script src="{% static 'js/landing_provably.js' %}?v=20"></script>
-  <script src="{% static 'js/landing_globe.js' %}?v=20"></script>
+  <script src="{% static 'js/landing_provably.js' %}?v=18"></script>
+  <script src="{% static 'js/landing_globe.js' %}?v=18"></script>
 {% endblock %}

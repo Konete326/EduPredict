@@ -1,11 +1,9 @@
 (function () {
   const VIEW_PREFIX = 'ep_dir_view:', RING_CIRC = 201.06;
   let globalsBound = false, drawerCloseTimer = null, fetchSeq = 0;
-
   const byId = (id) => document.getElementById(id);
   const mk = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = String(text); return n; };
   const setText = (id, val) => { const el = byId(id); if (el) el.textContent = val == null ? '' : String(val); };
-
   function fallbackCopy(val) {
     try {
       const ta = document.createElement('textarea');
@@ -16,7 +14,6 @@
       return ok;
     } catch (e) { return false; }
   }
-
   function copyTextToClipboard(text) {
     const val = String(text || '');
     if (!val) return Promise.resolve(false);
@@ -25,7 +22,6 @@
     }
     return Promise.resolve(fallbackCopy(val));
   }
-
   function flashCopiedState(btn) {
     if (!btn) return;
     if (btn._copyTimer) clearTimeout(btn._copyTimer);
@@ -38,13 +34,11 @@
       btn._copyTimer = null;
     }, 1400);
   }
-
   function resolveContainer(target) {
     if (!target) return null;
     if (typeof target === 'string') return byId(target);
     return target.closest ? (target.closest('[data-directory-cards]') || target) : target;
   }
-
   function setDirectoryView(target, mode, persist) {
     const container = resolveContainer(target);
     if (!container) return;
@@ -65,7 +59,6 @@
       try { localStorage.setItem(VIEW_PREFIX + container.id, nextMode); } catch (e) {}
     }
   }
-
   function renderDrawerBadge(riskLevel, riskStatus, score) {
     const badge = byId('s360-risk-badge');
     if (!badge) return;
@@ -73,7 +66,6 @@
     badge.textContent = '';
     badge.append(mk('span', 'h-1.5 w-1.5 rounded-full ' + dotCls), mk('span', '', String(riskLevel || 'INFO').toUpperCase() + (score != null ? ' (' + Math.round(Number(score) * 100) + '%)' : '')));
   }
-
   function renderDrawerSummary(s) {
     const avatarBox = byId('s360-avatar');
     if (avatarBox) {
@@ -147,7 +139,6 @@
     if (editBtn) { applyBtnAttrs(editBtn); editBtn.classList.toggle('hidden', typeof window.openUpdateMarksModal !== 'function'); }
     if (alertBtn) { applyBtnAttrs(alertBtn); alertBtn.classList.toggle('hidden', typeof window.openSendAlertModal !== 'function'); }
   }
-
   function closeStudent360Drawer(immediate) {
     const drawer = byId('student-360-drawer');
     if (!drawer) return;
@@ -158,7 +149,6 @@
     if (immediate) finish();
     else drawerCloseTimer = setTimeout(() => { drawerCloseTimer = null; finish(); }, 220);
   }
-
   function openStudent360Drawer(sid) {
     const cleanId = String(sid || '').trim(), drawer = byId('student-360-drawer');
     if (!cleanId || !drawer) return;
@@ -195,7 +185,6 @@
         if (byId('s360-error')) { byId('s360-error').textContent = 'Could not load student summary.'; byId('s360-error').classList.remove('hidden'); }
       });
   }
-
   function bindStudent360TriggerNode(targetEl, rawSid) {
     if (!targetEl || targetEl.dataset.s360Bound === '1') return;
     const sid = (rawSid || targetEl.textContent || '').trim();
@@ -207,7 +196,6 @@
     btn.addEventListener('click', () => openStudent360Drawer(sid));
     targetEl.appendChild(btn);
   }
-
   function bindAnalystStudent360Cells() {
     const table = byId('analyst-predictions-table');
     if (!table) return;
@@ -306,18 +294,32 @@
     });
     if (container && container._paginationController && typeof container._paginationController.refreshSearchText === 'function') container._paginationController.refreshSearchText();
   }
-
   function syncStreamDatasetLogsTable(logEntry) {
     const table = byId('dataset-logs-table');
     if (!table || !logEntry || typeof logEntry !== 'object') return;
     const fname = String(logEntry.filename || 'live_lms_stream_tick'), rowsCnt = String(logEntry.rows_processed != null ? logEntry.rows_processed : 0), fixedCnt = String(logEntry.missing_values_fixed != null ? logEntry.missing_values_fixed : 0), statusText = String(logEntry.status || 'COMPLETED').toUpperCase(), dateText = String(logEntry.uploaded_at || '-');
-    const dotCls = statusText === 'COMPLETED' ? 'bg-[var(--status-success)]' : 'bg-[var(--status-danger)]', firstTr = table.querySelector('tbody tr:not([data-empty-row])');
-    if (firstTr && firstTr.cells.length >= 5) { if (firstTr.setAttribute) firstTr.setAttribute('data-row-id', fname); firstTr.cells[0].textContent = fname; firstTr.cells[1].textContent = rowsCnt; firstTr.cells[2].textContent = fixedCnt; updateStreamCellBadge(firstTr.cells[3], dotCls, statusText); firstTr.cells[4].textContent = dateText; }
-    const container = table.closest ? table.closest('[data-paginated-container]') : null, firstCard = container ? container.querySelector('[data-mobile-card][data-page-item]') : null;
+    const dotCls = statusText === 'COMPLETED' ? 'bg-[var(--status-success)]' : 'bg-[var(--status-danger)]', container = table.closest ? table.closest('[data-paginated-container]') : null;
+    const mkPill = () => { const p = mk('span', 'inline-flex whitespace-nowrap items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]'); p.append(mk('span', 'h-1.5 w-1.5 rounded-full ' + dotCls), mk('span', '', statusText)); return p; };
+    let firstTr = table.querySelector('tbody tr:not([data-empty-row])'), firstCard = container ? container.querySelector('[data-mobile-card][data-page-item]') : null;
+    if (!firstTr) {
+      const mobileWrap = container && container.querySelectorAll ? (Array.from(container.querySelectorAll('[data-empty-row]')).find((el) => el.tagName !== 'TR')?.parentElement || container.querySelector('.md\\:hidden')) : null;
+      if ((container || table).querySelectorAll) (container || table).querySelectorAll('[data-empty-row]').forEach((el) => { if (el.remove) el.remove(); else if (el.parentNode) el.parentNode.removeChild(el); });
+      const tbody = table.querySelector('tbody') || table;
+      firstTr = mk('tr', 'transition-colors hover:bg-[var(--bg-elevated)]'); firstTr.setAttribute('data-page-item', ''); firstTr.setAttribute('data-row-id', fname);
+      [0, 1, 2, 3, 4].forEach((i) => { const td = mk('td', 'px-2.5 py-2 align-middle text-[var(--text-primary)] ' + (i === 0 || i === 3 ? 'whitespace-nowrap' : 'break-words max-w-[13rem]')); if (i === 3) td.appendChild(mkPill()); firstTr.appendChild(td); });
+      if (!firstTr.cells) firstTr.cells = firstTr.children;
+      if (tbody && tbody.appendChild) tbody.appendChild(firstTr);
+      if (!firstCard && mobileWrap && mobileWrap.appendChild) {
+        firstCard = mk('div', 'overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-sm'); firstCard.setAttribute('data-mobile-card', ''); firstCard.setAttribute('data-page-item', ''); firstCard.setAttribute('data-card-id', fname);
+        ['File Name', 'Rows', 'Missing Fixed', 'Status', 'Date'].forEach((lbl, i) => { const r = mk('div', i === 0 ? 'flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3.5 py-2.5' : ('flex items-start justify-between gap-3 px-3.5 py-2 text-xs' + (i > 1 ? ' border-t border-[var(--border-subtle)]' : ''))), v = mk('div', 'min-w-0 text-right ' + (i === 0 ? 'text-sm font-bold' : 'font-medium') + ' text-[var(--text-primary)] break-words'); if (i === 3) v.appendChild(mkPill()); r.append(mk('span', 'shrink-0 font-semibold uppercase tracking-wider text-[11px] text-[var(--text-muted)]', lbl), v); firstCard.appendChild(r); });
+        mobileWrap.appendChild(firstCard);
+      }
+    }
+    const trCells = firstTr ? (firstTr.cells || firstTr.children) : null;
+    if (firstTr && trCells && trCells.length >= 5) { if (firstTr.setAttribute) firstTr.setAttribute('data-row-id', fname); trCells[0].textContent = fname; trCells[1].textContent = rowsCnt; trCells[2].textContent = fixedCnt; updateStreamCellBadge(trCells[3], dotCls, statusText); trCells[4].textContent = dateText; }
     if (firstCard && firstCard.children.length >= 5) { if (firstCard.setAttribute) firstCard.setAttribute('data-card-id', fname); const valBox = (k) => { const row = firstCard.children[k]; return row ? ((row.querySelector ? row.querySelector('div.text-right') : null) || (row.children ? row.children[1] : null)) : null; }; if (valBox(0)) valBox(0).textContent = fname; if (valBox(1)) valBox(1).textContent = rowsCnt; if (valBox(2)) valBox(2).textContent = fixedCnt; updateStreamCellBadge(valBox(3), dotCls, statusText); if (valBox(4)) valBox(4).textContent = dateText; }
     if (container && container._paginationController && typeof container._paginationController.refreshSearchText === 'function') container._paginationController.refreshSearchText();
   }
-
   function initDirectoryUI() {
     bindGlobalsOnce();
     document.querySelectorAll('[data-directory-cards]').forEach((container) => {
@@ -327,7 +329,6 @@
     });
     bindAnalystStudent360Cells();
   }
-
   if (typeof window.reinitEduPredictUI === 'function' && !window.reinitEduPredictUI._dirWrapped) {
     const orig = window.reinitEduPredictUI;
     const wrapped = function () {
@@ -340,7 +341,6 @@
     wrapped._dirWrapped = true;
     window.reinitEduPredictUI = wrapped;
   }
-
   Object.assign(window, { initDirectoryUI, setDirectoryView, openStudent360Drawer, closeStudent360Drawer, copyTextToClipboard, syncStreamPredictionTable, syncStreamDatasetLogsTable });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDirectoryUI);
   else initDirectoryUI();

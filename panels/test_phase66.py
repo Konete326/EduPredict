@@ -20,8 +20,9 @@ from panels.test_admin import _MemCol
 _NODE_DOM_PRELUDE = r"""
 const fs = require('fs'), vm = require('vm'), assert = require('assert');
 class El {
-  constructor(t, a = {}, tx = '') { this.tag = t.toLowerCase(); this.attrs = { ...a }; this.children = []; this._text = String(tx); this.parentNode = null; this.parentElement = null; this.dataset = {}; this.style = {}; this.listeners = {}; const cls = new Set((a.class || '').split(/\s+/).filter(Boolean)); this.classList = { add: (...x) => x.forEach((c) => c && cls.add(c)), remove: (...x) => x.forEach((c) => cls.delete(c)), contains: (c) => cls.has(c), toggle: (c, f) => { const on = f === undefined ? !cls.has(c) : Boolean(f); on ? cls.add(c) : cls.delete(c); return on; } }; }
-  append(...ns) { ns.forEach((n) => { n.parentNode = this; n.parentElement = this; this.children.push(n); }); } appendChild(n) { this.append(n); return n; } getAttribute(k) { return k in this.attrs ? String(this.attrs[k]) : null; } setAttribute(k, v) { this.attrs[k] = String(v); } removeAttribute(k) { delete this.attrs[k]; } hasAttribute(k) { return k in this.attrs; } addEventListener(ev, fn) { (this.listeners[ev] = this.listeners[ev] || []).push(fn); }
+  constructor(t, a = {}, tx = '') { this.tag = t.toLowerCase(); this.tagName = t.toUpperCase(); this.attrs = { ...a }; this.children = []; this._text = String(tx); this.parentNode = null; this.parentElement = null; this.dataset = {}; this.style = {}; this.listeners = {}; const cls = new Set((a.class || '').split(/\s+/).filter(Boolean)); this.classList = { add: (...x) => x.forEach((c) => c && cls.add(c)), remove: (...x) => x.forEach((c) => cls.delete(c)), contains: (c) => cls.has(c), toggle: (c, f) => { const on = f === undefined ? !cls.has(c) : Boolean(f); on ? cls.add(c) : cls.delete(c); return on; } }; this._cls = cls; }
+  get className() { return Array.from(this._cls).join(' '); } set className(v) { this._cls.clear(); String(v || '').split(/\s+/).filter(Boolean).forEach((c) => this._cls.add(c)); }
+  append(...ns) { ns.forEach((n) => { n.parentNode = this; n.parentElement = this; this.children.push(n); }); } appendChild(n) { this.append(n); return n; } removeChild(n) { const idx = this.children.indexOf(n); if (idx !== -1) { this.children.splice(idx, 1); n.parentNode = null; n.parentElement = null; } return n; } remove() { if (this.parentNode) this.parentNode.removeChild(this); } getAttribute(k) { return k in this.attrs ? String(this.attrs[k]) : null; } setAttribute(k, v) { this.attrs[k] = String(v); } removeAttribute(k) { delete this.attrs[k]; } hasAttribute(k) { return k in this.attrs; } addEventListener(ev, fn) { (this.listeners[ev] = this.listeners[ev] || []).push(fn); }
   get cells() { return this.children.filter((c) => c.tag === 'td' || c.tag === 'th'); } get textContent() { return this.children.length ? this.children.map((c) => c.textContent).join('') : this._text; } set textContent(v) { this.children = []; this._text = v == null ? '' : String(v); }
   closest(s) { for (let p = this; p; p = p.parentElement) if (s.trim().split(/\s+/).every((k) => mOne(p, k))) return p; return null; } querySelector(s) { return this.querySelectorAll(s)[0] || null; }
   querySelectorAll(s) { const ps = s.split(',').map((x) => x.trim()).filter(Boolean), out = [], seen = new Set(); const w = (n) => n.children.forEach((c) => { if (ps.some((p) => mDesc(c, p, this)) && !seen.has(c)) { seen.add(c); out.push(c); } w(c); }); w(this); return out; }
@@ -257,9 +258,7 @@ assert.ok(c1.children[7].querySelector('span.rounded-full').classList.contains('
 assert.ok(c2.children[7].querySelector('span.rounded-full').classList.contains('bg-[var(--status-success)]') && c2.children[8].querySelector('span.rounded-full').classList.contains('bg-[var(--status-success)]'));
 """
         proc = subprocess.run(["node", "-e", node_script, str(base_dir / "static" / "js" / "app.js"), str(base_dir / "static" / "js" / "directory_ui.js")], capture_output=True, text=True, check=False)
-        self.assertEqual(proc.returncode, 0, msg=proc.stderr or proc.stdout)
-
-        tpl_src = (base_dir / "templates" / "panels" / "analyst_dashboard.html").read_text(encoding="utf-8")
+        self.assertEqual(proc.returncode, 0, msg=proc.stderr or proc.stdout)        tpl_src = (base_dir / "templates" / "panels" / "analyst_dashboard.html").read_text(encoding="utf-8")
         self.assertIn("analyst_evaluation.js' %}?v=17\"", tpl_src)
         self.assertNotIn("analyst_evaluation.js' %}?v=1\"", tpl_src)
         self.assertEqual(re.findall(r"analyst_evaluation\.js'\s*%\}\?v=(\d+)", tpl_src), ["17"])
@@ -309,9 +308,7 @@ win.syncStreamPredictionTable([{ student_id: 'STD-1', attendance_pct: 61.5, pred
 });
 """
         proc = subprocess.run(["node", "-e", node_script, str(base_dir / "static" / "js" / "app.js"), str(base_dir / "static" / "js" / "directory_ui.js")], capture_output=True, text=True, check=False)
-        self.assertEqual(proc.returncode, 0, msg=proc.stderr or proc.stdout)
-
-    def test_phase72_desktop_data_row_id_and_mobile_s360_trigger(self):
+        self.assertEqual(proc.returncode, 0, msg=proc.stderr or proc.stdout)    def test_phase72_desktop_data_row_id_and_mobile_s360_trigger(self):
         base_dir = Path(settings.BASE_DIR)
         dt_src = (base_dir / "templates" / "components" / "data_table.html").read_text(encoding="utf-8")
         self.assertIn("data-row-id=", dt_src)
@@ -363,6 +360,10 @@ assert.strictEqual(c1.children[9].querySelector('div.text-right').textContent, '
         self.assertRegex(str(dlog.get("uploaded_at") or ""), r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$")
         html = analyst.get(reverse("panels:analyst_dashboard")).content.decode("utf-8")
         self.assertIn("window.syncStreamDatasetLogsTable(data.dataset_log)", html)
+        for rel in ("templates/public/_base.html", "templates/public/landing.html"):
+            src = (base_dir / rel).read_text(encoding="utf-8")
+            versions = re.findall(r"%\}\?v=(\d+)", src)
+            self.assertTrue(versions and all(v == "18" for v in versions), rel)
         node_script = _NODE_DOM_PRELUDE + r"""
 const root = new El('html'), body = new El('body'), box = new El('div', { 'data-paginated-container': '', 'data-page-size': '5' }), tbl = new El('table', { id: 'dataset-logs-table' }), tbody = new El('tbody'); root.append(body);
 const mkB = (t) => { const p = new El('span', { class: 'inline-flex' }); p.append(new El('span', { class: 'rounded-full bg-[var(--status-danger)]' }), new El('span', {}, t)); return p; };
@@ -377,8 +378,17 @@ win.syncStreamDatasetLogsTable({ filename: 'live_lms_stream_tick', rows_processe
 assert.strictEqual(tr1.getAttribute('data-row-id'), 'live_lms_stream_tick'); assert.strictEqual(c1.getAttribute('data-card-id'), 'live_lms_stream_tick');
 ['live_lms_stream_tick', '3', '0', 'COMPLETED', '2026-11-25 14:05'].forEach((exp, k) => { assert.strictEqual(tr1.cells[k].textContent, exp); assert.strictEqual(c1.children[k].querySelector('div.text-right').textContent, exp); });
 box._paginationController.applySearch('live_lms_stream_tick'); assert.ok(!tr1.classList.contains('hidden') && !c1.classList.contains('hidden'));
+box.remove(); delete box.dataset.paginationReady; delete box._paginationController;
+const eBox = new El('div', { 'data-paginated-container': '', 'data-page-size': '5' }), eTbl = new El('table', { id: 'dataset-logs-table' }), eTbody = new El('tbody'), eMob = new El('div', { class: 'md:hidden' });
+eTbody.append(new El('tr', { 'data-empty-row': '' }, 'No upload logs yet.')); eTbl.append(eTbody); eMob.append(new El('div', { 'data-empty-row': '' }, 'No upload logs yet.')); eBox.append(eTbl, eMob); body.append(eBox);
+win.reinitEduPredictUI(); assert.strictEqual(eBox.querySelectorAll('[data-empty-row]').length, 2); assert.strictEqual(eBox.querySelectorAll('[data-page-item]').length, 0);
+win.syncStreamDatasetLogsTable({ filename: 'live_lms_stream_tick', rows_processed: 4, missing_values_fixed: 0, status: 'COMPLETED', uploaded_at: '2026-11-25 14:20' });
+assert.strictEqual(eBox.querySelectorAll('[data-empty-row]').length, 0);
+const newTr = eTbody.querySelector('tr[data-page-item]'), newCard = eMob.querySelector('[data-mobile-card][data-page-item]');
+assert.ok(newTr && newTr.getAttribute('data-row-id') === 'live_lms_stream_tick' && newTr.cells.length === 5);
+assert.ok(newCard && newCard.getAttribute('data-card-id') === 'live_lms_stream_tick' && newCard.children.length === 5);
+['live_lms_stream_tick', '4', '0', 'COMPLETED', '2026-11-25 14:20'].forEach((exp, k) => { assert.strictEqual(newTr.cells[k].textContent, exp); assert.strictEqual(newCard.children[k].querySelector('div.text-right').textContent, exp); });
+eBox._paginationController.applySearch('live_lms_stream_tick'); assert.ok(!newTr.classList.contains('hidden') && !newCard.classList.contains('hidden'));
 """
         proc = subprocess.run(["node", "-e", node_script, str(base_dir / "static" / "js" / "app.js"), str(base_dir / "static" / "js" / "directory_ui.js")], capture_output=True, text=True, check=False)
         self.assertEqual(proc.returncode, 0, msg=proc.stderr or proc.stdout)
-
-

@@ -61,27 +61,27 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 85 Live Recent Uploads Stream Log Sync Swarm"
-active_branch_merged_to_main: "feature/phase73-v18-cache-stream-logs -> main"
-project_phase: "Phase 85 Complete: Live Recent Uploads Stream Log Sync on Analyst LMS Stream Ticks"
+last_updated_by_agent: "Phase 86 Empty-State Recent Uploads & Public Asset Sync Swarm"
+active_branch_merged_to_main: "feature/phase86-empty-log-row-v20-sync -> main"
+project_phase: "Phase 86 Complete: Empty-State Recent Uploads Live Row Creation & Public Asset Version Sync"
 
 completed_modules:
-  - "Phase 1-84: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact, Provably Hero & Interactive 3D Testimonial Globe."
-  - "Phase 85: Live Recent Uploads Stream Log Sync:"
-      - "analytics/stream_services.py (164 lines, 0 comments): added dataset_log dictionary (filename: live_lms_stream_tick, uploaded_by, mode: STREAM_TICK, rows_processed, missing_values_fixed: 0, status: COMPLETED, uploaded_at) to simulate_lms_stream_tick return payload."
-      - "static/js/directory_ui.js (347 lines, 0 comments): added and exported window.syncStreamDatasetLogsTable(logEntry) to live-sync #dataset-logs-table desktop row (data-row-id, cells 0..4, status badge dot/label), mobile [data-mobile-card] (data-card-id, value boxes 0..4, status badge dot/label), and refresh pagination search index."
-      - "templates/panels/analyst_dashboard.html (346 lines, 0 comments): invoked window.syncStreamDatasetLogsTable(data.dataset_log) in initLiveStreamSimulator render(data) callback."
-      - "panels/test_phase66.py (384 lines, 0 comments): refactored shared _NODE_DOM_PRELUDE and added test_phase85_live_stream_recent_uploads_log_sync."
+  - "Phase 1-85: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact, Provably Hero & Interactive 3D Testimonial Globe, and Live Recent Uploads Stream Log Sync (85)."
+  - "Phase 86: Empty-State Recent Uploads Live Row Creation & Public Asset Version Sync:"
+      - "static/js/directory_ui.js (347 lines, 0 comments): updated syncStreamDatasetLogsTable(logEntry) so when #dataset-logs-table starts in empty state ([data-empty-row]), it removes [data-empty-row], dynamically builds and appends the 5-cell desktop tr[data-page-item][data-row-id] and 5-row mobile div[data-mobile-card][data-page-item][data-card-id] (with status badge pill), populates all fields, and invokes refreshSearchText()."
+      - "static/js/app.js (348 lines, 0 comments): updated refreshSearchText() inside initPaginatedContainers() to rebuild entries when a paginated container originally initialized with 0 [data-page-item] items."
+      - "templates/public/landing.html (288 lines, 0 comments): unified static asset query versions (?v=18) with templates/public/_base.html."
+      - "panels/test_phase66.py (394 lines, 0 comments): extended test_phase85_live_stream_recent_uploads_log_sync to verify unified public ?v=18 asset versions and Node VM empty-state row/card creation + search index rebuild."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check: all JS scripts in static/js/*.js exited 0."
-  - "Zero-comment & line-cap audit: analytics/stream_services.py (164 lines), static/js/directory_ui.js (347 lines), templates/panels/analyst_dashboard.html (346 lines), panels/test_phase66.py (384 lines) — 0 comments."
-  - "manage.py test: all unit tests passed (OK)."
+  - "Zero-comment & line-cap audit: static/js/directory_ui.js (347 lines), static/js/app.js (348 lines), templates/public/landing.html (288 lines), panels/test_phase66.py (394 lines) — 0 comments."
+  - "manage.py test: Ran 137 tests (OK)."
   - "manage.py verify_uat: UAT Results 7/7 passed - System 100% Operational."
 
 active_routes_and_files:
-  - "analytics/stream_services.py (164 lines), static/js/directory_ui.js (347 lines), templates/panels/analyst_dashboard.html (346 lines), panels/test_phase66.py (384 lines), .agents/git-sync.md"
+  - "static/js/directory_ui.js (347 lines), static/js/app.js (348 lines), templates/public/landing.html (288 lines), panels/test_phase66.py (394 lines), .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."
