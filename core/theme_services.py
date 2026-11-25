@@ -45,13 +45,27 @@ BRAND_SWATCHES = (
     {"slug": "violet", "label": "Violet", "hex": "#7e22ce", "hover": "#6b21a8", "soft_light": "#f5f3ff", "soft_dark": "rgba(126, 34, 206, 0.16)"},
 )
 
+def _preset(slug, label, cl, sl, el, tl, secl, ml, bl, cd, sd, ed, td, secd, md, bd, source="Studio", accent_slug="", shell_slug="", accent_hex="#2563eb"):
+    return {
+        "slug": slug, "label": label, "source": source, "accent_slug": accent_slug, "shell_slug": shell_slug, "accent_hex": accent_hex,
+        "canvas_light": cl, "surface_light": sl, "elevated_light": el, "text_light": tl, "secondary_light": secl, "muted_light": ml, "border_light": bl,
+        "canvas_dark": cd, "surface_dark": sd, "elevated_dark": ed, "text_dark": td, "secondary_dark": secd, "muted_dark": md, "border_dark": bd,
+    }
+
+
 SURFACE_PRESETS = (
-    {"slug": "neutral", "label": "Neutral", "canvas_light": "#f8fafc", "surface_light": "#ffffff", "elevated_light": "#f1f5f9", "canvas_dark": "#09090b", "surface_dark": "#111114", "elevated_dark": "#1b1b20"},
-    {"slug": "butter", "label": "Butter", "canvas_light": "#fefce8", "surface_light": "#fffdf5", "elevated_light": "#fef3c7", "canvas_dark": "#14120a", "surface_dark": "#1e1a0f", "elevated_dark": "#2c2516"},
-    {"slug": "matcha", "label": "Matcha", "canvas_light": "#f3faf4", "surface_light": "#fbfefb", "elevated_light": "#e2f3e6", "canvas_dark": "#09130d", "surface_dark": "#101f16", "elevated_dark": "#192e21"},
-    {"slug": "chocolate", "label": "Chocolate", "canvas_light": "#faf6f2", "surface_light": "#fffcf9", "elevated_light": "#f1e8df", "canvas_dark": "#140f0c", "surface_dark": "#1f1713", "elevated_dark": "#2e221c"},
-    {"slug": "stone", "label": "Stone", "canvas_light": "#f5f5f4", "surface_light": "#fafaf9", "elevated_light": "#e7e5e4", "canvas_dark": "#0c0a09", "surface_dark": "#1c1917", "elevated_dark": "#292524"},
-    {"slug": "gothic", "label": "Gothic", "canvas_light": "#f4f4f6", "surface_light": "#fafafc", "elevated_light": "#e4e4ec", "canvas_dark": "#050508", "surface_dark": "#0d0e14", "elevated_dark": "#181924"},
+    _preset("neutral", "Neutral", "#f8fafc", "#ffffff", "#f1f5f9", "#0f172a", "#475569", "#64748b", "#e2e8f0", "#09090b", "#111114", "#1b1b20", "#f4f4f5", "#d4d4d8", "#a1a1aa", "rgba(255, 255, 255, 0.08)"),
+    _preset("butter", "Butter", "#fefce8", "#fffdf5", "#fef3c7", "#292524", "#57534e", "#78716c", "#fde68a", "#14120a", "#1e1a0f", "#2c2516", "#fef9c3", "#e7e5e4", "#a8a29e", "rgba(253, 230, 138, 0.14)"),
+    _preset("matcha", "Matcha", "#f3faf4", "#fbfefb", "#e2f3e6", "#14261c", "#3f5a4a", "#647a6c", "#cbe5d2", "#09130d", "#101f16", "#192e21", "#ecfdf5", "#c8e0d2", "#8ba697", "rgba(167, 243, 208, 0.12)"),
+    _preset("chocolate", "Chocolate", "#faf6f2", "#fffcf9", "#f1e8df", "#291d17", "#5c493e", "#7c685d", "#e4d5c7", "#140f0c", "#1f1713", "#2e221c", "#f5ebe4", "#d6c5b9", "#a38f82", "rgba(228, 213, 199, 0.12)"),
+    _preset("stone", "Stone", "#f5f5f4", "#fafaf9", "#e7e5e4", "#1c1917", "#44403c", "#78716c", "#d6d3d1", "#0c0a09", "#1c1917", "#292524", "#fafaf9", "#d6d3d1", "#a8a29e", "rgba(255, 255, 255, 0.09)"),
+    _preset("gothic", "Gothic", "#f4f4f6", "#fafafc", "#e4e4ec", "#18181b", "#3f3f46", "#71717a", "#d4d4dc", "#050508", "#0d0e14", "#181924", "#f4f4f5", "#d4d4d8", "#9496a6", "rgba(255, 255, 255, 0.09)"),
+    _preset("meridian", "Meridian Blue", "#eef0f3", "#ffffff", "#e8eaee", "#181b21", "#3e4454", "#5a6072", "#c9cfd8", "#14171c", "#1c2027", "#232831", "#e6e9ef", "#cbd5e1", "#9097a6", "#353c48", "21st.dev", "ocean", "blue", "#3b608f"),
+    _preset("harbor", "Harbor Blue", "#ffffff", "#f8fafc", "#f1f5f9", "#0f172a", "#334155", "#64748b", "#e2e8f0", "#0f172a", "#1e293b", "#334155", "#f8fafc", "#dce6f9", "#94a3b8", "#334155", "21st.dev", "indigo", "blue", "#194391"),
+    _preset("claude-linen", "Claude Linen", "#faf9f5", "#ffffff", "#ede9de", "#3d3929", "#535146", "#83827d", "#dad9d4", "#262624", "#30302e", "#1b1b19", "#e5e5e2", "#c3c0b6", "#b7b5a9", "#3e3e38", "21st.dev", "coral", "white", "#c96442"),
+    _preset("catppuccin", "Catppuccin", "#e4e8ef", "#ffffff", "#dee1e8", "#4e5069", "#5a5d78", "#6d7083", "#bcc1ce", "#11111b", "#181825", "#313244", "#cdd6f4", "#bac2de", "#a6adc8", "#45475a", "21st.dev", "violet", "dark", "#8839ef"),
+    _preset("respec", "Respec Mint", "#fcfcfc", "#ffffff", "#ededed", "#171717", "#202020", "#525252", "#dfdfdf", "#121212", "#171717", "#242424", "#e2e8f0", "#cbd5e1", "#a2a2a2", "#292929", "21st.dev", "emerald", "green", "#10b981"),
+    _preset("sage", "Sage Studio", "#fdfdfd", "#f5f8fb", "#e4eae1", "#080808", "#3b4636", "#687066", "#e7e7ee", "#070503", "#100d08", "#1e1a14", "#f9f8f7", "#e7e4df", "#928f8a", "#2f281b", "21st.dev", "forest", "dark-green", "#7f956a"),
 )
 
 _MODE_SLUGS = {item["slug"] for item in APPEARANCE_MODES}
@@ -112,10 +126,10 @@ def normalize_theme_prefs(raw, role="PORTAL", user_id="guest"):
         "bg_surface": preset_cfg["surface_dark"] if is_dark else preset_cfg["surface_light"],
         "bg_elevated": preset_cfg["elevated_dark"] if is_dark else preset_cfg["elevated_light"],
         "bg_overlay": "rgba(9, 9, 11, 0.78)" if is_dark else "rgba(15, 23, 42, 0.55)",
-        "text_primary": "#f4f4f5" if is_dark else "#0f172a",
-        "text_secondary": "#d4d4d8" if is_dark else "#475569",
-        "text_muted": "#a1a1aa" if is_dark else "#64748b",
-        "border_subtle": "rgba(255, 255, 255, 0.08)" if is_dark else "#e2e8f0",
+        "text_primary": preset_cfg["text_dark"] if is_dark else preset_cfg["text_light"],
+        "text_secondary": preset_cfg["secondary_dark"] if is_dark else preset_cfg["secondary_light"],
+        "text_muted": preset_cfg["muted_dark"] if is_dark else preset_cfg["muted_light"],
+        "border_subtle": preset_cfg["border_dark"] if is_dark else preset_cfg["border_light"],
         "accent_primary": swatch_cfg["hex"],
         "accent_hover": swatch_cfg["hover"],
         "accent_soft": swatch_cfg["soft_dark"] if is_dark else swatch_cfg["soft_light"],
@@ -155,8 +169,6 @@ def _persist_role_theme(uid, role, prefs):
             invalidate_cache()
         except Exception:
             pass
-
-
 def _sync_session_user_themes(session, updates_by_role):
     user = session.get("user")
     if isinstance(user, dict) and user:
@@ -165,8 +177,6 @@ def _sync_session_user_themes(session, updates_by_role):
         user_tp.update({k: v for k, v in updates_by_role.items() if k != "PORTAL" and isinstance(v, dict)})
         updated_user["theme_prefs"] = user_tp
         session["user"] = updated_user
-
-
 def save_user_theme_prefs(request, data):
     role, uid = _resolve_theme_scope(request)
     payload = data if isinstance(data, dict) else {}
@@ -187,8 +197,6 @@ def save_user_theme_prefs(request, data):
         session.modified = True
     _persist_role_theme(uid, role, normalized)
     return normalized
-
-
 def sync_theme_prefs_on_login(request, user_doc):
     session = getattr(request, "session", None)
     if session is None or not isinstance(user_doc, dict):

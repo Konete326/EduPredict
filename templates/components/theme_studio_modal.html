@@ -114,19 +114,36 @@
               <div class="space-y-2.5">
                 <p class="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">4. Surface Palette &amp; Density</p>
                 <div class="grid grid-cols-3 gap-2">
-                  {% for p in theme_catalog.presets %}
+                  {% for p in theme_catalog.presets %}{% if p.source != '21st.dev' %}
                   <button type="button" data-surface-preset="{{ p.slug }}" aria-pressed="{% if theme_prefs.preset == p.slug %}true{% else %}false{% endif %}" class="flex flex-col gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2 text-left transition-colors hover:bg-[var(--bg-elevated)]">
                     <div class="flex items-center gap-1">
                       <span class="h-3.5 w-3.5 rounded border border-black/10" style="background-color: {{ p.canvas_light }};"></span>
                       <span class="h-3.5 w-3.5 rounded border border-black/10" style="background-color: {{ p.surface_light }};"></span>
-                      <span class="h-3.5 w-3.5 rounded border border-black/10" style="background-color: {{ p.elevated_light }};"></span>
+                      <span class="h-3.5 w-3.5 rounded border border-black/10" style="background-color: {{ p.text_light }};"></span>
                     </div>
                     <div class="flex items-center justify-between gap-1 min-w-0">
                       <span class="truncate text-[11px] font-medium text-[var(--text-primary)]">{{ p.label }}</span>
                       <i data-check-icon class="fa-solid fa-check text-[10px] shrink-0 text-[var(--accent-primary)]" aria-hidden="true"></i>
                     </div>
                   </button>
-                  {% endfor %}
+                  {% endif %}{% endfor %}
+                </div>
+                <p class="pt-1 text-[11px] font-bold uppercase tracking-wider text-[var(--accent-primary)]">21st.dev Curated Themes</p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {% for p in theme_catalog.presets %}{% if p.source == '21st.dev' %}
+                  <button type="button" data-surface-preset="{{ p.slug }}" data-preset-accent="{{ p.accent_slug }}" data-preset-shell="{{ p.shell_slug }}" aria-pressed="{% if theme_prefs.preset == p.slug %}true{% else %}false{% endif %}" class="flex flex-col gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2 text-left transition-colors hover:bg-[var(--bg-elevated)]">
+                    <div class="flex items-center gap-1">
+                      <span class="h-3.5 w-3.5 rounded border border-black/10" style="background-color: {{ p.canvas_light }};"></span>
+                      <span class="h-3.5 w-3.5 rounded border border-black/10" style="background-color: {{ p.surface_light }};"></span>
+                      <span class="h-3.5 w-3.5 rounded border border-black/10" style="background-color: {{ p.accent_hex }};"></span>
+                      <span class="h-3.5 w-3.5 rounded border border-black/10" style="background-color: {{ p.text_light }};"></span>
+                    </div>
+                    <div class="flex items-center justify-between gap-1 min-w-0">
+                      <span class="truncate text-[11px] font-medium text-[var(--text-primary)]">{{ p.label }}</span>
+                      <i data-check-icon class="fa-solid fa-check text-[10px] shrink-0 text-[var(--accent-primary)]" aria-hidden="true"></i>
+                    </div>
+                  </button>
+                  {% endif %}{% endfor %}
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-1">
                   <button type="button" data-theme-density="comfortable" aria-pressed="{% if theme_prefs.density != 'compact' %}true{% else %}false{% endif %}" class="flex items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
@@ -181,6 +198,13 @@
                     </span>
                     <span class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] font-mono tabular-nums text-[var(--text-muted)]">12</span>
                   </div>
+                </div>
+
+                <div class="space-y-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3">
+                  <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Text Contrast</p>
+                  <p class="text-xs font-semibold text-[var(--text-primary)]">Primary Heading Text</p>
+                  <p class="text-[11px] text-[var(--text-secondary)]">Secondary body &amp; table labels</p>
+                  <p class="text-[10px] text-[var(--text-muted)]">Muted metadata &amp; timestamps</p>
                 </div>
 
                 <div class="flex items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-2.5">

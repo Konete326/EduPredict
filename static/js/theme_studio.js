@@ -22,7 +22,7 @@
     const isDark = prefs.mode === 'dark', shell = shellMap[prefs.shell_theme] || shellMap.blue || shellMap.white || {}, swatch = swatchMap[prefs.accent] || swatchMap.ocean || swatchMap.indigo || {}, preset = presetMap[prefs.preset] || presetMap.neutral || {};
     return {
       bg_canvas: isDark ? (preset.canvas_dark || '#090d16') : (preset.canvas_light || '#f8fafc'), bg_surface: isDark ? (preset.surface_dark || '#111827') : (preset.surface_light || '#ffffff'), bg_elevated: isDark ? (preset.elevated_dark || '#1e293b') : (preset.elevated_light || '#f1f5f9'),
-      bg_overlay: isDark ? 'rgba(2, 6, 23, 0.78)' : 'rgba(15, 23, 42, 0.55)', text_primary: isDark ? '#f8fafc' : '#0f172a', text_secondary: isDark ? '#cbd5e1' : '#475569', text_muted: isDark ? '#94a3b8' : '#64748b', border_subtle: isDark ? '#1e293b' : '#e2e8f0',
+      bg_overlay: isDark ? 'rgba(2, 6, 23, 0.78)' : 'rgba(15, 23, 42, 0.55)', text_primary: isDark ? (preset.text_dark || '#f4f4f5') : (preset.text_light || '#0f172a'), text_secondary: isDark ? (preset.secondary_dark || '#d4d4d8') : (preset.secondary_light || '#475569'), text_muted: isDark ? (preset.muted_dark || '#a1a1aa') : (preset.muted_light || '#64748b'), border_subtle: isDark ? (preset.border_dark || 'rgba(255, 255, 255, 0.08)') : (preset.border_light || '#e2e8f0'),
       accent_primary: swatch.hex || (isDark ? '#3b82f6' : '#2563eb'), accent_hover: swatch.hover || (isDark ? '#60a5fa' : '#1d4ed8'), accent_soft: isDark ? (swatch.soft_dark || 'rgba(59, 130, 246, 0.16)') : (swatch.soft_light || '#eff6ff'),
       shell_sidebar_bg: isDark ? (shell.sidebar_bg_dark || '#0d182b') : (shell.sidebar_bg_light || '#eff6ff'), shell_topbar_bg: isDark ? (shell.topbar_bg_dark || '#112038') : (shell.topbar_bg_light || '#f5f9ff'), force_dark_chrome: Boolean(shell.force_dark_chrome)
     };
@@ -285,7 +285,17 @@
       modal.addEventListener('click', (e) => {
         for (const [sel, attr, key] of STUDIO_CONTROLS) {
           const btn = e.target.closest(sel);
-          if (btn) { applyEduPredictThemePrefs({ [key]: btn.getAttribute(attr) }); return; }
+          if (btn) {
+            const patch = { [key]: btn.getAttribute(attr) };
+            if (key === 'preset') {
+              const pAccent = btn.getAttribute('data-preset-accent');
+              const pShell = btn.getAttribute('data-preset-shell');
+              if (pAccent) patch.accent = pAccent;
+              if (pShell) patch.shell_theme = pShell;
+            }
+            applyEduPredictThemePrefs(patch);
+            return;
+          }
         }
         if (e.target.closest('#theme-studio-sync-toggle')) { applyEduPredictThemePrefs({ sync_shell: !currentPrefs.sync_shell }); return; }
         if (e.target.closest('#theme-studio-reset-btn')) resetEduPredictThemePrefs();

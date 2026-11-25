@@ -67,8 +67,8 @@ project_phase: "Phase 82 Complete: Provably Verification-Wave Hero & Interactive
 
 completed_modules:
   - "Phase 1-81: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact."
-  - "Phase 82-83: Provably Hero, Interactive Testimonial Globe & 100% Live MongoDB Showcase:"
-      - "accounts/public_data.py (<= 175), accounts/views.py (<= 250), accounts/services.py (<= 340), templates/public/_base.html (147), templates/public/landing.html (<= 300), static/css/landing_provably.css (312), static/js/landing_provably.js (<= 350), static/js/landing_globe.js (<= 270): all Provably credential stack cards, 4-beat walkthrough metrics, and 3D Testimonial Globe feedback pins now load 100% live from MongoDB (student_records, predictions, courses, support_tickets, users) via json_script with zero hardcoded sample people or quotes."
+  - "Phase 84: 21st.dev Curated Themes & Per-Theme Text Contrast Tokens:"
+      - "core/theme_services.py (<= 355), static/js/theme_studio.js (<= 315), templates/components/theme_studio_modal.html (<= 250): added 6 curated 21st.dev themes (Meridian Blue, Harbor Blue, Claude Linen, Catppuccin, Respec Mint, Sage Studio) with matched accent/shell sync + per-preset text_primary, text_secondary, text_muted, and border_subtle tokens for both Light and Dark modes, plus a Text Contrast live preview card."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
