@@ -166,7 +166,7 @@
 
   {% include 'components/confirm_modal.html' %}
   {% include 'components/form_modal.html' %}
-  {% if active_role == 'ADMIN' %}{% include 'components/theme_studio_modal.html' %}{% endif %}
+  {% if active_role %}{% include 'components/theme_studio_modal.html' %}{% endif %}
   {% include 'components/page_guide_modal.html' %}
   {% include 'components/image_cropper_modal.html' %}
   {% include 'components/student_360_drawer.html' %}

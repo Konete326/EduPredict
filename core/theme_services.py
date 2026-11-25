@@ -21,12 +21,12 @@ def _shell(slug, label, dot_color, p_side, p_top, accent_sync, s_light, t_light,
 
 
 SHELL_THEMES = (
-    _shell("dark", "Dark", "#1e293b", "#0f172a", "#1e293b", "indigo", "#0f172a", "#111827", "#090d16", "#111827", True),
+    _shell("dark", "Dark", "#1e293b", "#0f172a", "#1e293b", "indigo", "#0f172a", "#111827", "#0d0e12", "#111217", True),
     _shell("red", "Red", "#dc2626", "#991b1b", "#dc2626", "crimson", "#fef2f2", "#fff5f5", "#1b0e12", "#221116"),
     _shell("dark-green", "Dark Green", "#15803d", "#14532d", "#166534", "forest", "#f0fdf4", "#f4fbf6", "#0b1a12", "#0f2218"),
     _shell("green", "Green", "#10b981", "#047857", "#10b981", "emerald", "#ecfdf5", "#f2fbf7", "#0b1d18", "#102620"),
-    _shell("blue", "Blue", "#2563eb", "#1d4ed8", "#2563eb", "ocean", "#eff6ff", "#f5f9ff", "#0d182b", "#112038"),
-    _shell("white", "White", "#ffffff", "#f8fafc", "#ffffff", None, "#ffffff", "#ffffff", "#111827", "#111827"),
+    _shell("blue", "Blue", "#2563eb", "#1d4ed8", "#2563eb", "ocean", "#eff6ff", "#f5f9ff", "#0d0e12", "#111217"),
+    _shell("white", "White", "#ffffff", "#f8fafc", "#ffffff", None, "#ffffff", "#ffffff", "#111114", "#111217"),
 )
 
 BRAND_SWATCHES = (
@@ -46,7 +46,7 @@ BRAND_SWATCHES = (
 )
 
 SURFACE_PRESETS = (
-    {"slug": "neutral", "label": "Neutral", "canvas_light": "#f8fafc", "surface_light": "#ffffff", "elevated_light": "#f1f5f9", "canvas_dark": "#090d16", "surface_dark": "#111827", "elevated_dark": "#1e293b"},
+    {"slug": "neutral", "label": "Neutral", "canvas_light": "#f8fafc", "surface_light": "#ffffff", "elevated_light": "#f1f5f9", "canvas_dark": "#09090b", "surface_dark": "#111114", "elevated_dark": "#1b1b20"},
     {"slug": "butter", "label": "Butter", "canvas_light": "#fefce8", "surface_light": "#fffdf5", "elevated_light": "#fef3c7", "canvas_dark": "#14120a", "surface_dark": "#1e1a0f", "elevated_dark": "#2c2516"},
     {"slug": "matcha", "label": "Matcha", "canvas_light": "#f3faf4", "surface_light": "#fbfefb", "elevated_light": "#e2f3e6", "canvas_dark": "#09130d", "surface_dark": "#101f16", "elevated_dark": "#192e21"},
     {"slug": "chocolate", "label": "Chocolate", "canvas_light": "#faf6f2", "surface_light": "#fffcf9", "elevated_light": "#f1e8df", "canvas_dark": "#140f0c", "surface_dark": "#1f1713", "elevated_dark": "#2e221c"},
@@ -111,11 +111,11 @@ def normalize_theme_prefs(raw, role="PORTAL", user_id="guest"):
         "bg_canvas": preset_cfg["canvas_dark"] if is_dark else preset_cfg["canvas_light"],
         "bg_surface": preset_cfg["surface_dark"] if is_dark else preset_cfg["surface_light"],
         "bg_elevated": preset_cfg["elevated_dark"] if is_dark else preset_cfg["elevated_light"],
-        "bg_overlay": "rgba(2, 6, 23, 0.78)" if is_dark else "rgba(15, 23, 42, 0.55)",
-        "text_primary": "#f8fafc" if is_dark else "#0f172a",
-        "text_secondary": "#cbd5e1" if is_dark else "#475569",
-        "text_muted": "#94a3b8" if is_dark else "#64748b",
-        "border_subtle": "#1e293b" if is_dark else "#e2e8f0",
+        "bg_overlay": "rgba(9, 9, 11, 0.78)" if is_dark else "rgba(15, 23, 42, 0.55)",
+        "text_primary": "#f4f4f5" if is_dark else "#0f172a",
+        "text_secondary": "#d4d4d8" if is_dark else "#475569",
+        "text_muted": "#a1a1aa" if is_dark else "#64748b",
+        "border_subtle": "rgba(255, 255, 255, 0.08)" if is_dark else "#e2e8f0",
         "accent_primary": swatch_cfg["hex"],
         "accent_hover": swatch_cfg["hover"],
         "accent_soft": swatch_cfg["soft_dark"] if is_dark else swatch_cfg["soft_light"],

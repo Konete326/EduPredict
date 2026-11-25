@@ -18,24 +18,32 @@ def _safe_float(val, default=0.0):
 
 
 def _load_analyst_snapshot():
-    records = list(student_records_col().find({}, {'_id': 0}))
+    raw_records = list(student_records_col().find({}, {'_id': 0}))
+    record_map = {}
+    for rec in raw_records:
+        sid = str(rec.get('student_id', '')).strip()
+        if sid:
+            record_map[sid] = rec
+    records = list(record_map.values())
     pred_map = {}
     for pred in predictions_col().find({}, {'_id': 0}):
         sid = str(pred.get('student_id', '')).strip()
-        if sid:
+        if not sid or sid not in record_map:
+            continue
+        prev_pred = pred_map.get(sid)
+        gen = pred.get('generated_at')
+        prev_gen = prev_pred.get('generated_at') if prev_pred else None
+        if prev_pred is None or (hasattr(gen, 'strftime') and (not hasattr(prev_gen, 'strftime') or gen >= prev_gen)):
             pred_map[sid] = pred
-    logs = list(datasets_log_col().find({}, {'_id': 0}).sort('uploaded_at', DESCENDING).limit(6))
+    total_uploads_count = int(datasets_log_col().count_documents({}))
+    logs = list(datasets_log_col().find({}, {'_id': 0}).sort('uploaded_at', DESCENDING))
     evaluation = None
     evaluation_error = None
     try:
-        evaluation = get_cached(
-            'analyst:evaluation:default',
-            lambda: evaluate_models(records=records),
-            ttl=45.0,
-        )
+        evaluation = get_cached('analyst:evaluation:default', lambda: evaluate_models(records=records), ttl=45.0)
     except Exception as exc:
         evaluation_error = str(exc)
-    return records, pred_map, logs, evaluation, evaluation_error
+    return records, pred_map, logs, total_uploads_count, evaluation, evaluation_error
 
 
 def _build_joined_records(records, pred_map):
@@ -45,26 +53,18 @@ def _build_joined_records(records, pred_map):
         if not sid:
             continue
         pred = pred_map.get(sid) or {}
-        risk_level = str(pred.get('risk_level') or 'PENDING').strip().upper()
-        raw_score = pred.get('dropout_risk_score')
-        raw_pred_gpa = pred.get('predicted_gpa')
+        raw_score, raw_pred_gpa = pred.get('dropout_risk_score'), pred.get('predicted_gpa')
         joined.append({
-            'student_id': sid,
-            'full_name': str(rec.get('full_name') or sid),
-            'batch': str(rec.get('batch') or 'Unassigned'),
-            'course_code': str(rec.get('course_code') or 'GENERAL'),
-            'attendance_pct': _safe_float(rec.get('attendance_pct'), 0.0),
-            'internal_marks': _safe_float(rec.get('internal_marks'), 0.0),
-            'assignment_score': _safe_float(rec.get('assignment_score'), 0.0),
-            'lms_hours_weekly': _safe_float(rec.get('lms_hours_weekly'), 0.0),
+            'student_id': sid, 'full_name': str(rec.get('full_name') or sid),
+            'batch': str(rec.get('batch') or 'Unassigned'), 'course_code': str(rec.get('course_code') or 'GENERAL'),
+            'attendance_pct': _safe_float(rec.get('attendance_pct'), 0.0), 'internal_marks': _safe_float(rec.get('internal_marks'), 0.0),
+            'assignment_score': _safe_float(rec.get('assignment_score'), 0.0), 'lms_hours_weekly': _safe_float(rec.get('lms_hours_weekly'), 0.0),
             'previous_gpa': _safe_float(rec.get('previous_gpa'), 0.0),
             'predicted_gpa': _safe_float(raw_pred_gpa) if raw_pred_gpa is not None else None,
             'dropout_risk_score': _safe_float(raw_score) if raw_score is not None else None,
-            'risk_level': risk_level,
-            'is_anomaly': bool(pred.get('is_anomaly', False)),
-            'anomaly_reason': str(pred.get('anomaly_reason') or ''),
-            'recommendation': str(pred.get('recommendation') or 'Run prediction to get tips.'),
-            'raw_record': rec,
+            'risk_level': str(pred.get('risk_level') or 'PENDING').strip().upper(),
+            'is_anomaly': bool(pred.get('is_anomaly', False)), 'anomaly_reason': str(pred.get('anomaly_reason') or ''),
+            'recommendation': str(pred.get('recommendation') or 'Run prediction to get tips.'), 'raw_record': rec,
         })
     return joined
 
@@ -89,21 +89,16 @@ def _export_csv_response(rows):
     response['Content-Disposition'] = 'attachment; filename="edupredict_predictions.csv"'
     writer = csv.writer(response)
     writer.writerow([
-        'student_id', 'full_name', 'batch', 'course_code', 'attendance_pct',
-        'internal_marks', 'assignment_score', 'lms_hours_weekly', 'previous_gpa',
-        'predicted_gpa', 'dropout_risk_score', 'risk_level', 'is_anomaly',
-        'anomaly_reason', 'recommendation',
+        'student_id', 'full_name', 'batch', 'course_code', 'attendance_pct', 'internal_marks', 'assignment_score',
+        'lms_hours_weekly', 'previous_gpa', 'predicted_gpa', 'dropout_risk_score', 'risk_level', 'is_anomaly', 'anomaly_reason', 'recommendation',
     ])
     for r in rows:
         writer.writerow([
-            r['student_id'], r['full_name'], r['batch'], r['course_code'],
-            f"{r['attendance_pct']:.1f}", f"{r['internal_marks']:.1f}",
-            f"{r['assignment_score']:.1f}", f"{r['lms_hours_weekly']:.1f}",
-            f"{r['previous_gpa']:.2f}",
+            r['student_id'], r['full_name'], r['batch'], r['course_code'], f"{r['attendance_pct']:.1f}",
+            f"{r['internal_marks']:.1f}", f"{r['assignment_score']:.1f}", f"{r['lms_hours_weekly']:.1f}", f"{r['previous_gpa']:.2f}",
             f"{r['predicted_gpa']:.2f}" if r['predicted_gpa'] is not None else '',
             f"{r['dropout_risk_score']:.4f}" if r['dropout_risk_score'] is not None else '',
-            r['risk_level'], 'Yes' if r['is_anomaly'] else 'No',
-            r['anomaly_reason'], r['recommendation'],
+            r['risk_level'], 'Yes' if r['is_anomaly'] else 'No', r['anomaly_reason'], r['recommendation'],
         ])
     return response
 
@@ -117,7 +112,9 @@ def _ordered_evaluation_models(evaluation):
 
 
 def _compute_analyst_data(selected_batch, selected_course, selected_risk):
-    records, pred_map, logs, evaluation, evaluation_error = get_cached('analyst:snapshot', _load_analyst_snapshot, ttl=45.0)
+    records, pred_map, logs, total_uploads_count, evaluation, evaluation_error = get_cached(
+        'analyst:snapshot', _load_analyst_snapshot, ttl=45.0
+    )
     joined = _build_joined_records(records, pred_map)
     batches = sorted({item['batch'] for item in joined if item['batch']})
     courses = sorted({item['course_code'] for item in joined if item['course_code']})
@@ -125,8 +122,16 @@ def _compute_analyst_data(selected_batch, selected_course, selected_risk):
     risk_order = {'HIGH': 0, 'MEDIUM': 1, 'LOW': 2, 'PENDING': 3}
     filtered.sort(key=lambda x: (risk_order.get(x['risk_level'], 4), -(x['dropout_risk_score'] or 0.0)))
     gpa_vals = [r['predicted_gpa'] for r in filtered if r['predicted_gpa'] is not None]
+    eval_summary = evaluation.get('dataset_summary') if isinstance(evaluation, dict) else None
+    genuine_gpa_labels = int(eval_summary.get('genuine_gpa_labels') or 0) if isinstance(eval_summary, dict) else 0
+    accuracy_note = (
+        f"{genuine_gpa_labels} genuine actual_gpa labels verified for train/test validation."
+        if genuine_gpa_labels > 0
+        else "0 genuine actual_gpa labels: Model Evaluation hides real-world test scores; AI Accuracy shows Predicted vs Previous GPA as a proxy drift check."
+    )
     kpis = {
         'total_records': len(filtered),
+        'predictions_stored': sum(1 for r in filtered if r['predicted_gpa'] is not None),
         'high_risk_count': sum(1 for r in filtered if r['risk_level'] == 'HIGH'),
         'anomalies_count': sum(1 for r in filtered if r['is_anomaly']),
         'avg_predicted_gpa': f"{(sum(gpa_vals) / len(gpa_vals)):.2f}" if gpa_vals else '0.00',
@@ -171,6 +176,7 @@ def _compute_analyst_data(selected_batch, selected_course, selected_risk):
     return {
         'kpis': kpis, 'filter_options': {'batches': batches, 'courses': courses},
         'prediction_rows': prediction_rows, 'dataset_rows': dataset_rows,
+        'total_uploads_count': total_uploads_count, 'accuracy_note': accuracy_note,
         'chart_data': chart_data, 'filtered': filtered, 'evaluation': evaluation,
         'evaluation_models': _ordered_evaluation_models(evaluation),
         'evaluation_error': evaluation_error,
@@ -189,7 +195,8 @@ def analyst_accuracy(request):
             'kpis': {}, 'model_info': {'version': 'untrained', 'generated': 'Never', 'features': []},
             'risk_counts': {'LOW': 0, 'MEDIUM': 0, 'HIGH': 0}, 'error_buckets': {},
             'demand_headers': [], 'demand_rows': [], 'upload_headers': [], 'upload_rows': [],
-            'display': {'gpa_mae': 'N/A', 'stable_share': 'N/A', 'risk_agreement': 'N/A'},
+            'total_uploads_count': 0, 'accuracy_note': '',
+            'display': {'gpa_mae': 'N/A', 'stable_share': 'N/A', 'risk_agreement': 'N/A', 'gpa_mae_title': 'GPA Drift (Proxy MAE)', 'gpa_mae_badge': 'Proxy: Pred vs Prev GPA (0 labels)', 'accuracy_note': ''},
             'chart_data': {}, 'portal_settings': _resolve_runtime_settings(persist=False), 'db_error': str(exc),
         }
     return render(request, 'panels/analyst_accuracy.html', {
@@ -198,6 +205,10 @@ def analyst_accuracy(request):
         'error_buckets': data['error_buckets'], 'gpa_mae_display': data['display']['gpa_mae'],
         'stable_share_display': data['display']['stable_share'],
         'risk_agreement_display': data['display']['risk_agreement'],
+        'gpa_mae_title': data['display'].get('gpa_mae_title', 'GPA Drift (Proxy MAE)'),
+        'gpa_mae_badge': data['display'].get('gpa_mae_badge', 'Proxy: Pred vs Prev GPA'),
+        'accuracy_note': data.get('accuracy_note') or data['display'].get('accuracy_note', ''),
+        'total_uploads_count': data.get('total_uploads_count', 0),
         'demand_headers': data['demand_headers'], 'demand_rows': data['demand_rows'],
         'upload_headers': data['upload_headers'], 'upload_rows': data['upload_rows'],
         'chart_data': data['chart_data'], 'portal_settings': data['portal_settings'], 'db_error': data['db_error'],
@@ -210,8 +221,7 @@ def analyst_dashboard(request):
     selected_course = str(request.GET.get('course_code', 'ALL')).strip() or 'ALL'
     selected_risk = str(request.GET.get('risk_level', 'ALL')).strip().upper() or 'ALL'
     if request.GET.get('export') == 'csv':
-        data = _compute_analyst_data(selected_batch, selected_course, selected_risk)
-        return _export_csv_response(data['filtered'])
+        return _export_csv_response(_compute_analyst_data(selected_batch, selected_course, selected_risk)['filtered'])
 
     session_user = request.session.get('user') or {}
     user_id = str(session_user.get('user_id') or '').strip()
@@ -227,11 +237,11 @@ def analyst_dashboard(request):
             'prediction_headers': ['Student ID', 'Name', 'Batch', 'Course', 'Attendance', 'Past GPA', 'Next GPA', 'Risk Level', 'Unusual', 'Tip'],
             'prediction_rows': data['prediction_rows'],
             'dataset_headers': ['File Name', 'Rows', 'Fixed', 'Status', 'Date'],
-            'dataset_rows': data['dataset_rows'], 'chart_data': data['chart_data'],
+            'dataset_rows': data['dataset_rows'], 'total_uploads_count': data['total_uploads_count'],
+            'accuracy_note': data['accuracy_note'], 'chart_data': data['chart_data'],
             'evaluation': data['evaluation'], 'evaluation_models': data['evaluation_models'],
             'evaluation_error': data['evaluation_error'], 'portal_settings': data['portal_settings'],
-            'required_columns': REQUIRED_COLUMNS,
-            'db_error': None,
+            'required_columns': REQUIRED_COLUMNS, 'db_error': None,
         })
         return resp.content, resp.get('Content-Type', 'text/html; charset=utf-8')
 

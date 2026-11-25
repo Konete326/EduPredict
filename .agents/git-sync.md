@@ -61,28 +61,28 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 78 Live Dynamic Gemini AI & Full-App Software-Control Action Planner Swarm"
-active_branch_merged_to_main: "main (direct verified release push)"
-project_phase: "Phase 78 Complete: Live Dynamic Gemini AI Dock + RBAC-Validated Full-App Software Control"
+last_updated_by_agent: "Phase 80A Theme Polish, Universal Theme Studio & Analyst UX/Backend Swarm"
+active_branch_merged_to_main: "main (verified release push)"
+project_phase: "Phase 80A Complete: Refined Dark Mode, Universal Theme & Colors, Metric Card Polish & Analyst Consistency"
 
 completed_modules:
-  - "Phase 1-77: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Admin Activity Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup Wizard, Teacher Approval/Reject Guard, Official PDF & HTML Branding Sync, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish (60-63), Live Stream/KPI/PDF/Card-ID Sync (64-72), Hirael Login-03 (73), Glassmorphism Profile/Tabbed Settings/Drawer Blur/Zero-Glow Academic Widgets (74), Multi-Agent AI Dock/Real-Data Honesty/Monochrome A4 PDFs (75), AI Specialist DPs/sessionStorage Continuity/RBAC-DOM Polls/Zero-UI A4 Print/Progress Watchdog (76), and Vercel Production Auto-Deploy on GitHub main (77)."
-  - "Phase 78: Live Dynamic Gemini AI & Full-App RBAC Software-Control Action Planner:"
-      - "core/ai_agent_services.py (345/350 lines, 0 comments/docstrings): added _resolve_gemini_api_key() (env + Windows HKCU Environment fallback while keeping tracked .env GH013-safe), fixed Gemini model chain (primary -> gemini-flash-lite-latest -> gemini-3.5-flash-lite, dropping failing gemini-flash-latest), increased timeout to 10.0s (GEMINI_TIMEOUT_SECS), enabled structured JSON mode (responseMimeType: application/json, maxOutputTokens: 650), and upgraded handle_agent_dock_message() to plan dynamic {reply, dom_actions, poll, handoff_to} matching user language (Roman Urdu or English)."
-      - "core/ai_dom_actions.py (331/350 lines, 0 comments/docstrings): added CLICK_ACTION_SPECS (print_a4_report, download_pdf, open_change_password, open_theme_studio, notify_high_risk, run_ml, simulate_stream, export_backup), toggle_theme, toggle_sidebar, describe_role_action_schema(), sanitize_llm_dom_actions(), and sanitize_llm_poll() with strict ROLE_ROUTES and RBAC privacy guard validation."
-      - "panels/views_notifications.py (112/250 lines, 0 comments/docstrings): wired optional current_path into handle_agent_dock_message()."
-      - "static/js/ai_agent_dock.js (339/350 lines, 0 comments) & templates/components/ai_message_dock.html (77/350 lines, 0 comments): added dynamic software-control executor for all 6 action types (redirect, filter_table, open_and_fill_form with 2.2s prefill highlight, click_element with cross-route pending queue, toggle_theme, toggle_sidebar), current_path POST payload, live #ep-dock-engine-badge (Live AI / Policy Guard / Offline Mode), and non-repetitive offline Retry control."
+  - "Phase 1-79: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Admin Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official PDF & HTML Branding, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish (60-63), Live Stream/KPI/PDF/Card-ID Sync (64-72), Hirael Login-03 (73), Glassmorphism Profile/Tabbed Settings/Drawer Blur/Zero-Glow Academic Widgets (74), Multi-Agent AI Dock/Real-Data Honesty/Monochrome A4 PDFs (75), AI Specialist DPs/sessionStorage Continuity/RBAC-DOM Polls/Zero-UI A4 Print/Progress Watchdog (76), Vercel Auto-Deploy (77), Live Dynamic Gemini AI & Full-App Software Control (78)."
+  - "Phase 80A: Theme Polish, Universal Theme Studio & Analyst Data/UI Consistency:"
+      - "core/theme_services.py (339/350) & static/css/global.css (283/350): refined neutral zinc dark tokens (#09090b canvas, #111114 surface, #1b1b20 elevated), dark/blue shell dark chromes (#0d0e12 / #111217), rgba(255,255,255,0.08) hairline borders, and crisp input/table focus & hover parity."
+      - "templates/components/sidebar.html (199/350), templates/base.html (191/350) & templates/components/metric_card.html (22/350): enabled Theme & Colors (openThemeStudioModal() + theme_studio_modal.html) for all logged-in roles (ADMIN, TEACHER, STUDENT, ANALYST) while keeping Portal Settings ADMIN-only; polished metric_card.html padding & tablet/desktop typography."
+      - "panels/views_analyst.py (249/250) & analytics/model_health.py (220/350): deduplicated student_records & predictions by unique student_id (coverage <= 100.0%), synced Recent Uploads count (removed .limit(6), added total_uploads_count), and clarified genuine GPA labels vs proxy previous_gpa MAE across /analyst-panel/ and /analyst-panel/accuracy/."
+      - "templates/panels/analyst_dashboard.html (345/350), templates/panels/analyst_accuracy.html (159/350) & static/js/academic_widgets.js (242/350): simplified Analyst header to 3 primary actions + 3-step 'How Data & ML Work' strip, full-width Recent Uploads, compact Predictions table, stacked Tab 2 Training Data Summary, dynamic ctx.measureText padding (with fallback guard) to prevent x-axis label clipping, and wired gpa_mae_title/gpa_mae_badge."
+      - "panels/test_notifications.py (241/380) & panels/test_phase24.py (182/380): updated assertions for universal non-admin Theme & Colors modal while keeping /admin-panel/settings/ ADMIN-only."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "node --check: all 13 JS scripts in static/js/*.js exited 0 (ALL_JS_OK)."
-  - "Zero-comment & line-cap audit: core/ai_agent_services.py (345/350), core/ai_dom_actions.py (331/350), panels/views_notifications.py (112/250), static/js/ai_agent_dock.js (339/350), templates/components/ai_message_dock.html (77/350), panels/test_phase75.py (373/380), panels/test_phase76.py (365/380) — all 0 comments/docstrings; .env keeps GEMINI_BACKEND_KEY_3= blank."
-  - "Live Gemini dynamic test: Test 1 (STUDENT GPA advice -> engine=gemini-flash-lite-latest, live MongoDB GPA 3.41); Test 2 (ADMIN dark mode + prefilled create_course CS-405 Machine Learning -> engine=gemini-3.5-flash-lite, 2 validated dom_actions); Test 3 (STUDENT requesting admin create_user/export_backup -> engine=rbac_guard, blocked=True, dom_actions=[])."
-  - "manage.py test: Ran 136 tests in 100.347s (OK)."
-  - "manage.py verify_uat: UAT Results: 7/7 passed in 9.85s - System 100% Operational (Step 1 status=healthy, latency=616.11ms, Steps 2-7 PASS)."
+  - "node --check: all 13 JS scripts in static/js/*.js exited 0 (JS_CHECK_OK: 13 files)."
+  - "Zero-comment & line-cap audit: all 12 modified files passed with issues=[] (views_analyst.py 249/250, all others <= 350, test files <= 380)."
+  - "manage.py test --verbosity=2: Ran 136 tests in 100.176s (OK)."
+  - "manage.py verify_uat: UAT Results: 7/7 passed in 10.48s - System 100% Operational (Step 1 status=healthy, latency=636.4ms, Steps 2-7 PASS)."
 
 active_routes_and_files:
-  - "core/ai_agent_services.py, core/ai_dom_actions.py, panels/views_notifications.py, static/js/ai_agent_dock.js, templates/components/ai_message_dock.html, .agents/git-sync.md"
+  - "core/theme_services.py, static/css/global.css, templates/base.html, templates/components/sidebar.html, templates/components/metric_card.html, panels/views_analyst.py, analytics/model_health.py, templates/panels/analyst_dashboard.html, templates/panels/analyst_accuracy.html, static/js/academic_widgets.js, panels/test_notifications.py, panels/test_phase24.py, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

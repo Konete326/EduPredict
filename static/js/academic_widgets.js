@@ -99,8 +99,11 @@
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('No live course records available yet', w / 2, h / 2); ctx.restore();
         return;
       }
-      const padL = 38, padR = 14, padT = 16, padB = 26, plotW = Math.max(80, w - padL - padR), plotH = Math.max(60, h - padT - padB), yMin = 30, yMax = 100, toY = (v) => padT + ((yMax - clamp(v, yMin, yMax)) / (yMax - yMin)) * plotH;
       ctx.font = "500 10px 'JetBrains Mono', ui-monospace, monospace";
+      const measureLbl = (lbl) => (typeof ctx.measureText === 'function' ? ctx.measureText(lbl).width : String(lbl || '').length * 6);
+      const firstLblW = series.labels.length ? measureLbl(series.labels[0]) : 0;
+      const lastLblW = series.labels.length ? measureLbl(series.labels[series.labels.length - 1]) : 0;
+      const padL = Math.max(38, Math.ceil(firstLblW / 2) + 10), padR = Math.max(28, Math.ceil(lastLblW / 2) + 10), padT = 16, padB = 26, plotW = Math.max(80, w - padL - padR), plotH = Math.max(60, h - padT - padB), yMin = 30, yMax = 100, toY = (v) => padT + ((yMax - clamp(v, yMin, yMax)) / (yMax - yMin)) * plotH;
       [40, 60, 80, 100].forEach((tick) => {
         const y = toY(tick); ctx.save(); ctx.strokeStyle = t.borderSubtle; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
         ctx.fillStyle = t.textMuted; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(tick + '%', padL - 6, y); ctx.restore();

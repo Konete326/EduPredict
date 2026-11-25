@@ -226,10 +226,9 @@ class NotificationAndReplyTests(TestCase):
         prof_res = student.get(reverse("panels:user_profile"))
         self.assertEqual(prof_res.status_code, 200)
         prof_html = prof_res.content.decode("utf-8")
-        for marker in ('id="image-cropper-modal"', 'id="support-ticket-modal"', "openSupportTicketModal()"):
+        for marker in ('id="image-cropper-modal"', 'id="support-ticket-modal"', "openSupportTicketModal()", "openThemeStudioModal()", 'id="theme-studio-modal"'):
             self.assertIn(marker, prof_html)
-        self.assertNotIn("openThemeStudioModal()", prof_html)
-        self.assertNotIn('id="theme-studio-modal"', prof_html)
+        self.assertNotIn("/admin-panel/settings/", prof_html)
         notif_res = student.get(reverse("panels:student_notifications"))
         self.assertEqual(notif_res.status_code, 200)
         notif_html = notif_res.content.decode("utf-8")

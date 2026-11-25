@@ -153,14 +153,14 @@
           <i class="fa-solid fa-sliders w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Portal Settings</span>
         </a>
-        <button type="button" onclick="openThemeStudioModal()" title="Customize official portal theme colors" class="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+        {% endif %}
+        <button type="button" onclick="openThemeStudioModal()" title="Customize theme colors" class="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
           <span class="flex items-center gap-3 min-w-0">
             <i class="fa-solid fa-palette w-5 text-center shrink-0 text-sm text-[var(--accent-primary)]" aria-hidden="true"></i>
             <span class="truncate">Theme &amp; Colors</span>
           </span>
           <span class="h-2.5 w-2.5 shrink-0 rounded-full border border-[var(--border-subtle)]" style="background-color: var(--accent-primary);" aria-hidden="true"></span>
         </button>
-        {% endif %}
       </div>
     </div>
     {% endif %}

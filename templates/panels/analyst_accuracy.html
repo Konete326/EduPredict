@@ -32,7 +32,7 @@
 
 <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 [&_[data-dot-kpi]]:py-2">
   {% include 'components/metric_card.html' with title="Predictions Stored" value=kpis.total_predictions badge=kpis.coverage_pct|stringformat:"s"|add:"% of students" status="info" icon="fa-solid fa-bullseye" %}
-  {% include 'components/metric_card.html' with title="GPA Error (MAE)" value=gpa_mae_display badge="Predicted vs previous GPA" status="warning" icon="fa-solid fa-ruler" %}
+  {% include 'components/metric_card.html' with title=gpa_mae_title|default:"GPA Error (MAE)" value=gpa_mae_display badge=gpa_mae_badge|default:"Predicted vs previous GPA" status="warning" icon="fa-solid fa-ruler" %}
   {% include 'components/metric_card.html' with title="Stable GPA Share" value=stable_share_display badge="Error within 0.25" status="success" icon="fa-solid fa-scale-balanced" %}
   {% include 'components/metric_card.html' with title="Unusual Drops" value=kpis.anomaly_count badge=kpis.anomaly_rate|stringformat:"s"|add:"% of predictions" status="danger" icon="fa-solid fa-wave-square" %}
 </section>
@@ -112,11 +112,11 @@
     <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 flex items-center justify-between"><span class="text-[var(--text-muted)]">Flag Agreement</span><span class="font-mono font-semibold text-[var(--text-primary)]">{{ risk_agreement_display }}</span></div>
     <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 flex items-center justify-between"><span class="text-[var(--text-muted)]">Risk Cutoffs</span><span class="font-mono font-semibold text-[var(--text-primary)]">High &ge;{{ portal_settings.high_risk_threshold|default:70 }}% / Med &ge;{{ portal_settings.medium_risk_threshold|default:35 }}%</span></div>
   </section>
-  <section class="grid grid-cols-1 gap-3.5 xl:grid-cols-12">
-    <div class="xl:col-span-7 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
+  <section class="grid grid-cols-1 gap-3.5">
+    <div class="min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
       {% include 'components/data_table.html' with table_id="accuracy-demand-table" table_title="Course Demand Forecast" headers=demand_headers rows=demand_rows page_size=4 empty_message="No course demand data yet. Upload a dataset in the Data Hub." %}
     </div>
-    <div class="xl:col-span-5 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
+    <div class="min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
       {% include 'components/data_table.html' with table_id="accuracy-upload-table" table_title="Training Data Summary" headers=upload_headers rows=upload_rows page_size=4 empty_message="No uploads recorded yet." %}
     </div>
   </section>

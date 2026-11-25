@@ -18,25 +18,10 @@
     <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Ingest datasets, fill missing values with Scikit-Learn, and forecast student dropout risks.</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
-    <button type="button" onclick="openAnalystUploadModal()" title="Upload CSV or Excel dataset" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
-      <i class="fa-solid fa-cloud-arrow-up text-xs text-[var(--accent-primary)]"></i>
-      <span>Upload Dataset</span>
+    <button type="button" onclick="openAnalystUploadModal()" title="Upload CSV or Excel dataset and run ML predictions" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+      <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+      <span>Upload &amp; Auto-Predict</span>
     </button>
-    <form method="post" action="{% url 'analytics:upload_dataset' %}">
-      {% csrf_token %}
-      <input type="hidden" name="mode" value="sample">
-      <button type="submit" title="Add 60 sample students and run predictions" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
-        <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
-        <span>1-Click Load &amp; Predict</span>
-      </button>
-    </form>
-    <form method="post" action="{% url 'analytics:run_predictions' %}">
-      {% csrf_token %}
-      <button type="submit" title="Run predictions again on current MongoDB records" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
-        <i class="fa-solid fa-rotate text-xs text-[var(--accent-primary)]"></i>
-        <span>Retrain &amp; Run ML</span>
-      </button>
-    </form>
     <a href="{% url 'panels:analyst_dashboard' %}?batch={{ selected_filters.batch|urlencode }}&course_code={{ selected_filters.course_code|urlencode }}&risk_level={{ selected_filters.risk_level|urlencode }}&export=csv" title="Save filtered predictions as a CSV file" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
       <i class="fa-solid fa-file-csv text-xs text-[var(--status-success)]"></i>
       <span>Export CSV</span>
@@ -46,8 +31,30 @@
         <span id="live-stream-ping" class="absolute inline-flex h-full w-full motion-safe:animate-ping rounded-full bg-[var(--accent-primary)] opacity-60"></span>
         <span id="live-stream-dot" class="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent-primary)]"></span>
       </span>
-      <span id="live-stream-label">Simulate Live LMS Stream</span>
+      <span id="live-stream-label">Simulate Live Stream</span>
     </button>
+  </div>
+</section>
+
+<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 space-y-2.5">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div class="flex items-center gap-2">
+      <i class="fa-solid fa-diagram-project text-xs text-[var(--accent-primary)]" aria-hidden="true"></i>
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">How Data &amp; ML Work</h3>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <form method="post" action="{% url 'analytics:upload_dataset' %}">{% csrf_token %}<input type="hidden" name="mode" value="sample">
+        <button type="submit" title="Add 60 sample students and run predictions" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-database text-[11px] text-[var(--accent-primary)]"></i><span>Load 60 Sample Students</span></button>
+      </form>
+      <form method="post" action="{% url 'analytics:run_predictions' %}">{% csrf_token %}
+        <button type="submit" title="Retrain ML models and refresh predictions on current records" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-rotate text-[11px] text-[var(--accent-primary)]"></i><span>Retrain &amp; Run ML</span></button>
+      </form>
+    </div>
+  </div>
+  <div class="grid grid-cols-1 gap-2.5 md:grid-cols-3">
+    <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><p class="text-xs font-semibold text-[var(--text-primary)]">1. Upload or Load Data</p><p class="text-[11px] text-[var(--text-muted)]">Upload a CSV/Excel sheet or load 60 sample records.</p></div>
+    <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><p class="text-xs font-semibold text-[var(--text-primary)]">2. Auto-Clean &amp; Train ML</p><p class="text-[11px] text-[var(--text-muted)]">Blank cells are filled and Scikit-Learn scores risk &amp; GPA.</p></div>
+    <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><p class="text-xs font-semibold text-[var(--text-primary)]">3. Review &amp; Export</p><p class="text-[11px] text-[var(--text-muted)]">Filter high-risk students, hover tips, or export CSV.</p></div>
   </div>
 </section>
 
@@ -79,43 +86,34 @@
   {% include 'components/metric_card.html' with title="Average Pred. GPA" value=kpis.avg_predicted_gpa badge="Out of 4.0" status="success" icon="fa-solid fa-chart-line" %}
 </section>
 
-<section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-  <div class="xl:col-span-8 min-w-0 space-y-4">
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
-        <div class="mb-2.5 flex items-center justify-between gap-2">
-          <h3 class="text-sm font-semibold text-[var(--text-primary)]">Dropout Risk Levels</h3>
-          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Risk Split</span>
-        </div>
-        <div class="relative h-48 w-full"><canvas id="chart-dropout-doughnut"></canvas></div>
-      </div>
-
-      <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
-        <div class="mb-2.5 flex items-center justify-between gap-2">
-          <h3 class="text-sm font-semibold text-[var(--text-primary)]">Attendance vs. Predicted GPA</h3>
-          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Scatter Plot</span>
-        </div>
-        <div class="relative h-48 w-full"><canvas id="chart-correlation-scatter"></canvas></div>
-      </div>
+<section class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+  <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
+    <div class="mb-2.5 flex items-center justify-between gap-2">
+      <h3 class="text-sm font-semibold text-[var(--text-primary)]">Dropout Risk Levels</h3>
+      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Risk Split</span>
     </div>
-
-    <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
-      <div class="mb-2.5 flex items-center justify-between gap-2">
-        <div>
-          <h3 class="text-sm font-semibold text-[var(--text-primary)]">Course Demand</h3>
-          <p class="text-xs text-[var(--text-muted)]">Current students compared to expected seats next term</p>
-        </div>
-        <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Forecast</span>
-      </div>
-      <div class="relative h-48 w-full"><canvas id="chart-course-demand"></canvas></div>
-    </div>
+    <div class="relative h-48 w-full"><canvas id="chart-dropout-doughnut"></canvas></div>
   </div>
 
-  <div class="xl:col-span-4 min-w-0">
-    <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 h-full">
-      {% include 'components/data_table.html' with table_id="dataset-logs-table" table_title="Recent Uploads" headers=dataset_headers rows=dataset_rows page_size=5 empty_message="No files uploaded yet." %}
+  <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
+    <div class="mb-2.5 flex items-center justify-between gap-2">
+      <h3 class="text-sm font-semibold text-[var(--text-primary)]">Attendance vs. Predicted GPA</h3>
+      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Scatter Plot</span>
     </div>
+    <div class="relative h-48 w-full"><canvas id="chart-correlation-scatter"></canvas></div>
   </div>
+
+  <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
+    <div class="mb-2.5 flex items-center justify-between gap-2">
+      <h3 class="text-sm font-semibold text-[var(--text-primary)]">Course Demand</h3>
+      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Forecast</span>
+    </div>
+    <div class="relative h-48 w-full"><canvas id="chart-course-demand"></canvas></div>
+  </div>
+</section>
+
+<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
+  {% include 'components/data_table.html' with table_id="dataset-logs-table" table_title="Recent Uploads" headers=dataset_headers rows=dataset_rows page_size=5 empty_message="No files uploaded yet." %}
 </section>
 
 <section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-4">
@@ -159,7 +157,9 @@
     </div>
   </form>
 
-  {% include 'components/data_table.html' with table_id="analyst-predictions-table" table_title="Student Predictions" headers=prediction_headers rows=prediction_rows page_size=5 empty_message="No matching rows found. Load sample data or upload a file above." %}
+  <div class="[&_#analyst-predictions-table_th]:px-2.5 [&_#analyst-predictions-table_th]:py-2 [&_#analyst-predictions-table_th]:text-[11px] [&_#analyst-predictions-table_td]:px-2.5 [&_#analyst-predictions-table_td]:py-2 [&_#analyst-predictions-table_td]:text-xs [&_#analyst-predictions-table_td:last-child]:max-w-[11rem] [&_#analyst-predictions-table_td:last-child]:truncate [&_#analyst-predictions-table_th:last-child]:max-w-[11rem]">
+    {% include 'components/data_table.html' with table_id="analyst-predictions-table" table_title="Student Predictions" headers=prediction_headers rows=prediction_rows page_size=5 empty_message="No matching rows found. Load sample data or upload a file above." %}
+  </div>
 </section>
 
 {% include 'panels/analyst_evaluation_section.html' %}
@@ -207,21 +207,11 @@
     function toggleFallbackModal(id, open) {
       const m = document.getElementById(id);
       if (!m) return;
-      m.classList.toggle('hidden', !open);
-      m.classList.toggle('flex', open);
-      m.setAttribute('aria-hidden', open ? 'false' : 'true');
+      m.classList.toggle('hidden', !open); m.classList.toggle('flex', open); m.setAttribute('aria-hidden', open ? 'false' : 'true');
       if (typeof window.syncBodyScrollLock === 'function') window.syncBodyScrollLock();
     }
-
-    window.openAnalystUploadModal = function () {
-      if (typeof window.openCustomModal === 'function') window.openCustomModal('analyst-upload-modal');
-      else toggleFallbackModal('analyst-upload-modal', true);
-    };
-
-    window.closeAnalystUploadModal = function () {
-      if (typeof window.closeCustomModal === 'function') window.closeCustomModal('analyst-upload-modal');
-      else toggleFallbackModal('analyst-upload-modal', false);
-    };
+    window.openAnalystUploadModal = function () { if (typeof window.openCustomModal === 'function') window.openCustomModal('analyst-upload-modal'); else toggleFallbackModal('analyst-upload-modal', true); };
+    window.closeAnalystUploadModal = function () { if (typeof window.closeCustomModal === 'function') window.closeCustomModal('analyst-upload-modal'); else toggleFallbackModal('analyst-upload-modal', false); };
 
     function initAnalystCharts() {
       const dataNode = document.getElementById('analyst-chart-data');
@@ -270,7 +260,7 @@
       const setUi = (on) => {
         btn.setAttribute('aria-pressed', on ? 'true' : 'false'); btn.classList.toggle('border-[var(--accent-primary)]', on); btn.classList.toggle('bg-[var(--accent-soft)]', on);
         [pingEl, dotEl].forEach((el) => { if (el) { el.classList.toggle('bg-[var(--status-success)]', on); el.classList.toggle('bg-[var(--accent-primary)]', !on); } });
-        if (lblEl) lblEl.textContent = on ? 'Stop Live LMS Stream' : 'Simulate Live LMS Stream';
+        if (lblEl) lblEl.textContent = on ? 'Stop Live Stream' : 'Simulate Live Stream';
       };
       const stop = (silent) => { if (window._epAnalystStreamTimer) { clearInterval(window._epAnalystStreamTimer); window._epAnalystStreamTimer = null; } inFlight = false; setUi(false); if (!silent && typeof window.showToast === 'function') window.showToast('Live LMS stream paused.', 'info'); };
       const render = (data) => {
@@ -311,6 +301,7 @@
           }
         }
         if (typeof window.syncStreamPredictionTable === 'function') window.syncStreamPredictionTable(data.events);
+        applyPredictionTipTooltips();
         if (!eventsEl) return;
         eventsEl.textContent = '';
         (Array.isArray(data.events) ? data.events : []).forEach((ev) => {
@@ -339,7 +330,14 @@
       if (hideBtn && strip) hideBtn.addEventListener('click', () => strip.classList.add('hidden'));
     }
 
-    function bootAnalystPage() { initAnalystCharts(); initLiveStreamSimulator(); }
+    function applyPredictionTipTooltips() {
+      document.querySelectorAll('#analyst-predictions-table tbody tr td:last-child').forEach(function (td) {
+        const text = (td.textContent || '').trim();
+        if (text && !td.getAttribute('title')) td.setAttribute('title', text);
+      });
+    }
+
+    function bootAnalystPage() { initAnalystCharts(); initLiveStreamSimulator(); applyPredictionTipTooltips(); }
     window.initAnalystPage = bootAnalystPage;
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootAnalystPage, { once: true }); else bootAnalystPage();
   })();

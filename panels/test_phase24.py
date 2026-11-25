@@ -177,5 +177,6 @@ class Phase24IntegrationTests(TestCase):
             self.assertIn("data-topbar-breadcrumb", html)
             self.assertIn("ep-nav-link", html)
             self.assertIn("is-active", html)
-            self.assertNotIn("openThemeStudioModal()", html)
-            self.assertNotIn('id="theme-studio-modal"', html)
+            self.assertIn("openThemeStudioModal()", html)
+            self.assertIn('id="theme-studio-modal"', html)
+            self.assertNotIn("/admin-panel/settings/", html)
