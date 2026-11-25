@@ -107,15 +107,7 @@ class Phase66IntegrationTests(TestCase):
         dash_resp = analyst.get(reverse("panels:analyst_dashboard"))
         self.assertEqual(dash_resp.status_code, 200)
         html = dash_resp.content.decode("utf-8")
-        for expected in (
-            "chart-correlation-scatter",
-            "Chart.getChart(document.getElementById('chart-correlation-scatter'))",
-            "data-kpi-label",
-            "[data-kpi-counter]",
-            "Average Pred. GPA",
-            "data.scatter_points",
-            "data.avg_predicted_gpa",
-        ):
+        for expected in ("chart-correlation-scatter", "Chart.getChart(document.getElementById('chart-correlation-scatter'))", "data-kpi-label", "[data-kpi-counter]", "Average Pred. GPA", "data.scatter_points", "data.avg_predicted_gpa"):
             self.assertIn(expected, html)
 
     def test_phase67_kpi_data_value_spa_hook_and_pdf_branding_delegation(self):
@@ -124,20 +116,13 @@ class Phase66IntegrationTests(TestCase):
         first_body_line = min(n.lineno for n in tree.body if not isinstance(n, (ast.Import, ast.ImportFrom)))
         import_nodes = [n for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))]
         self.assertTrue(import_nodes and all(n.lineno < first_body_line for n in import_nodes))
-        self.assertTrue(any(
-            isinstance(n, ast.ImportFrom) and n.module == "core.db"
-            and any(a.name == "resolve_portal_branding" for a in n.names)
-            and n.lineno < first_body_line
-            for n in tree.body
-        ))
+        self.assertTrue(any(isinstance(n, ast.ImportFrom) and n.module == "core.db" and any(a.name == "resolve_portal_branding" for a in n.names) and n.lineno < first_body_line for n in tree.body))
 
         with patch("panels.pdf_services.resolve_portal_branding", return_value=("Delegated Campus", "Winter 2028")) as mock_resolve:
             self.assertEqual(_resolve_pdf_branding({"batch": "2026-A"}), ("Delegated Campus", "Winter 2028"))
         mock_resolve.assert_called_once_with({"batch": "2026-A"}, db_connected=True)
 
-        self.cols["system_settings"].insert_one({
-            "setting_key": "portal_config", "institution_name": "Metro Campus 67", "current_term": "Autumn 2027",
-        })
+        self.cols["system_settings"].insert_one({"setting_key": "portal_config", "institution_name": "Metro Campus 67", "current_term": "Autumn 2027"})
         invalidate_cache()
         self.assertEqual(_resolve_pdf_branding({}), ("Metro Campus 67", "Autumn 2027"))
 
@@ -258,7 +243,8 @@ assert.ok(c1.children[7].querySelector('span.rounded-full').classList.contains('
 assert.ok(c2.children[7].querySelector('span.rounded-full').classList.contains('bg-[var(--status-success)]') && c2.children[8].querySelector('span.rounded-full').classList.contains('bg-[var(--status-success)]'));
 """
         proc = subprocess.run(["node", "-e", node_script, str(base_dir / "static" / "js" / "app.js"), str(base_dir / "static" / "js" / "directory_ui.js")], capture_output=True, text=True, check=False)
-        self.assertEqual(proc.returncode, 0, msg=proc.stderr or proc.stdout)        tpl_src = (base_dir / "templates" / "panels" / "analyst_dashboard.html").read_text(encoding="utf-8")
+        self.assertEqual(proc.returncode, 0, msg=proc.stderr or proc.stdout)
+        tpl_src = (base_dir / "templates" / "panels" / "analyst_dashboard.html").read_text(encoding="utf-8")
         self.assertIn("analyst_evaluation.js' %}?v=17\"", tpl_src)
         self.assertNotIn("analyst_evaluation.js' %}?v=1\"", tpl_src)
         self.assertEqual(re.findall(r"analyst_evaluation\.js'\s*%\}\?v=(\d+)", tpl_src), ["17"])
@@ -308,7 +294,9 @@ win.syncStreamPredictionTable([{ student_id: 'STD-1', attendance_pct: 61.5, pred
 });
 """
         proc = subprocess.run(["node", "-e", node_script, str(base_dir / "static" / "js" / "app.js"), str(base_dir / "static" / "js" / "directory_ui.js")], capture_output=True, text=True, check=False)
-        self.assertEqual(proc.returncode, 0, msg=proc.stderr or proc.stdout)    def test_phase72_desktop_data_row_id_and_mobile_s360_trigger(self):
+        self.assertEqual(proc.returncode, 0, msg=proc.stderr or proc.stdout)
+
+    def test_phase72_desktop_data_row_id_and_mobile_s360_trigger(self):
         base_dir = Path(settings.BASE_DIR)
         dt_src = (base_dir / "templates" / "components" / "data_table.html").read_text(encoding="utf-8")
         self.assertIn("data-row-id=", dt_src)
@@ -360,6 +348,10 @@ assert.strictEqual(c1.children[9].querySelector('div.text-right').textContent, '
         self.assertRegex(str(dlog.get("uploaded_at") or ""), r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$")
         html = analyst.get(reverse("panels:analyst_dashboard")).content.decode("utf-8")
         self.assertIn("window.syncStreamDatasetLogsTable(data.dataset_log)", html)
+        self.assertIn("data-table-count-badge", (base_dir / "templates/components/data_table.html").read_text(encoding="utf-8"))
+        ad_src = (base_dir / "templates/panels/analyst_dashboard.html").read_text(encoding="utf-8")
+        self.assertIn("if (text) td.setAttribute('title', text);", ad_src)
+        self.assertNotIn("!td.getAttribute('title')", ad_src)
         for rel in ("templates/public/_base.html", "templates/public/landing.html"):
             src = (base_dir / rel).read_text(encoding="utf-8")
             versions = re.findall(r"%\}\?v=(\d+)", src)
@@ -379,11 +371,12 @@ assert.strictEqual(tr1.getAttribute('data-row-id'), 'live_lms_stream_tick'); ass
 ['live_lms_stream_tick', '3', '0', 'COMPLETED', '2026-11-25 14:05'].forEach((exp, k) => { assert.strictEqual(tr1.cells[k].textContent, exp); assert.strictEqual(c1.children[k].querySelector('div.text-right').textContent, exp); });
 box._paginationController.applySearch('live_lms_stream_tick'); assert.ok(!tr1.classList.contains('hidden') && !c1.classList.contains('hidden'));
 box.remove(); delete box.dataset.paginationReady; delete box._paginationController;
-const eBox = new El('div', { 'data-paginated-container': '', 'data-page-size': '5' }), eTbl = new El('table', { id: 'dataset-logs-table' }), eTbody = new El('tbody'), eMob = new El('div', { class: 'md:hidden' });
-eTbody.append(new El('tr', { 'data-empty-row': '' }, 'No upload logs yet.')); eTbl.append(eTbody); eMob.append(new El('div', { 'data-empty-row': '' }, 'No upload logs yet.')); eBox.append(eTbl, eMob); body.append(eBox);
+const eBox = new El('div', { 'data-paginated-container': '', 'data-page-size': '5' }), eBadge = new El('span', { 'data-table-count-badge': '', class: 'hidden' }, '0 items'), eTbl = new El('table', { id: 'dataset-logs-table' }), eTbody = new El('tbody'), eMob = new El('div', { class: 'md:hidden' });
+eTbody.append(new El('tr', { 'data-empty-row': '' }, 'No upload logs yet.')); eTbl.append(eTbody); eMob.append(new El('div', { 'data-empty-row': '' }, 'No upload logs yet.')); eBox.append(eBadge, eTbl, eMob); body.append(eBox);
 win.reinitEduPredictUI(); assert.strictEqual(eBox.querySelectorAll('[data-empty-row]').length, 2); assert.strictEqual(eBox.querySelectorAll('[data-page-item]').length, 0);
 win.syncStreamDatasetLogsTable({ filename: 'live_lms_stream_tick', rows_processed: 4, missing_values_fixed: 0, status: 'COMPLETED', uploaded_at: '2026-11-25 14:20' });
 assert.strictEqual(eBox.querySelectorAll('[data-empty-row]').length, 0);
+assert.strictEqual(eBox.querySelector('[data-table-count-badge]').textContent, '1 items'); assert.ok(!eBox.querySelector('[data-table-count-badge]').classList.contains('hidden'));
 const newTr = eTbody.querySelector('tr[data-page-item]'), newCard = eMob.querySelector('[data-mobile-card][data-page-item]');
 assert.ok(newTr && newTr.getAttribute('data-row-id') === 'live_lms_stream_tick' && newTr.cells.length === 5);
 assert.ok(newCard && newCard.getAttribute('data-card-id') === 'live_lms_stream_tick' && newCard.children.length === 5);

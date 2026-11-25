@@ -318,6 +318,8 @@
     const trCells = firstTr ? (firstTr.cells || firstTr.children) : null;
     if (firstTr && trCells && trCells.length >= 5) { if (firstTr.setAttribute) firstTr.setAttribute('data-row-id', fname); trCells[0].textContent = fname; trCells[1].textContent = rowsCnt; trCells[2].textContent = fixedCnt; updateStreamCellBadge(trCells[3], dotCls, statusText); trCells[4].textContent = dateText; }
     if (firstCard && firstCard.children.length >= 5) { if (firstCard.setAttribute) firstCard.setAttribute('data-card-id', fname); const valBox = (k) => { const row = firstCard.children[k]; return row ? ((row.querySelector ? row.querySelector('div.text-right') : null) || (row.children ? row.children[1] : null)) : null; }; if (valBox(0)) valBox(0).textContent = fname; if (valBox(1)) valBox(1).textContent = rowsCnt; if (valBox(2)) valBox(2).textContent = fixedCnt; updateStreamCellBadge(valBox(3), dotCls, statusText); if (valBox(4)) valBox(4).textContent = dateText; }
+    const countEl = container && container.querySelector ? container.querySelector('[data-table-count-badge]') : null, rowCnt = table.querySelectorAll ? table.querySelectorAll('tbody tr:not([data-empty-row])').length : 0;
+    if (countEl && rowCnt > 0) { countEl.textContent = rowCnt + ' items'; if (countEl.classList) countEl.classList.remove('hidden'); }
     if (container && container._paginationController && typeof container._paginationController.refreshSearchText === 'function') container._paginationController.refreshSearchText();
   }
   function initDirectoryUI() {

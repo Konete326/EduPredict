@@ -2,9 +2,7 @@
   {% if table_title %}
   <div class="flex flex-wrap items-center justify-between gap-2">
     <h3 class="text-sm font-semibold text-[var(--text-primary)]">{{ table_title }}</h3>
-    {% if rows %}
-    <span class="tabular-nums text-xs font-medium text-[var(--text-muted)]">{{ rows|length }} items</span>
-    {% endif %}
+    <span data-table-count-badge class="{% if not rows %}hidden {% endif %}tabular-nums text-xs font-medium text-[var(--text-muted)]">{{ rows|length }} items</span>
   </div>
   {% endif %}
 

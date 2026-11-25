@@ -61,27 +61,27 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 86 Empty-State Recent Uploads & Public Asset Sync Swarm"
-active_branch_merged_to_main: "feature/phase86-empty-log-row-v20-sync -> main"
-project_phase: "Phase 86 Complete: Empty-State Recent Uploads Live Row Creation & Public Asset Version Sync"
+last_updated_by_agent: "Phase 87 Live Tip Tooltip & Count Badge Sync Swarm"
+active_branch_merged_to_main: "feature/phase87-tip-tooltip-count-badge -> main"
+project_phase: "Phase 87 Complete: Live Stream Prediction Tip Tooltip Refresh & Recent Uploads Item Count Badge Sync"
 
 completed_modules:
-  - "Phase 1-85: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact, Provably Hero & Interactive 3D Testimonial Globe, and Live Recent Uploads Stream Log Sync (85)."
-  - "Phase 86: Empty-State Recent Uploads Live Row Creation & Public Asset Version Sync:"
-      - "static/js/directory_ui.js (347 lines, 0 comments): updated syncStreamDatasetLogsTable(logEntry) so when #dataset-logs-table starts in empty state ([data-empty-row]), it removes [data-empty-row], dynamically builds and appends the 5-cell desktop tr[data-page-item][data-row-id] and 5-row mobile div[data-mobile-card][data-page-item][data-card-id] (with status badge pill), populates all fields, and invokes refreshSearchText()."
-      - "static/js/app.js (348 lines, 0 comments): updated refreshSearchText() inside initPaginatedContainers() to rebuild entries when a paginated container originally initialized with 0 [data-page-item] items."
-      - "templates/public/landing.html (288 lines, 0 comments): unified static asset query versions (?v=18) with templates/public/_base.html."
-      - "panels/test_phase66.py (394 lines, 0 comments): extended test_phase85_live_stream_recent_uploads_log_sync to verify unified public ?v=18 asset versions and Node VM empty-state row/card creation + search index rebuild."
+  - "Phase 1-86: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact, Provably Hero & Interactive 3D Testimonial Globe, Live Recent Uploads Stream Log Sync (85), and Empty-State Recent Uploads Row Creation & Public Asset Version Sync (86)."
+  - "Phase 87: Live Stream Prediction Tip Tooltip Refresh & Recent Uploads Item Count Badge Sync:"
+      - "templates/components/data_table.html (132 lines, 0 comments): added data-table-count-badge attribute on the header items counter span (toggling hidden when rows is empty) so live stream updates can unhide and sync the item count."
+      - "static/js/directory_ui.js (349 lines, 0 comments): updated syncStreamDatasetLogsTable(logEntry) to sync [data-table-count-badge] textContent and unhide it when rows exist."
+      - "templates/panels/analyst_dashboard.html (346 lines, 0 comments): updated applyPredictionTipTooltips() to unconditionally refresh td.setAttribute('title', text) on every live stream tick."
+      - "panels/test_phase66.py (387 lines, 0 comments): extended test_phase85_live_stream_recent_uploads_log_sync to verify data-table-count-badge, unconditional tip tooltip refresh, and Node VM empty-state count badge unhiding."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check: all JS scripts in static/js/*.js exited 0."
-  - "Zero-comment & line-cap audit: static/js/directory_ui.js (347 lines), static/js/app.js (348 lines), templates/public/landing.html (288 lines), panels/test_phase66.py (394 lines) — 0 comments."
-  - "manage.py test: Ran 137 tests (OK)."
+  - "Zero-comment & line-cap audit: templates/components/data_table.html (132 lines), static/js/directory_ui.js (349 lines), templates/panels/analyst_dashboard.html (346 lines), panels/test_phase66.py (387 lines) — 0 comments."
+  - "manage.py test panels.test_phase66: Ran 9 tests (OK)."
   - "manage.py verify_uat: UAT Results 7/7 passed - System 100% Operational."
 
 active_routes_and_files:
-  - "static/js/directory_ui.js (347 lines), static/js/app.js (348 lines), templates/public/landing.html (288 lines), panels/test_phase66.py (394 lines), .agents/git-sync.md"
+  - "templates/components/data_table.html (132 lines), static/js/directory_ui.js (349 lines), templates/panels/analyst_dashboard.html (346 lines), panels/test_phase66.py (387 lines), .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

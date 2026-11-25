@@ -334,7 +334,7 @@
     function applyPredictionTipTooltips() {
       document.querySelectorAll('#analyst-predictions-table tbody tr td:last-child').forEach(function (td) {
         const text = (td.textContent || '').trim();
-        if (text && !td.getAttribute('title')) td.setAttribute('title', text);
+        if (text) td.setAttribute('title', text);
       });
     }
 
