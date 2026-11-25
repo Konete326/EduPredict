@@ -61,26 +61,26 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 80C Public Pages, Admin Hierarchy & Layout Polish Swarm"
+last_updated_by_agent: "Phase 82 Provably Hero & Interactive Testimonial Globe"
 active_branch_merged_to_main: "main (verified release push)"
-project_phase: "Phase 80C Complete: Public Landing/About/Contact, Admin Hierarchy & Teacher-Course Linking, Contour & Overflow Polish"
+project_phase: "Phase 82 Complete: Provably Verification-Wave Hero & Interactive 3D Testimonial Globe on Public Landing Page"
 
 completed_modules:
-  - "Phase 1-80B: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Admin Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official PDF & HTML Branding, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish (60-63), Live Stream/KPI/PDF/Card-ID Sync (64-72), Hirael Login-03 (73), Glassmorphism Profile/Tabbed Settings/Drawer Blur/Zero-Glow Academic Widgets (74), Multi-Agent AI Dock/Real-Data Honesty/Monochrome A4 PDFs (75), AI Specialist DPs/sessionStorage Continuity/RBAC-DOM Polls/Zero-UI A4 Print/Progress Watchdog (76), Vercel Auto-Deploy (77), Live Dynamic Gemini AI & Full-App Software Control (78), Theme Polish, Universal Theme Studio & Analyst UX/Backend (80A), Student & Teacher Panel Audit Fixes (80B)."
-  - "Phase 80C: Public Pages, Admin Hierarchy & Layout Polish:"
-      - "accounts/urls.py (12/350), accounts/views.py (241/250), accounts/services.py (333/350), templates/accounts/auth.html (330/350) & templates/public/{landing,about,contact}.html (190, 141, 167/350): added editorial Light/Dark public Home (/), About (/about/), and Contact (/contact/) pages with live DB metrics, 4-role workflow, Admin contact resolution, public support ticket submission, guest theme toggle, and program_level selection on registration."
-      - "panels/admin_services.py (346/350), panels/views_admin.py (245/250), panels/directory_card_services.py (189/350), templates/panels/admin_dashboard.html (168/350), admin_users.html (211/350) & admin_courses.html (215/350): added program_level across user CRUD/cards, linked courses to registered active TEACHER users (instructor_id/instructor/instructor_email/program_level with plain-text fallback), and added 4-Role Platform Flow strip on Admin Dashboard."
-      - "static/js/academic_widgets.js (243/350), templates/components/data_table.html (134/350), templates/components/directory_cards.html (184/350) & templates/panels/student_notifications.html (169/350): locked contour canvas CSS dimensions and safe right padding (>=36px) to prevent vertical squishing and SE-210 label clipping; compacted table padding/wrapping to eliminate desktop horizontal overflows."
+  - "Phase 1-81: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact."
+  - "Phase 82: Provably Hero & Interactive Testimonial Globe:"
+      - "templates/public/_base.html (147/350): added Plus Jakarta Sans Google Font, {% block extra_head %}, and bumped public static asset cache-busting to ?v=18."
+      - "static/css/landing_provably.css (270/350), static/js/landing_provably.js (334/350), static/js/landing_globe.js (324/350), templates/public/landing.html (292/350): ported 21st.dev Provably monochrome-to-color verification-wave hero (#cv-verify-toggle, #cv-wave, live #cv-stats-card, 3D flippable #cv-wax-seal, draggable/inspectable #cv-cert-stack + #cv-credential-dialog) and interactive 3D Canvas Testimonial Globe (#ep-testimonial-globe with drag inertia, shortest-arc focus turn, 6 inline-SVG campus pins, prev/next & keyboard controls, zero external Unsplash CSP violations)."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "node --check: all 13 JS scripts in static/js/*.js exited 0 (ALL_JS_OK)."
-  - "Zero-comment & line-cap audit: all 17 modified/created files passed (views_admin.py 245/250, accounts/views.py 241/250, all others <= 350, 0 comments/docstrings)."
-  - "manage.py test --verbosity=2: Ran 136 tests in 95.739s (OK)."
-  - "manage.py verify_uat: UAT Results: 7/7 passed in 9.92s - System 100% Operational (Step 1 status=healthy, latency=626.33ms, Steps 2-7 PASS)."
+  - "node --check: all JS scripts in static/js/*.js exited 0."
+  - "Zero-comment & line-cap audit: all 5 files <= 350 lines with 0 comments."
+  - "manage.py test: Ran 136 tests (OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed."
+  - "Browser QA (1280x800 & 375x812 Light/Dark): 0 console errors, 0 CSP errors, 0 HTTP 4xx/5xx, 0px mobile overflow, Provably switch/V-key/modal/wax-seal & Testimonial Globe pins/drag/prev-next verified."
 
 active_routes_and_files:
-  - "accounts/urls.py, accounts/views.py, accounts/services.py, templates/accounts/auth.html, templates/public/landing.html, templates/public/about.html, templates/public/contact.html, panels/admin_services.py, panels/views_admin.py, panels/directory_card_services.py, templates/panels/admin_dashboard.html, templates/panels/admin_users.html, templates/panels/admin_courses.html, static/js/academic_widgets.js, templates/components/data_table.html, templates/components/directory_cards.html, templates/panels/student_notifications.html, .agents/git-sync.md"
+  - "templates/public/_base.html, templates/public/landing.html, static/css/landing_provably.css, static/js/landing_provably.js, static/js/landing_globe.js, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."
