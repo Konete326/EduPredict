@@ -1,84 +1,25 @@
 (function () {
-  const TESTIMONIALS = [
-    {
-      name: 'Dr. Ayesha Khan',
-      role: 'Academic Coordinator',
-      org: 'Karachi Campus · BSCS',
+  function readTestimonialsData() {
+    try {
+      const node = document.getElementById('ep-landing-testimonials-data');
+      const parsed = node ? JSON.parse(node.textContent || '[]') : [];
+      if (Array.isArray(parsed) && parsed.length) return parsed;
+    } catch (e) {}
+    return [{
+      name: 'EduPredict Portal',
+      role: 'Live Campus Feed',
+      org: 'MongoDB Atlas',
       city: 'Karachi',
       country: 'PK',
       lat: 24.8607,
       lng: 67.0011,
       rating: 5,
-      initials: 'AK',
+      initials: 'EP',
       tone: '#2563eb',
-      quote: 'Linking courses directly to faculty and uploading 3-column marks sheets saved our department hours every week and flagged at-risk students before midterms.'
-    },
-    {
-      name: 'Prof. Zain Malik',
-      role: 'Senior Lecturer',
-      org: 'Lahore Engineering Faculty',
-      city: 'Lahore',
-      country: 'PK',
-      lat: 31.5204,
-      lng: 74.3587,
-      rating: 5,
-      initials: 'ZM',
-      tone: '#059669',
-      quote: 'The 1.2-second upload workflow lets me drop an attendance and marks CSV right after lab, and students immediately get updated projections and guidance.'
-    },
-    {
-      name: 'Hina Siddiqui',
-      role: 'Lead Data Analyst',
-      org: 'Islamabad Research Cell',
-      city: 'Islamabad',
-      country: 'PK',
-      lat: 33.6844,
-      lng: 73.0479,
-      rating: 5,
-      initials: 'HS',
-      tone: '#d97706',
-      quote: 'Having RandomForest, Ridge, and IsolationForest metrics side by side with real MongoDB records removed guesswork from our end-of-term evaluations.'
-    },
-    {
-      name: 'Hamza Tariq',
-      role: 'Undergraduate Student',
-      org: 'BS Computer Science · Batch 2026',
-      city: 'Dubai',
-      country: 'AE',
-      lat: 25.2048,
-      lng: 55.2708,
-      rating: 5,
-      initials: 'HT',
-      tone: '#0284c7',
-      quote: 'Seeing my predicted GPA alongside assigned teachers and downloading a crisp monochrome A4 report card made semester advising completely transparent.'
-    },
-    {
-      name: 'Dr. Claire Bennett',
-      role: 'Student Success Advisor',
-      org: 'London Partner Institute',
-      city: 'London',
-      country: 'UK',
-      lat: 51.5072,
-      lng: -0.1276,
-      rating: 5,
-      initials: 'CB',
-      tone: '#7c3aed',
-      quote: 'Instead of drowning staff in cluttered dashboards, every role sees only its own workflow, from approval queues to early intervention alerts.'
-    },
-    {
-      name: 'Prof. David Chen',
-      role: 'Registrar Systems Lead',
-      org: 'Toronto Academic Hub',
-      city: 'Toronto',
-      country: 'CA',
-      lat: 43.6532,
-      lng: -79.3832,
-      rating: 5,
-      initials: 'DC',
-      tone: '#dc2626',
-      quote: 'Program-level hierarchy makes it instantly clear whether a student belongs to School, College, or BS cohorts and who oversees their progress.'
-    }
-  ];
+      quote: 'No campus feedback submitted yet. Submit an inquiry on the Contact page or inside any role panel to appear here live.'
+    }];
+  }
+  const TESTIMONIALS = readTestimonialsData();
 
   function makeAvatarDataUri(initials, bgHex) {
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="32" fill="' + bgHex + '"/><text x="32" y="39" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="700" fill="#ffffff">' + initials + '</text></svg>';

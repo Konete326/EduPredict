@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.debug import sensitive_post_parameters
+from accounts.public_data import get_public_landing_showcase
 from accounts.services import (
     SELF_REGISTER_ROLES,
     VALID_ROLES,
@@ -27,7 +28,15 @@ def root_redirect(request):
         role = str(user.get("role") or "").strip().upper()
         if role in VALID_ROLES:
             return redirect(get_dashboard_route(role))
-    return render(request, "public/landing.html", {"page_title": "Academic Performance & Early-Alert Portal", "metrics": get_public_portal_metrics()})
+    return render(
+        request,
+        "public/landing.html",
+        {
+            "page_title": "Academic Performance & Early-Alert Portal",
+            "metrics": get_public_portal_metrics(),
+            "landing_showcase": get_public_landing_showcase(),
+        },
+    )
 
 
 def about_view(request):

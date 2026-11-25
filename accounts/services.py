@@ -330,6 +330,7 @@ def create_public_contact_ticket(name, email, subject, message):
         except Exception:
             pass
         invalidate_cache("admin:")
+        invalidate_cache("public:")
         return doc, None
     except Exception:
         return None, "Unable to save your inquiry right now. Please try again."

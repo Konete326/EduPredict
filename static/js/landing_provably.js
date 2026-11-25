@@ -1,9 +1,13 @@
 (function () {
-  const CREDENTIALS = [
-    { id: 'CERT-CS101-8821', program: 'BS / Computer Science', course: 'CS-101 · Intro to Computer Science', student: 'STD-2026-001 · Amina Tariq', gpa: '3.82', risk: 'LOW RISK', term: 'Fall 2026', issuer: 'Registrar & Dr. Ayesha Khan' },
-    { id: 'CERT-DS301-4419', program: 'BS / Data Analytics', course: 'DS-301 · Applied Data Analytics', student: 'STD-2026-014 · Bilal Ahmed', gpa: '3.64', risk: 'LOW RISK', term: 'Fall 2026', issuer: 'Registrar & Prof. Zain Malik' },
-    { id: 'CERT-SE210-1904', program: 'BS / Software Engineering', course: 'SE-210 · Software Engineering', student: 'STD-2026-029 · Sara Noor', gpa: '3.41', risk: 'LOW RISK', term: 'Fall 2026', issuer: 'Registrar & Dr. Omar Raza' }
-  ];
+  function readCredentialsData() {
+    try {
+      const node = document.getElementById('ep-landing-credentials-data');
+      const parsed = node ? JSON.parse(node.textContent || '[]') : [];
+      if (Array.isArray(parsed) && parsed.length) return parsed;
+    } catch (e) {}
+    return [{ id: 'LIVE PORTAL', program: 'BS / Undergraduate', course: 'No student records yet', student: 'Pending Upload', gpa: '0.00', risk: 'PENDING', term: 'Current Term', issuer: 'Registrar' }];
+  }
+  const CREDENTIALS = readCredentialsData();
 
   function initProvablyHero() {
     const hero = document.getElementById('cv-hero');
