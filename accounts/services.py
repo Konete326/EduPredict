@@ -240,6 +240,8 @@ def get_public_portal_metrics():
             "institution_name": inst_name,
             "current_term": current_term,
             "users_count": _safe_count(users_col),
+            "students_count": _safe_count(student_records_col),
+            "teachers_count": int(users_col().count_documents({"role": "TEACHER"})) if callable(users_col) else 0,
             "courses_count": _safe_count(courses_col),
             "records_count": _safe_count(student_records_col),
             "predictions_count": _safe_count(predictions_col),

@@ -31,7 +31,7 @@ def root_redirect(request):
 
 
 def about_view(request):
-    return render(request, "public/about.html", {"page_title": "About EduPredict", "metrics": get_public_portal_metrics()})
+    return render(request, "public/about.html", {"page_title": "About EduPredict", "metrics": get_public_portal_metrics(), "admin_contact": get_public_admin_contact()})
 
 
 def contact_view(request):
