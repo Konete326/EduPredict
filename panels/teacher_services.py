@@ -314,6 +314,7 @@ def send_student_alert(student_id, full_name, course_code, severity, message_tex
         "student_id": sid,
         "title": f"Teacher Alert ({course_lbl})",
         "message": f"{clean_msg} - {sender_lbl}",
+        "sender_name": sender_lbl,
         "severity": norm_sev,
         "urgency": raw_sev,
         "is_read": False,

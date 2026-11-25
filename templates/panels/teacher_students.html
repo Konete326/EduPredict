@@ -21,7 +21,7 @@
       <i class="fa-solid fa-file-pdf text-[var(--accent-primary)]"></i>
       <span>Export PDF Roster</span>
     </a>
-    <a href="{% url 'panels:teacher_students' %}?export=csv" title="Save student list as CSV" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+    <a href="{% url 'panels:teacher_students' %}?batch={{ selected_filters.batch|default:'ALL'|urlencode }}&course_code={{ selected_filters.course_code|default:'ALL'|urlencode }}&status={{ selected_filters.status|default:'ALL'|urlencode }}&export=csv" title="Save student list as CSV" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
       <i class="fa-solid fa-file-csv text-[var(--status-success)]"></i>
       <span>Export CSV</span>
     </a>
@@ -39,7 +39,7 @@
 {% endif %}
 
 <section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-4">
-  <form method="get" action="{% url 'panels:teacher_students' %}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6 items-end">
+  <form method="get" action="{% url 'panels:teacher_students' %}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 items-end">
     <div class="space-y-1">
       <label for="teacher-filter-batch" class="block text-xs font-medium text-[var(--text-secondary)]">Batch</label>
       <select id="teacher-filter-batch" name="batch" data-auto-filter="true" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
@@ -67,21 +67,13 @@
         {% endfor %}
       </select>
     </div>
-    <div class="flex flex-wrap items-center gap-2 lg:col-span-3">
+    <div class="flex flex-wrap items-center gap-2">
       <button type="submit" title="Apply selected filters" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
         <i class="fa-solid fa-filter"></i>
         <span>Apply</span>
       </button>
       <a href="{% url 'panels:teacher_students' %}" title="Clear all filters" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <span>Reset</span>
-      </a>
-      <a href="{% url 'panels:teacher_roster_pdf' %}?batch={{ selected_filters.batch|default:'ALL'|urlencode }}&course_code={{ selected_filters.course_code|default:'ALL'|urlencode }}&status={{ selected_filters.status|default:'ALL'|urlencode }}" title="Export printable class roster as PDF" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
-        <i class="fa-solid fa-file-pdf text-[var(--accent-primary)]"></i>
-        <span>Export PDF</span>
-      </a>
-      <a href="{% url 'panels:teacher_students' %}?batch={{ selected_filters.batch|default:'ALL'|urlencode }}&course_code={{ selected_filters.course_code|default:'ALL'|urlencode }}&status={{ selected_filters.status|default:'ALL'|urlencode }}&export=csv" title="Download student list as CSV" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
-        <i class="fa-solid fa-file-csv text-[var(--status-success)]"></i>
-        <span>Export CSV</span>
       </a>
     </div>
   </form>

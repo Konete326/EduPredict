@@ -43,19 +43,29 @@
 </section>
 
 <section class="print:hidden grid grid-cols-1 gap-4 xl:grid-cols-12">
-  <div class="xl:col-span-8 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+  <div class="xl:col-span-8 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 [&_th]:px-2.5 [&_td]:px-2.5">
     {% include 'components/data_table.html' with table_id="student-report-table" table_title="Course-wise Result" headers=report_headers rows=report_rows page_size=5 empty_message="No course marks uploaded yet. Ask your teacher to upload marks for your batch." %}
   </div>
   <div class="xl:col-span-4 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
     <h3 class="text-sm font-semibold text-[var(--text-primary)]">Report Summary</h3>
     <div class="space-y-2 text-xs">
-      <div class="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><span class="text-[var(--text-muted)] shrink-0">Portal / Term</span><span class="font-semibold text-[var(--text-primary)] truncate text-right">{{ portal_institution_name|default:"EduPredict Academic Portal" }} · {{ portal_current_term|default:"Fall 2026" }}</span></div>
-      <div class="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><span class="text-[var(--text-muted)]">Student Name</span><span class="font-semibold text-[var(--text-primary)] truncate">{{ record.full_name|default:"-" }}</span></div>
-      <div class="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><span class="text-[var(--text-muted)]">Student ID</span><span class="font-mono font-semibold text-[var(--text-primary)]">{{ record.student_id|default:"-" }}</span></div>
-      <div class="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><span class="text-[var(--text-muted)]">Batch</span><span class="font-mono font-semibold text-[var(--text-primary)]">{{ record.batch|default:"-" }}</span></div>
-      <div class="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><span class="text-[var(--text-muted)]">Earned Credits</span><span class="font-mono font-semibold text-[var(--text-primary)] tabular-nums">{{ credits|stringformat:".1f" }}</span></div>
-      <div class="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><span class="text-[var(--text-muted)]">Prediction Updated</span><span class="font-mono text-[var(--text-primary)]">{{ record.generated_at|default:"Pending" }}</span></div>
+      <div class="flex flex-wrap items-start justify-between gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><span class="text-[var(--text-muted)] shrink-0">Portal / Term</span><span class="min-w-0 font-semibold text-[var(--text-primary)] text-right break-words">{{ portal_institution_name|default:"EduPredict Academic Portal" }} · {{ portal_current_term|default:"Fall 2026" }}</span></div>
+      <div class="flex flex-wrap items-start justify-between gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><span class="text-[var(--text-muted)] shrink-0">Student Name</span><span class="min-w-0 font-semibold text-[var(--text-primary)] text-right break-words">{{ record.full_name|default:"-" }}</span></div>
+      <div class="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><span class="text-[var(--text-muted)]">Student ID</span><span class="font-mono font-semibold text-[var(--text-primary)]">{{ record.student_id|default:"-" }}</span></div>
+      <div class="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><span class="text-[var(--text-muted)]">Program / Dept</span><span class="font-semibold text-[var(--text-primary)] text-right break-words">{{ record.program_level|default:"Undergraduate" }}{% if record.department %} · {{ record.department }}{% endif %}</span></div>
+      <div class="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><span class="text-[var(--text-muted)]">Batch / Class</span><span class="font-mono font-semibold text-[var(--text-primary)]">{{ record.batch|default:"-" }}</span></div>
+      <div class="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><span class="text-[var(--text-muted)]">Earned Credits</span><span class="font-mono font-semibold text-[var(--text-primary)] tabular-nums">{{ credits|stringformat:".1f" }}</span></div>
+      <div class="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><span class="text-[var(--text-muted)]">Prediction Updated</span><span class="font-mono text-[var(--text-primary)]">{{ record.generated_at|default:"Pending" }}</span></div>
+      <div class="flex flex-wrap items-start justify-between gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><span class="text-[var(--text-muted)] shrink-0">Portal Admin</span><span class="min-w-0 text-right font-medium text-[var(--text-primary)] break-words">{{ admin_contact.name|default:"System Administrator" }}{% if admin_contact.email %} · {{ admin_contact.email }}{% endif %}</span></div>
     </div>
+    {% if enrolled_courses %}
+    <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5 space-y-1.5 text-xs">
+      <p class="font-semibold text-[var(--text-primary)]">Enrolled Courses &amp; Teachers</p>
+      {% for ec in enrolled_courses %}
+      <div class="flex items-center justify-between gap-2 text-[11px]"><span class="font-mono font-semibold text-[var(--accent-primary)]">{{ ec.course_code }}</span><span class="text-right text-[var(--text-secondary)] truncate">{{ ec.teacher_name }}</span></div>
+      {% endfor %}
+    </div>
+    {% endif %}
     <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 text-xs leading-relaxed text-[var(--text-secondary)]">
       <p class="mb-1 font-semibold text-[var(--text-primary)]">Teacher advice</p>
       <p>{{ record.recommendation|default:"No advice available yet. Check back after the next prediction run." }}</p>
@@ -79,7 +89,7 @@
   <table class="w-full border-collapse border border-black text-[11px]">
     <tbody>
       <tr><th class="w-[20%] border border-black bg-gray-100 px-2 py-1 text-left font-bold">Student Name</th><td class="w-[30%] border border-black px-2 py-1">{{ record.full_name|default:"-" }}</td><th class="w-[20%] border border-black bg-gray-100 px-2 py-1 text-left font-bold">Student ID</th><td class="w-[30%] border border-black px-2 py-1 font-mono">{{ record.student_id|default:"-" }}</td></tr>
-      <tr><th class="border border-black bg-gray-100 px-2 py-1 text-left font-bold">Batch</th><td class="border border-black px-2 py-1 font-mono">{{ record.batch|default:"-" }}</td><th class="border border-black bg-gray-100 px-2 py-1 text-left font-bold">Earned Credits</th><td class="border border-black px-2 py-1 font-mono">{{ credits|stringformat:".1f" }}</td></tr>
+      <tr><th class="border border-black bg-gray-100 px-2 py-1 text-left font-bold">Program / Dept</th><td class="border border-black px-2 py-1">{{ record.program_level|default:"Undergraduate" }}{% if record.department %} · {{ record.department }}{% endif %}</td><th class="border border-black bg-gray-100 px-2 py-1 text-left font-bold">Batch / Credits</th><td class="border border-black px-2 py-1 font-mono">{{ record.batch|default:"-" }} · {{ credits|stringformat:".1f" }} cr</td></tr>
       <tr><th class="border border-black bg-gray-100 px-2 py-1 text-left font-bold">Avg Attendance</th><td class="border border-black px-2 py-1 font-mono">{{ record.avg_attendance|floatformat:1 }}%</td><th class="border border-black bg-gray-100 px-2 py-1 text-left font-bold">Avg Marks</th><td class="border border-black px-2 py-1 font-mono">{{ record.avg_marks|floatformat:1 }}%</td></tr>
       <tr><th class="border border-black bg-gray-100 px-2 py-1 text-left font-bold">Predicted GPA</th><td class="border border-black px-2 py-1 font-mono font-bold">{{ predicted_gpa_display }}</td><th class="border border-black bg-gray-100 px-2 py-1 text-left font-bold">Risk Standing</th><td class="border border-black px-2 py-1 font-bold">{{ record.risk_level|default:"PENDING" }}</td></tr>
     </tbody>

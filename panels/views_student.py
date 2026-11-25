@@ -27,8 +27,8 @@ def _student_identity(request):
 def _empty_overview_context():
     return {
         "record": {
-            "student_id": "", "full_name": "", "batch": "", "courses": [],
-            "avg_attendance": 0.0, "avg_marks": 0.0, "avg_assignment": 0.0,
+            "student_id": "", "full_name": "", "batch": "", "department": "", "program_level": "",
+            "courses": [], "avg_attendance": 0.0, "avg_marks": 0.0, "avg_assignment": 0.0,
             "lms_hours_weekly": 0.0, "previous_gpa": 0.0, "predicted_gpa": None,
             "risk_level": "PENDING", "risk_score": None, "is_anomaly": False,
             "anomaly_reason": "", "recommendation": "", "generated_at": None,
@@ -42,6 +42,8 @@ def _empty_overview_context():
         "active_courses": 0,
         "credits": 0.0,
         "teacher_alerts": [],
+        "enrolled_courses": [],
+        "admin_contact": {"name": "", "email": ""},
     }
 
 
@@ -105,6 +107,8 @@ def student_dashboard(request):
         "predicted_gpa_display": predicted_gpa_display,
         "class_standing_display": class_standing_display,
         "teacher_alerts": data["teacher_alerts"],
+        "enrolled_courses": data.get("enrolled_courses", []),
+        "admin_contact": data.get("admin_contact", {}),
         "db_error": db_error,
     })
 
@@ -131,10 +135,12 @@ def student_report(request):
         "record": record,
         "risk_status": _risk_status(record["risk_level"]),
         "predicted_gpa_display": f"{record['predicted_gpa']:.2f}" if record["predicted_gpa"] is not None else "Pending",
-        "report_headers": ["Course", "My Marks", "Class Avg", "Difference", "Attendance", "Status"],
+        "report_headers": ["Course", "My Marks", "Class Avg", "Diff", "Attend.", "Status"],
         "report_rows": report_rows,
         "credits": data["credits"],
         "insight": data["insight"],
+        "enrolled_courses": data.get("enrolled_courses", []),
+        "admin_contact": data.get("admin_contact", {}),
         "portal_institution_name": inst_name,
         "portal_current_term": term_name,
         "db_error": db_error,

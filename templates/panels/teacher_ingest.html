@@ -38,9 +38,14 @@
 </div>
 {% endif %}
 
+<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3 text-xs text-[var(--text-secondary)] flex flex-wrap items-center gap-2.5">
+  <i class="fa-solid fa-circle-info text-[var(--accent-primary)] shrink-0"></i>
+  <span><strong class="text-[var(--text-primary)]">Overwrite &amp; Auto-ML:</strong> Uploading a sheet or saving Quick Entry updates existing students by <code class="font-mono text-[11px] text-[var(--text-primary)]">student_id</code> (or adds new ones) and automatically runs Auto-ML to refresh Predicted GPA and Risk Alerts.</span>
+</section>
+
 <section class="space-y-4">
   <div class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
-    {% include 'components/directory_cards.html' with grid_id="teacher-roster-table" grid_title="Class Roster Directory" cards=roster_cards page_size=8 empty_message="No student records saved yet. Upload a sheet or load sample class." %}
+    {% include 'components/directory_cards.html' with grid_id="teacher-roster-table" grid_title="Class Roster Directory" cards=roster_cards page_size=5 empty_message="No student records saved yet. Upload a sheet or load sample class." %}
   </div>
 
   <div class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">

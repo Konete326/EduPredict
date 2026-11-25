@@ -57,6 +57,16 @@
 <section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
   {% include 'components/data_table.html' with table_id="teacher-alert-history-table" table_title="Alerts I Sent" headers=history_headers rows=history_rows page_size=5 empty_message="You have not sent any alert yet. Pick a student above and send the first one." %}
 </section>
+<style>
+  #teacher-alert-history-table th:last-child,
+  #teacher-alert-history-table td:last-child {
+    white-space: nowrap;
+    min-width: 7.5rem;
+  }
+  #teacher-alert-history-table td:nth-child(3) {
+    min-width: 14rem;
+  }
+</style>
 {% endblock %}
 
 {% block extra_js %}

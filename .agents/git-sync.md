@@ -61,28 +61,27 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 80A Theme Polish, Universal Theme Studio & Analyst UX/Backend Swarm"
+last_updated_by_agent: "Phase 80B Student & Teacher Panel Audit Swarm"
 active_branch_merged_to_main: "main (verified release push)"
-project_phase: "Phase 80A Complete: Refined Dark Mode, Universal Theme & Colors, Metric Card Polish & Analyst Consistency"
+project_phase: "Phase 80B Complete: Student Prediction/Context/Overflow Fixes & Teacher Course/Alert Scoping Fixes"
 
 completed_modules:
-  - "Phase 1-79: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Admin Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official PDF & HTML Branding, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish (60-63), Live Stream/KPI/PDF/Card-ID Sync (64-72), Hirael Login-03 (73), Glassmorphism Profile/Tabbed Settings/Drawer Blur/Zero-Glow Academic Widgets (74), Multi-Agent AI Dock/Real-Data Honesty/Monochrome A4 PDFs (75), AI Specialist DPs/sessionStorage Continuity/RBAC-DOM Polls/Zero-UI A4 Print/Progress Watchdog (76), Vercel Auto-Deploy (77), Live Dynamic Gemini AI & Full-App Software Control (78)."
-  - "Phase 80A: Theme Polish, Universal Theme Studio & Analyst Data/UI Consistency:"
-      - "core/theme_services.py (339/350) & static/css/global.css (283/350): refined neutral zinc dark tokens (#09090b canvas, #111114 surface, #1b1b20 elevated), dark/blue shell dark chromes (#0d0e12 / #111217), rgba(255,255,255,0.08) hairline borders, and crisp input/table focus & hover parity."
-      - "templates/components/sidebar.html (199/350), templates/base.html (191/350) & templates/components/metric_card.html (22/350): enabled Theme & Colors (openThemeStudioModal() + theme_studio_modal.html) for all logged-in roles (ADMIN, TEACHER, STUDENT, ANALYST) while keeping Portal Settings ADMIN-only; polished metric_card.html padding & tablet/desktop typography."
-      - "panels/views_analyst.py (249/250) & analytics/model_health.py (220/350): deduplicated student_records & predictions by unique student_id (coverage <= 100.0%), synced Recent Uploads count (removed .limit(6), added total_uploads_count), and clarified genuine GPA labels vs proxy previous_gpa MAE across /analyst-panel/ and /analyst-panel/accuracy/."
-      - "templates/panels/analyst_dashboard.html (345/350), templates/panels/analyst_accuracy.html (159/350) & static/js/academic_widgets.js (242/350): simplified Analyst header to 3 primary actions + 3-step 'How Data & ML Work' strip, full-width Recent Uploads, compact Predictions table, stacked Tab 2 Training Data Summary, dynamic ctx.measureText padding (with fallback guard) to prevent x-axis label clipping, and wired gpa_mae_title/gpa_mae_badge."
-      - "panels/test_notifications.py (241/380) & panels/test_phase24.py (182/380): updated assertions for universal non-admin Theme & Colors modal while keeping /admin-panel/settings/ ADMIN-only."
+  - "Phase 1-80A: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Admin Logs & Portal Settings, Theme Studio, My Profile, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official PDF & HTML Branding, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish (60-63), Live Stream/KPI/PDF/Card-ID Sync (64-72), Hirael Login-03 (73), Glassmorphism Profile/Tabbed Settings/Drawer Blur/Zero-Glow Academic Widgets (74), Multi-Agent AI Dock/Real-Data Honesty/Monochrome A4 PDFs (75), AI Specialist DPs/sessionStorage Continuity/RBAC-DOM Polls/Zero-UI A4 Print/Progress Watchdog (76), Vercel Auto-Deploy (77), Live Dynamic Gemini AI & Full-App Software Control (78), Theme Polish, Universal Theme Studio & Analyst UX/Backend (80A)."
+  - "Phase 80B: Student & Teacher Panel Audit Fixes:"
+      - "panels/student_services.py (339/350) & panels/views_student.py (244/250): fixed _fetch_student_docs() prediction sorting (.sort('generated_at', DESCENDING).limit(1) + fallback GPA/risk calculation when marks exist without a prediction), added real academic context (Program/Level, Department, Batch/Class, Enrolled Courses with Assigned Teachers, Portal Admin contact) to Student Dashboard & Report."
+      - "templates/panels/student_dashboard.html (194/350), student_report.html (144/350) & student_notifications.html (169/350): added 3-step 'How EduPredict Works' strip, fixed horizontal overflow on /student-panel/notifications/ (table-fixed proportional widths so Mark Read is visible) and /student-panel/report/ (removed truncate clipping on Portal/Term & Student Name, compacted Course-wise Result table)."
+      - "panels/teacher_services.py (335/350), panels/teacher_alert_services.py (221/350) & panels/views_teacher.py (243/250): added Assigned Courses & Classes (matched from courses_col() by instructor_id/instructor/instructor_email with My/All Courses scope filter), Portal Admin contact, and scoped 'Alerts I Sent' on /teacher-panel/alerts/ to the logged-in teacher."
+      - "templates/panels/teacher_dashboard.html (226/350), teacher_alerts.html (93/350), teacher_ingest.html (181/350) & teacher_students.html (161/350): added 3-step Teacher Workflow strip, Overwrite & Auto-ML behavior notice, Date column nowrap/min-width fitting, removed duplicate Course/Batch subtitle repetition & duplicate export buttons (sm:grid-cols-2 xl:grid-cols-4), and set ingest roster page_size=5."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "node --check: all 13 JS scripts in static/js/*.js exited 0 (JS_CHECK_OK: 13 files)."
-  - "Zero-comment & line-cap audit: all 12 modified files passed with issues=[] (views_analyst.py 249/250, all others <= 350, test files <= 380)."
-  - "manage.py test --verbosity=2: Ran 136 tests in 100.176s (OK)."
-  - "manage.py verify_uat: UAT Results: 7/7 passed in 10.48s - System 100% Operational (Step 1 status=healthy, latency=636.4ms, Steps 2-7 PASS)."
+  - "node --check: all 13 JS scripts in static/js/*.js exited 0."
+  - "Zero-comment & line-cap audit: all 12 modified files passed with issues=[] (views_student.py 244/250, views_teacher.py 243/250, all others <= 350)."
+  - "manage.py test --verbosity=2: Ran 136 tests in 94.210s (OK)."
+  - "manage.py verify_uat: UAT Results: 7/7 passed in 11.82s - System 100% Operational (Step 1 status=healthy, latency=651.99ms, Steps 2-7 PASS)."
 
 active_routes_and_files:
-  - "core/theme_services.py, static/css/global.css, templates/base.html, templates/components/sidebar.html, templates/components/metric_card.html, panels/views_analyst.py, analytics/model_health.py, templates/panels/analyst_dashboard.html, templates/panels/analyst_accuracy.html, static/js/academic_widgets.js, panels/test_notifications.py, panels/test_phase24.py, .agents/git-sync.md"
+  - "panels/student_services.py, panels/views_student.py, templates/panels/student_dashboard.html, templates/panels/student_report.html, templates/panels/student_notifications.html, panels/teacher_services.py, panels/teacher_alert_services.py, panels/views_teacher.py, templates/panels/teacher_dashboard.html, templates/panels/teacher_students.html, templates/panels/teacher_ingest.html, templates/panels/teacher_alerts.html, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

@@ -13,7 +13,7 @@ def _safe_float(val, default=0.0):
 
 def _empty_record(student_id):
     return {
-        "student_id": student_id, "full_name": "", "batch": "", "department": "",
+        "student_id": student_id, "full_name": "", "batch": "", "department": "", "program_level": "",
         "records": [], "courses": [], "avg_attendance": 0.0, "avg_marks": 0.0,
         "avg_assignment": 0.0, "lms_hours_weekly": 0.0, "previous_gpa": 0.0,
         "predicted_gpa": None, "risk_level": "PENDING", "risk_score": None,
@@ -23,8 +23,45 @@ def _empty_record(student_id):
 
 def _fetch_student_docs(student_id):
     records = list(student_records_col().find({"student_id": student_id}, {"_id": 0}).sort("updated_at", DESCENDING))
-    prediction = predictions_col().find_one({"student_id": student_id}, {"_id": 0, "generated_at": -1})
+    preds = list(predictions_col().find({"student_id": student_id}, {"_id": 0}).sort("generated_at", DESCENDING).limit(1))
+    prediction = preds[0] if preds else None
     return records, prediction
+
+
+def _resolve_program_level(user_doc, department, batch):
+    explicit = str((user_doc or {}).get("program_level") or "").strip()
+    if explicit:
+        return explicit
+    if department:
+        return f"BS {department}"
+    if batch:
+        return f"Batch {batch}"
+    return "Undergraduate"
+
+
+def _load_academic_context(course_codes, batch):
+    clean_codes = [str(c).strip().upper() for c in (course_codes or []) if c]
+    if clean_codes:
+        course_docs = list(courses_col().find({"course_code": {"$in": clean_codes}}, {"_id": 0}))
+    elif batch:
+        course_docs = list(courses_col().find({"batch": batch, "status": "ACTIVE"}, {"_id": 0}))
+    else:
+        course_docs = []
+    teachers_by_name = {}
+    for t in users_col().find({"role": "TEACHER"}, {"_id": 0, "full_name": 1, "email": 1}):
+        tname = str(t.get("full_name") or "").strip()
+        if tname:
+            teachers_by_name[tname.lower()] = {"name": tname, "email": str(t.get("email") or "").strip()}
+    by_code = {str(c.get("course_code") or "").strip().upper(): c for c in course_docs}
+    enrolled_courses = []
+    for code in (clean_codes or list(by_code.keys())):
+        cdoc = by_code.get(code) or {}
+        instructor = str(cdoc.get("instructor") or "TBA").strip() or "TBA"
+        tinfo = teachers_by_name.get(instructor.lower()) or {}
+        enrolled_courses.append({"course_code": code, "title": str(cdoc.get("title") or code), "credits": round(_safe_float(cdoc.get("credits"), 3.0), 1), "teacher_name": tinfo.get("name") or instructor, "teacher_email": tinfo.get("email") or ""})
+    admin_doc = users_col().find_one({"role": "ADMIN", "is_active": True}, {"_id": 0, "full_name": 1, "email": 1}) or users_col().find_one({"role": "ADMIN"}, {"_id": 0, "full_name": 1, "email": 1})
+    admin_contact = {"name": str((admin_doc or {}).get("full_name") or "Portal Administrator"), "email": str((admin_doc or {}).get("email") or "")}
+    return enrolled_courses, admin_contact, course_docs
 
 
 def _fetch_batch_docs(batch, course_codes=None):
@@ -176,19 +213,27 @@ def _load_student_overview(student_id, user_id, role):
     excellent_att = min(100.0, max(85.0, min_att + 5.0))
     record = _empty_record(student_id)
     records, prediction = _fetch_student_docs(student_id)
+    user_doc = None
+    try:
+        ucol = users_col()
+        if student_id:
+            user_doc = ucol.find_one({"student_id": student_id}, {"_id": 0, "full_name": 1, "batch": 1, "department": 1, "program_level": 1})
+        if not user_doc and user_id:
+            user_doc = ucol.find_one({"user_id": user_id}, {"_id": 0, "full_name": 1, "batch": 1, "department": 1, "program_level": 1})
+    except Exception:
+        user_doc = None
+
     if records:
         primary = records[0]
         record["full_name"] = str(primary.get("full_name") or "")
         record["batch"] = str(primary.get("batch") or "")
-        course_rows = []
-        for rec in records:
-            course_rows.append({
-                "course_code": str(rec.get("course_code") or "").upper(),
-                "attendance_pct": round(_safe_float(rec.get("attendance_pct")), 1),
-                "internal_marks": round(_safe_float(rec.get("internal_marks")), 1),
-                "assignment_score": round(_safe_float(rec.get("assignment_score")), 1),
-                "lms_hours_weekly": round(_safe_float(rec.get("lms_hours_weekly")), 1),
-            })
+        course_rows = [{
+            "course_code": str(rec.get("course_code") or "").upper(),
+            "attendance_pct": round(_safe_float(rec.get("attendance_pct")), 1),
+            "internal_marks": round(_safe_float(rec.get("internal_marks")), 1),
+            "assignment_score": round(_safe_float(rec.get("assignment_score")), 1),
+            "lms_hours_weekly": round(_safe_float(rec.get("lms_hours_weekly")), 1),
+        } for rec in records]
         record["courses"] = course_rows
         n = len(course_rows) or 1
         record["avg_attendance"] = round(sum(c["attendance_pct"] for c in course_rows) / n, 1)
@@ -196,20 +241,12 @@ def _load_student_overview(student_id, user_id, role):
         record["avg_assignment"] = round(sum(c["assignment_score"] for c in course_rows) / n, 1)
         record["lms_hours_weekly"] = course_rows[0]["lms_hours_weekly"]
         record["previous_gpa"] = round(_safe_float(primary.get("previous_gpa")), 2)
-    else:
-        user_doc = None
-        try:
-            ucol = users_col()
-            if student_id:
-                user_doc = ucol.find_one({"student_id": student_id}, {"_id": 0, "full_name": 1, "batch": 1, "department": 1})
-            if not user_doc and user_id:
-                user_doc = ucol.find_one({"user_id": user_id}, {"_id": 0, "full_name": 1, "batch": 1, "department": 1})
-        except Exception:
-            user_doc = None
-        if isinstance(user_doc, dict):
-            record["full_name"] = str(user_doc.get("full_name") or "")
-            record["batch"] = str(user_doc.get("batch") or "")
-            record["department"] = str(user_doc.get("department") or "")
+
+    if isinstance(user_doc, dict):
+        record["full_name"] = record["full_name"] or str(user_doc.get("full_name") or "")
+        record["batch"] = record["batch"] or str(user_doc.get("batch") or "")
+        record["department"] = str(user_doc.get("department") or "")
+    record["program_level"] = _resolve_program_level(user_doc, record["department"], record["batch"])
 
     if prediction:
         raw_gpa = prediction.get("predicted_gpa")
@@ -221,6 +258,16 @@ def _load_student_overview(student_id, user_id, role):
         record["recommendation"] = str(prediction.get("recommendation") or "")
         gen = prediction.get("generated_at")
         record["generated_at"] = gen.strftime("%Y-%m-%d %H:%M") if hasattr(gen, "strftime") else None
+
+    if record["courses"] and record["predicted_gpa"] is None:
+        record["predicted_gpa"] = round(min(4.0, max(0.0, (record["avg_marks"] / 100.0) * 4.0)), 2)
+        if record["risk_level"] == "PENDING":
+            if record["avg_attendance"] < min_att or record["avg_marks"] < 50.0:
+                record["risk_level"] = "HIGH"
+            elif record["avg_marks"] < 65.0:
+                record["risk_level"] = "MEDIUM"
+            else:
+                record["risk_level"] = "LOW"
 
     course_codes = [x["course_code"] for x in record["courses"] if x.get("course_code")]
     batch_docs = _fetch_batch_docs(record["batch"], course_codes=course_codes) if (record["courses"] and (record["batch"] or course_codes)) else []
@@ -239,15 +286,7 @@ def _load_student_overview(student_id, user_id, role):
             status = {"text": "Needs Help", "status": "warning"}
         else:
             status = {"text": "At Risk", "status": "danger"}
-        subject_rows.append({
-            "course_code": code,
-            "my_marks": course["internal_marks"],
-            "class_marks": avg["marks"],
-            "my_attendance": course["attendance_pct"],
-            "class_attendance": avg["attendance"],
-            "diff": diff,
-            "status": status,
-        })
+        subject_rows.append({"course_code": code, "my_marks": course["internal_marks"], "class_marks": avg["marks"], "my_attendance": course["attendance_pct"], "class_attendance": avg["attendance"], "diff": diff, "status": status})
         chart_labels.append(code)
         chart_mine.append(course["internal_marks"])
         chart_class.append(avg["marks"])
@@ -260,23 +299,18 @@ def _load_student_overview(student_id, user_id, role):
 
     unread_alerts = notifications_col().count_documents({"is_read": False, "$or": _alert_targets(student_id, user_id, role)})
     active_courses = courses_col().count_documents({"status": "ACTIVE"})
-    credits = 0.0
-    for c in courses_col().find({"course_code": {"$in": [x["course_code"] for x in record["courses"]]}}, {"_id": 0, "credits": 1}):
-        credits += _safe_float(c.get("credits"), 3.0)
+    enrolled_courses, admin_contact, course_docs = _load_academic_context(course_codes, record["batch"])
+    credits = sum(_safe_float(c.get("credits"), 3.0) for c in course_docs if str(c.get("course_code") or "").upper() in course_codes)
     if credits == 0.0 and record["courses"]:
         credits = round(3.0 * len(record["courses"]), 1)
 
     return {
-        "record": record,
-        "subject_rows": subject_rows,
+        "record": record, "subject_rows": subject_rows,
         "chart": {"labels": chart_labels, "mine": chart_mine, "class_avg": chart_class},
-        "rank": rank,
-        "tips": tips,
-        "insight": insight,
-        "unread_alerts": unread_alerts,
-        "active_courses": active_courses,
-        "credits": round(credits, 1),
+        "rank": rank, "tips": tips, "insight": insight,
+        "unread_alerts": unread_alerts, "active_courses": active_courses, "credits": round(credits, 1),
         "teacher_alerts": _load_recent_alerts(student_id, user_id, role, limit=5),
+        "enrolled_courses": enrolled_courses, "admin_contact": admin_contact,
     }
 
 

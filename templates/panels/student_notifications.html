@@ -46,39 +46,39 @@
 
   <div data-paginated-container data-page-size="5" class="space-y-2.5">
     <div class="hidden md:block overflow-x-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
-      <table data-searchable-table class="w-full border-collapse text-left text-sm">
+      <table data-searchable-table class="w-full table-fixed border-collapse text-left text-xs sm:text-sm">
         <thead class="sticky top-0 z-10 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
           <tr>
-            <th class="whitespace-nowrap px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Title</th>
-            <th class="whitespace-nowrap px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Message</th>
-            <th class="whitespace-nowrap px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Level</th>
-            <th class="whitespace-nowrap px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Date</th>
-            <th class="whitespace-nowrap px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Status</th>
-            <th class="whitespace-nowrap px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Actions</th>
+            <th class="w-[20%] px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Title</th>
+            <th class="w-[34%] px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Message</th>
+            <th class="w-[11%] whitespace-nowrap px-2.5 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Level</th>
+            <th class="w-[14%] whitespace-nowrap px-2.5 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Date</th>
+            <th class="w-[9%] whitespace-nowrap px-2.5 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Status</th>
+            <th class="w-[12%] whitespace-nowrap px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-[var(--border-subtle)] tabular-nums">
           {% for alert in alerts %}
           <tr data-page-item class="transition-colors hover:bg-[var(--bg-elevated)]">
-            <td class="whitespace-nowrap px-4 py-2.5 font-medium text-[var(--text-primary)]">{{ alert.title }}</td>
-            <td class="px-4 py-2.5 text-[var(--text-secondary)] max-w-md"><span class="block truncate">{{ alert.message }}</span></td>
-            <td class="whitespace-nowrap px-4 py-2.5">
+            <td class="px-3 py-2 font-medium text-[var(--text-primary)] break-words align-top">{{ alert.title }}</td>
+            <td class="px-3 py-2 text-xs text-[var(--text-secondary)] break-words align-top">{{ alert.message }}</td>
+            <td class="whitespace-nowrap px-2.5 py-2 align-top">
               <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
                 <span class="h-1.5 w-1.5 rounded-full {% if alert.status == 'danger' %}bg-[var(--status-danger)]{% elif alert.status == 'warning' %}bg-[var(--status-warning)]{% else %}bg-[var(--accent-primary)]{% endif %}"></span>
                 <span>{{ alert.severity }}</span>
               </span>
             </td>
-            <td class="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-[var(--text-muted)]">{{ alert.created }}</td>
-            <td class="whitespace-nowrap px-4 py-2.5">
+            <td class="whitespace-nowrap px-2.5 py-2 font-mono text-xs text-[var(--text-muted)] align-top">{{ alert.created }}</td>
+            <td class="whitespace-nowrap px-2.5 py-2 align-top">
               {% if alert.is_read %}
               <span class="text-xs text-[var(--text-muted)]">Read</span>
               {% else %}
               <span class="text-xs font-semibold text-[var(--status-warning)]">Unread</span>
               {% endif %}
             </td>
-            <td class="whitespace-nowrap px-4 py-2.5">
+            <td class="whitespace-nowrap px-3 py-2 text-right align-top">
               {% if not alert.is_read %}
-              <form method="post" action="{% url 'panels:student_notifications' %}">
+              <form method="post" action="{% url 'panels:student_notifications' %}" class="inline-block">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="mark_read">
                 <input type="hidden" name="alert_id" value="{{ alert.id }}">

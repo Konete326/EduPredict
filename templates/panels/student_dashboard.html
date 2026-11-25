@@ -3,15 +3,32 @@
 {% block content %}
 <section class="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-2.5 shadow-sm">
   <div class="min-w-0 space-y-0.5">
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="flex flex-wrap items-center gap-1.5">
       <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]"><i class="fa-solid fa-graduation-cap text-[10px]"></i><span>Student Portal</span></span>
-      {% if record.batch %}<span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">{{ record.batch }}</span>{% endif %}
+      {% if record.program_level %}<span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">{{ record.program_level }}</span>{% endif %}
+      {% if record.department %}<span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] text-[var(--text-secondary)]">{{ record.department }}</span>{% endif %}
+      {% if record.batch %}<span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Batch {{ record.batch }}</span>{% endif %}
     </div>
     <h2 class="text-base sm:text-lg font-bold tracking-tight text-[var(--text-primary)]">Hello, {{ record.full_name|default:"Student" }}!</h2>
   </div>
   <div class="flex flex-wrap items-center gap-2">
     <a href="{% url 'panels:student_notifications' %}" title="See teacher alerts and reminders" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-bell text-[var(--status-warning)]"></i><span>Alerts</span>{% if unread_alerts %}<span class="rounded-full bg-[var(--status-danger)] px-1.5 py-0.5 text-[10px] font-bold text-white tabular-nums">{{ unread_alerts }}</span>{% endif %}</a>
     <a href="{% url 'panels:student_report' %}" title="Open your report card" class="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent-primary)] px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm"><i class="fa-solid fa-file-lines text-xs"></i><span>My Report Card</span></a>
+  </div>
+</section>
+
+<section aria-label="How EduPredict Works" class="grid grid-cols-1 gap-2.5 md:grid-cols-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 py-2.5">
+  <div class="flex items-start gap-2.5">
+    <span class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--accent-soft)] text-[11px] font-bold text-[var(--accent-primary)]"><i class="fa-solid fa-file-arrow-up"></i></span>
+    <div class="min-w-0"><p class="text-xs font-semibold text-[var(--text-primary)]">1. Teacher Uploads Marks</p><p class="text-[11px] text-[var(--text-muted)]">Your teachers enter attendance &amp; internal marks for each course.</p></div>
+  </div>
+  <div class="flex items-start gap-2.5">
+    <span class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--accent-soft)] text-[11px] font-bold text-[var(--accent-primary)]"><i class="fa-solid fa-chart-line"></i></span>
+    <div class="min-w-0"><p class="text-xs font-semibold text-[var(--text-primary)]">2. ML Forecasts GPA &amp; Risk</p><p class="text-[11px] text-[var(--text-muted)]">EduPredict calculates your predicted GPA and risk standing.</p></div>
+  </div>
+  <div class="flex items-start gap-2.5">
+    <span class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--accent-soft)] text-[11px] font-bold text-[var(--accent-primary)]"><i class="fa-solid fa-file-pdf"></i></span>
+    <div class="min-w-0"><p class="text-xs font-semibold text-[var(--text-primary)]">3. Review Tips &amp; A4 Report</p><p class="text-[11px] text-[var(--text-muted)]">Read study tips, teacher alerts, and download your A4 PDF.</p></div>
   </div>
 </section>
 
@@ -80,6 +97,37 @@
         <a href="{% url 'panels:student_tips' %}" class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-2 text-[11px] font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-lightbulb text-[var(--status-warning)]"></i><span>Study Tips</span></a>
         <button type="button" onclick="openFormModal({ title: 'Need Help', actionUrl: '{% url 'panels:submit_support_ticket' %}', fields: [{ name: 'subject', label: 'Subject', type: 'text', placeholder: 'Short title', required: true }, { name: 'message', label: 'Message', type: 'textarea', placeholder: 'Write your question or issue...', required: true }] })" class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-2 text-[11px] font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-headset text-[var(--accent-primary)]"></i><span>Ask for Help</span></button>
       </div>
+    </div>
+  </section>
+
+  <section class="grid grid-cols-1 gap-3.5 xl:grid-cols-12">
+    <div class="xl:col-span-8 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 space-y-2">
+      <div class="flex items-center justify-between gap-2">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Enrolled Courses &amp; Assigned Teachers</h3>
+        <span class="text-[11px] text-[var(--text-muted)]">{{ record.program_level|default:"Undergraduate" }}{% if record.batch %} · Batch {{ record.batch }}{% endif %}</span>
+      </div>
+      {% if enrolled_courses %}
+      <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {% for ec in enrolled_courses %}
+        <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 space-y-0.5">
+          <div class="flex items-center justify-between gap-2"><span class="font-mono text-xs font-bold text-[var(--accent-primary)]">{{ ec.course_code }}</span><span class="text-[10px] text-[var(--text-muted)]">{{ ec.credits }} cr</span></div>
+          <p class="text-xs font-medium text-[var(--text-primary)] truncate" title="{{ ec.title }}">{{ ec.title }}</p>
+          <p class="text-[11px] text-[var(--text-secondary)] truncate"><i class="fa-solid fa-chalkboard-user mr-1 text-[10px] text-[var(--text-muted)]"></i>{{ ec.teacher_name }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-xs text-[var(--text-muted)]">No enrolled courses assigned yet.</p>
+      {% endif %}
+    </div>
+    <div class="xl:col-span-4 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 flex flex-col justify-between gap-2">
+      <div class="space-y-1">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Academic &amp; Admin Contact</h3>
+        <p class="text-xs text-[var(--text-secondary)]"><strong class="text-[var(--text-primary)]">Dept:</strong> {{ record.department|default:"General" }} · <strong class="text-[var(--text-primary)]">Batch:</strong> {{ record.batch|default:"-" }}</p>
+        <p class="text-xs text-[var(--text-secondary)]"><strong class="text-[var(--text-primary)]">Portal Admin:</strong> {{ admin_contact.name|default:"System Administrator" }}</p>
+        {% if admin_contact.email %}<p class="text-[11px] font-mono text-[var(--accent-primary)] break-all">{{ admin_contact.email }}</p>{% endif %}
+      </div>
+      <a href="{% url 'panels:student_notifications' %}" class="text-[11px] font-semibold text-[var(--accent-primary)] hover:underline">Send support request &rarr;</a>
     </div>
   </section>
 </div>
