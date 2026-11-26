@@ -64,19 +64,16 @@ class Phase25IntegrationTests(TestCase):
         return client
 
     def test_student_self_signup_approves_and_redirects(self):
+        self.cols["users"].insert_one({"user_id": "USR-T900", "full_name": "Prof. Assigned", "email": "assigned@edupredict.edu", "role": "TEACHER", "department": "Computer Science", "is_active": True, "approval_status": "APPROVED"})
         client = Client()
-        resp = client.post(reverse("accounts:auth_view"), {
-            "action": "register", "full_name": "Sara Ahmed", "email": "sara@edupredict.edu",
-            "password": "password123", "confirm_password": "password123", "role": "STUDENT",
-            "department": "Computer Science", "batch": "2026-A", "phone": "0300-1234567", "bio": "BSCS Student",
-        })
-        self.assertRedirects(resp, reverse("panels:student_dashboard"), fetch_redirect_response=False)
+        resp = client.post(reverse("accounts:auth_view"), {"action": "register", "full_name": "Sara Ahmed", "email": "sara@edupredict.edu", "password": "password123", "confirm_password": "password123", "role": "STUDENT", "department": "Computer Science", "batch": "2026-A", "phone": "0300-1234567", "bio": "BSCS Student", "assigned_teacher_id": "USR-T900"})
+        self.assertEqual(resp.status_code, 200)
         saved = self.cols["users"].find_one({"email": "sara@edupredict.edu"})
         self.assertIsNotNone(saved)
-        self.assertEqual(saved["phone"], "0300-1234567")
-        self.assertEqual(saved["bio"], "BSCS Student")
-        self.assertEqual(saved["approval_status"], "APPROVED")
-        self.assertTrue(saved["is_active"])
+        self.assertEqual((saved["phone"], saved["bio"], saved["assigned_teacher_id"], saved["approval_status"], saved["is_active"]), ("0300-1234567", "BSCS Student", "USR-T900", "PENDING", False))
+        self._login_admin_client().post(reverse("panels:admin_users"), {"action": "toggle", "user_id": saved["user_id"], "filter_role": "PENDING"})
+        login_resp = client.post(reverse("accounts:auth_view"), {"action": "login", "email": "sara@edupredict.edu", "password": "password123"})
+        self.assertRedirects(login_resp, reverse("panels:student_dashboard"), fetch_redirect_response=False)
         self.assertEqual(client.session["user"]["role"], "STUDENT")
 
     def test_teacher_self_signup_is_pending_and_blocks_login_until_approved(self):
@@ -149,10 +146,12 @@ class Phase25IntegrationTests(TestCase):
         overview["subject_rows"][0]["my_marks"] = 88.0
         mock_overview.return_value = overview
         client = self._login_role("STUDENT", user_id="USR-1003", student_id="STD-2026-001")
-        for route_name in ("panels:student_dashboard", "panels:student_report"):
-            resp = client.get(reverse(route_name))
-            self.assertEqual(resp.status_code, 200)
-            self.assertIn("Download PDF Transcript", resp.content.decode("utf-8"))
+        dash_resp = client.get(reverse("panels:student_dashboard"))
+        self.assertEqual(dash_resp.status_code, 200)
+        self.assertIn("My Report Card", dash_resp.content.decode("utf-8"))
+        rep_resp = client.get(reverse("panels:student_report"))
+        self.assertEqual(rep_resp.status_code, 200)
+        self.assertIn("Download PDF Transcript", rep_resp.content.decode("utf-8"))
         pdf_bytes = generate_student_report_card_pdf(overview)
         self.assertIsInstance(pdf_bytes, bytes)
         self.assertTrue(pdf_bytes.startswith(b"%PDF-"))
@@ -303,12 +302,14 @@ class Phase25IntegrationTests(TestCase):
 
         self.cols["notifications"].insert_one({
             "target_role": "STUDENT", "target_user_id": "STD-HIGH", "student_id": "STD-HIGH",
+            "sender_user_id": "USR-T1", "sender_name": "Test Teacher",
             "title": "Teacher Alert (CS-101)", "message": "Previous read alert", "severity": "WARNING",
             "is_read": True, "created_at": datetime(2026, 11, 21, 11, 0, tzinfo=timezone.utc),
         })
         teacher = self._login_role("TEACHER", user_id="USR-T1")
         alerts_html = teacher.get(reverse("panels:teacher_alerts")).content.decode("utf-8")
-        self.assertIn("Read ✓✓", alerts_html)
+        self.assertIn("Previous read alert", alerts_html)
+        self.assertIn("Read", alerts_html)
         self.assertIn("Notify All High-Risk Students", alerts_html)
         self.assertIn("Auto-Alert &lt; 75%: On", alerts_html)
 

@@ -286,7 +286,7 @@ class StaticFilesAndProductionConfigTests(TestCase):
             {"action": "login", "email": "nonexistent@test.com", "password": "wrongpassword123"},
         )
         self.assertEqual(resp.status_code, 200)
-        self.assertIn("Invalid email or password.", resp.content.decode("utf-8"))
+        self.assertIn("Invalid email/student ID or password.", resp.content.decode("utf-8"))
 
     def test_health_endpoint_reports_process_memory(self):
         resp = self.client.get("/health/")

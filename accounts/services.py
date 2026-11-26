@@ -1,21 +1,12 @@
 import os
+import re
 import threading
 import uuid
 from datetime import datetime, timezone
 from django.contrib.auth.hashers import check_password, make_password
+from pymongo import ASCENDING
 from pymongo.errors import DuplicateKeyError
-from core.db import (
-    courses_col,
-    ensure_indexes,
-    get_cached,
-    invalidate_cache,
-    notifications_col,
-    predictions_col,
-    resolve_portal_branding,
-    student_records_col,
-    support_tickets_col,
-    users_col,
-)
+from core.db import courses_col, ensure_indexes, get_cached, invalidate_cache, notifications_col, predictions_col, resolve_portal_branding, student_records_col, support_tickets_col, users_col
 
 VALID_ROLES = ("ADMIN", "TEACHER", "STUDENT", "ANALYST")
 SELF_REGISTER_ROLES = ("STUDENT", "TEACHER", "ANALYST")
@@ -108,6 +99,8 @@ def serialize_session_user(user_doc):
         "phone": str(user_doc.get("phone") or ""),
         "bio": str(user_doc.get("bio") or ""),
         "avatar_url": str(user_doc.get("avatar_url") or ""),
+        "assigned_teacher_id": str(user_doc.get("assigned_teacher_id") or ""),
+        "assigned_teacher_name": str(user_doc.get("assigned_teacher_name") or ""),
         "is_active": bool(user_doc.get("is_active", True)),
         "approval_status": str(user_doc.get("approval_status") or ("APPROVED" if user_doc.get("is_active", True) else "INACTIVE")).upper(),
         "theme_prefs": dict(user_doc.get("theme_prefs")) if isinstance(user_doc.get("theme_prefs"), dict) else {},
@@ -118,6 +111,16 @@ def serialize_session_user(user_doc):
     elif student_id:
         session_user["student_id"] = str(student_id)
     return session_user
+
+
+def list_approved_teachers():
+    def _fetch():
+        try:
+            docs = users_col().find({"role": "TEACHER", "is_active": True}, {"_id": 0, "user_id": 1, "full_name": 1, "department": 1, "email": 1}).sort("full_name", ASCENDING)
+            return [{"user_id": str(d.get("user_id") or ""), "full_name": str(d.get("full_name") or ""), "department": str(d.get("department") or "General"), "email": str(d.get("email") or "")} for d in docs if d.get("user_id")]
+        except Exception:
+            return []
+    return get_cached("admin:approved_teachers", _fetch, ttl=20.0)
 
 
 def generate_unique_user_id(col):
@@ -138,34 +141,48 @@ def generate_unique_student_id(records_col, user_id):
     return f"STD-{year}-{uuid.uuid4().hex[:4].upper()}"
 
 
-def authenticate_user(email, password):
+def authenticate_user(identifier, password):
     ensure_default_admin()
-    user_doc = users_col().find_one({"email": email.strip().lower()})
+    raw_id = str(identifier or "").strip()
+    if not raw_id:
+        return None, "Invalid email/student ID or password."
+    col, lower_id, upper_id = users_col(), raw_id.lower(), raw_id.upper()
+    user_doc = col.find_one({"email": lower_id})
     if user_doc is None:
-        return None, "Invalid email or password."
+        for candidate in dict.fromkeys((raw_id, upper_id, lower_id)):
+            user_doc = col.find_one({"student_id": candidate})
+            if user_doc is not None:
+                break
+    if user_doc is None:
+        try:
+            user_doc = col.find_one({"student_id": {"$regex": f"^{re.escape(raw_id)}$", "$options": "i"}})
+        except Exception:
+            user_doc = None
+    if user_doc is None:
+        return None, "Invalid email/student ID or password."
+    role = str(user_doc.get("role") or "").strip().upper()
+    role_label = "student" if role == "STUDENT" else "teacher"
     approval_status = str(user_doc.get("approval_status") or "").strip().upper()
     if approval_status == "PENDING":
-        return None, "Your teacher account is pending Admin approval. Please wait until an administrator approves your account."
+        return None, f"Your {role_label} account is pending Admin approval. Please wait until an administrator approves your account."
     if approval_status == "REJECTED":
         reason = str(user_doc.get("rejection_reason") or "").strip()
-        return None, (f"Your teacher account request was rejected by Admin. Reason: {reason}" if reason else "Your teacher account request was rejected by Admin.")
+        return None, (f"Your {role_label} account request was rejected by Admin. Reason: {reason}" if reason else f"Your {role_label} account request was rejected by Admin.")
     if not user_doc.get("is_active", True):
         return None, "Your account is inactive. Please contact an administrator."
     if not check_password(password, user_doc.get("password_hash", "")):
-        return None, "Invalid email or password."
-    role = str(user_doc.get("role") or "").strip().upper()
+        return None, "Invalid email/student ID or password."
     if role not in VALID_ROLES:
         return None, "Account role is invalid. Please contact an administrator."
     return user_doc, None
 
 
-def register_user(full_name, email, password, role, department, batch, phone="", bio="", program_level=""):
+def register_user(full_name, email, password, role, department, batch, phone="", bio="", program_level="", assigned_teacher_id="", assigned_teacher_name=""):
     normalized_role = str(role or "").strip().upper()
     if normalized_role not in SELF_REGISTER_ROLES:
         return None, "Administrator accounts can only be created by an existing Admin."
     ensure_accounts_indexes_once()
-    col = users_col()
-    normalized_email = email.strip().lower()
+    col, normalized_email = users_col(), email.strip().lower()
     if col.find_one({"email": normalized_email}, {"_id": 1}) is not None:
         return None, "An account with this email already exists."
 
@@ -173,9 +190,16 @@ def register_user(full_name, email, password, role, department, batch, phone="",
     resolved_batch = batch.strip() or ("2026" if normalized_role == "STUDENT" else "ALL")
     raw_level = str(program_level or "").strip()
     resolved_program_level = raw_level if raw_level in PROGRAM_LEVELS else ""
-    user_id = generate_unique_user_id(col)
-    is_pending_teacher = normalized_role == "TEACHER"
+    clean_teacher_id = str(assigned_teacher_id or "").strip()
+    clean_teacher_name = str(assigned_teacher_name or "").strip()
+    if normalized_role == "STUDENT" and clean_teacher_id:
+        teacher_doc = col.find_one({"user_id": clean_teacher_id, "role": "TEACHER", "is_active": True}, {"_id": 0, "user_id": 1, "full_name": 1})
+        if teacher_doc is None:
+            return None, "Please select a valid approved Teacher."
+        clean_teacher_name = str(teacher_doc.get("full_name") or clean_teacher_name).strip()
 
+    user_id = generate_unique_user_id(col)
+    needs_approval = normalized_role in ("TEACHER", "STUDENT")
     user_doc = {
         "user_id": user_id,
         "full_name": full_name.strip(),
@@ -187,35 +211,27 @@ def register_user(full_name, email, password, role, department, batch, phone="",
         "program_level": resolved_program_level,
         "phone": str(phone or "").strip(),
         "bio": str(bio or "").strip(),
-        "is_active": not is_pending_teacher,
-        "approval_status": "PENDING" if is_pending_teacher else "APPROVED",
+        "is_active": not needs_approval,
+        "approval_status": "PENDING" if needs_approval else "APPROVED",
         "created_at": datetime.now(timezone.utc),
     }
 
-    student_id = None
     if normalized_role == "STUDENT":
-        records_col = student_records_col()
-        student_id = generate_unique_student_id(records_col, user_id)
-        user_doc["student_id"] = student_id
+        user_doc["student_id"] = generate_unique_student_id(student_records_col(), user_id)
+        if clean_teacher_id:
+            user_doc["assigned_teacher_id"] = clean_teacher_id
+            user_doc["assigned_teacher_name"] = clean_teacher_name
 
     try:
         col.insert_one(user_doc)
     except DuplicateKeyError:
         return None, "An account with this email already exists."
 
-    if is_pending_teacher:
+    if needs_approval:
         try:
-            notifications_col().insert_one(
-                {
-                    "title": "Teacher Approval Needed",
-                    "message": f"{full_name.strip()} ({normalized_email}, {resolved_department}) registered as Teacher and is waiting for Admin approval.",
-                    "severity": "WARNING",
-                    "category": "APPROVAL",
-                    "target_role": "ADMIN",
-                    "is_read": False,
-                    "created_at": datetime.now(timezone.utc),
-                }
-            )
+            role_title = "Teacher" if normalized_role == "TEACHER" else "Student"
+            teacher_note = f", Teacher: {clean_teacher_name}" if clean_teacher_name else ""
+            notifications_col().insert_one({"title": f"{role_title} Approval Needed", "message": f"{full_name.strip()} ({normalized_email}, {resolved_department}{teacher_note}) registered as {role_title} and is waiting for Admin approval.", "severity": "WARNING", "category": "APPROVAL", "target_role": "ADMIN", "is_read": False, "created_at": datetime.now(timezone.utc)})
             invalidate_cache("notifs:")
         except Exception:
             pass
@@ -253,29 +269,13 @@ def get_public_portal_metrics():
 def get_public_admin_contact():
     def _fetch():
         inst_name, current_term = resolve_portal_branding(db_connected=True)
-        admin_doc = None
+        proj = {"_id": 0, "full_name": 1, "email": 1, "department": 1, "phone": 1}
         try:
-            admin_doc = users_col().find_one(
-                {"role": "ADMIN", "is_active": True},
-                {"_id": 0, "full_name": 1, "email": 1, "department": 1, "phone": 1},
-            )
-            if admin_doc is None:
-                admin_doc = users_col().find_one(
-                    {"role": "ADMIN"},
-                    {"_id": 0, "full_name": 1, "email": 1, "department": 1, "phone": 1},
-                )
+            admin_doc = users_col().find_one({"role": "ADMIN", "is_active": True}, proj) or users_col().find_one({"role": "ADMIN"}, proj)
         except Exception:
             admin_doc = None
         doc = admin_doc if isinstance(admin_doc, dict) else {}
-        return {
-            "institution_name": inst_name,
-            "current_term": current_term,
-            "full_name": str(doc.get("full_name") or "System Administrator").strip() or "System Administrator",
-            "email": str(doc.get("email") or "admin@gmail.com").strip() or "admin@gmail.com",
-            "department": str(doc.get("department") or "Administration").strip() or "Administration",
-            "phone": str(doc.get("phone") or "").strip(),
-        }
-
+        return {"institution_name": inst_name, "current_term": current_term, "full_name": str(doc.get("full_name") or "System Administrator").strip() or "System Administrator", "email": str(doc.get("email") or "admin@gmail.com").strip() or "admin@gmail.com", "department": str(doc.get("department") or "Administration").strip() or "Administration", "phone": str(doc.get("phone") or "").strip()}
     return get_cached("public:admin_contact", _fetch, ttl=60.0)
 
 
@@ -289,43 +289,17 @@ def _generate_public_ticket_id(col):
 
 
 def create_public_contact_ticket(name, email, subject, message):
-    clean_name = str(name or "").strip()
-    clean_email = str(email or "").strip().lower()
-    clean_subject = str(subject or "").strip()
-    clean_message = str(message or "").strip()
+    clean_name, clean_email = str(name or "").strip(), str(email or "").strip().lower()
+    clean_subject, clean_message = str(subject or "").strip(), str(message or "").strip()
     if not clean_name or not clean_email or not clean_subject or not clean_message:
         return None, "All fields are required."
     try:
-        col = support_tickets_col()
+        col, now = support_tickets_col(), datetime.now(timezone.utc)
         ticket_id = _generate_public_ticket_id(col)
-        now = datetime.now(timezone.utc)
-        doc = {
-            "ticket_id": ticket_id,
-            "user_id": "GUEST",
-            "user_name": clean_name,
-            "email": clean_email,
-            "role": "GUEST",
-            "subject": clean_subject,
-            "message": f"[Public Contact: {clean_email}] {clean_message}",
-            "attachments": [],
-            "status": "OPEN",
-            "source": "PUBLIC_CONTACT",
-            "created_at": now,
-        }
+        doc = {"ticket_id": ticket_id, "user_id": "GUEST", "user_name": clean_name, "email": clean_email, "role": "GUEST", "subject": clean_subject, "message": f"[Public Contact: {clean_email}] {clean_message}", "attachments": [], "status": "OPEN", "source": "PUBLIC_CONTACT", "created_at": now}
         col.insert_one(doc)
         try:
-            notifications_col().insert_one(
-                {
-                    "title": f"New Contact {ticket_id}: {clean_subject}",
-                    "message": f"{clean_name} ({clean_email}): {clean_message}",
-                    "severity": "WARNING",
-                    "category": "TICKET",
-                    "target_role": "ADMIN",
-                    "ticket_id": ticket_id,
-                    "is_read": False,
-                    "created_at": now,
-                }
-            )
+            notifications_col().insert_one({"title": f"New Contact {ticket_id}: {clean_subject}", "message": f"{clean_name} ({clean_email}): {clean_message}", "severity": "WARNING", "category": "TICKET", "target_role": "ADMIN", "ticket_id": ticket_id, "is_read": False, "created_at": now})
             invalidate_cache("notifs:")
         except Exception:
             pass

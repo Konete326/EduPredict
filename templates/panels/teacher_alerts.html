@@ -9,8 +9,8 @@
         <span>Teacher Portal</span>
       </span>
     </div>
-    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Risk Alerts</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Send warning notes to students who miss classes or drop in marks, and see what you already sent.</p>
+    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Risk Alerts &amp; Student Inbox</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Send warning notes to at-risk students and reply to feedback messages sent to you by your class.</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
     <form method="post" action="{% url 'panels:teacher_alerts' %}">
@@ -46,8 +46,12 @@
 <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
   {% include 'components/metric_card.html' with title="Need Attention" value=kpis.at_risk_count badge="High risk or needs help" status="danger" icon="fa-solid fa-triangle-exclamation" %}
   {% include 'components/metric_card.html' with title="High Risk" value=kpis.high_risk_count badge="From AI predictions" status="danger" icon="fa-solid fa-fire" %}
-  {% include 'components/metric_card.html' with title="Medium Risk" value=kpis.medium_risk_count badge="Watch closely" status="warning" icon="fa-solid fa-eye" %}
+  {% include 'components/metric_card.html' with title="Student Inbox" value=kpis.open_feedback_count|default:0 badge="Open student feedback" status="warning" icon="fa-solid fa-inbox" %}
   {% include 'components/metric_card.html' with title="Alerts Sent" value=kpis.alerts_sent badge=kpis.unread_alerts|stringformat:"s"|add:" unread by students" status="info" icon="fa-solid fa-paper-plane" %}
+</section>
+
+<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+  {% include 'components/data_table.html' with table_id="teacher-feedback-inbox-table" table_title="Student Feedback Inbox" headers=feedback_headers rows=feedback_rows page_size=5 empty_message="No student feedback messages addressed to you yet." %}
 </section>
 
 <section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
@@ -86,6 +90,22 @@
         { type: 'hidden', name: 'course_code', value: d.courseCode || '' },
         { name: 'severity', label: 'Message Level', type: 'select', options: [{ value: 'WARNING', label: 'Needs Attention (Warning)' }, { value: 'DANGER', label: 'Urgent Help Needed' }, { value: 'INFO', label: 'Friendly Reminder' }], value: 'WARNING' },
         { name: 'message', label: 'Message to Student', type: 'textarea', value: defaultMsg, placeholder: 'Please attend extra help hours and submit missing work this week.', required: true }
+      ]
+    });
+  };
+
+  window.openReplyFeedbackModal = function (btn) {
+    const d = btn ? btn.dataset : {};
+    const studentName = d.studentName || 'Student';
+    const tid = d.ticketId || '';
+    window.openFormModal({
+      title: 'Reply to ' + studentName + ' (' + tid + ')',
+      actionUrl: "{% url 'panels:teacher_alerts' %}",
+      submitText: 'Send Reply & Resolve',
+      fields: [
+        { type: 'hidden', name: 'action', value: 'reply_feedback' },
+        { type: 'hidden', name: 'ticket_id', value: tid },
+        { name: 'reply_text', label: 'Your Reply to ' + studentName + ' — "' + (d.subject || 'Feedback') + '"', type: 'textarea', value: d.reply || '', placeholder: 'Write a helpful reply to resolve this student message...', required: true }
       ]
     });
   };

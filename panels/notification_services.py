@@ -49,7 +49,7 @@ def _resolve_notification_target(doc, role_key=""):
             return "/admin-panel/logs/"
         return "/admin-panel/"
     if role == "TEACHER":
-        if severity in ("WARNING", "DANGER") or any(kw in cat_title or kw in text_blob for kw in ("ALERT", "DROP", "RISK", "ATTENDANCE")):
+        if severity in ("WARNING", "DANGER") or any(kw in cat_title or kw in text_blob for kw in ("ALERT", "DROP", "RISK", "ATTENDANCE", "TICKET", "FEEDBACK")):
             return "/teacher-panel/alerts/"
         if any(kw in text_blob for kw in ("MARKS", "CSV", "GPA", "STUDENT")):
             return "/teacher-panel/students/"
@@ -285,3 +285,66 @@ def delete_ticket_reply(ticket_id, actor_name="System Admin"):
     _safe_audit(actor, "DELETE_TICKET_REPLY", f"Deleted reply on ticket {clean_tid}.", severity="WARNING")
     invalidate_cache()
     return True, None
+
+
+def submit_student_feedback(user_id, user_name, role, subject, message, recipient="ADMIN", target_teacher_id="", target_teacher_name="", student_id=""):
+    clean_subject = str(subject or "").strip()
+    clean_message = str(message or "").strip()
+    if not clean_subject or not clean_message:
+        return None, "Subject and message details are required."
+    clean_recipient = str(recipient or "ADMIN").strip().upper()
+    if clean_recipient not in ("ADMIN", "TEACHER"):
+        clean_recipient = "ADMIN"
+    teacher_id = str(target_teacher_id or "").strip()
+    teacher_name = str(target_teacher_name or "").strip()
+    if clean_recipient == "TEACHER" and not teacher_id:
+        return None, "No assigned teacher found for your account yet. Please send to Institute Admin instead."
+    col = support_tickets_col()
+    count = col.count_documents({}) + 1001
+    ticket_id = f"TKT-{count}"
+    while col.find_one({"ticket_id": ticket_id}, {"_id": 1}):
+        count += 1
+        ticket_id = f"TKT-{count}"
+    uid = str(user_id or student_id or "").strip()
+    sender_name = str(user_name or "Student").strip() or "Student"
+    doc = {
+        "ticket_id": ticket_id,
+        "user_id": uid,
+        "student_id": str(student_id or "").strip(),
+        "user_name": sender_name,
+        "role": str(role or "STUDENT").strip().upper(),
+        "subject": clean_subject,
+        "message": clean_message,
+        "target_role": clean_recipient,
+        "target_teacher_id": teacher_id if clean_recipient == "TEACHER" else "",
+        "target_teacher_name": teacher_name if clean_recipient == "TEACHER" else "",
+        "attachments": [],
+        "status": "OPEN",
+        "created_at": datetime.now(timezone.utc),
+    }
+    col.insert_one(doc)
+    if clean_recipient == "TEACHER":
+        create_notification(
+            title=f"Student Feedback {ticket_id}: {clean_subject}",
+            message=f"{sender_name}: {clean_message}",
+            severity="WARNING",
+            target_role="TEACHER",
+            target_user_id=teacher_id,
+            category="STUDENT_FEEDBACK",
+            ticket_id=ticket_id,
+            feedback_text=clean_message,
+        )
+        _safe_audit(sender_name, "CREATE_TEACHER_FEEDBACK", f"Feedback {ticket_id} sent to teacher {teacher_name or teacher_id}: {clean_subject}", severity="INFO")
+    else:
+        create_notification(
+            title=f"New Ticket {ticket_id}: {clean_subject}",
+            message=clean_message,
+            severity="WARNING",
+            target_role="ADMIN",
+            category="TICKET",
+            ticket_id=ticket_id,
+            feedback_text=clean_message,
+        )
+        _safe_audit(sender_name, "CREATE_TICKET", f"Support ticket {ticket_id} submitted by {sender_name}: {clean_subject}", severity="WARNING")
+    invalidate_cache()
+    return doc, None

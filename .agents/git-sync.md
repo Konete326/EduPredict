@@ -61,25 +61,29 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 82 Provably Hero & Interactive Testimonial Globe"
-active_branch_merged_to_main: "main (verified release push)"
-project_phase: "Phase 82 Complete: Provably Verification-Wave Hero & Interactive 3D Testimonial Globe on Public Landing Page"
+last_updated_by_agent: "Phase 85 Single-Institute CSV, Auth, Teacher Isolation & Dual Feedback"
+active_branch_merged_to_main: "feature/single-institute-csv-auth -> main"
+project_phase: "Phase 85 Complete: Single-Institute Sample Datasets, Student-ID Auth & Approval, Teacher CSV Isolation, Read-Only Student Panel & Dual Feedback"
 
 completed_modules:
-  - "Phase 1-81: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact."
-  - "Phase 84: 21st.dev Curated Themes & Per-Theme Text Contrast Tokens:"
-      - "core/theme_services.py (<= 355), static/js/theme_studio.js (<= 315), templates/components/theme_studio_modal.html (<= 250): added 6 curated 21st.dev themes (Meridian Blue, Harbor Blue, Claude Linen, Catppuccin, Respec Mint, Sage Studio) with matched accent/shell sync + per-preset text_primary, text_secondary, text_muted, and border_subtle tokens for both Light and Dark modes, plus a Text Contrast live preview card."
+  - "Phase 1-84: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio (21st.dev Curated Themes & Text Contrast Tokens), Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock, Provably Hero & Interactive Testimonial Globe, Vercel Auto-Deploy."
+  - "Phase 85 (Single-Institute CSV, Auth, Teacher Isolation & Dual Feedback):"
+      - "sample_datasets/: added admin_master_training_dataset.csv (200 rows, 12 ML columns), 6 teacher class CSVs (teacher_ai205_class.csv, teacher_cs101_class.csv, teacher_ds301_class.csv, teacher_la110_class.csv, teacher_ml401_class.csv, teacher_se210_class.csv; 18 rows each with student_id, full_name, birth_date, course_code, marks, attendance), and README.md."
+      - "accounts/services.py (310/350), accounts/views.py (229/250), templates/accounts/auth.html (347/350): Email OR Student ID login, Student signup with required assigned_teacher_id + Admin approval queue (PENDING until approved)."
+      - "panels/admin_services.py (350/350), panels/views_admin.py (250/250), templates/panels/admin_dashboard.html (199/350), templates/panels/admin_users.html (252/350): Admin Master Training CSV upload (action=upload_master_csv) with ML Model Trained status badge and Pending Approvals queue for both Teachers & Students."
+      - "analytics/data_pipeline.py (273/350), panels/teacher_services.py (335/350), panels/views_teacher.py (226/250), templates/panels/teacher_dashboard.html (249/350), teacher_ingest.html (242/350), teacher_students.html (178/350), teacher_alerts.html (113/350): birth_date column ingestion, auto-provisioned Student login accounts (<first_name>@<birth_date>) with Class Login Credentials Ready card, strict per-teacher data isolation with 0-upload empty-state CTA, and Teacher Student Feedback Inbox with 1-click Reply/Resolve."
+      - "panels/student_services.py (350/350), panels/notification_services.py (350/350), panels/views_student.py (236/250), templates/panels/student_dashboard.html (183/350), student_report.html (146/350), student_notifications.html (214/350): strictly Read-Only Student Panel with Assigned Teacher contact and Dual Feedback system (Send to My Teacher OR Institute Admin with badges & replies)."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "node --check: all JS scripts in static/js/*.js exited 0."
-  - "Zero-comment & line-cap audit: all 5 files <= 350 lines with 0 comments."
-  - "manage.py test: Ran 136 tests (OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed."
-  - "Browser QA (1280x800 & 375x812 Light/Dark): 0 console errors, 0 CSP errors, 0 HTTP 4xx/5xx, 0px mobile overflow, Provably switch/V-key/modal/wax-seal & Testimonial Globe pins/drag/prev-next verified."
+  - "node --check: all 16 static/js/*.js files exited 0."
+  - "Zero-comment & line-cap audit: 0 errors across all 20 modified app/template files (views*.py <= 250, others <= 350)."
+  - "manage.py test: Ran 136 tests in 86.054s (136/136 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 11.15s - System 100% Operational."
+  - "Live HTTP E2E QA (http://127.0.0.1:8000 + MongoDB Atlas): Admin Master CSV upload -> Teacher signup & Admin approval -> Teacher 0-upload empty state -> Teacher CSV upload & auto-provisioned student login (EDU-2026-101 / maham@2005-03-19) -> Read-Only Student Panel -> Dual Feedback (Teacher + Admin) -> Teacher Inbox reply & resolve verified and cleaned up."
 
 active_routes_and_files:
-  - "templates/public/_base.html, templates/public/landing.html, static/css/landing_provably.css, static/js/landing_provably.js, static/js/landing_globe.js, .agents/git-sync.md"
+  - "sample_datasets/*, accounts/services.py, accounts/views.py, analytics/data_pipeline.py, panels/admin_services.py, panels/views_admin.py, panels/teacher_services.py, panels/views_teacher.py, panels/student_services.py, panels/notification_services.py, panels/views_student.py, templates/accounts/auth.html, templates/panels/{admin_dashboard,admin_users,teacher_dashboard,teacher_ingest,teacher_students,teacher_alerts,student_dashboard,student_report,student_notifications}.html, panels/{test_phase25,test_phase75,test_teacher_student,test_uat}.py, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

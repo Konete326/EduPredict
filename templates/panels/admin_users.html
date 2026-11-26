@@ -46,17 +46,58 @@
       <span>Analysts</span>
       <span class="tabular-nums opacity-80">({{ role_counts.ANALYST|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_users' %}?role=PENDING" title="Show teachers awaiting approval" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'PENDING' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_users' %}?role=PENDING" title="Show teachers and students awaiting approval" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'PENDING' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       {% if role_counts.PENDING %}<span class="h-2 w-2 rounded-full bg-[var(--status-warning)]"></span>{% endif %}
       <span>Pending Approval</span>
       <span class="tabular-nums opacity-80">({{ role_counts.PENDING|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_users' %}?role=REJECTED" title="Show rejected teacher accounts" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'REJECTED' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_users' %}?role=REJECTED" title="Show rejected accounts" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'REJECTED' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       {% if role_counts.REJECTED %}<span class="h-2 w-2 rounded-full bg-[var(--status-danger)]"></span>{% endif %}
       <span>Rejected</span>
       <span class="tabular-nums opacity-80">({{ role_counts.REJECTED|default:0 }})</span>
     </a>
   </div>
+
+  {% if pending_users %}
+  <div class="rounded-xl border border-[var(--status-warning)]/40 bg-[var(--bg-canvas)] p-3 space-y-2">
+    <div class="flex items-center justify-between gap-2">
+      <p class="text-xs font-semibold text-[var(--text-primary)]">
+        <i class="fa-solid fa-user-clock mr-1.5 text-[var(--status-warning)]"></i>Pending Approvals (Teachers &amp; Students)
+      </p>
+      <span class="text-[11px] font-medium text-[var(--text-muted)]">{{ pending_users|length }} waiting</span>
+    </div>
+    <div class="divide-y divide-[var(--border-subtle)]">
+      {% for pu in pending_users %}
+      <div class="flex flex-wrap items-center justify-between gap-2 py-2 text-xs">
+        <div class="min-w-0">
+          <span class="font-semibold text-[var(--text-primary)]">{{ pu.full_name }}</span>
+          <span class="ml-1.5 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent-primary)]">{{ pu.role }}</span>
+          <span class="ml-1.5 text-[var(--text-secondary)]">{{ pu.email }} &middot; {{ pu.department }}</span>
+          {% if pu.assigned_teacher_name %}
+          <span class="ml-1.5 text-[11px] text-[var(--text-muted)]">&middot; Assigned Teacher: <strong class="text-[var(--text-primary)]">{{ pu.assigned_teacher_name }}</strong></span>
+          {% endif %}
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <form method="post" action="{% url 'panels:admin_users' %}" class="inline">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="toggle">
+            <input type="hidden" name="user_id" value="{{ pu.user_id }}">
+            <input type="hidden" name="filter_role" value="{{ selected_role }}">
+            <button type="submit" class="inline-flex items-center gap-1 rounded-lg bg-[var(--accent-primary)] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[var(--accent-hover)]">
+              <i class="fa-solid fa-user-check text-[10px]"></i>
+              <span>Approve</span>
+            </button>
+          </form>
+          <button type="button" onclick="openRejectUserModal(this)" data-user-id="{{ pu.user_id }}" data-full-name="{{ pu.full_name }}" data-filter-role="{{ selected_role }}" class="inline-flex items-center gap-1 rounded-lg border border-[var(--status-danger)]/40 bg-[var(--bg-surface)] px-2.5 py-1 text-[11px] font-semibold text-[var(--status-danger)] hover:bg-[var(--status-danger)]/10">
+            <i class="fa-solid fa-user-xmark text-[10px]"></i>
+            <span>Reject</span>
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 
   {% include 'components/directory_cards.html' with grid_id="admin-users-table" grid_title="User Directory" cards=user_cards page_size=5 empty_message="No users found for this role." %}
 </section>
@@ -165,8 +206,8 @@
       const isActive = String(d.isActive || '').toLowerCase() === 'true';
       const nameLabel = d.fullName || d.userId || 'this user';
       window.openConfirmModal({
-        title: isPending ? 'Approve Teacher Account' : (isActive ? 'Turn Off User' : 'Turn On User'),
-        message: isPending ? ('Approve ' + (d.fullName || d.userId || 'this teacher') + ' so they can sign in?') : ((isActive ? 'Turn off ' : 'Turn on ') + nameLabel + '?'),
+        title: isPending ? 'Approve User Account' : (isActive ? 'Turn Off User' : 'Turn On User'),
+        message: isPending ? ('Approve ' + nameLabel + ' so they can sign in?') : ((isActive ? 'Turn off ' : 'Turn on ') + nameLabel + '?'),
         confirmText: isPending ? 'Approve' : (isActive ? 'Turn Off' : 'Turn On'),
         onConfirmUrl: adminUsersUrl,
         fields: {
@@ -180,14 +221,14 @@
     window.openRejectUserModal = function (btn) {
       const d = btn ? btn.dataset : {};
       window.openFormModal({
-        title: 'Reject Teacher Account (' + (d.fullName || d.userId || '') + ')',
+        title: 'Reject Account (' + (d.fullName || d.userId || '') + ')',
         actionUrl: adminUsersUrl,
         submitText: 'Reject Account',
         fields: [
           { type: 'hidden', name: 'action', value: 'reject' },
           { type: 'hidden', name: 'user_id', value: d.userId || '' },
           { type: 'hidden', name: 'filter_role', value: d.filterRole || selectedRole },
-          { name: 'rejection_reason', label: 'Rejection Reason', type: 'textarea', rows: 3, placeholder: 'Explain why this teacher application was rejected...', required: true }
+          { name: 'rejection_reason', label: 'Rejection Reason', type: 'textarea', rows: 3, placeholder: 'Explain why this account request was rejected...', required: true }
         ]
       });
     };
