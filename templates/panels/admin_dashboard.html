@@ -1,28 +1,22 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
+<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
-    <div class="flex items-center gap-2">
-      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">
-        <i class="fa-solid fa-shield-halved text-xs"></i>
-        <span>Admin Panel</span>
-      </span>
-    </div>
-    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">System Overview</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Live MongoDB Atlas metrics, class capacity comparisons, and student risk breakdown.</p>
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">System Overview</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Live MongoDB Atlas metrics, class capacity comparisons, and student risk breakdown</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
-    <a href="{% url 'panels:admin_backup_export' %}?format=json" title="Save full database backup as JSON" class="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+    <a href="{% url 'panels:admin_backup_export' %}?format=json" title="Save full database backup as JSON" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
       <i class="fa-solid fa-file-code"></i>
       <span>Backup JSON</span>
     </a>
-    <a href="{% url 'panels:admin_backup_export' %}?format=csv" title="Save summary report as CSV" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+    <a href="{% url 'panels:admin_backup_export' %}?format=csv" title="Save summary report as CSV" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
       <i class="fa-solid fa-file-csv text-[var(--status-success)]"></i>
       <span>Export CSV</span>
     </a>
   </div>
-</section>
+</header>
 
 {% if db_error %}
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
@@ -38,7 +32,7 @@
 </section>
 
 <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-  <div class="xl:col-span-7 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+  <div class="xl:col-span-7 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
     <div class="mb-2.5 flex items-center justify-between gap-2">
       <div>
         <h3 class="text-sm font-semibold text-[var(--text-primary)]">Students by Department</h3>
@@ -49,7 +43,7 @@
     <div class="relative h-48 w-full"><canvas id="chart-admin-departments"></canvas></div>
   </div>
 
-  <div class="xl:col-span-5 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+  <div class="xl:col-span-5 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
     <div class="mb-2.5 flex items-center justify-between gap-2">
       <div>
         <h3 class="text-sm font-semibold text-[var(--text-primary)]">Dropout Risk</h3>
@@ -61,7 +55,7 @@
   </div>
 </section>
 
-<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+<section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
   {% include 'components/data_table.html' with table_id="admin-recent-tickets-table" table_title="Latest Help Tickets" headers=recent_ticket_headers rows=recent_ticket_rows page_size=5 empty_message="No help tickets yet." %}
 </section>
 {% endblock %}

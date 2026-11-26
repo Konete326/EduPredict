@@ -2,37 +2,33 @@
 {% load static %}
 
 {% block content %}
-<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
+<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
     <div class="flex flex-wrap items-center gap-2">
-      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">
-        <i class="fa-solid fa-microchip text-xs"></i>
-        <span>Machine Learning Engine</span>
-      </span>
-      <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-0.5 text-xs font-mono font-medium text-[var(--text-secondary)]">
+      <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Data &amp; Predictions Hub</h2>
+      <span class="inline-flex items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-0.5 text-xs font-mono font-medium text-[var(--text-secondary)]">
         <i class="fa-solid fa-sliders text-[11px] text-[var(--accent-primary)]"></i>
         <span>High &ge;{{ portal_settings.high_risk_threshold|default:70 }}% &middot; Med &ge;{{ portal_settings.medium_risk_threshold|default:35 }}% &middot; Drop &gt;{{ portal_settings.anomaly_drop_pct|default:25 }}%</span>
       </span>
     </div>
-    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Data &amp; Predictions Hub</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Ingest datasets, fill missing values with Scikit-Learn, and forecast student dropout risks.</p>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Ingest datasets, fill missing values with Scikit-Learn, and forecast student dropout risks</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
-    <button type="button" onclick="openAnalystUploadModal()" title="Upload CSV or Excel dataset and run ML predictions" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+    <button type="button" onclick="openAnalystUploadModal()" title="Upload CSV or Excel dataset and run ML predictions" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
       <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
       <span>Upload &amp; Auto-Predict</span>
     </button>
     <form method="post" action="{% url 'analytics:upload_dataset' %}">{% csrf_token %}<input type="hidden" name="mode" value="sample">
-      <button type="submit" title="Add 60 sample students and run predictions" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-database text-xs text-[var(--accent-primary)]"></i><span>Load Sample</span></button>
+      <button type="submit" title="Add 60 sample students and run predictions" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-database text-xs text-[var(--accent-primary)]"></i><span>Load Sample</span></button>
     </form>
     <form method="post" action="{% url 'analytics:run_predictions' %}">{% csrf_token %}
-      <button type="submit" title="Retrain ML models and refresh predictions on current records" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-rotate text-xs text-[var(--accent-primary)]"></i><span>Retrain ML</span></button>
+      <button type="submit" title="Retrain ML models and refresh predictions on current records" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-rotate text-xs text-[var(--accent-primary)]"></i><span>Retrain ML</span></button>
     </form>
-    <a href="{% url 'panels:analyst_dashboard' %}?batch={{ selected_filters.batch|urlencode }}&course_code={{ selected_filters.course_code|urlencode }}&risk_level={{ selected_filters.risk_level|urlencode }}&export=csv" title="Save filtered predictions as a CSV file" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+    <a href="{% url 'panels:analyst_dashboard' %}?batch={{ selected_filters.batch|urlencode }}&course_code={{ selected_filters.course_code|urlencode }}&risk_level={{ selected_filters.risk_level|urlencode }}&export=csv" title="Save filtered predictions as a CSV file" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
       <i class="fa-solid fa-file-csv text-xs text-[var(--status-success)]"></i>
       <span>Export CSV</span>
     </a>
-    <button id="live-stream-toggle-btn" type="button" data-stream-url="{% url 'analytics:stream_tick' %}" data-no-lock="true" aria-pressed="false" title="Toggle simulated 5-second live LMS stream" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+    <button id="live-stream-toggle-btn" type="button" data-stream-url="{% url 'analytics:stream_tick' %}" data-no-lock="true" aria-pressed="false" title="Toggle simulated 5-second live LMS stream" class="inline-flex h-9 items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
       <span class="relative flex h-2 w-2 shrink-0" aria-hidden="true">
         <span id="live-stream-ping" class="absolute inline-flex h-full w-full motion-safe:animate-ping rounded-full bg-[var(--accent-primary)] opacity-60"></span>
         <span id="live-stream-dot" class="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent-primary)]"></span>
@@ -40,9 +36,9 @@
       <span id="live-stream-label">Simulate Live Stream</span>
     </button>
   </div>
-</section>
+</header>
 
-<section id="live-stream-status-strip" class="hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3 space-y-2" aria-live="polite">
+<section id="live-stream-status-strip" class="hidden rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3 space-y-2" aria-live="polite">
   <div class="flex flex-wrap items-center justify-between gap-2">
     <div class="flex items-center gap-2 min-w-0">
       <span class="h-2 w-2 shrink-0 rounded-full bg-[var(--status-success)] motion-safe:animate-pulse" aria-hidden="true"></span>
@@ -58,7 +54,7 @@
 </section>
 
 {% if db_error %}
-<div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
+<div class="rounded-[12px] border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
   <i class="fa-solid fa-circle-exclamation mr-2"></i>Database message: {{ db_error }}
 </div>
 {% endif %}
@@ -71,7 +67,7 @@
 </section>
 
 <section class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-  <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
+  <div class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
     <div class="mb-2.5 flex items-center justify-between gap-2">
       <h3 class="text-sm font-semibold text-[var(--text-primary)]">Dropout Risk Levels</h3>
       <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Risk Split</span>
@@ -79,7 +75,7 @@
     <div class="relative h-48 w-full"><canvas id="chart-dropout-doughnut"></canvas></div>
   </div>
 
-  <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
+  <div class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
     <div class="mb-2.5 flex items-center justify-between gap-2">
       <h3 class="text-sm font-semibold text-[var(--text-primary)]">Attendance vs. Predicted GPA</h3>
       <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Scatter Plot</span>
@@ -87,7 +83,7 @@
     <div class="relative h-48 w-full"><canvas id="chart-correlation-scatter"></canvas></div>
   </div>
 
-  <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
+  <div class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
     <div class="mb-2.5 flex items-center justify-between gap-2">
       <h3 class="text-sm font-semibold text-[var(--text-primary)]">Course Demand</h3>
       <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Forecast</span>
@@ -96,15 +92,15 @@
   </div>
 </section>
 
-<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
+<section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 min-w-0">
   {% include 'components/data_table.html' with table_id="dataset-logs-table" table_title="Recent Uploads" headers=dataset_headers rows=dataset_rows page_size=5 empty_message="No files uploaded yet." %}
 </section>
 
-<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-4">
+<section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-4">
   <form method="get" action="{% url 'panels:analyst_dashboard' %}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 items-end">
     <div class="space-y-1">
       <label for="filter-batch" class="block text-xs font-medium text-[var(--text-secondary)]">Batch</label>
-      <select id="filter-batch" name="batch" data-auto-filter="true" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+      <select id="filter-batch" name="batch" data-auto-filter="true" class="w-full rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
         <option value="ALL" {% if selected_filters.batch == 'ALL' %}selected{% endif %}>All Batches</option>
         {% for b in filter_options.batches %}
         <option value="{{ b }}" {% if selected_filters.batch == b %}selected{% endif %}>{{ b }}</option>
@@ -113,7 +109,7 @@
     </div>
     <div class="space-y-1">
       <label for="filter-course" class="block text-xs font-medium text-[var(--text-secondary)]">Course</label>
-      <select id="filter-course" name="course_code" data-auto-filter="true" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+      <select id="filter-course" name="course_code" data-auto-filter="true" class="w-full rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
         <option value="ALL" {% if selected_filters.course_code == 'ALL' %}selected{% endif %}>All Courses</option>
         {% for c in filter_options.courses %}
         <option value="{{ c }}" {% if selected_filters.course_code == c %}selected{% endif %}>{{ c }}</option>
@@ -122,7 +118,7 @@
     </div>
     <div class="space-y-1">
       <label for="filter-risk" class="block text-xs font-medium text-[var(--text-secondary)]">Risk Level</label>
-      <select id="filter-risk" name="risk_level" data-auto-filter="true" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+      <select id="filter-risk" name="risk_level" data-auto-filter="true" class="w-full rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
         <option value="ALL" {% if selected_filters.risk_level == 'ALL' %}selected{% endif %}>All Levels</option>
         <option value="HIGH" {% if selected_filters.risk_level == 'HIGH' %}selected{% endif %}>High Risk</option>
         <option value="MEDIUM" {% if selected_filters.risk_level == 'MEDIUM' %}selected{% endif %}>Medium Risk</option>
@@ -131,11 +127,11 @@
       </select>
     </div>
     <div class="flex items-center gap-2 lg:col-span-2">
-      <button type="submit" title="Filter student predictions" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <button type="submit" title="Filter student predictions" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
         <i class="fa-solid fa-filter"></i>
         <span>Filter</span>
       </button>
-      <a href="{% url 'panels:analyst_dashboard' %}" title="Clear all filters" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+      <a href="{% url 'panels:analyst_dashboard' %}" title="Clear all filters" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <span>Clear</span>
       </a>
     </div>
@@ -149,13 +145,13 @@
 {% include 'panels/analyst_evaluation_section.html' %}
 
 <div id="analyst-upload-modal" data-ep-modal="true" data-modal-backdrop aria-hidden="true" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 backdrop-blur-xs">
-  <div class="w-full max-w-lg rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-xl space-y-4">
+  <div class="w-full max-w-lg rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-xl space-y-4">
     <div class="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
       <div>
-        <h3 class="text-base font-bold text-[var(--text-primary)]">Upload Student Dataset</h3>
+        <h3 class="text-base font-semibold text-[var(--text-primary)]">Upload Student Dataset</h3>
         <p class="text-xs text-[var(--text-muted)]">Choose a .csv or .xlsx file up to 25 MB. Missing values are cleaned automatically.</p>
       </div>
-      <button type="button" onclick="closeAnalystUploadModal()" aria-label="Close upload modal" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+      <button type="button" onclick="closeAnalystUploadModal()" aria-label="Close upload modal" class="inline-flex h-8 w-8 items-center justify-center rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
         <i class="fa-solid fa-xmark text-sm"></i>
       </button>
     </div>
@@ -163,8 +159,8 @@
       {% csrf_token %}
       <input type="hidden" name="mode" value="upload">
       {% include 'components/gradient_file_uploader.html' with input_id="dataset-file-input" input_name="dataset_file" accept=".csv,.xlsx" max_mb=25 auto_submit=True title="Drop Dataset (.csv / .xlsx)" subtitle="Missing values are cleaned automatically" %}
-      <details class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2">
-        <summary class="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Needed Columns ({{ required_columns|length }})</summary>
+      <details class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2">
+        <summary class="cursor-pointer select-none text-[11px] font-semibold text-[var(--text-muted)]">Needed Columns ({{ required_columns|length }})</summary>
         <div class="mt-2 flex flex-wrap gap-1.5">
           {% for col in required_columns %}
           <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">{{ col }}</span>
@@ -172,8 +168,8 @@
         </div>
       </details>
       <div class="flex items-center justify-end gap-2 pt-1">
-        <button type="button" onclick="closeAnalystUploadModal()" class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors">Cancel</button>
-        <button type="submit" title="Upload file, clean blank cells, and run predictions" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+        <button type="button" onclick="closeAnalystUploadModal()" class="h-9 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors">Cancel</button>
+        <button type="submit" title="Upload file, clean blank cells, and run predictions" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
           <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
           <span>Upload &amp; Predict</span>
         </button>

@@ -1,25 +1,20 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3.5 sm:px-5 shadow-sm">
-  <div class="min-w-0 space-y-0.5">
-    <div class="flex items-center gap-2">
-      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]">
-        <i class="fa-solid fa-sliders text-[10px]" aria-hidden="true"></i><span>System Configuration</span>
-      </span>
-      <h2 class="text-base sm:text-lg font-bold tracking-tight text-[var(--text-primary)]">Portal Settings</h2>
-    </div>
-    <p class="text-xs text-[var(--text-secondary)]">Set active school terms, passing rules, dropout warning limits, alerts, and official portal theme.</p>
+<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
+  <div class="min-w-0 space-y-1">
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Portal Settings</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Set active school terms, passing rules, dropout warning limits, alerts, and official portal theme</p>
   </div>
   <div class="flex flex-wrap items-center gap-2 shrink-0">
-    <button type="button" onclick="openThemeStudioModal()" title="Open Theme & Appearance Live Studio" class="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+    <button type="button" onclick="openThemeStudioModal()" title="Open Theme & Appearance Live Studio" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
       <i class="fa-solid fa-palette text-xs" aria-hidden="true"></i><span>Open Live Studio</span>
     </button>
-    <button type="button" onclick="openResetDefaultsModal()" title="Restore default portal settings" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+    <button type="button" onclick="openResetDefaultsModal()" title="Restore default portal settings" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
       <i class="fa-solid fa-rotate-left text-xs text-[var(--status-danger)]" aria-hidden="true"></i><span>Reset Defaults</span>
     </button>
   </div>
-</section>
+</header>
 
 {% if db_error %}
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
@@ -27,14 +22,14 @@
 </div>
 {% endif %}
 
-<div role="tablist" aria-label="Portal settings tabs" class="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1.5 shadow-sm">
-  <button type="button" role="tab" aria-selected="true" data-settings-tab="general" class="inline-flex items-center gap-2 rounded-lg bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-semibold text-white transition-colors">
+<div role="tablist" aria-label="Portal settings tabs" class="flex flex-wrap items-center gap-2 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1.5">
+  <button type="button" role="tab" aria-selected="true" data-settings-tab="general" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors">
     <i class="fa-solid fa-graduation-cap text-xs" aria-hidden="true"></i><span>Academic &amp; Risk Thresholds</span>
   </button>
-  <button type="button" role="tab" aria-selected="false" data-settings-tab="alerts" class="inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+  <button type="button" role="tab" aria-selected="false" data-settings-tab="alerts" class="inline-flex h-9 items-center gap-2 rounded-[12px] px-3.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
     <i class="fa-solid fa-bell text-xs" aria-hidden="true"></i><span>Auto-Alerts &amp; Permissions</span>
   </button>
-  <button type="button" role="tab" aria-selected="false" data-settings-tab="summary" class="inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+  <button type="button" role="tab" aria-selected="false" data-settings-tab="summary" class="inline-flex h-9 items-center gap-2 rounded-[12px] px-3.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
     <i class="fa-solid fa-table-list text-xs" aria-hidden="true"></i><span>Active Summary &amp; Appearance</span>
   </button>
 </div>
@@ -56,7 +51,7 @@
     </section>
 
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-      <div class="xl:col-span-6 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3 shadow-sm">
+      <div class="xl:col-span-6 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
         <div>
           <h3 class="text-sm font-semibold text-[var(--text-primary)]">Academic &amp; General Rules</h3>
           <p class="text-xs text-[var(--text-muted)]">Portal branding, active school term, and minimum attendance rule.</p>
@@ -87,7 +82,7 @@
         </div>
       </div>
 
-      <div class="xl:col-span-6 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 flex flex-col justify-between gap-3 shadow-sm">
+      <div class="xl:col-span-6 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 flex flex-col justify-between gap-3">
         <div class="space-y-3">
           <div>
             <h3 class="text-sm font-semibold text-[var(--text-primary)]">ML Risk Thresholds</h3>
@@ -114,7 +109,7 @@
         </div>
         <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-3">
           <p class="text-xs text-[var(--text-muted)]">Last saved by <span class="font-medium text-[var(--text-secondary)]">{{ settings_data.updated_by|default:"System Admin" }}</span>{% if settings_data.updated_at_str %} on {{ settings_data.updated_at_str }}{% endif %}</p>
-          <button type="submit" title="Save portal settings" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+          <button type="submit" title="Save portal settings" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
             <i class="fa-solid fa-floppy-disk text-xs" aria-hidden="true"></i><span>Save Settings</span>
           </button>
         </div>
@@ -123,7 +118,7 @@
   </div>
 
   <div id="settings-panel-alerts" role="tabpanel" data-settings-panel="alerts" class="hidden space-y-4">
-    <section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 space-y-4 shadow-sm">
+    <section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-4">
       <div>
         <h3 class="text-sm sm:text-base font-semibold text-[var(--text-primary)]">Automated Alert Switches &amp; Role Guardrails</h3>
         <p class="text-xs text-[var(--text-muted)]">Choose who receives automatic notifications when attendance or risk warnings trigger.</p>
@@ -145,7 +140,7 @@
       </div>
       <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-3">
         <p class="text-xs text-[var(--text-muted)]">Academic &amp; Risk values stay preserved when saving from this tab.</p>
-        <button type="submit" title="Save portal settings" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+        <button type="submit" title="Save portal settings" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
           <i class="fa-solid fa-floppy-disk text-xs" aria-hidden="true"></i><span>Save Settings</span>
         </button>
       </div>
@@ -154,19 +149,20 @@
 </form>
 
 <div id="settings-panel-summary" role="tabpanel" data-settings-panel="summary" class="hidden space-y-4">
-  <section class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3.5 shadow-sm">
-    <div class="flex items-center gap-3 min-w-0">
-      <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--accent-soft)] text-[var(--accent-primary)]"><i class="fa-solid fa-palette text-sm" aria-hidden="true"></i></span>
-      <div class="min-w-0">
-        <div class="flex flex-wrap items-center gap-2"><h3 class="text-sm font-semibold text-[var(--text-primary)]">Theme &amp; Appearance Live Studio</h3><span class="inline-flex items-center rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent-primary)]">Live Studio</span></div>
-        <p class="text-xs text-[var(--text-muted)]">Customize Light or OLED Dark mode, sidebar shell colors, brand accent, and spacing for this panel.</p>
+  <section class="flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+    <div class="min-w-0 space-y-0.5">
+      <div class="flex flex-wrap items-center gap-2">
+        <i class="fa-solid fa-palette text-sm text-[var(--accent-primary)]" aria-hidden="true"></i>
+        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Theme &amp; Appearance Live Studio</h3>
+        <span class="inline-flex items-center rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--accent-primary)]">Live Studio</span>
       </div>
+      <p class="text-xs text-[var(--text-muted)]">Customize Light or OLED Dark mode, sidebar shell colors, brand accent, and spacing for this panel.</p>
     </div>
-    <button type="button" onclick="openThemeStudioModal()" title="Open Theme & Appearance Live Studio" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
-      <i class="fa-solid fa-wand-magic-sparkles text-xs" aria-hidden="true"></i><span>Open Live Studio</span>
+    <button type="button" onclick="openThemeStudioModal()" title="Open Theme & Appearance Live Studio" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <i class="fa-solid fa-sliders text-xs" aria-hidden="true"></i><span>Open Live Studio</span>
     </button>
   </section>
-  <section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 shadow-sm">
+  <section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
     {% include 'components/data_table.html' with table_id="admin-settings-table" table_title="Active Configuration Summary" headers=setting_headers rows=setting_rows page_size=5 empty_message="No settings configured." %}
   </section>
 </div>

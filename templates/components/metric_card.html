@@ -1,4 +1,4 @@
-<div data-dot-kpi data-kpi-filter="{{ filter_query|default:title }}" data-status="{{ status|default:'info' }}" data-kpi-value="{{ value }}" data-kpi-label="{{ title }}" role="button" tabindex="0" class="ep-dot-kpi-card group relative flex min-w-0 flex-col justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 transition-colors duration-150 hover:border-[var(--accent-primary)] focus-visible:outline-none">
+<div data-dot-kpi data-kpi-filter="{{ filter_query|default:title }}" data-status="{{ status|default:'info' }}" data-kpi-value="{{ value }}" data-kpi-label="{{ title }}" role="button" tabindex="0" class="ep-dot-kpi-card group relative flex min-w-0 flex-col justify-between rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 transition-colors duration-150 hover:border-[var(--accent-primary)] focus-visible:outline-none">
   <div class="flex items-center justify-between gap-2 min-w-0">
     <p class="truncate text-xs font-medium text-[var(--text-secondary)]">{{ title }}</p>
     {% if icon %}

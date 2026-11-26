@@ -1,5 +1,5 @@
-<div id="ep-agent-dock-root" class="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2.5 print:hidden">
-  <section id="ep-agent-chat-panel" aria-label="AI Specialist Chat" aria-hidden="true" class="hidden w-[22rem] sm:w-[24.5rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-xl">
+<div id="ep-agent-dock-root" class="fixed bottom-4 right-4 z-40 print:hidden">
+  <section id="ep-agent-chat-panel" aria-label="AI Specialist Chat" aria-hidden="true" class="hidden absolute bottom-[calc(100%+3.75rem)] right-0 z-40 w-[22rem] sm:w-[24.5rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-xl">
     <header class="flex items-center justify-between gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 py-2.5">
       <div class="flex min-w-0 items-center gap-2.5">
         <img id="ep-chat-agent-dp" class="h-9 w-9 shrink-0 rounded-full border border-[var(--border-subtle)] object-cover" src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2040%2040'%3E%3Cdefs%3E%3ClinearGradient%20id%3D'g'%20x1%3D'0'%20y1%3D'0'%20x2%3D'1'%20y2%3D'1'%3E%3Cstop%20offset%3D'0%25'%20stop-color%3D'%2316a34a'%2F%3E%3Cstop%20offset%3D'100%25'%20stop-color%3D'%23059669'%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D'40'%20height%3D'40'%20rx%3D'20'%20fill%3D'url(%23g)'%2F%3E%3Cpath%20d%3D'M20%2011L9%2016l11%205%2011-5-11-5zm-6%207.5v4.5c0%201.8%202.7%203%206%203s6-1.2%206-3v-4.5l-6%202.8-6-2.8z'%20fill%3D'%23ffffff'%2F%3E%3C%2Fsvg%3E" alt="EduCoach AI">
@@ -40,7 +40,7 @@
     </footer>
   </section>
 
-  <div id="ep-message-dock" aria-hidden="true" class="hidden max-w-[calc(100vw-2rem)] items-center gap-1.5 sm:gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 sm:px-3 py-1.5 shadow-lg">
+  <div id="ep-message-dock" aria-hidden="true" class="hidden absolute bottom-[calc(100%+0.5rem)] right-0 z-40 max-w-[calc(100vw-2rem)] items-center gap-1.5 sm:gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 sm:px-3 py-1.5 shadow-lg">
     <div class="flex shrink-0 items-center gap-1.5" role="group" aria-label="AI Agents">
       <button type="button" data-dock-agent="coach" aria-pressed="false" title="EduCoach AI — Academic & Study Advisor" aria-label="EduCoach AI — Academic & Study Advisor" class="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform hover:scale-105 focus:outline-none">
         <img data-dock-avatar class="h-8 w-8 rounded-full object-cover" src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2040%2040'%3E%3Cdefs%3E%3ClinearGradient%20id%3D'g'%20x1%3D'0'%20y1%3D'0'%20x2%3D'1'%20y2%3D'1'%3E%3Cstop%20offset%3D'0%25'%20stop-color%3D'%2316a34a'%2F%3E%3Cstop%20offset%3D'100%25'%20stop-color%3D'%23059669'%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D'40'%20height%3D'40'%20rx%3D'20'%20fill%3D'url(%23g)'%2F%3E%3Cpath%20d%3D'M20%2011L9%2016l11%205%2011-5-11-5zm-6%207.5v4.5c0%201.8%202.7%203%206%203s6-1.2%206-3v-4.5l-6%202.8-6-2.8z'%20fill%3D'%23ffffff'%2F%3E%3C%2Fsvg%3E" alt="EduCoach AI">
@@ -70,7 +70,7 @@
     </form>
   </div>
 
-  <button id="ep-agent-dock-toggle" type="button" title="Drag to move or click to open AI Assistants" aria-expanded="false" aria-controls="ep-message-dock" class="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--accent-primary)] px-4 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-[var(--accent-hover)] cursor-grab active:cursor-grabbing select-none touch-none transition-transform active:scale-95">
+  <button id="ep-agent-dock-toggle" type="button" title="Drag to move or click to open AI Assistants" aria-expanded="false" aria-controls="ep-message-dock" class="inline-flex h-10 items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--accent-primary)] px-4 text-xs font-semibold text-white shadow-md hover:bg-[var(--accent-hover)] cursor-grab active:cursor-grabbing select-none touch-none transition-transform active:scale-95">
     <i class="fa-solid fa-grip-vertical text-[10px] opacity-75 pointer-events-none" aria-hidden="true"></i>
     <i class="fa-solid fa-comments text-sm pointer-events-none" aria-hidden="true"></i>
     <span class="pointer-events-none">AI Assistants</span>

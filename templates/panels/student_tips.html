@@ -1,19 +1,16 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-2.5 shadow-sm">
-  <div class="min-w-0 flex items-center gap-2.5">
-    <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]"><i class="fa-solid fa-lightbulb text-[10px]"></i><span>Student Portal</span></span>
-    <div>
-      <h2 class="text-base sm:text-lg font-bold tracking-tight text-[var(--text-primary)]">My Study Tips</h2>
-      <p class="text-[11px] text-[var(--text-secondary)]">Weekly goals and real study insight from your attendance and marks.</p>
-    </div>
+<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
+  <div class="min-w-0 space-y-1">
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">My Study Tips</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Weekly goals and real study insight from your attendance and marks</p>
   </div>
-  <a href="{% url 'panels:student_dashboard' %}" title="Back to dashboard" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-arrow-left text-[10px]"></i><span>Dashboard</span></a>
-</section>
+  <a href="{% url 'panels:student_dashboard' %}" title="Back to dashboard" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-arrow-left text-[10px]"></i><span>Dashboard</span></a>
+</header>
 
 {% if db_error %}
-<div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2 text-xs text-[var(--status-danger)]"><i class="fa-solid fa-circle-exclamation mr-1.5"></i>Database notice: {{ db_error }}</div>
+<div class="rounded-[12px] border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2 text-xs text-[var(--status-danger)]"><i class="fa-solid fa-circle-exclamation mr-1.5"></i>Database notice: {{ db_error }}</div>
 {% endif %}
 
 <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 [&_[data-dot-kpi]]:py-2">
@@ -28,12 +25,12 @@
 </section>
 
 <section class="grid grid-cols-1 gap-3.5 xl:grid-cols-12">
-  <div id="orbit-goals-card" data-att="{{ record.avg_attendance|default:0 }}" data-hours="{{ record.lms_hours_weekly|default:0 }}" data-marks="{{ record.avg_marks|default:0 }}" tabindex="0" class="xl:col-span-5 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 flex flex-col justify-between gap-2.5">
+  <div id="orbit-goals-card" data-att="{{ record.avg_attendance|default:0 }}" data-hours="{{ record.lms_hours_weekly|default:0 }}" data-marks="{{ record.avg_marks|default:0 }}" tabindex="0" class="xl:col-span-5 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 flex flex-col justify-between gap-2.5">
     <div class="flex items-center justify-between gap-2">
       <div><h3 class="text-sm font-semibold text-[var(--text-primary)]">Study Orbit Goals</h3><p class="text-[11px] text-[var(--text-muted)]">Select a ring and tune weekly target</p></div>
       <div class="flex items-center gap-1.5 shrink-0">
         <span id="orbit-center-pct" title="Overall goal score" class="inline-flex items-center rounded-md bg-[var(--accent-soft)] px-2 py-0.5 font-mono text-xs font-bold tabular-nums text-[var(--accent-primary)]">0%</span>
-        <button id="orbit-reset-btn" type="button" class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-[11px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">Reset</button>
+        <button id="orbit-reset-btn" type="button" class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-[11px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">Reset</button>
       </div>
     </div>
     <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-12 items-center">
@@ -50,12 +47,12 @@
         </div>
       </div>
       <div class="sm:col-span-7 space-y-1.5">
-        <button type="button" data-orbit-goal="attendance" aria-pressed="true" class="flex w-full items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-left text-[11px] transition-colors hover:bg-[var(--bg-elevated)]"><span class="inline-flex items-center gap-1.5 font-medium text-[var(--text-secondary)]"><span class="h-2 w-2 rounded-full bg-[var(--status-success)]"></span>Attendance</span><span class="font-mono font-semibold text-[var(--text-primary)]"><span data-orbit-val="attendance">0% / 85%</span> &middot; <span data-orbit-pct="attendance">0%</span></span></button>
-        <button type="button" data-orbit-goal="study_hours" aria-pressed="false" class="flex w-full items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-left text-[11px] transition-colors hover:bg-[var(--bg-elevated)]"><span class="inline-flex items-center gap-1.5 font-medium text-[var(--text-secondary)]"><span class="h-2 w-2 rounded-full bg-[var(--accent-primary)]"></span>Study Hours</span><span class="font-mono font-semibold text-[var(--text-primary)]"><span data-orbit-val="study_hours">0h / 8h</span> &middot; <span data-orbit-pct="study_hours">0%</span></span></button>
-        <button type="button" data-orbit-goal="coursework" aria-pressed="false" class="flex w-full items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-left text-[11px] transition-colors hover:bg-[var(--bg-elevated)]"><span class="inline-flex items-center gap-1.5 font-medium text-[var(--text-secondary)]"><span class="h-2 w-2 rounded-full bg-[var(--status-warning)]"></span>Coursework</span><span class="font-mono font-semibold text-[var(--text-primary)]"><span data-orbit-val="coursework">0% / 80%</span> &middot; <span data-orbit-pct="coursework">0%</span></span></button>
+        <button type="button" data-orbit-goal="attendance" aria-pressed="true" class="flex w-full items-center justify-between rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-left text-[11px] transition-colors hover:bg-[var(--bg-elevated)]"><span class="inline-flex items-center gap-1.5 font-medium text-[var(--text-secondary)]"><span class="h-2 w-2 rounded-full bg-[var(--status-success)]"></span>Attendance</span><span class="font-mono font-semibold text-[var(--text-primary)]"><span data-orbit-val="attendance">0% / 85%</span> &middot; <span data-orbit-pct="attendance">0%</span></span></button>
+        <button type="button" data-orbit-goal="study_hours" aria-pressed="false" class="flex w-full items-center justify-between rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-left text-[11px] transition-colors hover:bg-[var(--bg-elevated)]"><span class="inline-flex items-center gap-1.5 font-medium text-[var(--text-secondary)]"><span class="h-2 w-2 rounded-full bg-[var(--accent-primary)]"></span>Study Hours</span><span class="font-mono font-semibold text-[var(--text-primary)]"><span data-orbit-val="study_hours">0h / 8h</span> &middot; <span data-orbit-pct="study_hours">0%</span></span></button>
+        <button type="button" data-orbit-goal="coursework" aria-pressed="false" class="flex w-full items-center justify-between rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-left text-[11px] transition-colors hover:bg-[var(--bg-elevated)]"><span class="inline-flex items-center gap-1.5 font-medium text-[var(--text-secondary)]"><span class="h-2 w-2 rounded-full bg-[var(--status-warning)]"></span>Coursework</span><span class="font-mono font-semibold text-[var(--text-primary)]"><span data-orbit-val="coursework">0% / 80%</span> &middot; <span data-orbit-pct="coursework">0%</span></span></button>
       </div>
     </div>
-    <div class="grid grid-cols-1 gap-2 sm:grid-cols-12 items-center rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5">
+    <div class="grid grid-cols-1 gap-2 sm:grid-cols-12 items-center rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5">
       <div class="sm:col-span-6 flex items-center justify-between gap-1.5">
         <span id="orbit-active-label" class="truncate text-[11px] font-semibold text-[var(--text-primary)]">Attendance Target %</span>
         <div class="inline-flex items-center gap-1">
@@ -64,42 +61,42 @@
           <button type="button" data-orbit-step="1" aria-label="Increase target" class="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">+</button>
         </div>
       </div>
-      <div class="sm:col-span-6 space-y-0.5"><p class="text-[9px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">7-Day Consistency</p><div id="orbit-sparkline" class="flex items-end gap-1"></div></div>
+      <div class="sm:col-span-6 space-y-0.5"><p class="text-[10px] font-semibold text-[var(--text-muted)]">7-Day Consistency</p><div id="orbit-sparkline" class="flex items-end gap-1"></div></div>
     </div>
   </div>
 
   <div class="xl:col-span-7 min-w-0 grid grid-cols-1 gap-3.5 md:grid-cols-12">
-    <div class="md:col-span-7 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 space-y-2">
+    <div class="md:col-span-7 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 space-y-2">
       <h3 class="text-sm font-semibold text-[var(--text-primary)]">This Week's Tips</h3>
       {% if tips %}
       <div class="space-y-2 max-h-60 overflow-y-auto pr-0.5">
         {% for tip in tips %}
-        <div class="flex items-start gap-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5">
+        <div class="flex items-start gap-2.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5">
           <i class="fa-solid {% if tip.status == 'danger' %}fa-circle-exclamation text-[var(--status-danger)]{% elif tip.status == 'warning' %}fa-triangle-exclamation text-[var(--status-warning)]{% else %}fa-circle-check text-[var(--status-success)]{% endif %} mt-0.5 text-xs"></i>
           <div class="min-w-0"><p class="text-xs font-semibold text-[var(--text-primary)]">{{ tip.title }}</p><p class="mt-0.5 text-[11px] leading-snug text-[var(--text-secondary)]">{{ tip.text }}</p></div>
         </div>
         {% endfor %}
       </div>
       {% else %}
-      <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-8 text-center"><i class="fa-regular fa-lightbulb mb-1.5 text-base text-[var(--text-muted)]"></i><p class="text-xs text-[var(--text-secondary)]">Tips will appear once your marks are uploaded.</p></div>
+      <div class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-8 text-center"><i class="fa-regular fa-lightbulb mb-1.5 text-base text-[var(--text-muted)]"></i><p class="text-xs text-[var(--text-secondary)]">Tips will appear once your marks are uploaded.</p></div>
       {% endif %}
     </div>
 
-    <div class="md:col-span-5 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 flex flex-col justify-between gap-2">
+    <div class="md:col-span-5 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 flex flex-col justify-between gap-2">
       <div class="space-y-2">
         <h3 class="text-sm font-semibold text-[var(--text-primary)]">My Learning Insight</h3>
         <p class="text-xs leading-relaxed text-[var(--text-secondary)]">{{ insight.summary }}</p>
         {% if insight.points %}
         <ul class="space-y-1">{% for point in insight.points|slice:":3" %}<li class="flex items-start gap-1.5 text-[11px] text-[var(--text-secondary)]"><i class="fa-solid fa-circle-check mt-0.5 text-[var(--accent-primary)] shrink-0"></i><span>{{ point }}</span></li>{% endfor %}</ul>
         {% endif %}
-        <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-2.5 text-[11px] text-[var(--text-secondary)]"><p class="mb-0.5 font-semibold text-[var(--text-primary)]">Teacher advice</p><p>{{ record.recommendation|default:"No advice available yet." }}</p></div>
+        <div class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-2.5 text-[11px] text-[var(--text-secondary)]"><p class="mb-0.5 font-semibold text-[var(--text-primary)]">Teacher advice</p><p>{{ record.recommendation|default:"No advice available yet." }}</p></div>
       </div>
-      <button type="button" onclick="openFormModal({ title: 'Need Help', actionUrl: '{% url 'panels:submit_support_ticket' %}', fields: [{ name: 'subject', label: 'Subject', type: 'text', placeholder: 'Short title', required: true }, { name: 'message', label: 'Message', type: 'textarea', placeholder: 'Write your question or issue...', required: true }] })" title="Send a question to the Admin office" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-headset mr-1.5 text-[var(--accent-primary)]"></i>Ask for help</button>
+      <button type="button" onclick="openFormModal({ title: 'Need Help', actionUrl: '{% url 'panels:submit_support_ticket' %}', fields: [{ name: 'subject', label: 'Subject', type: 'text', placeholder: 'Short title', required: true }, { name: 'message', label: 'Message', type: 'textarea', placeholder: 'Write your question or issue...', required: true }] })" title="Send a question to the Admin office" class="w-full h-9 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-headset mr-1.5 text-[var(--accent-primary)]"></i>Ask for help</button>
     </div>
   </div>
 </section>
 
-<footer data-ep-marquee class="ep-marquee-wrap rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] py-1 px-3 text-[11px]">
+<footer data-ep-marquee class="ep-marquee-wrap rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] py-1 px-3 text-[11px]">
   {% if record.courses %}
   <div data-marquee-track class="ep-marquee-track items-center text-[11px]">
     <span class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full bg-[var(--status-success)]"></span>Attendance {{ record.avg_attendance|default:0 }}%</span>

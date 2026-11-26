@@ -1,13 +1,10 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
+<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
-    <div class="flex items-center gap-2">
-      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">
-        <i class="fa-solid fa-brain text-xs"></i>
-        <span>ML Training</span>
-      </span>
+    <div class="flex flex-wrap items-center gap-2">
+      <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Master Training Data</h2>
       {% if ml_status.trained %}
       <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--status-success)]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--status-success)]">
         <i class="fa-solid fa-circle-check text-[10px]"></i>
@@ -20,14 +17,13 @@
       </span>
       {% endif %}
     </div>
-    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Master Training Data</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Upload an institute CSV or Excel dataset to train dropout risk and GPA prediction models.</p>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Upload an institute CSV or Excel dataset to train dropout risk and GPA prediction models</p>
   </div>
-  <a href="{% url 'panels:admin_dashboard' %}" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+  <a href="{% url 'panels:admin_dashboard' %}" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
     <i class="fa-solid fa-arrow-left text-xs"></i>
     <span>Back to Dashboard</span>
   </a>
-</section>
+</header>
 
 {% if db_error %}
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
@@ -46,7 +42,7 @@
   {% include 'components/metric_card.html' with title="Last Trained" value=ml_status.uploaded_at|default:"Not yet" badge="Latest run" status="success" icon="fa-solid fa-calendar-check" %}
 </section>
 
-<section id="master-training-upload" class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 space-y-3">
+<section id="master-training-upload" class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
   <div class="flex flex-wrap items-center justify-between gap-2">
     <div>
       <h3 class="text-sm font-semibold text-[var(--text-primary)]">Upload Master Training CSV</h3>
@@ -56,15 +52,15 @@
   <form method="post" action="{% url 'panels:admin_training' %}" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3">
     {% csrf_token %}
     <input type="hidden" name="action" value="upload_master_csv">
-    <input type="file" name="dataset_file" accept=".csv,.xlsx" required class="block w-full sm:w-auto flex-1 max-w-md rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs text-[var(--text-primary)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--accent-soft)] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[var(--accent-primary)]">
-    <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+    <input type="file" name="dataset_file" accept=".csv,.xlsx" required class="block w-full sm:w-auto flex-1 max-w-md rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--accent-soft)] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[var(--accent-primary)]">
+    <button type="submit" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
       <i class="fa-solid fa-brain text-xs"></i>
       <span>Upload &amp; Train ML</span>
     </button>
   </form>
 </section>
 
-<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+<section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
   {% include 'components/data_table.html' with table_id="admin-training-uploads-table" table_title="Recent Training Uploads" headers=training_headers rows=training_rows page_size=5 empty_message="No master training datasets uploaded yet." %}
 </section>
 {% endblock %}

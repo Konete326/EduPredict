@@ -1,67 +1,61 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<section class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
+<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
-    <div class="flex items-center gap-2">
-      <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)]">
-        <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
-        <span>Class Upload &amp; Auto-Provisioning</span>
-      </span>
-    </div>
-    <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Upload Marks &amp; Attendance</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Upload your class CSV to auto-create student logins, calculate predicted GPA, and update risk warnings.</p>
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Upload Marks &amp; Attendance</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Upload your class CSV to auto-create student logins, calculate predicted GPA, and update risk warnings</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
-    <button type="button" onclick="openUploadSheetModal()" title="Upload CSV or Excel spreadsheet" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+    <button type="button" onclick="openUploadSheetModal()" title="Upload CSV or Excel spreadsheet" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
       <i class="fa-solid fa-file-csv text-xs"></i>
       <span>Upload Class CSV</span>
     </button>
-    <button type="button" onclick="openQuickEntryModal()" title="Quickly add or update single student marks" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+    <button type="button" onclick="openQuickEntryModal()" title="Quickly add or update single student marks" class="inline-flex h-9 items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
       <i class="fa-solid fa-user-plus text-xs text-[var(--accent-primary)]"></i>
       <span>Quick Student Entry</span>
     </button>
     <form method="post" action="{% url 'panels:teacher_ingest' %}">
       {% csrf_token %}
       <input type="hidden" name="mode" value="sample">
-      <button type="submit" title="Fill sample class data and run ML predictions in one click" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <button type="submit" title="Fill sample class data and run ML predictions in one click" class="inline-flex h-9 items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
         <i class="fa-solid fa-bolt text-xs text-[var(--accent-primary)]"></i>
         <span>Load Sample Class</span>
       </button>
     </form>
   </div>
-</section>
+</header>
 
 {% if db_error %}
-<div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
+<div class="rounded-[12px] border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
   <i class="fa-solid fa-circle-exclamation mr-2"></i>Database notice: {{ db_error }}
 </div>
 {% endif %}
 
 {% if provisioned_creds %}
-<section id="teacher-credentials-ready" class="rounded-2xl border border-[var(--status-success)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm space-y-3">
+<section id="teacher-credentials-ready" class="rounded-[16px] border border-[var(--status-success)] bg-[var(--bg-surface)] p-4 space-y-3">
   <div class="flex flex-wrap items-center justify-between gap-2">
     <div class="min-w-0">
       <div class="flex items-center gap-2">
         <i class="fa-solid fa-key text-xs text-[var(--status-success)]"></i>
-        <h3 class="text-sm font-bold text-[var(--text-primary)]">Class Login Credentials Ready ({{ provisioned_creds|length }} Students)</h3>
+        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Class Login Credentials Ready ({{ provisioned_creds|length }} Students)</h3>
       </div>
       <p class="text-xs text-[var(--text-secondary)]">Share these logins with your class. Students sign in with their exact <code class="font-mono text-[11px] text-[var(--text-primary)]">student_id</code> and password <code class="font-mono text-[11px] text-[var(--text-primary)]">&lt;first_name&gt;@&lt;birth_date&gt;</code>.</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
-      <a href="{% url 'panels:teacher_credentials_csv' %}" data-no-loading="true" title="Download class student login credentials as CSV" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--accent-hover)] transition-colors shadow-sm">
+      <a href="{% url 'panels:teacher_credentials_csv' %}" data-no-loading="true" title="Download class student login credentials as CSV" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white hover:bg-[var(--accent-hover)] transition-colors">
         <i class="fa-solid fa-download text-[11px]"></i>
         <span>Download Credentials CSV</span>
       </a>
-      <button type="button" onclick="copyProvisionedCreds()" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
+      <button type="button" onclick="copyProvisionedCreds()" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
         <i class="fa-solid fa-copy text-[11px] text-[var(--accent-primary)]"></i>
         <span>Copy Credentials</span>
       </button>
     </div>
   </div>
-  <div class="overflow-x-auto rounded-xl border border-[var(--border-subtle)]">
+  <div class="overflow-x-auto rounded-[12px] border border-[var(--border-subtle)]">
     <table class="w-full text-left text-xs">
-      <thead class="bg-[var(--bg-elevated)] text-[var(--text-muted)] uppercase text-[10px] tracking-wider">
+      <thead class="bg-[var(--bg-elevated)] text-[var(--text-muted)] text-[11px] font-semibold">
         <tr>
           <th class="px-3 py-2">Student ID (Login)</th>
           <th class="px-3 py-2">Student Name</th>
@@ -85,29 +79,29 @@
 {{ provisioned_creds|json_script:"teacher-provisioned-creds-data" }}
 {% endif %}
 
-<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3 text-xs text-[var(--text-secondary)] flex flex-wrap items-center gap-2.5">
+<section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3 text-xs text-[var(--text-secondary)] flex flex-wrap items-center gap-2.5">
   <i class="fa-solid fa-circle-info text-[var(--accent-primary)] shrink-0"></i>
   <span><strong class="text-[var(--text-primary)]">Class CSV &amp; Auto-ML:</strong> Include <code class="font-mono text-[11px] text-[var(--text-primary)]">student_id, full_name, birth_date, course_code, marks, attendance</code> to auto-create student logins (<code class="font-mono text-[11px]">first_name@birth_date</code>) and run live GPA &amp; risk predictions. Standard 3-column sheets (<code class="font-mono text-[11px]">student_id, marks, attendance</code>) also work.</span>
 </section>
 
 <section class="space-y-4">
-  <div class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
+  <div class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
     {% include 'components/directory_cards.html' with grid_id="teacher-roster-table" grid_title="My Class Roster Directory" cards=roster_cards page_size=5 empty_message="No student records saved yet. Upload your class CSV or add a student via Quick Entry." %}
   </div>
 
-  <div class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5 shadow-sm">
+  <div class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
     {% include 'components/data_table.html' with table_id="teacher-logs-table" table_title="Upload History" headers=log_headers rows=log_rows page_size=5 empty_message="No uploaded spreadsheets logged yet." %}
   </div>
 </section>
 
 <div id="teacher-upload-modal" data-ep-modal="true" data-modal-backdrop aria-hidden="true" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 backdrop-blur-xs">
-  <div class="w-full max-w-lg rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-xl space-y-4">
+  <div class="w-full max-w-lg rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-xl space-y-4">
     <div class="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
       <div>
-        <h3 class="text-base font-bold text-[var(--text-primary)]">Upload Class CSV / Excel</h3>
+        <h3 class="text-base font-semibold text-[var(--text-primary)]">Upload Class CSV / Excel</h3>
         <p class="text-xs text-[var(--text-muted)]">Columns: student_id, full_name, birth_date, course_code, marks, attendance</p>
       </div>
-      <button type="button" onclick="closeUploadSheetModal()" aria-label="Close upload modal" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+      <button type="button" onclick="closeUploadSheetModal()" aria-label="Close upload modal" class="inline-flex h-8 w-8 items-center justify-center rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
         <i class="fa-solid fa-xmark text-sm"></i>
       </button>
     </div>
@@ -117,13 +111,13 @@
       <input type="hidden" name="mode" value="upload">
       {% include 'components/gradient_file_uploader.html' with input_id="teacher-dataset-file" input_name="dataset_file" accept=".csv,.xlsx" max_mb=25 auto_submit=True title="Drop Class CSV or Excel Sheet" subtitle="student_id, full_name, birth_date, course_code, marks, attendance" %}
       <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
-        <a href="{% url 'panels:teacher_ingest' %}?template=csv" data-no-lock="true" title="Download sample spreadsheet template" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors">
+        <a href="{% url 'panels:teacher_ingest' %}?template=csv" data-no-lock="true" title="Download sample spreadsheet template" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors">
           <i class="fa-solid fa-download text-[11px]"></i>
           <span>Template CSV</span>
         </a>
         <div class="flex items-center gap-2">
-          <button type="button" onclick="closeUploadSheetModal()" class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors">Cancel</button>
-          <button type="submit" title="Upload spreadsheet and auto-update predictions" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+          <button type="button" onclick="closeUploadSheetModal()" class="h-9 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors">Cancel</button>
+          <button type="submit" title="Upload spreadsheet and auto-update predictions" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
             <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
             <span>Upload &amp; Auto-Process</span>
           </button>

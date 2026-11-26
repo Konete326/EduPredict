@@ -29,14 +29,17 @@
   const clearActiveSession = () => { try { if (window.sessionStorage) { window.sessionStorage.removeItem(SESSION_KEY); window.sessionStorage.removeItem(PENDING_DOM_KEY); } } catch (e) {} };
   const queuePendingAction = (act) => { try { if (window.sessionStorage && act) window.sessionStorage.setItem(PENDING_DOM_KEY, JSON.stringify(act)); } catch (e) {} };
   const pushStreamNode = (stream, node) => { if (!stream) return; const e = stream.querySelector('[data-dock-empty]'); if (e && e.parentNode) e.parentNode.removeChild(e); stream.appendChild(node); stream.scrollTop = stream.scrollHeight || 0; };
-  const setChatOpen = (open) => { isChatOpen = Boolean(open); toggleFlexPanel(getEls().chatPanel, isChatOpen); };
+  const setChatOpen = (open) => { const el = getEls(); isChatOpen = Boolean(open); toggleFlexPanel(el.chatPanel, isChatOpen); syncDockPlacement(el); };
+  function syncDockPlacement(el) {
+    const d = el || getEls(); if (!d.root || typeof d.root.getBoundingClientRect !== 'function') return;
+    const r = d.root.getBoundingClientRect(), vw = window.innerWidth || 1280, vh = window.innerHeight || 800, onRight = ((r.left || 0) + ((r.width || 150) / 2)) > vw / 2, onBottom = ((r.top || 0) + ((r.height || 40) / 2)) > vh / 2;
+    [d.dockBar, d.chatPanel].forEach((p, idx) => { if (!p || !p.style) return; const gap = idx === 0 ? '8px' : '60px'; p.style.right = onRight ? '0px' : 'auto'; p.style.left = onRight ? 'auto' : '0px'; p.style.bottom = onBottom ? ('calc(100% + ' + gap + ')') : 'auto'; p.style.top = onBottom ? 'auto' : ('calc(100% + ' + gap + ')'); });
+  }
   const removeTypingBubble = () => { const s = getEls().stream, n = s ? s.querySelector('[data-dock-typing]') : null; if (n && n.parentNode) n.parentNode.removeChild(n); };
   const highlightInputs = (nodes) => { nodes.forEach((i) => PREFILL_CLS.forEach((c) => i.classList.add(c))); if (typeof setTimeout === 'function' && nodes.length) setTimeout(() => nodes.forEach((i) => PREFILL_CLS.forEach((c) => i.classList.remove(c))), 2200); };
 
   function updateEngineBadge(engine) {
-    lastEngine = String(engine || 'live');
-    const el = getEls(), low = lastEngine.toLowerCase();
-    if (!el.engBadge || !el.engDot || !el.engLabel) return;
+    lastEngine = String(engine || 'live'); const el = getEls(), low = lastEngine.toLowerCase(); if (!el.engBadge || !el.engDot || !el.engLabel) return;
     const isFb = low.startsWith('fallback:'), isGuard = low.startsWith('guard:') || low.startsWith('rbac:');
     el.engBadge.title = 'Engine: ' + lastEngine;
     el.engBadge.className = 'inline-flex shrink-0 items-center gap-1 font-medium ' + (isFb ? 'text-[var(--status-warning)]' : (isGuard ? 'text-[var(--accent-primary)]' : 'text-[var(--status-success)]'));
@@ -44,40 +47,34 @@
     el.engLabel.textContent = isFb ? 'Offline Mode' : (isGuard ? 'Policy Guard' : 'Live AI');
   }
   function navigateToUrl(rawUrl, forceDirect) {
-    if (!rawUrl) return;
-    saveActiveSession();
+    if (!rawUrl) return; saveActiveSession();
     try {
       const target = new URL(rawUrl, (window.location && window.location.origin) || (['http:', '', 'localhost'].join('/'))), low = target.pathname.toLowerCase();
       const isFile = forceDirect || low.includes('/backup') || low.includes('download') || low.includes('export-pdf') || low.endsWith('.pdf') || low.endsWith('.csv');
       if (!isFile && typeof window.eduPredictNavigate === 'function') { window.eduPredictNavigate(target, { pushState: true, bypassCache: false }); return; }
-      if (window.location && typeof window.location.assign === 'function') window.location.assign(target.href);
-      else if (window.location) window.location.href = target.href;
+      if (window.location && typeof window.location.assign === 'function') window.location.assign(target.href); else if (window.location) window.location.href = target.href;
     } catch (e) { if (window.location) window.location.href = rawUrl; }
   }
   function renderEmptyState(stream) {
-    if (!stream) return;
-    stream.textContent = '';
+    if (!stream) return; stream.textContent = '';
     const box = mk('div', 'flex h-full flex-col items-center justify-center gap-1.5 px-4 text-center text-[var(--text-muted)]', null, { 'data-dock-empty': 'true' });
     box.append(mk('i', 'fa-solid fa-comments text-lg text-[var(--accent-primary)]', null, { 'aria-hidden': 'true' }), mk('p', 'text-xs font-medium text-[var(--text-primary)]', 'Pick an EduPredict AI Agent'), mk('p', 'text-[11px] leading-relaxed', 'Select an agent below or type your request. Specialists auto-route and can run portal actions.'));
     stream.appendChild(box);
   }
   function updateAgentVisuals(agent) {
-    const el = getEls(), viewAgent = agent || AGENTS.coach;
-    if (!el.root) return;
+    const el = getEls(), viewAgent = agent || AGENTS.coach; if (!el.root) return;
     el.root.querySelectorAll('[data-dock-agent]').forEach((btn) => {
       const bid = resolveAgentId(btn.getAttribute('data-dock-agent')), active = Boolean(agent && bid === agent.id), av = btn.querySelector('[data-dock-avatar]');
-      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-      RING_CLS.forEach((cls) => btn.classList.toggle(cls, active));
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false'); RING_CLS.forEach((cls) => btn.classList.toggle(cls, active));
       if (av && AGENTS[bid]) { av.src = AGENTS[bid].avatar_url; av.alt = AGENTS[bid].name; }
     });
     if (el.chatDp) { el.chatDp.src = viewAgent.avatar_url; el.chatDp.alt = viewAgent.name; }
-    if (el.nameEl) el.nameEl.textContent = viewAgent.name;
-    if (el.roleEl) el.roleEl.textContent = viewAgent.role;
+    if (el.nameEl) el.nameEl.textContent = viewAgent.name; if (el.roleEl) el.roleEl.textContent = viewAgent.role;
     if (el.input) el.input.placeholder = agent ? ('Ask ' + agent.name + '...') : 'Select an agent or type a message...';
   }
   function resetConversation(clearActive) { const el = getEls(); sessionSeq += 1; ephemeralMessages = []; isSending = false; if (el.sendBtn) el.sendBtn.disabled = false; renderEmptyState(el.stream); updateEngineBadge('live'); if (clearActive) { activeAgentId = null; updateAgentVisuals(null); } }
   function setDockOpen(open) {
-    const el = getEls(); isDockOpen = Boolean(open); toggleFlexPanel(el.dockBar, isDockOpen);
+    const el = getEls(); isDockOpen = Boolean(open); toggleFlexPanel(el.dockBar, isDockOpen); syncDockPlacement(el);
     if (el.toggleBtn) el.toggleBtn.setAttribute('aria-expanded', isDockOpen ? 'true' : 'false');
     if (!isDockOpen) { setChatOpen(false); resetConversation(true); clearActiveSession(); } else saveActiveSession();
   }
@@ -173,9 +170,7 @@
     }
     list.forEach(runSingleDomAction);
   }
-  function consumePendingDomAction() {
-    try { if (!window.sessionStorage) return; const raw = window.sessionStorage.getItem(PENDING_DOM_KEY); if (!raw) return; window.sessionStorage.removeItem(PENDING_DOM_KEY); executeDomActions(JSON.parse(raw)); } catch (e) {}
-  }
+  function consumePendingDomAction() { try { if (!window.sessionStorage) return; const raw = window.sessionStorage.getItem(PENDING_DOM_KEY); if (!raw) return; window.sessionStorage.removeItem(PENDING_DOM_KEY); executeDomActions(JSON.parse(raw)); } catch (e) {} }
   function renderActionChips(bubble, actions) {
     if (!bubble || !Array.isArray(actions) || !actions.length) return;
     const wrap = mk('div', 'mt-2 flex flex-wrap gap-1.5'), icons = { redirect: 'fa-solid fa-arrow-up-right-from-square', filter_table: 'fa-solid fa-filter', click_element: 'fa-solid fa-bolt', open_and_fill_form: 'fa-solid fa-pen-to-square', toggle_theme: 'fa-solid fa-circle-half-stroke', toggle_sidebar: 'fa-solid fa-bars-staggered' };
@@ -302,7 +297,7 @@
       const el = getEls(), msgs = Array.isArray(st.messages) ? st.messages : [];
       isDockOpen = Boolean(st.isDockOpen); isChatOpen = Boolean(st.isChatOpen); activeAgentId = st.activeAgentId ? resolveAgentId(st.activeAgentId) : null;
       toggleFlexPanel(el.dockBar, isDockOpen); if (el.toggleBtn) el.toggleBtn.setAttribute('aria-expanded', isDockOpen ? 'true' : 'false');
-      toggleFlexPanel(el.chatPanel, isChatOpen); updateAgentVisuals(activeAgentId ? AGENTS[activeAgentId] : null);
+      toggleFlexPanel(el.chatPanel, isChatOpen); syncDockPlacement(el); updateAgentVisuals(activeAgentId ? AGENTS[activeAgentId] : null);
       if (st.lastEngine) updateEngineBadge(st.lastEngine);
       ephemeralMessages = msgs;
       if (el.stream && msgs.length) {
@@ -319,13 +314,13 @@
   function bindDockDrag(el) {
     if (!el.root || !el.toggleBtn || el.toggleBtn.dataset.dragBound === '1') return;
     el.toggleBtn.dataset.dragBound = '1';
-    const POS_KEY = 'ep_agent_dock_pos', getRect = () => (typeof el.root.getBoundingClientRect === 'function' ? el.root.getBoundingClientRect() : { left: 16, top: 16, width: 160, height: 44 }); let drag = null, suppressClick = false;
-    const applyPos = (l, t) => { const rect = getRect(), w = rect.width || el.root.offsetWidth || 160, h = rect.height || el.root.offsetHeight || 44; el.root.style.right = 'auto'; el.root.style.bottom = 'auto'; el.root.style.left = Math.max(12, Math.min(Math.max(12, window.innerWidth - w - 12), l)) + 'px'; el.root.style.top = Math.max(12, Math.min(Math.max(12, window.innerHeight - h - 12), t)) + 'px'; };
+    const POS_KEY = 'ep_agent_dock_pos', getRect = () => (typeof el.root.getBoundingClientRect === 'function' ? el.root.getBoundingClientRect() : { left: 16, top: 16, width: 160, height: 40 }); let drag = null, suppressClick = false;
+    const applyPos = (l, t) => { const rect = typeof el.toggleBtn.getBoundingClientRect === 'function' ? el.toggleBtn.getBoundingClientRect() : getRect(), w = rect.width || el.toggleBtn.offsetWidth || 160, h = rect.height || el.toggleBtn.offsetHeight || 40; el.root.style.right = 'auto'; el.root.style.bottom = 'auto'; el.root.style.left = Math.max(12, Math.min(Math.max(12, (window.innerWidth || 1280) - w - 12), l)) + 'px'; el.root.style.top = Math.max(12, Math.min(Math.max(12, (window.innerHeight || 800) - h - 12), t)) + 'px'; syncDockPlacement(el); };
     try { const s = JSON.parse(sessionStorage.getItem(POS_KEY) || 'null'); if (s && typeof s.l === 'number' && typeof s.t === 'number') applyPos(s.l, s.t); } catch (e) {}
-    el.toggleBtn.addEventListener('pointerdown', (e) => { const rect = getRect(); drag = { id: e.pointerId, x: e.clientX, y: e.clientY, l: rect.left, t: rect.top, moved: false }; try { if (el.toggleBtn.setPointerCapture) el.toggleBtn.setPointerCapture(e.pointerId); } catch (err) {} });
+    el.toggleBtn.addEventListener('pointerdown', (e) => { const rect = typeof el.toggleBtn.getBoundingClientRect === 'function' ? el.toggleBtn.getBoundingClientRect() : getRect(); drag = { id: e.pointerId, x: e.clientX, y: e.clientY, l: rect.left, t: rect.top, moved: false }; try { if (el.toggleBtn.setPointerCapture) el.toggleBtn.setPointerCapture(e.pointerId); } catch (err) {} });
     const onMove = (e) => { if (!drag || e.pointerId !== drag.id) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) > 5 || Math.abs(dy) > 5) drag.moved = true; if (drag.moved) applyPos(drag.l + dx, drag.t + dy); };
     const endDrag = (e) => { if (!drag || e.pointerId !== drag.id) return; if (drag.moved) { suppressClick = true; try { sessionStorage.setItem(POS_KEY, JSON.stringify({ l: parseFloat(el.root.style.left || '0') || 0, t: parseFloat(el.root.style.top || '0') || 0 })); } catch (err) {} } drag = null; };
-    if (typeof window.addEventListener === 'function') { window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', endDrag); window.addEventListener('pointercancel', endDrag); }
+    if (typeof window.addEventListener === 'function') { window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', endDrag); window.addEventListener('pointercancel', endDrag); window.addEventListener('resize', () => syncDockPlacement(getEls())); }
     el.toggleBtn.addEventListener('click', (e) => { if (suppressClick) { suppressClick = false; e.preventDefault(); e.stopImmediatePropagation(); return; } setDockOpen(!isDockOpen); });
   }
   function initAiAgentDock() {

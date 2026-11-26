@@ -61,29 +61,27 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 88 Astryx Unslop, Bento Modals, 4-Col Lists & Training Page"
-active_branch_merged_to_main: "feature/phase88-astryx-bento-clean-ui -> main"
-project_phase: "Phase 88: Astryx + Unslop Polish, Bento Grid Modals, 4-Col Lists + View Modal, Dedicated Training Page & Draggable AI Dock"
+last_updated_by_agent: "Phase 89 AI Dock Popover Fix & Meta Astryx Unslop Polish"
+active_branch_merged_to_main: "feature/astryx-dock-polish -> main"
+project_phase: "Phase 89: Stationary Quadrant-Aware AI Dock Popover & Full Meta Astryx + unslop UI Alignment"
 
 completed_modules:
-  - "Phase 1-87: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Multi-Agent AI Dock, Vercel Auto-Deploy, Provably Hero & Live Testimonial Globe, Single-Institute Datasets, Student-ID Auth, Teacher CSV Isolation & Credentials Export, Training vs Live Separation, Clean-Start DB Reset & Full Docs Sync."
-  - "Phase 88 (Astryx + Unslop Polish, Bento Modals, 4-Col Lists + View Modal, Dedicated Training Page & Draggable AI Dock):"
-      - "templates/components/{form_modal,ai_message_dock}.html, templates/base.html, static/js/{app,ai_agent_dock}.js: added 2-column Bento Grid modals (>= 5 fields), global openViewDetailsModal() reusing #form-modal, fixed window-bound draggable #ep-agent-dock-toggle with sessionStorage persistence, added Figtree font, and bumped assets to ?v=22."
-      - "static/css/global.css, templates/components/{sidebar,metric_card}.html: applied Meta Astryx + unslop polish (Figtree font stack, 175ms cubic-bezier transitions, quiet sentence-case sidebar labels with aria-current='page', clean stat cards without oversized decorative boxes)."
-      - "panels/{urls,views_admin,admin_services}.py, templates/panels/{admin_training,admin_dashboard,teacher_dashboard,student_dashboard,analyst_dashboard}.html: added dedicated /admin-panel/training/ page & sidebar route, and simplified all 4 role dashboards to minimal Header + 4 KPIs + 2 Charts + 1 concise card."
-      - "panels/{admin_directory_services,teacher_services,student_services}.py, templates/components/data_table.html, templates/panels/{admin_users,admin_courses,admin_tickets,teacher_students,student_notifications}.html: simplified all data tables to 3-4 essential columns with View (fa-eye) detail modals."
-      - ".agents/{design,project-rules,prd,git-sync}.md, README.md: documented permanent Phase 88 UI/UX standards."
+  - "Phase 1-88: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Multi-Agent AI Dock, Vercel Auto-Deploy, Provably Hero & Live Testimonial Globe, Single-Institute Datasets, Student-ID Auth, Teacher CSV Isolation & Credentials Export, Training vs Live Separation, Bento Grid Modals, 4-Col Minimal Lists + View Details Modal, Dedicated /admin-panel/training/ Page, Clean-Start DB Reset & Full Docs Sync."
+  - "Phase 89 (AI Dock Popover Fix & Meta Astryx Design System + unslop Across All Panels):"
+      - "templates/components/ai_message_dock.html, static/js/ai_agent_dock.js, templates/base.html: converted #ep-message-dock and #ep-agent-chat-panel into position:absolute popovers inside a compact toggle-sized #ep-agent-dock-root with syncDockPlacement(el) quadrant anchoring, eliminating sideways button jump when clicking dragged #ep-agent-dock-toggle; switched Tailwind sans font stack to Figtree."
+      - "static/css/global.css, templates/components/{data_table,metric_card,topbar,form_modal,confirm_modal}.html: added Astryx radius tokens (--radius-inner/element/container), 14px/20px body scale, .ep-page-header hairline layout, rounded-[16px] flat cards (zero shadow-sm), rounded-[12px] controls, sentence-case table headers, and StatusDot indicators for normal states."
+      - "templates/panels/{admin_*,teacher_*,student_*,analyst_*}.html (all 17 panel templates): replaced boxed card-soup headers with flat ep-page-header, removed shouty role eyebrow pills/uppercase tracked headings, kept monochrome A4 print sheet (#ep-a4-print-sheet) and 17-inch viewport-fit tabs intact."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check: all static/js/*.js files exited 0."
-  - "Zero-comment & line-cap audit: 0 comments across all 31 modified code files; all within caps (views_*.py <= 250, app/template/JS/CSS <= 350, tests <= 400)."
-  - "manage.py test: Ran 137 tests in 87.208s (137/137 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 8.80s - System 100% Operational."
-  - "Live QA (http://127.0.0.1:8000): verified Admin login, /admin-panel/training/ GET + CSV upload (ML Model Trained), /admin-panel/users/ & /admin-panel/courses/ 4-col tables + View modal + Bento modal, and draggable AI dock JS; cleaned MongoDB Atlas to 1 Admin user and 0 rows across all other collections."
+  - "Zero-comment & line-cap audit: 0 comments across all 26 modified code files; all within caps (<= 350)."
+  - "manage.py test: Ran 137 tests in 72.671s (137/137 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 8.40s - System 100% Operational."
+  - "Live Browser QA (http://127.0.0.1:8000): verified Figtree font load, dragged #ep-agent-dock-toggle click deltaX=0 / deltaY=0 with dock/chat opening inside viewport, flat ep-page-header + StatusDot tables + Bento Add Course modal across Admin pages, and cleaned MongoDB Atlas back to 1 Admin user only."
 
 active_routes_and_files:
-  - "panels/{admin_directory_services,admin_services,student_services,teacher_services,urls,views_admin}.py, static/css/global.css, static/js/{ai_agent_dock,app}.js, templates/base.html, templates/components/{ai_message_dock,data_table,form_modal,metric_card,sidebar}.html, templates/panels/{admin_courses,admin_dashboard,admin_tickets,admin_training,admin_users,analyst_dashboard,student_dashboard,student_notifications,teacher_dashboard,teacher_students}.html, .agents/{design,git-sync,prd,project-rules}.md, README.md"
+  - "static/css/global.css, static/js/ai_agent_dock.js, templates/base.html, templates/components/{ai_message_dock,confirm_modal,data_table,form_modal,metric_card,topbar}.html, templates/panels/{admin_courses,admin_dashboard,admin_logs,admin_settings,admin_tickets,admin_training,admin_users,analyst_accuracy,analyst_dashboard,student_dashboard,student_notifications,student_report,student_tips,teacher_alerts,teacher_dashboard,teacher_ingest,teacher_students}.html, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."
