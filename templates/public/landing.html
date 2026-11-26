@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %}Academic Early Warning &amp; Analytics{% endblock %}
 {% block extra_head %}
-  <link rel="stylesheet" href="{% static 'css/landing_provably.css' %}?v=18">
+  <link rel="stylesheet" href="{% static 'css/landing_provably.css' %}?v=18&r=94">
 {% endblock %}
 {% block public_header %}{% endblock %}
 {% block public_footer %}{% endblock %}
@@ -39,10 +39,10 @@
               <div class="big">{{ metrics.predictions_count|default:0 }}</div>
             </div>
             <div class="avs">
-              <i style="top:15px;background:#10b981"><i class="fa-solid fa-user-graduate" style="position:static;width:auto;height:auto;background:none;font-size:11px"></i></i>
-              <i style="top:53px;background:#059669"><i class="fa-solid fa-chalkboard-user" style="position:static;width:auto;height:auto;background:none;font-size:11px"></i></i>
-              <i style="top:91px;background:#121212"><i class="fa-solid fa-chart-line" style="position:static;width:auto;height:auto;background:none;font-size:11px"></i></i>
-              <i style="top:129px;background:#047857"><i class="fa-solid fa-shield-halved" style="position:static;width:auto;height:auto;background:none;font-size:11px"></i></i>
+              <i style="top:15px;background:#10b981"><span class="fa-solid fa-user-graduate" style="font-size:11px"></span></i>
+              <i style="top:53px;background:#059669"><span class="fa-solid fa-chalkboard-user" style="font-size:11px"></span></i>
+              <i style="top:91px;background:#121212"><span class="fa-solid fa-chart-line" style="font-size:11px"></span></i>
+              <i style="top:129px;background:#047857"><span class="fa-solid fa-shield-halved" style="font-size:11px"></span></i>
             </div>
             <div class="chat">
               <div class="msg" style="left:14px;top:15px;width:268px"><div class="t">Dr. Amina <span>#cs-101</span><svg class="i"><use href="#fl-chat"/></svg></div><p><b>@educoach</b> which students need early help?</p></div>
@@ -136,5 +136,5 @@
 </div>
 {% endblock %}
 {% block extra_js %}
-  <script src="{% static 'js/landing_provably.js' %}?v=18"></script>
+  <script src="{% static 'js/landing_provably.js' %}?v=18&r=94"></script>
 {% endblock %}
