@@ -5,7 +5,6 @@
   <div class="min-w-0 space-y-0.5">
     <div class="flex flex-wrap items-center gap-1.5">
       <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]"><i class="fa-solid fa-graduation-cap text-[10px]"></i><span>Student Portal</span></span>
-      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-muted)]">Read-Only Progress</span>
       {% if record.program_level %}<span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">{{ record.program_level }}</span>{% endif %}
       {% if record.batch %}<span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Batch {{ record.batch }}</span>{% endif %}
     </div>

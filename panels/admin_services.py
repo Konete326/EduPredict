@@ -14,11 +14,9 @@ from panels.admin_audit_services import record_audit_log
 from panels.admin_seed import _format_dt, _infer_department_from_code, _safe_int, build_backup_payload, courses_col, ensure_admin_seed_data, get_admin_overview_context as _base_admin_overview
 from panels.notification_services import create_notification
 from panels.phase62_services import reject_teacher_account
-
 VALID_TICKET_STATUSES, VALID_COURSE_STATUSES = ("OPEN", "RESOLVED"), ("ACTIVE", "ARCHIVED")
 VALID_PROGRAM_LEVELS = ("School / Junior", "College / Intermediate", "BS / Undergraduate", "MS / Graduate")
 LIVE_RECORD_QUERY = {"is_training_dataset": {"$ne": True}}
-
 def _load_live_admin_overview():
     base = _base_admin_overview()
     kpis, charts = dict(base.get("kpis") or {}), {k: dict(v) for k, v in (base.get("chart_data") or {}).items()}
@@ -48,13 +46,10 @@ def _load_live_admin_overview():
     charts["departments"] = {"labels": dept_labels, "enrolled": [dept_enrolled.get(d, 0) for d in dept_labels], "capacity": [dept_capacity.get(d, 0) for d in dept_labels]}
     charts["risk_breakdown"] = {"labels": ["Low Risk", "Medium Risk", "High Risk"], "counts": [low_r, med_r, high_r]}
     return {**base, "kpis": kpis, "chart_data": charts}
-
 def get_admin_overview_context(): return get_cached("admin:overview:live", _load_live_admin_overview, ttl=30.0)
-
 def _audit(category, action, summary, severity="INFO", actor="System Admin"):
     try: record_audit_log(actor, "ADMIN", category, action, summary, severity=severity, source="SYSTEM")
     except Exception: pass
-
 def _generate_unique_ticket_id(col):
     base = 1001 + col.count_documents({})
     for offset in range(30):
@@ -76,11 +71,9 @@ def _load_users(normalized):
         if normalized == "ALL" or (normalized in ("PENDING", "REJECTED") and approval_status == normalized) or role == normalized:
             users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "program_level": str(doc.get("program_level") or ("BS / Undergraduate" if role == "STUDENT" else "")), "phone": str(doc.get("phone") or ""), "bio": str(doc.get("bio") or ""), "is_active": is_active, "approval_status": approval_status, "rejection_reason": str(doc.get("rejection_reason") or ""), "student_id": str(doc.get("student_id") or ""), "assigned_teacher_id": str(doc.get("assigned_teacher_id") or ""), "assigned_teacher_name": str(doc.get("assigned_teacher_name") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at"))})
     return users, role_counts
-
 def list_users(role_filter="ALL"):
     normalized = str(role_filter or "ALL").strip().upper()
     return get_cached(f"admin:users:{normalized}", lambda: _load_users(normalized), ttl=30.0)
-
 def _validate_user_input(full_name, email, role, department, batch):
     clean_name, clean_email, clean_role = str(full_name or "").strip(), str(email or "").strip().lower(), str(role or "").strip().upper()
     if not clean_name: return None, "Full name is required."
@@ -88,7 +81,6 @@ def _validate_user_input(full_name, email, role, department, batch):
     except ValidationError: return None, "Please enter a valid email address."
     if clean_role not in VALID_ROLES: return None, "Select a valid role (ADMIN, TEACHER, STUDENT, or ANALYST)."
     return (clean_name, clean_email, clean_role, str(department or "").strip() or "General", str(batch or "").strip() or ("2026-A" if clean_role == "STUDENT" else "ALL")), None
-
 def create_user_record(full_name, email, password, role, department, batch, actor_name="System Admin", program_level=""):
     ensure_accounts_indexes_once()
     parsed, err = _validate_user_input(full_name, email, role, department, batch)
@@ -106,7 +98,6 @@ def create_user_record(full_name, email, password, role, department, batch, acto
     _audit("USERS", "CREATE_USER", f"Created user {clean_name} ({user_id}, {clean_role}).", "SUCCESS", actor=actor_name)
     invalidate_cache()
     return doc, None
-
 def update_user_record(user_id, full_name, email, role, department, batch, password="", actor_user_id=None, actor_email="", actor_name="System Admin", program_level=None):
     col, clean_uid = users_col(), str(user_id or "").strip()
     existing = col.find_one({"user_id": clean_uid})
@@ -126,7 +117,6 @@ def update_user_record(user_id, full_name, email, role, department, batch, passw
     _audit("USERS", "UPDATE_USER", f"Updated user {clean_uid} ({clean_role}).", "INFO", actor=actor_name)
     invalidate_cache()
     return True, None
-
 def toggle_user_status(user_id, actor_user_id=None, actor_email="", actor_name="System Admin"):
     clean_uid, col = str(user_id or "").strip(), users_col()
     existing = col.find_one({"user_id": clean_uid})
@@ -143,7 +133,6 @@ def toggle_user_status(user_id, actor_user_id=None, actor_email="", actor_name="
         _audit("USERS", "TOGGLE_USER", f"{'Activated' if new_state else 'Deactivated'} user {clean_uid}.", "SUCCESS" if new_state else "WARNING", actor=actor_name)
     invalidate_cache()
     return new_state, None
-
 def ingest_master_training_dataset(file_obj, actor_name="System Admin", is_training_dataset=True):
     if file_obj is None: return None, "Please select a master training CSV or Excel file."
     ingest_res = ingest_dataset(file_obj=file_obj, uploaded_by=actor_name, mode="upload", is_training_dataset=bool(is_training_dataset))
@@ -161,7 +150,6 @@ def ingest_master_training_dataset(file_obj, actor_name="System Admin", is_train
     _audit("DATA", "UPLOAD_MASTER_CSV", f"Uploaded master training CSV {filename} ({rows_count} records) and trained ML models.", "SUCCESS", actor=actor_name)
     invalidate_cache()
     return {"filename": filename, "rows_processed": rows_count, "missing_values_fixed": int(ingest_res.get("missing_values_fixed") or 0), "predictions_generated": int(pred_res.get("predictions_generated") or 0), "high_risk_count": int(pred_res.get("high_risk_count") or 0)}, None
-
 def get_master_training_status():
     def _fetch():
         try:
@@ -172,7 +160,20 @@ def get_master_training_status():
         except Exception:
             return {"trained": False, "records_count": 0, "filename": "", "uploaded_at": ""}
     return get_cached("admin:ml_status", _fetch, ttl=20.0)
-
+def _load_training_uploads():
+    uploads, rows = [], []
+    try:
+        query = {"$or": [{"is_training_dataset": True}, {"uploaded_by": {"$regex": "admin", "$options": "i"}}]}
+        for d in datasets_log_col().find(query, {"_id": 0}).sort("uploaded_at", DESCENDING).limit(20):
+            fn, by, rc, preds, st, dt = str(d.get("filename") or "master.csv"), str(d.get("uploaded_by") or "System Admin"), int(d.get("rows_processed") or 0), int(d.get("predictions_generated") or 0), str(d.get("status") or "COMPLETED").upper(), _format_dt(d.get("uploaded_at"))
+            uploads.append({"filename": fn, "uploaded_by": by, "rows_processed": rc, "predictions_generated": preds, "status": st, "uploaded_at_str": dt})
+            rows.append([fn, by, rc, preds, {"text": st, "status": "success" if st == "COMPLETED" else "warning"}, dt])
+    except Exception:
+        pass
+    return uploads, rows
+def get_admin_training_context():
+    uploads, rows = get_cached("admin:training_uploads", _load_training_uploads, ttl=20.0)
+    return {"ml_status": get_master_training_status(), "training_uploads": uploads, "training_headers": ["Filename", "Uploaded By", "Rows", "Predictions", "Status", "Uploaded At"], "training_rows": rows}
 def delete_user_record(user_id, actor_user_id=None, actor_email="", actor_name="System Admin"):
     clean_uid, col = str(user_id or "").strip(), users_col()
     existing = col.find_one({"user_id": clean_uid}, {"_id": 1, "email": 1})
@@ -207,7 +208,6 @@ def _course_fields(title, department, batch, instructor, credits, capacity, stat
     fb, clean_status, clean_level = fallback or {}, str(status or "ACTIVE").strip().upper(), str(program_level or "").strip()
     t_name, t_id, t_email = _resolve_course_teacher(instructor, instructor_id, instructor_email, fb)
     return {"title": str(title or "").strip(), "department": str(department or "").strip() or fb.get("department") or "General", "batch": str(batch or "").strip() or fb.get("batch") or "2026-A", "instructor": t_name, "instructor_id": t_id, "instructor_email": t_email, **({"program_level": clean_level} if clean_level else {}), "credits": _safe_int(credits, 3, 1, 12), "capacity": _safe_int(capacity, 60, 1, 2000), "status": clean_status if clean_status in VALID_COURSE_STATUSES else "ACTIVE"}
-
 def create_course_record(course_code, title, department, batch, instructor, credits, capacity, status="ACTIVE", actor_name="System Admin", instructor_id="", instructor_email="", program_level=""):
     clean_code, clean_title = str(course_code or "").strip().upper(), str(title or "").strip()
     if len(clean_code) < 2 or not clean_title: return None, "Course code and title are required."
@@ -218,7 +218,6 @@ def create_course_record(course_code, title, department, batch, instructor, cred
     _audit("COURSES", "CREATE_COURSE", f"Added course {clean_code} ({clean_title}).", "SUCCESS", actor=actor_name)
     invalidate_cache()
     return doc, None
-
 def update_course_record(course_code, title, department, batch, instructor, credits, capacity, status="ACTIVE", actor_name="System Admin", instructor_id="", instructor_email="", program_level=""):
     clean_code, clean_title = str(course_code or "").strip().upper(), str(title or "").strip()
     if not clean_code or not clean_title: return False, "Course code and title are required."
@@ -230,7 +229,6 @@ def update_course_record(course_code, title, department, batch, instructor, cred
     _audit("COURSES", "UPDATE_COURSE", f"Updated course {clean_code} ({clean_title}).", "INFO", actor=actor_name)
     invalidate_cache()
     return True, None
-
 def delete_course_record(course_code, actor_name="System Admin"):
     clean_code = str(course_code or "").strip().upper()
     if courses_col().delete_one({"course_code": clean_code}).deleted_count:
@@ -238,7 +236,6 @@ def delete_course_record(course_code, actor_name="System Admin"):
         invalidate_cache()
         return True, None
     return False, "Course record not found."
-
 def _load_tickets(clean_status):
     ensure_admin_seed_data()
     counts, tickets = {"ALL": 0, "OPEN": 0, "RESOLVED": 0}, []
@@ -249,11 +246,9 @@ def _load_tickets(clean_status):
         if clean_status not in VALID_TICKET_STATUSES or status == clean_status:
             tickets.append({"ticket_id": str(doc.get("ticket_id") or ""), "user_id": str(doc.get("user_id") or ""), "user_name": str(doc.get("user_name") or "User"), "role": str(doc.get("role") or "USER").upper(), "subject": str(doc.get("subject") or ""), "message": str(doc.get("message") or ""), "status": status, "admin_reply": str(doc.get("admin_reply") or ""), "replied_by": str(doc.get("replied_by") or ""), "replied_at_str": _format_dt(doc.get("replied_at")) if doc.get("replied_at") else "", "created_at_str": _format_dt(doc.get("created_at")), "attachments": [str(a) for a in (doc.get("attachments") or []) if a]})
     return tickets, counts
-
 def list_tickets(status_filter="ALL"):
     clean_status = str(status_filter or "ALL").strip().upper()
     return get_cached(f"admin:tickets:{clean_status}", lambda: _load_tickets(clean_status), ttl=30.0)
-
 def _clean_ticket_attachments(attachments, user_id):
     clean = []
     for idx, item in enumerate(attachments or []):
@@ -265,7 +260,6 @@ def _clean_ticket_attachments(attachments, user_id):
             url = upload_ticket_attachment(item, user_id, index=idx)[0] if is_cloudinary_configured() else encode_image_data_uri(item)
             if url: clean.append(url)
     return clean[:3]
-
 def create_ticket_record(user_id, user_name, role, subject, message, attachments=None):
     clean_subject, clean_message = str(subject or "").strip(), str(message or "").strip()
     if not clean_subject or not clean_message: return None, "Subject and message details are required."
@@ -276,7 +270,6 @@ def create_ticket_record(user_id, user_name, role, subject, message, attachments
     _audit("TICKETS", "CREATE_TICKET", f"Support ticket {doc['ticket_id']} submitted by {doc['user_name']}: {clean_subject}", "WARNING", actor=doc["user_name"])
     invalidate_cache()
     return doc, None
-
 def toggle_ticket_status(ticket_id, actor_name="System Admin"):
     col = support_tickets_col()
     existing = col.find_one({"ticket_id": str(ticket_id or "").strip()})
@@ -288,7 +281,6 @@ def toggle_ticket_status(ticket_id, actor_name="System Admin"):
     _audit("TICKETS", "TOGGLE_TICKET", f"Ticket {tid} marked as {new_status}.", "SUCCESS" if new_status == "RESOLVED" else "WARNING", actor=actor_name)
     invalidate_cache()
     return new_status, None
-
 def delete_ticket_record(ticket_id, actor_name="System Admin"):
     clean_tid = str(ticket_id or "").strip()
     if support_tickets_col().delete_one({"ticket_id": clean_tid}).deleted_count:
@@ -296,7 +288,6 @@ def delete_ticket_record(ticket_id, actor_name="System Admin"):
         invalidate_cache()
         return True, None
     return False, "Support ticket not found."
-
 def mark_notifications_read(user_doc):
     user = user_doc if isinstance(user_doc, dict) else {}
     user_id, student_id, active_role = str(user.get("user_id") or "").strip(), str(user.get("student_id") or "").strip(), str(user.get("role") or "").strip().upper()
@@ -307,43 +298,4 @@ def mark_notifications_read(user_doc):
     modified = int(notifications_col().update_many({"is_read": False, "$or": targets}, {"$set": {"is_read": True}}).modified_count)
     invalidate_cache()
     return modified
-
-def _action(label, icon, onclick, title, attrs, variant="default"): return {"label": label, "icon": icon, "variant": variant, "title": title, "onclick": onclick, "attrs": attrs}
-def build_user_table_data(users, filter_role, actor_user_id, actor_email=""):
-    headers, role_status_map = ["User ID", "Full Name", "Email", "Role", "Department", "Status", "Actions"], {"ADMIN": "info", "ANALYST": "info", "TEACHER": "warning", "STUDENT": "success"}
-    clean_actor_email, rows = str(actor_email or "").strip().lower(), []
-    for u in users:
-        uid = u["user_id"]
-        is_self = (actor_user_id and uid == actor_user_id) or (clean_actor_email and u["email"].strip().lower() == clean_actor_email)
-        edit_attrs = {"data-user-id": uid, "data-full-name": u["full_name"], "data-email": u["email"], "data-role": u["role"], "data-department": u["department"], "data-batch": u["batch"], "data-program-level": u.get("program_level", ""), "data-filter-role": filter_role, **({"data-is-self": "true"} if is_self else {})}
-        actions = [_action("Edit", "fa-solid fa-pen-to-square", "openEditUserModal(this)", f"Edit {u['full_name']}", edit_attrs)]
-        if not is_self:
-            lbl, ico = ("Deactivate", "fa-solid fa-user-slash") if u["is_active"] else ("Activate", "fa-solid fa-user-check")
-            actions += [_action(lbl, ico, "openToggleUserModal(this)", f"{lbl} {u['full_name']}", {"data-user-id": uid, "data-full-name": u["full_name"], "data-is-active": "true" if u["is_active"] else "false", "data-filter-role": filter_role}), _action("Delete", "fa-solid fa-trash", "openDeleteUserModal(this)", f"Delete {u['full_name']}", {"data-user-id": uid, "data-full-name": u["full_name"], "data-filter-role": filter_role}, variant="danger")]
-        display_name = f"{u['full_name']} (You)" if is_self else u["full_name"]
-        rows.append([uid, display_name, u["email"], {"text": u["role"], "status": role_status_map.get(u["role"], "info")}, u["department"], {"text": "Active" if u["is_active"] else "Inactive", "status": "success" if u["is_active"] else "danger"}, {"actions": actions}])
-    return headers, rows
-
-def build_course_table_data(courses, filter_dept):
-    headers, rows = ["Code", "Course Title", "Department", "Batch", "Instructor", "Enrolled", "Status", "Actions"], []
-    for c in courses:
-        actions = [_action("Edit", "fa-solid fa-pen-to-square", "openEditCourseModal(this)", f"Edit {c['course_code']}", {"data-course-code": c["course_code"], "data-title": c["title"], "data-department": c["department"], "data-batch": c["batch"], "data-program-level": c.get("program_level", ""), "data-instructor": c["instructor"], "data-instructor-id": c.get("instructor_id", ""), "data-instructor-email": c.get("instructor_email", ""), "data-credits": str(c["credits"]), "data-capacity": str(c["capacity"]), "data-status": c["status"], "data-filter-dept": filter_dept}), _action("Delete", "fa-solid fa-trash", "openDeleteCourseModal(this)", f"Delete {c['course_code']}", {"data-course-code": c["course_code"], "data-title": c["title"], "data-filter-dept": filter_dept}, variant="danger")]
-        batch_cell = f"{c['batch']} ({c['program_level']})" if c.get("program_level") else c["batch"]
-        rows.append([c["course_code"], c["title"], c["department"], batch_cell, c["instructor"], f"{c['enrolled_count']} / {c['capacity']} ({c['fill_pct']}%)", {"text": c["status"], "status": "success" if c["status"] == "ACTIVE" else "warning"}, {"actions": actions}])
-    return headers, rows
-
-def build_ticket_table_data(tickets, filter_status):
-    headers, rows = ["Ticket ID", "User", "Role", "Subject", "Status", "Date", "Actions"], []
-    for t in tickets:
-        is_open, has_reply = t["status"] == "OPEN", bool(t.get("admin_reply"))
-        lbl, ico = ("Resolve", "fa-solid fa-circle-check") if is_open else ("Reopen", "fa-solid fa-rotate-left")
-        attachments, created_at = [str(a) for a in (t.get("attachments") or []) if a], t.get("created_at_str") or t.get("created_at", "")
-        base_attrs = {"data-ticket-id": t["ticket_id"], "data-subject": t["subject"], "data-filter-status": filter_status}
-        detail_attrs = {**base_attrs, "data-message": t["message"], "data-admin-reply": t.get("admin_reply", ""), "data-status": t["status"], "data-attachments": "|".join(attachments), "data-user-name": t.get("user_name", ""), "data-role": t.get("role", ""), "data-created-at": created_at, "data-replied-by": t.get("replied_by", ""), "data-replied-at": t.get("replied_at_str") or t.get("replied_at", "")}
-        actions = [_action("View", "fa-solid fa-eye", "openTicketDetailDrawer(this)", f"View {t['ticket_id']}", detail_attrs), _action("Edit" if has_reply else "Reply", "fa-solid fa-reply", "openReplyTicketModal(this)", f"Reply to {t['ticket_id']}", detail_attrs, variant="primary")]
-        if has_reply:
-            actions.append(_action("Clear", "fa-solid fa-comment-slash", "openDeleteReplyModal(this)", f"Delete reply on {t['ticket_id']}", base_attrs, variant="danger"))
-        actions.extend([_action(lbl, ico, "openToggleTicketModal(this)", f"{lbl} {t['ticket_id']}", {**base_attrs, "data-status": t["status"]}), _action("", "fa-solid fa-trash", "openDeleteTicketModal(this)", f"Delete ticket {t['ticket_id']}", {**base_attrs, "aria-label": f"Delete ticket {t['ticket_id']}"}, variant="danger")])
-        subject_cell = (f"{t['subject']} (Replied)" if has_reply else t["subject"]) + (f" [{len(attachments)} img]" if attachments else "")
-        rows.append([t["ticket_id"], t["user_name"], {"text": t["role"], "status": "info"}, subject_cell, {"text": t["status"], "status": "success" if t["status"] == "RESOLVED" else "warning"}, created_at, {"actions": actions}])
-    return headers, rows
+from panels.admin_directory_services import build_course_table_data, build_ticket_table_data, build_user_table_data

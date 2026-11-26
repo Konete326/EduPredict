@@ -1,4 +1,4 @@
-import re
+import json, re
 from datetime import datetime, timezone
 from django.contrib.auth.hashers import make_password
 from pymongo import DESCENDING
@@ -17,8 +17,8 @@ def _safe_float(val, default=0.0):
         return default
 
 
-def _action(label, icon, onclick, title, attrs, variant="default"):
-    return {"label": label, "icon": icon, "variant": variant, "title": title, "onclick": onclick, "attrs": attrs}
+def _action(label, icon, onclick, title, attrs, variant="default"): return {"label": label, "icon": icon, "variant": variant, "title": title, "onclick": onclick, "attrs": attrs}
+def _view_action(title, payload): return {"type": "view_modal", "label": "View", "icon": "fa-solid fa-eye", "variant": "default", "title": title, "payload_json": json.dumps(payload)}
 
 
 def _is_admin(teacher_user):
@@ -170,14 +170,11 @@ def _load_teacher_students_context(batch_f, course_f, status_f, teacher_user=Non
     rows, export_rows = [], []
     for s in filtered:
         gpa_str = f"{s['predicted_gpa']:.2f}" if s["predicted_gpa"] is not None else f"{s['previous_gpa']:.2f}"
-        actions = [_action("Update Marks", "fa-solid fa-pen-to-square", "openUpdateMarksModal(this)", f"Edit marks for {s['full_name']}", _student_attrs(s)), _action("Send Alert", "fa-solid fa-bell", "openSendAlertModal(this)", f"Send alert to {s['full_name']}", _alert_attrs(s), variant="primary"), _action("Delete", "fa-solid fa-trash", "openDeleteStudentModal(this)", f"Delete {s['full_name']}", _delete_attrs(s), variant="danger")]
-        rows.append([s["student_id"], s["full_name"], s["batch"], s["course_code"], f"{s['attendance_pct']:.1f}%", f"{s['internal_marks']:.1f}", gpa_str, s["badge"], {"actions": actions}])
+        view_payload = {"title": s["full_name"], "subtitle": f"{s['student_id']} · {s['course_code']}", "badge": s["badge"]["text"], "items": [{"label": "Student ID", "value": s["student_id"]}, {"label": "Birth Date", "value": s.get("birth_date") or "-"}, {"label": "Course", "value": s["course_code"]}, {"label": "Marks", "value": f"{s['internal_marks']:.1f}"}, {"label": "Attendance", "value": f"{s['attendance_pct']:.1f}%"}, {"label": "Predicted GPA", "value": gpa_str}, {"label": "Risk", "value": s["badge"]["text"], "fullWidth": True}]}
+        actions = [_view_action(f"View {s['full_name']}", view_payload), _action("Edit", "fa-solid fa-pen-to-square", "openUpdateMarksModal(this)", f"Edit marks for {s['full_name']}", _student_attrs(s)), _action("Alert", "fa-solid fa-bell", "openSendAlertModal(this)", f"Send alert to {s['full_name']}", _alert_attrs(s), variant="primary"), _action("Delete", "fa-solid fa-trash", "openDeleteStudentModal(this)", f"Delete {s['full_name']}", _delete_attrs(s), variant="danger")]
+        rows.append([s["full_name"], f"{s['internal_marks']:.1f} / {s['attendance_pct']:.1f}%", s["badge"], {"actions": actions}])
         export_rows.append({"student_id": s["student_id"], "full_name": s["full_name"], "batch": s["batch"], "course_code": s["course_code"], "attendance_pct": f"{s['attendance_pct']:.1f}", "internal_marks": f"{s['internal_marks']:.1f}", "predicted_gpa": gpa_str, "status": s["badge"]["text"]})
-    return {
-        "filter_options": {"batches": sorted({s["batch"] for s in students if s["batch"]}), "courses": sorted({s["course_code"] for s in students if s["course_code"]}), "statuses": ["Excellent", "Stable", "Needs Help", "High Risk"]},
-        "student_headers": ["Student ID", "Name", "Batch", "Course", "Attendance", "Marks", "Pred GPA", "Status", "Actions"],
-        "student_rows": rows, "students_raw": filtered, "export_rows": export_rows, "birth_map": {s["student_id"]: s["birth_date"] for s in filtered if s.get("birth_date")},
-    }
+    return {"filter_options": {"batches": sorted({s["batch"] for s in students if s["batch"]}), "courses": sorted({s["course_code"] for s in students if s["course_code"]}), "statuses": ["Excellent", "Stable", "Needs Help", "High Risk"]}, "student_headers": ["Student", "Marks & Att", "Risk", "Actions"], "student_rows": rows, "students_raw": filtered, "export_rows": export_rows, "birth_map": {s["student_id"]: s["birth_date"] for s in filtered if s.get("birth_date")}}
 
 
 def get_teacher_students_context(batch_filter="ALL", course_filter="ALL", status_filter="ALL", teacher_user=None):

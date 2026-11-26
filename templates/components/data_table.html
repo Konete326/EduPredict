@@ -27,13 +27,29 @@
               <span class="h-1.5 w-1.5 rounded-full {% if cell.status == 'success' %}bg-[var(--status-success)]{% elif cell.status == 'warning' %}bg-[var(--status-warning)]{% elif cell.status == 'danger' or cell.status == 'error' %}bg-[var(--status-danger)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span>
               <span>{{ cell.text }}</span>
             </span>
+            {% elif cell.initials and cell.text is not None %}
+            <div class="flex items-center gap-2.5 min-w-0">
+              {% if cell.avatar_url %}
+              <img src="{{ cell.avatar_url }}" alt="{{ cell.text }}" class="h-7 w-7 shrink-0 rounded-full object-cover border border-[var(--border-subtle)]">
+              {% else %}
+              <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[11px] font-bold text-[var(--accent-primary)]">{{ cell.initials }}</span>
+              {% endif %}
+              <span class="truncate font-medium text-[var(--text-primary)]">{{ cell.text }}</span>
+            </div>
             {% elif cell.actions %}
             <div class="flex flex-nowrap items-center justify-end gap-1 whitespace-nowrap">
               {% for act in cell.actions %}
+              {% if act.type == 'view_modal' %}
+              <button type="button" onclick="window.openViewDetailsModal(JSON.parse(this.getAttribute('data-view-payload') || '{}'))"{% if act.payload_json %} data-view-payload="{{ act.payload_json }}"{% endif %}{% if act.title %} title="{{ act.title }}"{% endif %}{% if act.attrs %}{% for k, v in act.attrs.items %} {{ k }}="{{ v }}"{% endfor %}{% endif %} class="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-1.5 py-1 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+                {% if act.icon %}<i class="{{ act.icon }} text-[11px]" aria-hidden="true"></i>{% endif %}
+                {% if act.label %}<span>{{ act.label }}</span>{% endif %}
+              </button>
+              {% else %}
               <button type="button"{% if act.onclick %} onclick="{{ act.onclick }}"{% endif %}{% if act.title %} title="{{ act.title }}"{% endif %}{% if act.attrs %}{% for k, v in act.attrs.items %} {{ k }}="{{ v }}"{% endfor %}{% endif %} class="inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-1 text-[11px] font-medium transition-colors {% if act.variant == 'danger' %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]{% elif act.variant == 'primary' %}border-transparent bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]{% else %}border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
                 {% if act.icon %}<i class="{{ act.icon }} text-[11px]" aria-hidden="true"></i>{% endif %}
                 {% if act.label %}<span>{{ act.label }}</span>{% endif %}
               </button>
+              {% endif %}
               {% endfor %}
             </div>
             {% else %}
@@ -70,6 +86,15 @@
             <span class="h-1.5 w-1.5 rounded-full {% if cell.status == 'success' %}bg-[var(--status-success)]{% elif cell.status == 'warning' %}bg-[var(--status-warning)]{% elif cell.status == 'danger' or cell.status == 'error' %}bg-[var(--status-danger)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span>
             <span>{{ cell.text }}</span>
           </span>
+          {% elif cell.initials and cell.text is not None %}
+          <div class="flex items-center justify-end gap-2 min-w-0">
+            {% if cell.avatar_url %}
+            <img src="{{ cell.avatar_url }}" alt="{{ cell.text }}" class="h-6 w-6 shrink-0 rounded-full object-cover border border-[var(--border-subtle)]">
+            {% else %}
+            <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[10px] font-bold text-[var(--accent-primary)]">{{ cell.initials }}</span>
+            {% endif %}
+            <span class="truncate">{{ cell.text }}</span>
+          </div>
           {% else %}{{ cell }}{% endif %}
         </div>
       </div>
@@ -78,10 +103,17 @@
         <span class="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Actions</span>
         <div class="flex flex-wrap items-center justify-end gap-1.5">
           {% for act in cell.actions %}
+          {% if act.type == 'view_modal' %}
+          <button type="button" onclick="window.openViewDetailsModal(JSON.parse(this.getAttribute('data-view-payload') || '{}'))"{% if act.payload_json %} data-view-payload="{{ act.payload_json }}"{% endif %}{% if act.title %} title="{{ act.title }}"{% endif %}{% if act.attrs %}{% for k, v in act.attrs.items %} {{ k }}="{{ v }}"{% endfor %}{% endif %} class="inline-flex min-h-[34px] items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+            {% if act.icon %}<i class="{{ act.icon }} text-[11px]" aria-hidden="true"></i>{% endif %}
+            {% if act.label %}<span>{{ act.label }}</span>{% endif %}
+          </button>
+          {% else %}
           <button type="button"{% if act.onclick %} onclick="{{ act.onclick }}"{% endif %}{% if act.title %} title="{{ act.title }}"{% endif %}{% if act.attrs %}{% for k, v in act.attrs.items %} {{ k }}="{{ v }}"{% endfor %}{% endif %} class="inline-flex min-h-[34px] items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors {% if act.variant == 'danger' %}border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]{% elif act.variant == 'primary' %}border-transparent bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]{% else %}border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
             {% if act.icon %}<i class="{{ act.icon }} text-[11px]" aria-hidden="true"></i>{% endif %}
             {% if act.label %}<span>{{ act.label }}</span>{% endif %}
           </button>
+          {% endif %}
           {% endfor %}
         </div>
       </div>

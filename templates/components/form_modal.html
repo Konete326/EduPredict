@@ -1,7 +1,7 @@
 <div id="form-modal" class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6" role="dialog" aria-modal="true" aria-labelledby="form-modal-title">
   <div data-modal-backdrop="form-modal" class="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm transition-opacity"></div>
   <div class="relative z-10 flex min-h-full w-full items-center justify-center pointer-events-none">
-    <div class="pointer-events-auto relative w-full max-w-lg mx-auto my-auto flex flex-col rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden max-h-[90vh]">
+    <div id="form-modal-dialog" class="pointer-events-auto relative w-full max-w-lg mx-auto my-auto flex flex-col rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden max-h-[90vh]">
       <div class="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5 py-3.5 bg-[var(--bg-surface)]">
         <h3 id="form-modal-title" class="text-base font-semibold text-[var(--text-primary)]">Form</h3>
         <button type="button" onclick="closeFormModal()" aria-label="Close modal" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
@@ -12,7 +12,7 @@
         {% csrf_token %}
         <div id="form-modal-fields" class="flex-1 overflow-y-auto px-5 pt-4 pb-6 space-y-3.5"></div>
         <div class="flex shrink-0 items-center justify-end gap-2.5 border-t border-[var(--border-subtle)] px-5 py-3.5 bg-[var(--bg-surface)]">
-          <button type="button" onclick="closeFormModal()" class="inline-flex items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">Cancel</button>
+          <button id="form-modal-cancel-btn" type="button" onclick="closeFormModal()" class="inline-flex items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">Cancel</button>
           <button id="form-modal-submit-btn" type="submit" class="inline-flex items-center justify-center rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">Save</button>
         </div>
       </form>

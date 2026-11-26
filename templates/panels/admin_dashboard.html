@@ -37,74 +37,6 @@
   {% include 'components/metric_card.html' with title="System Health" value=kpis.system_status badge=kpis.open_tickets|stringformat:"s"|add:" open tickets" status="success" icon="fa-solid fa-heart-pulse" %}
 </section>
 
-<section id="master-training-upload" class="scroll-mt-20 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
-  <div class="flex flex-wrap items-center justify-between gap-3">
-    <div class="min-w-0 space-y-1">
-      <div class="flex flex-wrap items-center gap-2">
-        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Upload Master Training CSV</h3>
-        {% if ml_status.trained %}
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--status-success)]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--status-success)]">
-          <i class="fa-solid fa-circle-check text-[10px]"></i>
-          <span>ML Model Trained &middot; {{ ml_status.records_count }} records</span>
-        </span>
-        {% else %}
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--status-warning)]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--status-warning)]">
-          <i class="fa-solid fa-clock text-[10px]"></i>
-          <span>ML Model Pending</span>
-        </span>
-        {% endif %}
-      </div>
-      <p class="text-xs text-[var(--text-secondary)]">Upload your institute master CSV/Excel dataset to train dropout risk and GPA models in one click.</p>
-    </div>
-    <form method="post" action="{% url 'panels:admin_dashboard' %}" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="upload_master_csv">
-      <input type="file" name="dataset_file" accept=".csv,.xlsx" required class="block max-w-[230px] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] file:mr-2 file:rounded-md file:border-0 file:bg-[var(--accent-soft)] file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-[var(--accent-primary)]">
-      <button type="submit" class="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent-primary)] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
-        <i class="fa-solid fa-brain text-xs"></i>
-        <span>Upload &amp; Train ML</span>
-      </button>
-    </form>
-  </div>
-</section>
-
-<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3">
-  <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-    <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">How EduPredict Connects</h3>
-    <span class="text-[11px] text-[var(--text-muted)]">4-Role Academic &amp; ML Pipeline</span>
-  </div>
-  <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
-    <a href="{% url 'panels:admin_courses' %}" class="flex items-center gap-2.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs transition-colors hover:border-[var(--accent-primary)]">
-      <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--accent-soft)] text-[11px] font-bold text-[var(--accent-primary)]">1</span>
-      <div class="min-w-0">
-        <p class="truncate font-semibold text-[var(--text-primary)]">Admin Sets Courses &amp; Teachers</p>
-        <p class="truncate text-[11px] text-[var(--text-muted)]">Assign teachers, levels &amp; batches</p>
-      </div>
-    </a>
-    <div class="flex items-center gap-2.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs">
-      <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--accent-soft)] text-[11px] font-bold text-[var(--accent-primary)]">2</span>
-      <div class="min-w-0">
-        <p class="truncate font-semibold text-[var(--text-primary)]">Teacher Uploads Marks</p>
-        <p class="truncate text-[11px] text-[var(--text-muted)]">Attendance &amp; scores per course</p>
-      </div>
-    </div>
-    <div class="flex items-center gap-2.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs">
-      <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--accent-soft)] text-[11px] font-bold text-[var(--accent-primary)]">3</span>
-      <div class="min-w-0">
-        <p class="truncate font-semibold text-[var(--text-primary)]">Analyst Runs ML</p>
-        <p class="truncate text-[11px] text-[var(--text-muted)]">Trains models &amp; scores dropout risk</p>
-      </div>
-    </div>
-    <div class="flex items-center gap-2.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs">
-      <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--accent-soft)] text-[11px] font-bold text-[var(--accent-primary)]">4</span>
-      <div class="min-w-0">
-        <p class="truncate font-semibold text-[var(--text-primary)]">Student Tracks GPA &amp; Report</p>
-        <p class="truncate text-[11px] text-[var(--text-muted)]">Live forecast, tips &amp; PDF transcript</p>
-      </div>
-    </div>
-  </div>
-</section>
-
 <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
   <div class="xl:col-span-7 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
     <div class="mb-2.5 flex items-center justify-between gap-2">
@@ -129,7 +61,7 @@
   </div>
 </section>
 
-<section id="master-training-upload" class="scroll-mt-20 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
   {% include 'components/data_table.html' with table_id="admin-recent-tickets-table" table_title="Latest Help Tickets" headers=recent_ticket_headers rows=recent_ticket_rows page_size=5 empty_message="No help tickets yet." %}
 </section>
 {% endblock %}

@@ -61,26 +61,29 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 87 Clean-Start & UI Polish"
-active_branch_merged_to_main: "feature/clean-start-ui-polish -> main"
-project_phase: "Phase 87: Clean-Start DB Reset, Decent Activity Logs, Draggable AI Dock & Sidebar Training Link"
+last_updated_by_agent: "Phase 88 Astryx Unslop, Bento Modals, 4-Col Lists & Training Page"
+active_branch_merged_to_main: "feature/phase88-astryx-bento-clean-ui -> main"
+project_phase: "Phase 88: Astryx + Unslop Polish, Bento Grid Modals, 4-Col Lists + View Modal, Dedicated Training Page & Draggable AI Dock"
 
 completed_modules:
-  - "Phase 1-86: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Multi-Agent AI Dock, Vercel Auto-Deploy, Provably Hero & Live Testimonial Globe, Single-Institute Datasets, Student-ID Auth, Teacher CSV Isolation & Credentials Export, Training vs Live Separation & Full Docs Sync."
-  - "Phase 87 (Clean-Start DB Reset, Decent Activity Logs, Draggable AI Dock & Sidebar Training Link):"
-      - "panels/admin_seed.py, panels/admin_audit_services.py, core/management/commands/verify_uat.py: disabled dummy/seed auto-insertion on startup, purged all non-ADMIN MongoDB data for a clean start, simplified Activity Logs to 5 clean columns (Event, Actor, Category, Level, Timestamp), and ensured verify_uat cleans up its own activity_logs."
-      - "templates/components/sidebar.html, templates/panels/admin_dashboard.html, templates/panels/user_profile.html, templates/components/ai_message_dock.html, static/js/ai_agent_dock.js: added Training Data link in Admin Core sidebar pointing to #master-training-upload, fixed Cloudinary Ready truncation on /profile/, and made #ep-agent-dock-toggle draggable anywhere with localStorage persistence."
+  - "Phase 1-87: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Multi-Agent AI Dock, Vercel Auto-Deploy, Provably Hero & Live Testimonial Globe, Single-Institute Datasets, Student-ID Auth, Teacher CSV Isolation & Credentials Export, Training vs Live Separation, Clean-Start DB Reset & Full Docs Sync."
+  - "Phase 88 (Astryx + Unslop Polish, Bento Modals, 4-Col Lists + View Modal, Dedicated Training Page & Draggable AI Dock):"
+      - "templates/components/{form_modal,ai_message_dock}.html, templates/base.html, static/js/{app,ai_agent_dock}.js: added 2-column Bento Grid modals (>= 5 fields), global openViewDetailsModal() reusing #form-modal, fixed window-bound draggable #ep-agent-dock-toggle with sessionStorage persistence, added Figtree font, and bumped assets to ?v=22."
+      - "static/css/global.css, templates/components/{sidebar,metric_card}.html: applied Meta Astryx + unslop polish (Figtree font stack, 175ms cubic-bezier transitions, quiet sentence-case sidebar labels with aria-current='page', clean stat cards without oversized decorative boxes)."
+      - "panels/{urls,views_admin,admin_services}.py, templates/panels/{admin_training,admin_dashboard,teacher_dashboard,student_dashboard,analyst_dashboard}.html: added dedicated /admin-panel/training/ page & sidebar route, and simplified all 4 role dashboards to minimal Header + 4 KPIs + 2 Charts + 1 concise card."
+      - "panels/{admin_directory_services,teacher_services,student_services}.py, templates/components/data_table.html, templates/panels/{admin_users,admin_courses,admin_tickets,teacher_students,student_notifications}.html: simplified all data tables to 3-4 essential columns with View (fa-eye) detail modals."
+      - ".agents/{design,project-rules,prd,git-sync}.md, README.md: documented permanent Phase 88 UI/UX standards."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check: all static/js/*.js files exited 0."
-  - "Zero-comment & line-cap audit: 0 comments across all 9 modified .py/.html files; all within caps (views_*.py <= 250, others <= 350)."
-  - "manage.py test: Ran 137 tests in 87.268s (137/137 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 14.61s - System 100% Operational."
-  - "Behavioral verification: /teacher-panel/credentials/download/ returned 200 text/csv with valid headers & <first_name>@<birth_date> credentials; is_training_dataset=True rows excluded from teacher & admin live rosters."
+  - "Zero-comment & line-cap audit: 0 comments across all 31 modified code files; all within caps (views_*.py <= 250, app/template/JS/CSS <= 350, tests <= 400)."
+  - "manage.py test: Ran 137 tests in 87.208s (137/137 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 8.80s - System 100% Operational."
+  - "Live QA (http://127.0.0.1:8000): verified Admin login, /admin-panel/training/ GET + CSV upload (ML Model Trained), /admin-panel/users/ & /admin-panel/courses/ 4-col tables + View modal + Bento modal, and draggable AI dock JS; cleaned MongoDB Atlas to 1 Admin user and 0 rows across all other collections."
 
 active_routes_and_files:
-  - "analytics/{data_pipeline,ml_engine}.py, panels/{admin_services,teacher_services,urls,views_admin,views_teacher}.py, templates/panels/{teacher_ingest,teacher_students}.html, README.md, .agents/{prd,srd,trd,git-sync}.md, docs/aptech_submission/{DEMO_WALKTHROUGH,INSTALLATION_README}.md"
+  - "panels/{admin_directory_services,admin_services,student_services,teacher_services,urls,views_admin}.py, static/css/global.css, static/js/{ai_agent_dock,app}.js, templates/base.html, templates/components/{ai_message_dock,data_table,form_modal,metric_card,sidebar}.html, templates/panels/{admin_courses,admin_dashboard,admin_tickets,admin_training,admin_users,analyst_dashboard,student_dashboard,student_notifications,teacher_dashboard,teacher_students}.html, .agents/{design,git-sync,prd,project-rules}.md, README.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

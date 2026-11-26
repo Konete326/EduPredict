@@ -1,13 +1,13 @@
-<div data-dot-kpi data-kpi-filter="{{ filter_query|default:title }}" data-status="{{ status|default:'info' }}" data-kpi-value="{{ value }}" data-kpi-label="{{ title }}" role="button" tabindex="0" class="ep-dot-kpi-card group relative flex min-w-0 flex-col justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 sm:p-4 transition-colors hover:border-[var(--accent-primary)] focus-visible:outline-none">
+<div data-dot-kpi data-kpi-filter="{{ filter_query|default:title }}" data-status="{{ status|default:'info' }}" data-kpi-value="{{ value }}" data-kpi-label="{{ title }}" role="button" tabindex="0" class="ep-dot-kpi-card group relative flex min-w-0 flex-col justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 transition-colors duration-150 hover:border-[var(--accent-primary)] focus-visible:outline-none">
   <div class="flex items-center justify-between gap-2 min-w-0">
-    <p class="truncate text-xs font-medium tracking-tight text-[var(--text-muted)]">{{ title }}</p>
+    <p class="truncate text-xs font-medium text-[var(--text-secondary)]">{{ title }}</p>
     {% if icon %}
-    <i class="{{ icon }} shrink-0 text-sm text-[var(--text-muted)] transition-colors group-hover:text-[var(--accent-primary)]" aria-hidden="true"></i>
+    <i class="{{ icon }} shrink-0 text-sm text-[var(--text-muted)] transition-colors duration-150 group-hover:text-[var(--accent-primary)]" aria-hidden="true"></i>
     {% endif %}
   </div>
-  <p data-kpi-counter class="mt-1.5 sm:mt-2 tabular-nums text-xl font-semibold leading-tight tracking-tight text-[var(--text-primary)] sm:text-2xl lg:text-[1.65rem]">{{ value }}</p>
+  <p data-kpi-counter class="mt-2 tabular-nums text-2xl font-semibold leading-tight tracking-tight text-[var(--text-primary)]">{{ value }}</p>
   {% if badge or subtitle %}
-  <div class="mt-2 sm:mt-2.5 flex min-w-0 flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+  <div class="mt-2.5 flex min-w-0 flex-wrap items-center justify-between gap-2">
     {% if badge %}
     <span class="inline-flex min-w-0 max-w-full items-center gap-1.5 text-[11px] font-medium text-[var(--text-secondary)]">
       <span class="h-1.5 w-1.5 shrink-0 rounded-full {% if status == 'success' %}bg-[var(--status-success)]{% elif status == 'warning' %}bg-[var(--status-warning)]{% elif status == 'danger' or status == 'error' %}bg-[var(--status-danger)]{% else %}bg-[var(--accent-primary)]{% endif %}" aria-hidden="true"></span>

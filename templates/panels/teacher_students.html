@@ -93,7 +93,7 @@
     </div>
   </form>
 
-  {% include 'components/directory_cards.html' with grid_id="teacher-students-table" grid_title="Student Directory" cards=student_cards page_size=5 empty_message="No students match these filters. Upload your class CSV or reset filters." %}
+  {% include 'components/data_table.html' with table_id="teacher-students-table" table_title="Student Directory" headers=student_headers rows=student_rows page_size=5 empty_message="No students match these filters. Upload your class CSV or reset filters." %}
 </section>
 {{ birth_map|json_script:"teacher-students-birth-map" }}
 {% endblock %}

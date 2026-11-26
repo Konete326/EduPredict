@@ -1,3 +1,4 @@
+import json
 from pymongo import DESCENDING
 from analytics.ml_engine import _resolve_runtime_settings
 from core.db import courses_col, get_cached, notifications_col, predictions_col, student_records_col, support_tickets_col, users_col
@@ -321,24 +322,13 @@ def list_student_feedback_tickets(student_id, user_id):
     query = {"$or": [{"user_id": {"$in": ids}}, {"student_id": {"$in": ids}}]}
     items = []
     for t in support_tickets_col().find(query, {"_id": 0}).sort("created_at", DESCENDING).limit(20):
-        created = t.get("created_at")
-        status = str(t.get("status") or "OPEN").upper()
-        target_role = str(t.get("target_role") or "ADMIN").strip().upper()
+        created, status, target_role = t.get("created_at"), str(t.get("status") or "OPEN").upper(), str(t.get("target_role") or "ADMIN").strip().upper()
         t_name = str(t.get("target_teacher_name") or "").strip()
         recipient_label = f"Teacher ({t_name})" if (target_role == "TEACHER" and t_name) else ("Teacher" if target_role == "TEACHER" else "Admin")
-        items.append({
-            "ticket_id": str(t.get("ticket_id") or ""),
-            "subject": str(t.get("subject") or ""),
-            "message": str(t.get("message") or ""),
-            "target_role": target_role,
-            "target_teacher_name": t_name,
-            "recipient_label": recipient_label,
-            "admin_reply": str(t.get("admin_reply") or ""),
-            "replied_by": str(t.get("replied_by") or ""),
-            "attachments": [str(a) for a in (t.get("attachments") or []) if a],
-            "status": status,
-            "created": created.strftime("%Y-%m-%d %H:%M") if hasattr(created, "strftime") else "-",
-        })
+        tid, subj, msg, reply = str(t.get("ticket_id") or ""), str(t.get("subject") or ""), str(t.get("message") or ""), str(t.get("admin_reply") or "")
+        created_str = created.strftime("%Y-%m-%d %H:%M") if hasattr(created, "strftime") else "-"
+        view_payload = {"title": subj or "Feedback", "subtitle": f"{tid or '-'} · {recipient_label}", "badge": status.title(), "items": [{"label": "Ticket ID", "value": tid or "-"}, {"label": "Recipient", "value": recipient_label}, {"label": "Date", "value": created_str, "fullWidth": True}, {"label": "Full Message", "value": msg or "-", "fullWidth": True}, {"label": "Staff Reply", "value": reply or "Awaiting reply.", "fullWidth": True}]}
+        items.append({"ticket_id": tid, "subject": subj, "message": msg, "target_role": target_role, "target_teacher_name": t_name, "recipient_label": recipient_label, "admin_reply": reply, "replied_by": str(t.get("replied_by") or ""), "attachments": [str(a) for a in (t.get("attachments") or []) if a], "status": status, "created": created_str, "view_payload_json": json.dumps(view_payload)})
     return items
 
 

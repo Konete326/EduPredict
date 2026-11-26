@@ -213,10 +213,11 @@ class AdminCrudAndGuardsTests(_AdminTestBase):
         self.assertFalse(upd_ok)
         self.assertIn("change your own", upd_err.lower())
         users, _ = list_users("ALL")
-        _, rows = build_user_table_data(users, "ALL", "USR-ADM-1", actor_email="admin@edupredict.edu")
-        actions_by_uid = {row[0]: [a["label"] for a in row[6]["actions"]] for row in rows}
-        self.assertEqual(actions_by_uid["USR-ADM-1"], ["Edit"])
-        self.assertEqual(actions_by_uid["USR-1001"], ["Edit", "Deactivate", "Delete"])
+        headers, rows = build_user_table_data(users, "ALL", "USR-ADM-1", actor_email="admin@edupredict.edu")
+        self.assertEqual(headers, ["Name", "Role", "Status", "Actions"])
+        actions_by_uid = {row[3]["actions"][1]["attrs"]["data-user-id"]: [a["label"] for a in row[3]["actions"]] for row in rows}
+        self.assertEqual(actions_by_uid["USR-ADM-1"], ["View", "Edit"])
+        self.assertEqual(actions_by_uid["USR-1001"], ["View", "Edit", "Deactivate", "Delete"])
 
     def test_admin_support_ticket_boundary_and_backup_exports(self):
         admin_client = self._login_as("ADMIN")

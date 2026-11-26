@@ -124,7 +124,7 @@
       const deptPrefix = selectedDept === 'Data Science' ? 'DS' : (selectedDept === 'Electrical Engineering' ? 'EE' : (selectedDept === 'Business' ? 'BBA' : 'CS'));
       let maxNum = 0;
       document.querySelectorAll('#admin-courses-table tbody tr td:first-child, #admin-courses-table [data-course-code]').forEach(function (el) {
-        const raw = (el.getAttribute('data-course-code') || el.textContent || '').trim().toUpperCase();
+        const raw = (el.getAttribute('data-course-code') || el.textContent || '').split('·')[0].trim().toUpperCase();
         const m = raw.match(/^([A-Z]+)-(\d+)$/);
         if (m && m[1] === deptPrefix) maxNum = Math.max(maxNum, parseInt(m[2], 10) || 0);
       });

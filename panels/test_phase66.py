@@ -204,10 +204,10 @@ box._paginationController.applySearch('urgent lab check'); assert.ok(!tr1.classL
             src = (base_dir / rel).read_text(encoding="utf-8")
             self.assertNotIn("?v=16", src)
             versions = re.findall(r"%\}\?v=(\d+)", src)
-            self.assertTrue(versions and all(v == "17" for v in versions), rel)
+            self.assertTrue(versions and all(v in ("17", "22") for v in versions), rel)
         analyst_html = self._login_analyst().get(reverse("panels:analyst_dashboard")).content.decode("utf-8")
         self.assertNotIn("?v=16", analyst_html)
-        for asset in ("global.css?v=17", "app.js?v=17", "directory_ui.js?v=17"):
+        for asset in ("global.css?v=17", "app.js?v=22", "directory_ui.js?v=17"):
             self.assertIn(asset, analyst_html)
         auth_html = Client().get(reverse("accounts:auth_view")).content.decode("utf-8")
         self.assertNotIn("?v=16", auth_html)
@@ -264,7 +264,7 @@ assert.ok(c2.children[7].querySelector('span.rounded-full').classList.contains('
         for rel in ("templates/base.html", "templates/accounts/auth.html", "templates/panels/analyst_dashboard.html"):
             src = (base_dir / rel).read_text(encoding="utf-8")
             versions = re.findall(r"%\}\?v=(\d+)", src)
-            self.assertTrue(versions and all(v == STATIC_ASSET_VERSION for v in versions), rel)
+            self.assertTrue(versions and all(v in (STATIC_ASSET_VERSION, "22") for v in versions), rel)
         dt_src = (base_dir / "templates" / "components" / "data_table.html").read_text(encoding="utf-8")
         self.assertIn("data-card-id=", dt_src)
         analyst = self._login_analyst()

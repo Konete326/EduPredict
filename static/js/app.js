@@ -13,32 +13,19 @@
   function syncBodyScrollLock() {
     if (!document.body) return;
     const modalOpen = MODAL_IDS.some((id) => { const m = byId(id); return m && !m.classList.contains('hidden'); }) || Boolean(document.querySelector('[data-ep-modal]:not(.hidden)'));
-    const overlayDrawerOpen = ['ticket-detail-drawer', 'student-360-drawer'].some((id) => { const d = byId(id); return d && !d.classList.contains('hidden'); });
-    const drawer = byId('mobile-sidebar-drawer'), mobileOpen = Boolean(!isDesktop() && drawer && !drawer.classList.contains('-translate-x-full'));
-    document.body.classList.toggle('modal-open', Boolean(modalOpen));
-    document.body.classList.toggle('drawer-open', Boolean(mobileOpen || overlayDrawerOpen));
-    document.body.classList.toggle('ep-overlay-blur', Boolean(modalOpen || overlayDrawerOpen));
+    const overlayDrawerOpen = ['ticket-detail-drawer', 'student-360-drawer'].some((id) => { const d = byId(id); return d && !d.classList.contains('hidden'); }), drawer = byId('mobile-sidebar-drawer'), mobileOpen = Boolean(!isDesktop() && drawer && !drawer.classList.contains('-translate-x-full'));
+    document.body.classList.toggle('modal-open', Boolean(modalOpen)); document.body.classList.toggle('drawer-open', Boolean(mobileOpen || overlayDrawerOpen)); document.body.classList.toggle('ep-overlay-blur', Boolean(modalOpen || overlayDrawerOpen));
   }
-  function setModalOpen(modal, open) {
-    if (!modal) return;
-    modal.classList.toggle('hidden', !open);
-    modal.classList.toggle('flex', open);
-    modal.setAttribute('aria-hidden', open ? 'false' : 'true');
-    syncBodyScrollLock();
-  }
+  function setModalOpen(modal, open) { if (!modal) return; modal.classList.toggle('hidden', !open); modal.classList.toggle('flex', open); modal.setAttribute('aria-hidden', open ? 'false' : 'true'); syncBodyScrollLock(); }
   function openConfirmModal(options) {
     const opts = options || {}, modal = byId('confirm-modal'), titleEl = byId('confirm-modal-title'), msgEl = byId('confirm-modal-message'), formEl = byId('confirm-modal-form');
     if (!modal || !titleEl || !msgEl || !formEl) return;
-    titleEl.textContent = opts.title || 'Please Confirm';
-    msgEl.textContent = opts.message || 'Are you sure you want to do this?';
-    formEl.setAttribute('action', opts.onConfirmUrl || '');
-    formEl.querySelectorAll('[data-confirm-field]').forEach((el) => el.remove());
+    titleEl.textContent = opts.title || 'Please Confirm'; msgEl.textContent = opts.message || 'Are you sure you want to do this?';
+    formEl.setAttribute('action', opts.onConfirmUrl || ''); formEl.querySelectorAll('[data-confirm-field]').forEach((el) => el.remove());
     if (opts.fields && typeof opts.fields === 'object') {
-      const pairs = Array.isArray(opts.fields) ? opts.fields.map((f) => [f.name, f.value]) : Object.entries(opts.fields);
-      pairs.forEach(([name, value]) => { if (name) formEl.appendChild(mk('input', '', undefined, { type: 'hidden', name: name, value: value == null ? '' : String(value), 'data-confirm-field': 'true' })); });
+      (Array.isArray(opts.fields) ? opts.fields.map((f) => [f.name, f.value]) : Object.entries(opts.fields)).forEach(([name, value]) => { if (name) formEl.appendChild(mk('input', '', undefined, { type: 'hidden', name: name, value: value == null ? '' : String(value), 'data-confirm-field': 'true' })); });
     }
-    const btn = formEl.querySelector('button[type="submit"]');
-    if (btn) btn.textContent = opts.confirmText || 'Confirm';
+    const btn = formEl.querySelector('button[type="submit"]'); if (btn) btn.textContent = opts.confirmText || 'Confirm';
     setModalOpen(modal, true);
   }
   const closeConfirmModal = () => setModalOpen(byId('confirm-modal'), false);
@@ -82,34 +69,66 @@
     } else wrapper.append(label, el);
     return wrapper;
   }
-  function openFormModal(options) {
-    const opts = options || {}, modal = byId('form-modal'), titleEl = byId('form-modal-title'), formEl = byId('form-modal-element'), fieldsEl = byId('form-modal-fields');
-    if (!modal || !titleEl || !formEl || !fieldsEl) return;
-    titleEl.textContent = opts.title || 'Form';
-    const actionUrl = opts.actionUrl || '';
-    formEl.setAttribute('action', actionUrl);
-    formEl.setAttribute('method', opts.method || 'post');
-    if (byId('form-modal-submit-btn')) byId('form-modal-submit-btn').textContent = opts.submitText || 'Save';
+  function setupModalShell(title, isBento) {
+    const modal = byId('form-modal'), dialogEl = byId('form-modal-dialog'), titleEl = byId('form-modal-title'), formEl = byId('form-modal-element'), fieldsEl = byId('form-modal-fields'), submitBtn = byId('form-modal-submit-btn'), cancelBtn = byId('form-modal-cancel-btn');
+    if (!modal || !titleEl || !formEl || !fieldsEl) return null;
+    titleEl.textContent = title;
+    if (dialogEl) { dialogEl.classList.toggle('max-w-2xl', isBento); dialogEl.classList.toggle('max-w-lg', !isBento); }
+    fieldsEl.className = isBento ? 'flex-1 overflow-y-auto px-5 pt-4 pb-6 grid grid-cols-1 md:grid-cols-2 gap-3.5 items-start' : 'flex-1 overflow-y-auto px-5 pt-4 pb-6 space-y-3.5';
     fieldsEl.innerHTML = '';
-    if (Array.isArray(opts.fields)) opts.fields.forEach((f) => fieldsEl.appendChild(createFieldNode(f)));
-    else if (typeof opts.fieldsHtml === 'string') fieldsEl.innerHTML = opts.fieldsHtml;
     if (activeSubmitHandler) { formEl.removeEventListener('submit', activeSubmitHandler); activeSubmitHandler = null; }
+    return { modal, formEl, fieldsEl, submitBtn, cancelBtn };
+  }
+  function openFormModal(options) {
+    const opts = options || {}, visibleFields = Array.isArray(opts.fields) ? opts.fields.filter((f) => f && f.type !== 'hidden') : [], isBento = visibleFields.length >= 5;
+    const ctx = setupModalShell(opts.title || 'Form', isBento); if (!ctx) return;
+    const actionUrl = opts.actionUrl || '';
+    ctx.formEl.setAttribute('action', actionUrl); ctx.formEl.setAttribute('method', opts.method || 'post');
+    if (ctx.submitBtn) { ctx.submitBtn.classList.remove('hidden'); ctx.submitBtn.textContent = opts.submitText || 'Save'; }
+    if (ctx.cancelBtn) ctx.cancelBtn.textContent = opts.cancelText || 'Cancel';
+    if (Array.isArray(opts.fields)) {
+      let visIdx = 0, col = 0;
+      opts.fields.forEach((f) => {
+        const node = createFieldNode(f);
+        if (isBento && f && f.type !== 'hidden') {
+          const spanTwo = f.type === 'textarea' || Boolean(f.fullWidth) || (visIdx === visibleFields.length - 1 && col === 0);
+          if (spanTwo) { node.classList.add('md:col-span-2'); col = 0; } else col = (col + 1) % 2;
+          visIdx += 1;
+        }
+        ctx.fieldsEl.appendChild(node);
+      });
+    } else if (typeof opts.fieldsHtml === 'string') ctx.fieldsEl.innerHTML = opts.fieldsHtml;
     if (!actionUrl || actionUrl === '#') {
-      activeSubmitHandler = (e) => { e.preventDefault(); if (!formEl.checkValidity()) { formEl.reportValidity(); return; } closeFormModal(); showToast(opts.previewMessage || 'Saved.', 'success'); };
-      formEl.addEventListener('submit', activeSubmitHandler);
+      activeSubmitHandler = (e) => { e.preventDefault(); if (!ctx.formEl.checkValidity()) { ctx.formEl.reportValidity(); return; } closeFormModal(); showToast(opts.previewMessage || 'Saved.', 'success'); };
+      ctx.formEl.addEventListener('submit', activeSubmitHandler);
     }
-    setModalOpen(modal, true);
+    setModalOpen(ctx.modal, true);
   }
-  function closeFormModal() {
-    const formEl = byId('form-modal-element');
-    if (formEl && activeSubmitHandler) { formEl.removeEventListener('submit', activeSubmitHandler); activeSubmitHandler = null; }
-    setModalOpen(byId('form-modal'), false);
+  function openViewDetailsModal(options) {
+    const opts = options || {}, ctx = setupModalShell(opts.title || 'Details', true); if (!ctx) return;
+    ctx.formEl.setAttribute('action', '');
+    if (ctx.submitBtn) ctx.submitBtn.classList.add('hidden');
+    if (ctx.cancelBtn) ctx.cancelBtn.textContent = 'Close';
+    if (opts.subtitle || opts.badge) {
+      const topBanner = mk('div', 'md:col-span-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3.5 py-2.5');
+      if (opts.subtitle) topBanner.appendChild(mk('p', 'text-xs text-[var(--text-secondary)]', opts.subtitle));
+      if (opts.badge) topBanner.appendChild(mk('span', 'rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]', opts.badge));
+      ctx.fieldsEl.appendChild(topBanner);
+    }
+    const items = Array.isArray(opts.items) ? opts.items : [];
+    let col = 0;
+    items.forEach((item, idx) => {
+      if (!item) return;
+      const spanTwo = Boolean(item.fullWidth) || (idx === items.length - 1 && col === 0);
+      const card = mk('div', 'rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3' + (spanTwo ? ' md:col-span-2' : ''));
+      col = spanTwo ? 0 : (col + 1) % 2;
+      card.append(mk('p', 'text-[11px] font-medium uppercase tracking-wider text-[var(--text-muted)]', item.label || ''), mk('p', 'mt-1 text-sm font-medium text-[var(--text-primary)] break-words', item.value !== undefined && item.value !== null && item.value !== '' ? String(item.value) : '—'));
+      ctx.fieldsEl.appendChild(card);
+    });
+    setModalOpen(ctx.modal, true);
   }
-  function removeToastNode(node) {
-    if (!node || !node.parentNode) return;
-    Object.assign(node.style, { opacity: '0', transform: 'translateY(0.35rem)', transition: 'opacity 150ms ease, transform 150ms ease' });
-    setTimeout(() => { if (node.parentNode) node.parentNode.removeChild(node); }, 160);
-  }
+  function closeFormModal() { const formEl = byId('form-modal-element'); if (formEl && activeSubmitHandler) { formEl.removeEventListener('submit', activeSubmitHandler); activeSubmitHandler = null; } setModalOpen(byId('form-modal'), false); }
+  function removeToastNode(node) { if (!node || !node.parentNode) return; Object.assign(node.style, { opacity: '0', transform: 'translateY(0.35rem)', transition: 'opacity 150ms ease, transform 150ms ease' }); setTimeout(() => { if (node.parentNode) node.parentNode.removeChild(node); }, 160); }
   function showToast(message, severity) {
     const container = byId('toast-container');
     if (!container) return;
@@ -126,23 +145,16 @@
     setTimeout(() => removeToastNode(toast), 4500);
   }
   function applyDesktopSidebarClasses(collapsed) {
-    document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
-    if (document.body) document.body.classList.toggle('sidebar-collapsed', collapsed);
+    document.documentElement.classList.toggle('sidebar-collapsed', collapsed); if (document.body) document.body.classList.toggle('sidebar-collapsed', collapsed);
     const drawer = byId('mobile-sidebar-drawer'), main = byId('app-shell-main');
     if (drawer) { drawer.classList.toggle('lg:-translate-x-full', collapsed); drawer.classList.toggle('lg:translate-x-0', !collapsed); }
     if (main) { main.classList.toggle('lg:pl-0', collapsed); main.classList.toggle('lg:pl-64', !collapsed); }
   }
   function syncSidebarToggleA11y() {
-    const btn = byId('mobile-sidebar-toggle'), drawer = byId('mobile-sidebar-drawer');
-    const collapsed = document.documentElement.classList.contains('sidebar-collapsed') || (document.body && document.body.classList.contains('sidebar-collapsed'));
+    const btn = byId('mobile-sidebar-toggle'), drawer = byId('mobile-sidebar-drawer'), collapsed = document.documentElement.classList.contains('sidebar-collapsed') || (document.body && document.body.classList.contains('sidebar-collapsed'));
     if (btn) btn.setAttribute('aria-expanded', (isDesktop() ? !collapsed : Boolean(drawer && !drawer.classList.contains('-translate-x-full'))) ? 'true' : 'false');
   }
-  function restoreSidebarState() {
-    let collapsed = document.documentElement.classList.contains('sidebar-collapsed');
-    try { const saved = localStorage.getItem(SIDEBAR_KEY); if (saved !== null) collapsed = saved === 'true' || saved === '1'; } catch (e) {}
-    applyDesktopSidebarClasses(collapsed);
-    syncSidebarToggleA11y();
-  }
+  function restoreSidebarState() { let collapsed = document.documentElement.classList.contains('sidebar-collapsed'); try { const saved = localStorage.getItem(SIDEBAR_KEY); if (saved !== null) collapsed = saved === 'true' || saved === '1'; } catch (e) {} applyDesktopSidebarClasses(collapsed); syncSidebarToggleA11y(); }
   function setMobileSidebar(open) {
     const drawer = byId('mobile-sidebar-drawer'), backdrop = byId('mobile-sidebar-backdrop');
     if (drawer) { drawer.classList.toggle('-translate-x-full', !open); drawer.classList.toggle('translate-x-0', open); }
@@ -151,10 +163,7 @@
   }
   const openMobileSidebar = () => setMobileSidebar(true), closeMobileSidebar = () => setMobileSidebar(false);
   function setDesktopCollapsed(collapsed) { applyDesktopSidebarClasses(collapsed); try { localStorage.setItem(SIDEBAR_KEY, collapsed ? 'true' : 'false'); } catch (e) {} syncSidebarToggleA11y(); setTimeout(() => window.dispatchEvent(new Event('resize')), 220); }
-  function toggleSidebar() {
-    if (isDesktop()) { setDesktopCollapsed(!(document.documentElement.classList.contains('sidebar-collapsed') || (document.body && document.body.classList.contains('sidebar-collapsed')))); return; }
-    setMobileSidebar(!(byId('mobile-sidebar-drawer') && !byId('mobile-sidebar-drawer').classList.contains('-translate-x-full')));
-  }
+  function toggleSidebar() { if (isDesktop()) { setDesktopCollapsed(!(document.documentElement.classList.contains('sidebar-collapsed') || (document.body && document.body.classList.contains('sidebar-collapsed')))); return; } setMobileSidebar(!(byId('mobile-sidebar-drawer') && !byId('mobile-sidebar-drawer').classList.contains('-translate-x-full'))); }
   const closeSidebarAny = () => (isDesktop() ? setDesktopCollapsed(true) : closeMobileSidebar());
   function syncThemeButton() {
     const isDark = document.documentElement.classList.contains('dark');
@@ -165,11 +174,9 @@
   function toggleTheme() {
     const doc = document.documentElement, nextTheme = doc.classList.contains('dark') ? 'light' : 'dark';
     if (typeof window.applyEduPredictThemePrefs === 'function') { window.applyEduPredictThemePrefs({ mode: nextTheme }); return; }
-    doc.classList.add('theme-transitioning');
-    doc.classList.toggle('dark', nextTheme === 'dark');
+    doc.classList.add('theme-transitioning'); doc.classList.toggle('dark', nextTheme === 'dark');
     try { localStorage.setItem(THEME_KEY, nextTheme); } catch (e) {}
-    syncThemeButton();
-    window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: nextTheme } }));
+    syncThemeButton(); window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: nextTheme } }));
     setTimeout(() => doc.classList.remove('theme-transitioning'), 260);
   }
   function closeNotificationDropdown() { if (byId('notification-dropdown')) byId('notification-dropdown').classList.add('hidden'); if (byId('notification-bell-btn')) byId('notification-bell-btn').setAttribute('aria-expanded', 'false'); }
@@ -276,24 +283,17 @@
   const closeCustomModal = (id) => setModalOpen(byId(id), false);
   const closeAllModals = () => { MODAL_IDS.forEach(closeModalById); document.querySelectorAll('[data-ep-modal]').forEach((m) => setModalOpen(m, false)); };
   function bindModalBackdrops() {
-    const attach = (m, fn) => bindOnce(m, 'click', (e) => {
-      if (pointerDownTarget === e.target && (e.target === m || e.target.hasAttribute('data-modal-backdrop'))) fn();
-    });
-    MODAL_IDS.forEach((id) => attach(byId(id), () => closeModalById(id)));
-    document.querySelectorAll('[data-ep-modal]').forEach((m) => attach(m, () => setModalOpen(m, false)));
+    const attach = (m, fn) => bindOnce(m, 'click', (e) => { if (pointerDownTarget === e.target && (e.target === m || e.target.hasAttribute('data-modal-backdrop'))) fn(); });
+    MODAL_IDS.forEach((id) => attach(byId(id), () => closeModalById(id))); document.querySelectorAll('[data-ep-modal]').forEach((m) => attach(m, () => setModalOpen(m, false)));
   }
   function bindDynamicControls() {
     restoreSidebarState(); syncThemeButton();
-    bindOnce(byId('theme-toggle-btn'), 'click', toggleTheme);
-    bindOnce(byId('mobile-sidebar-toggle'), 'click', toggleSidebar);
-    bindOnce(byId('mobile-sidebar-close'), 'click', closeSidebarAny);
-    bindOnce(byId('mobile-sidebar-backdrop'), 'click', closeMobileSidebar);
+    bindOnce(byId('theme-toggle-btn'), 'click', toggleTheme); bindOnce(byId('mobile-sidebar-toggle'), 'click', toggleSidebar);
+    bindOnce(byId('mobile-sidebar-close'), 'click', closeSidebarAny); bindOnce(byId('mobile-sidebar-backdrop'), 'click', closeMobileSidebar);
     bindOnce(byId('notification-bell-btn'), 'click', (e) => {
-      e.stopPropagation();
-      const dropdown = byId('notification-dropdown'), bell = byId('notification-bell-btn');
+      e.stopPropagation(); const dropdown = byId('notification-dropdown'), bell = byId('notification-bell-btn');
       if (!dropdown || !bell) return;
-      const open = dropdown.classList.contains('hidden');
-      dropdown.classList.toggle('hidden', !open); bell.setAttribute('aria-expanded', open ? 'true' : 'false');
+      const open = dropdown.classList.contains('hidden'); dropdown.classList.toggle('hidden', !open); bell.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
     bindOnce(byId('mark-notifications-read-btn'), 'click', () => {
       const token = getCsrfToken();
@@ -303,8 +303,7 @@
       closeNotificationDropdown(); showToast('All alerts marked as read.', 'info');
     });
     initPaginatedContainers(); initSortableTables(); bindTableSearch(); bindModalBackdrops();
-    const toastContainer = byId('toast-container');
-    if (toastContainer) toastContainer.querySelectorAll('[data-toast]').forEach((node) => setTimeout(() => removeToastNode(node), 5000));
+    const toastContainer = byId('toast-container'); if (toastContainer) toastContainer.querySelectorAll('[data-toast]').forEach((node) => setTimeout(() => removeToastNode(node), 5000));
   }
   function bindDocumentGlobalsOnce() {
     if (globalsBound) return;
@@ -342,7 +341,7 @@
   function reinitEduPredictUI() { closeAllModals(); closeNotificationDropdown(); if (typeof window.eduPredictCancelUpload === 'function') window.eduPredictCancelUpload(true); if (typeof window.resetEduPredictSubmitLocks === 'function') window.resetEduPredictSubmitLocks(); bindDynamicControls(); if (typeof window.initSmartAutomation === 'function') window.initSmartAutomation(); if (typeof window.initEduPredictWidgets === 'function') window.initEduPredictWidgets(); if (typeof window.initDotKpiCards === 'function') window.initDotKpiCards(); if (typeof window.initPageGuidesShell === 'function') window.initPageGuidesShell(); }
   function initShellBindings() { bindDocumentGlobalsOnce(); bindDynamicControls(); }
   restoreSidebarState();
-  Object.assign(window, { openConfirmModal, closeConfirmModal, openFormModal, closeFormModal, openComingSoonModal, closeComingSoonModal, openCustomModal, closeCustomModal, showToast, toggleTheme, openMobileSidebar, closeMobileSidebar, toggleSidebar, closeSidebarAny, syncBodyScrollLock, reinitEduPredictUI });
+  Object.assign(window, { openConfirmModal, closeConfirmModal, openFormModal, closeFormModal, openViewDetailsModal, openComingSoonModal, closeComingSoonModal, openCustomModal, closeCustomModal, showToast, toggleTheme, openMobileSidebar, closeMobileSidebar, toggleSidebar, closeSidebarAny, syncBodyScrollLock, reinitEduPredictUI });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initShellBindings);
   else initShellBindings();
 })();

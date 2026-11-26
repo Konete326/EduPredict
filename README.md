@@ -12,7 +12,7 @@ EduPredict is an enterprise-grade academic analytics and early warning platform 
 EduPredict strictly isolates four role-based dashboard panels:
 
 1. **Admin Panel (`/admin-panel/`)**
-   - **Master Training CSV Ingestion:** One-time historical dataset upload (`is_training_dataset=True`) to train the ML suite without polluting live teacher/admin class rosters.
+   - **Master Training CSV Ingestion (`/admin-panel/training/`):** Dedicated `Training Data` sidebar page for one-time historical dataset upload (`is_training_dataset=True`) to train the ML suite without polluting live teacher/admin class rosters.
    - **User Lifecycle & Teacher Approvals:** Approve or reject pending Teacher signups with audited reasons, plus role protection and self-deactivation guards (`data-is-self="true"`).
    - **Course Catalog & Portal Settings:** Manage courses, capacity limits, risk thresholds, and the **Admin-only Curated Theme Studio** (21st.dev presets with per-theme text contrast tokens).
    - **Audit Logs & Backups:** Filterable activity logs, incoming Admin support tickets, and full-database JSON/CSV backup exports (`export_backup`).
@@ -36,7 +36,7 @@ EduPredict strictly isolates four role-based dashboard panels:
 
 ## Single-Institute Workflow (End-to-End)
 
-1. **Admin Uploads Master Training CSV:** Sign in as Admin and upload `sample_datasets/admin_master_training_dataset.csv` at `/admin-panel/`. Records are stored with `is_training_dataset=True` to train the ML models while staying isolated from live class rosters.
+1. **Admin Uploads Master Training CSV:** Sign in as Admin and upload `sample_datasets/admin_master_training_dataset.csv` at `/admin-panel/training/` (`Training Data` in sidebar). Records are stored with `is_training_dataset=True` to train the ML models while staying isolated from live class rosters.
 2. **Teacher Approval:** Teachers register at `/auth/` and wait for Admin approval in `/admin-panel/users/`.
 3. **Teacher Uploads Class CSV & Auto-Provisions Students:** Approved Teachers upload their class CSV (e.g., `sample_datasets/teacher_cs101_class.csv`) at `/teacher-panel/ingest/`. EduPredict automatically tags records to that teacher, creates/updates student logins (`student_id` + `<first_name>@<birth_date>`), and generates ML predictions.
 4. **Teacher Downloads Student Credentials CSV:** Click **Download Credentials CSV** (`/teacher-panel/credentials/download/`) to export `class_student_credentials.csv` for class distribution.
@@ -67,6 +67,15 @@ Ready-to-use CSVs are included in [`sample_datasets/`](sample_datasets/README.md
 - **21st.dev Provably Hero & Live Walkthrough:** Public landing page (`/`) dynamically hydrates live student credential cards and walkthrough previews directly from MongoDB via `accounts/public_data.py` (60s TTL cache).
 - **Live Testimonial Globe:** Interactive global campus testimonial showcase backed by real MongoDB `support_tickets` and active `users`.
 - **Curated Theme Studio:** 21st.dev-curated Light/Dark theme presets with per-theme text contrast tokens (`static/css/global.css`), Ocean Blue default, and scoped persistence.
+
+---
+
+## Enterprise UI/UX Standards
+
+- **Minimalist Lists + `View` Modal (`openViewDetailsModal`):** All data tables across all panels display only 3–4 essential columns (`Name/Title`, `Role/Meta`, `Status`, `Actions`) and place full metadata (IDs, emails, timestamps, batches, full messages) inside a `View` (`fa-eye`) detail modal.
+- **Bento Grid Modals:** Any form modal with `>= 5` visible fields renders in a desktop 2-column Bento Grid (`max-w-2xl`, `md:grid-cols-2`) instead of a tall vertical stack.
+- **Clean Dashboards & Dedicated Training Data:** Role dashboards stay minimal (`Header + 4 KPIs + 2 Graphs + 1 concise card`), and Admin Master Training CSV lives on its dedicated `/admin-panel/training/` page (`Training Data` in sidebar).
+- **Draggable AI Assistants Dock:** `#ep-agent-dock-toggle` is draggable anywhere on screen with `sessionStorage` position persistence.
 
 ---
 

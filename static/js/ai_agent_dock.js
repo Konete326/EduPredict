@@ -319,14 +319,14 @@
   function bindDockDrag(el) {
     if (!el.root || !el.toggleBtn || el.toggleBtn.dataset.dragBound === '1') return;
     el.toggleBtn.dataset.dragBound = '1';
-    const POS_KEY = 'ep_agent_dock_pos'; let drag = null, suppressClick = false;
-    const applyPos = (r, b) => { el.root.style.right = Math.max(12, Math.min(Math.max(12, window.innerWidth - (el.root.offsetWidth || 160) - 12), r)) + 'px'; el.root.style.bottom = Math.max(12, Math.min(Math.max(12, window.innerHeight - (el.toggleBtn.offsetHeight || 44) - 12), b)) + 'px'; };
-    try { const s = JSON.parse(sessionStorage.getItem(POS_KEY) || 'null'); if (s && typeof s.r === 'number' && typeof s.b === 'number') applyPos(s.r, s.b); } catch (e) {}
-    el.toggleBtn.addEventListener('pointerdown', (e) => { drag = { id: e.pointerId, x: e.clientX, y: e.clientY, r: parseFloat(el.root.style.right || '16') || 16, b: parseFloat(el.root.style.bottom || '16') || 16, moved: false }; if (el.toggleBtn.setPointerCapture) el.toggleBtn.setPointerCapture(e.pointerId); });
-    el.toggleBtn.addEventListener('pointermove', (e) => { if (!drag || e.pointerId !== drag.id) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) > 5 || Math.abs(dy) > 5) drag.moved = true; if (drag.moved) applyPos(drag.r - dx, drag.b - dy); });
-    const endDrag = (e) => { if (!drag || e.pointerId !== drag.id) return; if (drag.moved) { suppressClick = true; try { sessionStorage.setItem(POS_KEY, JSON.stringify({ r: parseFloat(el.root.style.right || '16'), b: parseFloat(el.root.style.bottom || '16') })); } catch (err) {} } drag = null; };
-    el.toggleBtn.addEventListener('pointerup', endDrag); el.toggleBtn.addEventListener('pointercancel', endDrag);
-    el.toggleBtn.addEventListener('click', (e) => { if (suppressClick) { suppressClick = false; e.stopImmediatePropagation(); return; } setDockOpen(!isDockOpen); });
+    const POS_KEY = 'ep_agent_dock_pos', getRect = () => (typeof el.root.getBoundingClientRect === 'function' ? el.root.getBoundingClientRect() : { left: 16, top: 16, width: 160, height: 44 }); let drag = null, suppressClick = false;
+    const applyPos = (l, t) => { const rect = getRect(), w = rect.width || el.root.offsetWidth || 160, h = rect.height || el.root.offsetHeight || 44; el.root.style.right = 'auto'; el.root.style.bottom = 'auto'; el.root.style.left = Math.max(12, Math.min(Math.max(12, window.innerWidth - w - 12), l)) + 'px'; el.root.style.top = Math.max(12, Math.min(Math.max(12, window.innerHeight - h - 12), t)) + 'px'; };
+    try { const s = JSON.parse(sessionStorage.getItem(POS_KEY) || 'null'); if (s && typeof s.l === 'number' && typeof s.t === 'number') applyPos(s.l, s.t); } catch (e) {}
+    el.toggleBtn.addEventListener('pointerdown', (e) => { const rect = getRect(); drag = { id: e.pointerId, x: e.clientX, y: e.clientY, l: rect.left, t: rect.top, moved: false }; try { if (el.toggleBtn.setPointerCapture) el.toggleBtn.setPointerCapture(e.pointerId); } catch (err) {} });
+    const onMove = (e) => { if (!drag || e.pointerId !== drag.id) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) > 5 || Math.abs(dy) > 5) drag.moved = true; if (drag.moved) applyPos(drag.l + dx, drag.t + dy); };
+    const endDrag = (e) => { if (!drag || e.pointerId !== drag.id) return; if (drag.moved) { suppressClick = true; try { sessionStorage.setItem(POS_KEY, JSON.stringify({ l: parseFloat(el.root.style.left || '0') || 0, t: parseFloat(el.root.style.top || '0') || 0 })); } catch (err) {} } drag = null; };
+    if (typeof window.addEventListener === 'function') { window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', endDrag); window.addEventListener('pointercancel', endDrag); }
+    el.toggleBtn.addEventListener('click', (e) => { if (suppressClick) { suppressClick = false; e.preventDefault(); e.stopImmediatePropagation(); return; } setDockOpen(!isDockOpen); });
   }
   function initAiAgentDock() {
     const el = getEls(); if (!el.root) return;

@@ -146,37 +146,37 @@
       <table class="w-full border-collapse text-left text-xs">
         <thead class="sticky top-0 z-10 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
           <tr>
-            <th class="whitespace-nowrap px-2.5 py-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Ticket</th>
+            <th class="px-2.5 py-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Subject</th>
             <th class="whitespace-nowrap px-2.5 py-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Sent To</th>
-            <th class="px-2.5 py-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Subject &amp; Message</th>
-            <th class="px-2.5 py-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Reply</th>
             <th class="whitespace-nowrap px-2.5 py-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Status</th>
-            <th class="whitespace-nowrap px-2.5 py-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Date</th>
+            <th class="whitespace-nowrap px-2.5 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-[var(--border-subtle)] tabular-nums">
           {% for t in feedback_tickets %}
           <tr data-page-item class="hover:bg-[var(--bg-elevated)]">
-            <td class="whitespace-nowrap px-2.5 py-2 font-mono font-semibold text-[var(--text-primary)] align-top">{{ t.ticket_id }}</td>
-            <td class="whitespace-nowrap px-2.5 py-2 align-top">
+            <td class="px-2.5 py-2 font-semibold text-[var(--text-primary)] break-words max-w-[16rem] align-middle">{{ t.subject }}</td>
+            <td class="whitespace-nowrap px-2.5 py-2 align-middle">
               <span class="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] px-2 py-0.5 text-[11px] font-semibold {% if t.target_role == 'TEACHER' %}bg-[var(--accent-soft)] text-[var(--accent-primary)]{% else %}bg-[var(--bg-elevated)] text-[var(--text-secondary)]{% endif %}">
                 <i class="fa-solid {% if t.target_role == 'TEACHER' %}fa-chalkboard-user{% else %}fa-user-shield{% endif %} text-[10px]"></i>
-                <span>Sent to: {{ t.recipient_label }}</span>
+                <span>{{ t.recipient_label }}</span>
               </span>
             </td>
-            <td class="px-2.5 py-2 align-top break-words max-w-[16rem]"><p class="font-semibold text-[var(--text-primary)]">{{ t.subject }}</p><p class="text-[11px] text-[var(--text-secondary)]">{{ t.message }}</p></td>
-            <td class="px-2.5 py-2 align-top break-words max-w-[15rem]">
-              {% if t.admin_reply %}
-              <div class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-1.5 text-[11px]"><p class="font-semibold text-[var(--status-success)]">{{ t.replied_by|default:"Staff Reply" }}</p><p class="text-[var(--text-secondary)]">{{ t.admin_reply }}</p></div>
-              {% else %}<span class="text-[11px] text-[var(--text-muted)]">Awaiting reply</span>{% endif %}
+            <td class="whitespace-nowrap px-2.5 py-2 align-middle">
+              <span class="inline-flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-medium {% if t.status == 'RESOLVED' %}text-[var(--status-success)]{% else %}text-[var(--status-warning)]{% endif %}">
+                <span class="h-1.5 w-1.5 rounded-full {% if t.status == 'RESOLVED' %}bg-[var(--status-success)]{% else %}bg-[var(--status-warning)]{% endif %}"></span>
+                <span>{{ t.status|title }}</span>
+              </span>
             </td>
-            <td class="whitespace-nowrap px-2.5 py-2 align-top">
-              <span class="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-medium {% if t.status == 'RESOLVED' %}text-[var(--status-success)]{% else %}text-[var(--status-warning)]{% endif %}">{{ t.status|title }}</span>
+            <td class="whitespace-nowrap px-2.5 py-2 text-right align-middle">
+              <button type="button" onclick="window.openViewDetailsModal(JSON.parse(this.getAttribute('data-view-payload') || '{}'))" data-view-payload="{{ t.view_payload_json }}" title="View feedback details" class="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+                <i class="fa-solid fa-eye text-[11px]" aria-hidden="true"></i>
+                <span>View</span>
+              </button>
             </td>
-            <td class="whitespace-nowrap px-2.5 py-2 font-mono text-[11px] text-[var(--text-muted)] align-top">{{ t.created }}</td>
           </tr>
           {% empty %}
-          <tr data-empty-row><td colspan="6" class="px-4 py-8 text-center text-xs text-[var(--text-muted)]">You have not sent any feedback yet. Use the form above to message your Teacher or Admin.</td></tr>
+          <tr data-empty-row><td colspan="4" class="px-4 py-8 text-center text-xs text-[var(--text-muted)]">You have not sent any feedback yet. Use the form above to message your Teacher or Admin.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -184,17 +184,13 @@
     <div class="md:hidden space-y-2.5">
       {% for t in feedback_tickets %}
       <div data-mobile-card data-page-item class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3 space-y-2">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="font-mono text-xs font-bold text-[var(--text-primary)]">{{ t.ticket_id }}</span>
-          <span class="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] px-2 py-0.5 text-[11px] font-semibold {% if t.target_role == 'TEACHER' %}bg-[var(--accent-soft)] text-[var(--accent-primary)]{% else %}bg-[var(--bg-elevated)] text-[var(--text-secondary)]{% endif %}">Sent to: {{ t.recipient_label }}</span>
+        <div class="flex items-start justify-between gap-2">
+          <p class="text-xs font-semibold text-[var(--text-primary)]">{{ t.subject }}</p>
+          <span class="shrink-0 inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] px-2 py-0.5 text-[11px] font-semibold {% if t.target_role == 'TEACHER' %}bg-[var(--accent-soft)] text-[var(--accent-primary)]{% else %}bg-[var(--bg-elevated)] text-[var(--text-secondary)]{% endif %}">{{ t.recipient_label }}</span>
         </div>
-        <div><p class="text-xs font-semibold text-[var(--text-primary)]">{{ t.subject }}</p><p class="text-xs text-[var(--text-secondary)]">{{ t.message }}</p></div>
-        {% if t.admin_reply %}
-        <div class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-[11px]"><p class="font-semibold text-[var(--status-success)]">{{ t.replied_by|default:"Staff Reply" }}</p><p class="text-[var(--text-secondary)]">{{ t.admin_reply }}</p></div>
-        {% endif %}
         <div class="flex items-center justify-between border-t border-[var(--border-subtle)] pt-1.5 text-[11px]">
-          <span class="font-mono text-[var(--text-muted)]">{{ t.created }}</span>
           <span class="font-semibold {% if t.status == 'RESOLVED' %}text-[var(--status-success)]{% else %}text-[var(--status-warning)]{% endif %}">{{ t.status|title }}</span>
+          <button type="button" onclick="window.openViewDetailsModal(JSON.parse(this.getAttribute('data-view-payload') || '{}'))" data-view-payload="{{ t.view_payload_json }}" class="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)]"><i class="fa-solid fa-eye text-[10px]" aria-hidden="true"></i><span>View</span></button>
         </div>
       </div>
       {% empty %}

@@ -298,7 +298,7 @@ class ThemePreferencesTests(TestCase):
         ser = serialize_session_user({"user_id": "USR-1", "role": "ADMIN", "email": "a@e.edu", "phone": "123", "bio": "Lead", "avatar_url": "https://cdn.test/a.webp"})
         self.assertEqual((ser["phone"], ser["bio"], ser["avatar_url"]), ("123", "Lead", "https://cdn.test/a.webp"))
         _, rows = build_user_table_data([{"user_id": "USR-1", "full_name": "Root Admin", "email": "a@e.edu", "role": "ADMIN", "department": "Admin", "batch": "ALL", "is_active": True}], "ALL", "USR-1", "a@e.edu")
-        self.assertEqual((rows[0][1], rows[0][6]["actions"][0]["attrs"].get("data-is-self")), ("Root Admin (You)", "true"))
+        self.assertEqual((rows[0][0]["text"], rows[0][3]["actions"][1]["attrs"].get("data-is-self")), ("Root Admin (You)", "true"))
 
     @patch("core.theme_services.invalidate_cache")
     @patch("core.theme_services.record_audit_log")

@@ -230,10 +230,7 @@ class Phase25IntegrationTests(TestCase):
         analyst = self._login_role("ANALYST", user_id="USR-AN1")
         student = self._login_role("STUDENT", user_id="USR-1003", student_id="STD-2026-001")
 
-        markers = (
-            'data-directory-mode="table"', "data-directory-view-toggle", "data-directory-table-view",
-            "data-directory-cards-view", "data-copy-text", 'id="student-360-drawer"',
-        )
+        markers = ("data-paginated-container", "data-view-payload", "window.openViewDetailsModal(", 'id="student-360-drawer"')
         for client, path in ((admin, reverse("panels:admin_users")), (teacher, reverse("panels:teacher_students"))):
             resp = client.get(path)
             self.assertEqual(resp.status_code, 200)
@@ -241,8 +238,7 @@ class Phase25IntegrationTests(TestCase):
             for marker in markers:
                 self.assertIn(marker, html)
             if path.endswith("/students/"):
-                self.assertIn("openStudent360Drawer(", html)
-                self.assertIn('data-copy-text="STD-2026-001"', html)
+                self.assertIn("STD-2026-001", html)
 
         summary_url = reverse("panels:student_360_summary", args=["STD-2026-001"])
         for client in (teacher, analyst, admin):

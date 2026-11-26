@@ -249,19 +249,20 @@ class Phase74VerificationTests(TestCase):
 
     def test_admin_tickets_compact_actions_drawer_blur_and_css_stacking(self):
         headers, rows = build_ticket_table_data(list(self.cols["support_tickets"].find({})), "ALL")
-        self.assertEqual(headers, ["Ticket ID", "User", "Role", "Subject", "Status", "Date", "Actions"])
+        self.assertEqual(headers, ["Subject", "User", "Status", "Actions"])
         replied_acts = rows[1][-1]["actions"]
-        self.assertEqual([a["label"] for a in replied_acts], ["View", "Edit", "Clear", "Reopen", ""])
-        self.assertEqual([a["onclick"] for a in replied_acts], ["openTicketDetailDrawer(this)", "openReplyTicketModal(this)", "openDeleteReplyModal(this)", "openToggleTicketModal(this)", "openDeleteTicketModal(this)"])
+        self.assertEqual([a["label"] for a in replied_acts], ["View", "Edit", "Reopen", "Delete"])
+        self.assertEqual(replied_acts[0]["type"], "view_modal")
+        self.assertEqual([a["onclick"] for a in replied_acts[1:]], ["openReplyTicketModal(this)", "openToggleTicketModal(this)", "openDeleteTicketModal(this)"])
         self.assertEqual(replied_acts[-1]["attrs"].get("aria-label"), "Delete ticket TKT-7402")
-        self.assertEqual([a["label"] for a in rows[2][-1]["actions"]], ["View", "Reply", "Resolve", ""])
+        self.assertEqual([a["label"] for a in rows[2][-1]["actions"]], ["View", "Reply", "Resolve", "Delete"])
 
         admin = self._login("ADMIN", "USR-1000", "admin@gmail.com", "System Administrator")
         ticket_html = admin.get(reverse("panels:admin_tickets")).content.decode("utf-8")
         for marker in (
             "flex-nowrap items-center justify-end gap-1 whitespace-nowrap",
-            "openTicketDetailDrawer(this)", "openReplyTicketModal(this)",
-            "openDeleteReplyModal(this)", "openToggleTicketModal(this)", "openDeleteTicketModal(this)",
+            "window.openViewDetailsModal(", "openReplyTicketModal(this)",
+            "openToggleTicketModal(this)", "openDeleteTicketModal(this)",
             'id="drawer-edit-reply-btn"', 'id="drawer-delete-reply-btn"', 'id="drawer-toggle-status-btn"',
         ):
             self.assertIn(marker, ticket_html)

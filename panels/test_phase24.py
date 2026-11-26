@@ -124,14 +124,14 @@ class Phase24IntegrationTests(TestCase):
         r_admin_users = admin.get("/admin-panel/users/")
         self.assertEqual(r_admin_users.status_code, 200)
         h_au = r_admin_users.content.decode("utf-8")
-        for m in ('id="admin-users-table"', "data-directory-cards", "data-paginated-container"):
+        for m in ('id="admin-users-table"', "data-paginated-container"):
             self.assertIn(m, h_au)
 
         teacher = self._login("TEACHER", user_id="USR-T1")
         r_t_students = teacher.get("/teacher-panel/students/")
         self.assertEqual(r_t_students.status_code, 200)
         h_ts = r_t_students.content.decode("utf-8")
-        for m in ('id="teacher-students-table"', "data-directory-cards", "openQuickEntryModal()"):
+        for m in ('id="teacher-students-table"', "data-paginated-container", "openQuickEntryModal()"):
             self.assertIn(m, h_ts)
 
         r_t_ingest = teacher.get("/teacher-panel/ingest/")

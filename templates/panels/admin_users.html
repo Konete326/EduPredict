@@ -99,7 +99,7 @@
   </div>
   {% endif %}
 
-  {% include 'components/directory_cards.html' with grid_id="admin-users-table" grid_title="User Directory" cards=user_cards page_size=5 empty_message="No users found for this role." %}
+  {% include 'components/data_table.html' with table_id="admin-users-table" table_title="User Directory" headers=user_headers rows=user_rows page_size=5 empty_message="No users found for this role." %}
 </section>
 {% endblock %}
 

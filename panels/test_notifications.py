@@ -217,7 +217,7 @@ class NotificationAndReplyTests(TestCase):
         self.assertEqual(admin_res.status_code, 200)
         html = admin_res.content.decode("utf-8")
         expected_attr = f'data-attachments="{"|".join(urls[:3])}"'
-        for marker in (expected_attr, 'id="ticket-detail-drawer"', 'id="image-lightbox-modal"', 'id="image-cropper-modal"', 'id="support-ticket-modal"', "openTicketDetailDrawer(this)"):
+        for marker in (expected_attr, 'id="ticket-detail-drawer"', 'id="image-lightbox-modal"', 'id="image-cropper-modal"', 'id="support-ticket-modal"', "window.openViewDetailsModal("):
             self.assertIn(marker, html)
 
     def test_profile_and_student_notifications_render_cropper_and_hide_non_admin_theme_studio(self):

@@ -9,6 +9,7 @@ urlpatterns = [
     path('admin-panel/', views_admin.admin_dashboard, name='admin_dashboard'),
     path('admin-panel/users/', views_admin.admin_users, name='admin_users'),
     path('admin-panel/courses/', views_admin.admin_courses, name='admin_courses'),
+    path('admin-panel/training/', views_admin.admin_training, name='admin_training'),
     path('admin-panel/tickets/', views_admin.admin_tickets, name='admin_tickets'),
     path('admin-panel/logs/', views_admin.admin_logs, name='admin_logs'),
     path('admin-panel/settings/', views_admin.admin_settings, name='admin_settings'),

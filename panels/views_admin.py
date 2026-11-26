@@ -6,40 +6,34 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from core.decorators import get_dashboard_route, login_required_custom, role_required
 from panels.admin_audit_services import VALID_LOG_CATEGORIES, clear_manual_audit_logs, export_activity_logs_csv, get_default_admin_logs_context, get_default_portal_settings_context, get_portal_settings, list_activity_logs, record_audit_log, reset_portal_settings, update_portal_settings
 from panels.admin_seed import get_default_admin_overview_context
-from panels.admin_services import build_backup_payload, build_course_table_data, build_ticket_table_data, build_user_table_data, create_course_record, create_ticket_record, create_user_record, delete_course_record, delete_ticket_record, delete_user_record, get_admin_overview_context, get_master_training_status, ingest_master_training_dataset, list_active_teachers, list_courses_with_stats, list_tickets, list_users, mark_notifications_read, reject_teacher_account, toggle_ticket_status, toggle_user_status, update_course_record, update_user_record
+from panels.admin_services import build_backup_payload, build_course_table_data, build_ticket_table_data, build_user_table_data, create_course_record, create_ticket_record, create_user_record, delete_course_record, delete_ticket_record, delete_user_record, get_admin_overview_context, get_admin_training_context, get_master_training_status, ingest_master_training_dataset, list_active_teachers, list_courses_with_stats, list_tickets, list_users, mark_notifications_read, reject_teacher_account, toggle_ticket_status, toggle_user_status, update_course_record, update_user_record
 from panels.directory_card_services import build_admin_user_cards
 from panels.notification_services import delete_ticket_reply, reply_to_ticket
-
-
 def _param(request, key, default=""):
     return str(request.POST.get(key) or request.GET.get(key) or default).strip()
-
 def _actor_name(request):
     user = request.session.get("user") or {}
     return str(user.get("full_name") or user.get("email") or "System Admin").strip() or "System Admin"
-
 def _redirect_with_filter(route_name, param_name, param_value):
     base_url, clean_val = reverse(route_name), str(param_value or "").strip()
     return redirect(f"{base_url}?{param_name}={clean_val}") if clean_val and clean_val != "ALL" else redirect(base_url)
-
 def _flash_result(request, ok, error, success_msg):
     messages.error(request, error or "Operation could not be completed.") if (error or not ok) else messages.success(request, success_msg)
-
 def _download_response(content, content_type, filename):
     resp = HttpResponse(content, content_type=content_type)
     resp["Content-Disposition"] = f'attachment; filename="{filename}"'
     return resp
-
-
+def _handle_master_csv_upload(request):
+    try:
+        res, err = ingest_master_training_dataset(request.FILES.get("dataset_file") or request.FILES.get("master_csv"), actor_name=_actor_name(request), is_training_dataset=True)
+        _flash_result(request, res is not None, err, f"Master CSV trained ({res['rows_processed']} records, {res['predictions_generated']} live predictions)." if res else "")
+    except Exception as exc:
+        messages.error(request, f"Master CSV error: {exc}")
+    return redirect("panels:admin_training")
 @role_required(["ADMIN"])
 def admin_dashboard(request):
     if request.method == "POST" and _param(request, "action").lower() == "upload_master_csv":
-        try:
-            res, err = ingest_master_training_dataset(request.FILES.get("dataset_file") or request.FILES.get("master_csv"), actor_name=_actor_name(request), is_training_dataset=True)
-            _flash_result(request, res is not None, err, f"Master CSV trained ({res['rows_processed']} records, {res['predictions_generated']} live predictions)." if res else "")
-        except Exception as exc:
-            messages.error(request, f"Master CSV error: {exc}")
-        return redirect("panels:admin_dashboard")
+        return _handle_master_csv_upload(request)
     context = {"page_title": "Admin Home", "active_role": "ADMIN", "db_error": None, "ml_status": {"trained": False, "records_count": 0, "filename": "", "uploaded_at": ""}, **get_default_admin_overview_context()}
     try:
         context.update(get_admin_overview_context())
@@ -47,8 +41,16 @@ def admin_dashboard(request):
     except Exception as exc:
         context["db_error"] = str(exc)
     return render(request, "panels/admin_dashboard.html", context)
-
-
+@role_required(["ADMIN"])
+def admin_training(request):
+    if request.method == "POST" and _param(request, "action").lower() == "upload_master_csv":
+        return _handle_master_csv_upload(request)
+    context = {"page_title": "Training Data", "active_role": "ADMIN", "db_error": None, "ml_status": {"trained": False, "records_count": 0, "filename": "", "uploaded_at": ""}, "training_uploads": [], "training_headers": [], "training_rows": []}
+    try:
+        context.update(get_admin_training_context())
+    except Exception as exc:
+        context["db_error"] = str(exc)
+    return render(request, "panels/admin_training.html", context)
 @role_required(["ADMIN"])
 def admin_users(request):
     filter_role = (_param(request, "filter_role") or _param(request, "role") or "ALL").upper()
@@ -86,8 +88,6 @@ def admin_users(request):
     user_cards = build_admin_user_cards(users, filter_role, actor_id, actor_email=actor_email)
     pending_users = [u for u in users if str(u.get("approval_status") or "").upper() == "PENDING"]
     return render(request, "panels/admin_users.html", {"page_title": "Users", "active_role": "ADMIN", "users": users, "pending_users": pending_users, "user_headers": user_headers, "user_rows": user_rows, "user_cards": user_cards, "role_counts": role_counts, "selected_role": filter_role, "db_error": db_error})
-
-
 @role_required(["ADMIN"])
 def admin_courses(request):
     filter_dept = _param(request, "filter_dept") or _param(request, "department") or "ALL"
@@ -116,8 +116,6 @@ def admin_courses(request):
         db_error = str(exc)
     course_headers, course_rows = build_course_table_data(courses, filter_dept)
     return render(request, "panels/admin_courses.html", {"page_title": "Courses", "active_role": "ADMIN", "courses": courses, "course_headers": course_headers, "course_rows": course_rows, "departments": departments, "dept_counts": dept_counts, "teacher_options": teacher_options, "selected_dept": filter_dept, "db_error": db_error})
-
-
 @role_required(["ADMIN"])
 def admin_tickets(request):
     filter_status = (_param(request, "filter_status") or _param(request, "status") or "ALL").upper()
@@ -149,8 +147,6 @@ def admin_tickets(request):
         db_error = str(exc)
     ticket_headers, ticket_rows = build_ticket_table_data(tickets, filter_status)
     return render(request, "panels/admin_tickets.html", {"page_title": "Help Tickets", "active_role": "ADMIN", "tickets": tickets, "ticket_headers": ticket_headers, "ticket_rows": ticket_rows, "status_counts": status_counts, "selected_status": filter_status, "db_error": db_error})
-
-
 @role_required(["ADMIN"])
 def admin_logs(request):
     raw_cat = (_param(request, "filter_category") or _param(request, "category") or "ALL").upper()
@@ -182,8 +178,6 @@ def admin_logs(request):
     except Exception as exc:
         context["db_error"] = str(exc)
     return render(request, "panels/admin_logs.html", context)
-
-
 @role_required(["ADMIN"])
 def admin_settings(request):
     if request.method == "POST":
@@ -206,8 +200,6 @@ def admin_settings(request):
     except Exception as exc:
         context["db_error"] = str(exc)
     return render(request, "panels/admin_settings.html", context)
-
-
 @role_required(["ADMIN"])
 def admin_backup_export(request):
     fmt = str(request.GET.get("format") or "json").strip().lower()
@@ -216,8 +208,6 @@ def admin_backup_export(request):
     except Exception as exc:
         messages.error(request, f"Backup export failed: {exc}")
         return redirect("panels:admin_dashboard")
-
-
 @login_required_custom
 def submit_support_ticket(request):
     user = request.session.get("user") or {}
@@ -236,8 +226,6 @@ def submit_support_ticket(request):
     except Exception as exc:
         messages.error(request, f"Could not send help ticket: {exc}")
     return redirect(next_url)
-
-
 @login_required_custom
 def mark_notifications_read_view(request):
     user = request.session.get("user") or {}

@@ -14,7 +14,8 @@
 ## 3. User Roles & Dedicated Panels
 
 ### 3.1. Administrator Panel (`/admin-panel/`)
-- **Overview Dashboard (`/admin-panel/`):** 4 KPI metric cards (Total Students, Active Teachers, High Dropout Risk Count, System Uptime Status) + 2 Chart.js charts (Department-wise Enrolment & Monthly Attendance Trend).
+- **Overview Dashboard (`/admin-panel/`):** Minimalist layout with Header + 4 KPI metric cards (Total Students, Active Teachers, High Dropout Risk Count, System Uptime Status) + 2 Chart.js charts (Department-wise Enrolment & Monthly Attendance Trend) + 1 concise summary card.
+- **Training Data (`/admin-panel/training/`):** Dedicated Admin Master Training CSV upload page (`Training Data` in sidebar) for one-time historical ML training (`is_training_dataset=True`) isolated from live rosters.
 - **User Management (`/admin-panel/users/`):** View, Add, Edit, Toggle Active Status, and Delete users (`Admin`, `Teacher`, `Student`, `Analyst`) with smart defaults, strict self-protection lock (`data-is-self="true"` preventing self-delete, self-deactivation, and self-role-downgrade), and global searchable/paginated views.
 - **Course & Batch Management (`/admin-panel/courses/`):** CRUD for courses, subjects, and academic batches with smart Course Code suggestions and prefix-based Department inference.
 - **Support Ticket Resolution (`/admin-panel/tickets/`):** View user feedback/issues and resolve/delete tickets in 1 click (Admins manage incoming tickets and do not submit tickets to themselves).
@@ -83,3 +84,9 @@ To match live enterprise educational platforms (Civitas Learning, EAB Navigate, 
 - **Teacher Approval, Class CSV Auto-Provisioning & Credentials Export:** Approved Teachers upload isolated class CSVs (`student_id, full_name, birth_date, course_code, marks, attendance`) that automatically provision/update Student accounts (`student_id` username + `<first_name>@<birth_date>` password), run live ML predictions, and expose a 1-click **Download Credentials CSV** action (`/teacher-panel/credentials/download/`, `panels:teacher_credentials_csv`).
 - **Read-Only Student Panel & Dual Feedback:** Students sign in with `student_id` + `<first_name>@<birth_date>` into a strictly read-only academic dashboard displaying their assigned teacher and can route **Dual Feedback** either to their **Teacher** (Teacher Alerts inbox) or to **Admin** (Admin Tickets).
 - **Sample Datasets Pack & Live Stream Hydration (`sample_datasets/`):** Bundles `admin_master_training_dataset.csv` (200 rows) + 6 teacher class CSVs (18 rows each) for end-to-end demos, alongside real-time Analyst LMS stream log/table hydration and background-tab pause guards.
+
+## 12. Phase 87 — Minimalist Lists, Bento Grid Modals, Clean Dashboards & Draggable AI Dock
+- **Minimalist Lists + `View` Modal Standard (`openViewDetailsModal`):** Every data table across all 4 role panels shows only 3–4 essential columns (`Name/Title`, `Role/Meta`, `Status`, `Actions`), placing full metadata (IDs, emails, timestamps, batches, full messages) inside a `View` (`fa-eye`) detail modal (`openViewDetailsModal`).
+- **Bento Grid Modals Standard:** Any form modal with `>= 5` visible fields renders in a desktop 2-column Bento Grid (`max-w-2xl`, `md:grid-cols-2`) rather than a tall vertical stack.
+- **Clean Dashboards & Dedicated Admin Training Data:** Role dashboards remain minimal and focused (`Header + 4 KPIs + 2 Graphs + 1 concise card`, zero AI slop/extra strips), and Admin Master Training CSV ingestion lives on its dedicated `/admin-panel/training/` page (`Training Data` in sidebar).
+- **Draggable AI Assistants Dock:** `#ep-agent-dock-toggle` is draggable anywhere on screen with `sessionStorage` position persistence.
