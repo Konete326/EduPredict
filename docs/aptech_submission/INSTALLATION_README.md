@@ -82,8 +82,17 @@ Initialize the lightweight SQLite session table and verify Django configuration:
 .\.venv\Scripts\python.exe manage.py runserver
 ```
 
-Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in your browser.
+Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) locally (or visit the live Vercel deployment at **https://edupredict.vercel.app**).
 Check live database latency and memory health at [http://127.0.0.1:8000/health/](http://127.0.0.1:8000/health/).
+
+---
+
+## 5.1. Single-Institute Sample Datasets & Student Login Workflow (`sample_datasets/`)
+
+The repository includes a ready-to-use dataset pack in `sample_datasets/`:
+- `admin_master_training_dataset.csv` (200 historical rows): Upload once as **Admin** (`/admin-panel/`) to train the ML suite (`is_training_dataset=True`, excluded from live rosters).
+- **6 Teacher Class CSVs** (18 rows each): `teacher_cs101_class.csv`, `teacher_ds301_class.csv`, `teacher_se210_class.csv`, `teacher_ml401_class.csv`, `teacher_ai205_class.csv`, and `teacher_la110_class.csv`. Upload as an approved **Teacher** (`/teacher-panel/ingest/`) to auto-provision student accounts and download `class_student_credentials.csv` via `/teacher-panel/credentials/download/`.
+- **Student Login Format (`/auth/`):** Username `<student_id>` (e.g., `EDU-2026-101`), Password `<first_name>@<birth_date>` (e.g., `maham@2005-03-19`).
 
 ---
 

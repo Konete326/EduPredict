@@ -35,8 +35,8 @@ def _download_response(content, content_type, filename):
 def admin_dashboard(request):
     if request.method == "POST" and _param(request, "action").lower() == "upload_master_csv":
         try:
-            res, err = ingest_master_training_dataset(request.FILES.get("dataset_file") or request.FILES.get("master_csv"), actor_name=_actor_name(request))
-            _flash_result(request, res is not None, err, f"Master CSV trained ({res['rows_processed']} records, {res['predictions_generated']} predictions)." if res else "")
+            res, err = ingest_master_training_dataset(request.FILES.get("dataset_file") or request.FILES.get("master_csv"), actor_name=_actor_name(request), is_training_dataset=True)
+            _flash_result(request, res is not None, err, f"Master CSV trained ({res['rows_processed']} records, {res['predictions_generated']} live predictions)." if res else "")
         except Exception as exc:
             messages.error(request, f"Master CSV error: {exc}")
         return redirect("panels:admin_dashboard")

@@ -61,29 +61,27 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Single-Institute CSV, Auth, Teacher Isolation & Dual Feedback Swarm"
-active_branch_merged_to_main: "feature/single-institute-csv-auth -> main"
-project_phase: "Single-Institute Sample Datasets, Student-ID Auth & Approval, Teacher CSV Isolation, Read-Only Student Panel & Dual Feedback Complete"
+last_updated_by_agent: "Phase 86 Final Verifier & Release Shepherd"
+active_branch_merged_to_main: "feature/training-creds-docs -> main"
+project_phase: "Phase 86: Training vs Live Dataset Isolation, Teacher Credentials CSV Export & Full Docs Sync Complete"
 
 completed_modules:
-  - "Phase 1-89: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact, Provably Hero & Interactive 3D Testimonial Globe, and Live Stream Sync / Tab Pause Guard (Phases 85-89)."
-  - "Single-Institute CSV, Auth, Teacher Isolation & Dual Feedback:"
-      - "sample_datasets/: added admin_master_training_dataset.csv (200 rows, 12 ML columns), 6 teacher class CSVs (teacher_ai205_class.csv, teacher_cs101_class.csv, teacher_ds301_class.csv, teacher_la110_class.csv, teacher_ml401_class.csv, teacher_se210_class.csv; 18 rows each with student_id, full_name, birth_date, course_code, marks, attendance), and README.md."
-      - "accounts/services.py (310/350), accounts/views.py (229/250), templates/accounts/auth.html (347/350): Email OR Student ID login, Student signup with required assigned_teacher_id + Admin approval queue (PENDING until approved)."
-      - "panels/admin_services.py (350/350), panels/views_admin.py (250/250), templates/panels/admin_dashboard.html (199/350), templates/panels/admin_users.html (252/350): Admin Master Training CSV upload (action=upload_master_csv) with ML Model Trained status badge and Pending Approvals queue for both Teachers & Students."
-      - "analytics/data_pipeline.py (273/350), panels/teacher_services.py (335/350), panels/views_teacher.py (226/250), templates/panels/teacher_dashboard.html (249/350), teacher_ingest.html (242/350), teacher_students.html (178/350), teacher_alerts.html (113/350): birth_date column ingestion, auto-provisioned Student login accounts (<first_name>@<birth_date>) with Class Login Credentials Ready card, strict per-teacher data isolation with 0-upload empty-state CTA, and Teacher Student Feedback Inbox with 1-click Reply/Resolve."
-      - "panels/student_services.py (350/350), panels/notification_services.py (350/350), panels/views_student.py (236/250), templates/panels/student_dashboard.html (183/350), student_report.html (146/350), student_notifications.html (214/350): strictly Read-Only Student Panel with Assigned Teacher contact and Dual Feedback system (Send to My Teacher OR Institute Admin with badges & replies)."
+  - "Phase 1-85: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact, Provably Hero & Interactive 3D Testimonial Globe, Single-Institute Sample Datasets, Student-ID Auth & Approval, Teacher CSV Isolation, Read-Only Student Panel & Dual Feedback."
+  - "Phase 86 (Training vs Live Isolation, Teacher Credentials CSV Export & Full Docs Sync):"
+      - "analytics/data_pipeline.py (276/350), analytics/ml_engine.py (323/350), panels/views_admin.py (250/250), panels/admin_services.py (349/350): added is_training_dataset flag on ingest_dataset (True + source=ADMIN_MASTER_TRAINING on Admin Master CSV upload, False on live class uploads); ML engine trains RandomForest/Ridge/IsolationForest on all student_records including master training rows while scoring predictions/notifications/course_demand strictly on live non-training records; Admin overview KPIs & course stats exclude is_training_dataset=True."
+      - "panels/teacher_services.py (349/350), panels/views_teacher.py (240/250), panels/urls.py (36/350), templates/panels/teacher_ingest.html (248/350), templates/panels/teacher_students.html (182/350): excluded is_training_dataset=True from _teacher_student_query; added get_teacher_credentials_export_rows and @role_required(['TEACHER', 'ADMIN']) route /teacher-panel/credentials/download/ (panels:teacher_credentials_csv) streaming UTF-8 class_student_credentials.csv; added 1-click Download Credentials CSV links on teacher_ingest.html and teacher_students.html."
+      - "README.md, .agents/{prd,srd,trd}.md, docs/aptech_submission/{DEMO_WALKTHROUGH,INSTALLATION_README}.md: synced full architecture, Single-Institute Workflow, sample_datasets/ guide, is_training_dataset separation, credentials CSV export, 21st.dev UI & Vercel deployment docs."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "node --check: all 16 static/js/*.js files exited 0."
-  - "Zero-comment & line-cap audit: 0 errors across all 20 modified app/template files (views*.py <= 250, others <= 350)."
-  - "manage.py test: Ran 136 tests in 86.054s (136/136 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 11.15s - System 100% Operational."
-  - "Live HTTP E2E QA (http://127.0.0.1:8000 + MongoDB Atlas): Admin Master CSV upload -> Teacher signup & Admin approval -> Teacher 0-upload empty state -> Teacher CSV upload & auto-provisioned student login (EDU-2026-101 / maham@2005-03-19) -> Read-Only Student Panel -> Dual Feedback (Teacher + Admin) -> Teacher Inbox reply & resolve verified and cleaned up."
+  - "node --check: all static/js/*.js files exited 0."
+  - "Zero-comment & line-cap audit: 0 comments across all 9 modified .py/.html files; all within caps (views_*.py <= 250, others <= 350)."
+  - "manage.py test: Ran 137 tests in 87.268s (137/137 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 14.61s - System 100% Operational."
+  - "Behavioral verification: /teacher-panel/credentials/download/ returned 200 text/csv with valid headers & <first_name>@<birth_date> credentials; is_training_dataset=True rows excluded from teacher & admin live rosters."
 
 active_routes_and_files:
-  - "sample_datasets/*, accounts/services.py, accounts/views.py, analytics/data_pipeline.py, panels/admin_services.py, panels/views_admin.py, panels/teacher_services.py, panels/views_teacher.py, panels/student_services.py, panels/notification_services.py, panels/views_student.py, templates/accounts/auth.html, templates/panels/{admin_dashboard,admin_users,teacher_dashboard,teacher_ingest,teacher_students,teacher_alerts,student_dashboard,student_report,student_notifications}.html, panels/{test_phase25,test_phase75,test_teacher_student,test_uat}.py, .agents/git-sync.md"
+  - "analytics/{data_pipeline,ml_engine}.py, panels/{admin_services,teacher_services,urls,views_admin,views_teacher}.py, templates/panels/{teacher_ingest,teacher_students}.html, README.md, .agents/{prd,srd,trd,git-sync}.md, docs/aptech_submission/{DEMO_WALKTHROUGH,INSTALLATION_README}.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

@@ -163,7 +163,7 @@ def _teacher_meta(teacher_user, uploaded_by):
     return {"teacher_user_id": uid, "teacher_name": name or "Teacher", "teacher_email": email} if (uid or email or name) else {}
 
 
-def ingest_dataset(file_obj=None, uploaded_by="", mode="upload", teacher_user=None):
+def ingest_dataset(file_obj=None, uploaded_by="", mode="upload", teacher_user=None, is_training_dataset=False):
     filename, df, load_error = _load_dataframe(file_obj, mode)
     if load_error is not None:
         return _failed_result(filename, uploaded_by, load_error)
@@ -241,8 +241,10 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload", teacher_user=No
             "course_code": str(row["course_code"]).strip().upper(),
             "attendance_pct": round(float(row["attendance_pct"]), 2), "internal_marks": round(float(row["internal_marks"]), 2),
             "assignment_score": round(float(row["assignment_score"]), 2), "lms_hours_weekly": round(float(row["lms_hours_weekly"]), 2),
-            "previous_gpa": round(float(row["previous_gpa"]), 2), "updated_at": now,
+            "previous_gpa": round(float(row["previous_gpa"]), 2), "is_training_dataset": bool(is_training_dataset), "updated_at": now,
         }
+        if is_training_dataset:
+            doc["source"] = "ADMIN_MASTER_TRAINING"
         if bdate:
             doc["birth_date"] = bdate
         if t_meta:
@@ -261,12 +263,13 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload", teacher_user=No
     try:
         ensure_indexes()
         _write_ops(student_records_col(), operations)
-        log_doc = {"filename": filename, "uploaded_by": uploaded_by or "Analyst", "rows_processed": len(operations), "missing_values_fixed": missing_values_fixed, "status": "COMPLETED", "uploaded_at": now}
+        log_doc = {"filename": filename, "uploaded_by": uploaded_by or "Analyst", "rows_processed": len(operations), "missing_values_fixed": missing_values_fixed, "is_training_dataset": bool(is_training_dataset), "status": "COMPLETED", "uploaded_at": now}
         if t_meta.get("teacher_user_id"):
             log_doc["teacher_user_id"] = t_meta["teacher_user_id"]
         datasets_log_col().insert_one(log_doc)
         invalidate_cache("analyst:")
         invalidate_cache("teacher:")
+        invalidate_cache("admin:")
     except Exception as exc:
         return _failed_result(filename, uploaded_by, f"Database write failed: {exc}", missing_values_fixed)
 

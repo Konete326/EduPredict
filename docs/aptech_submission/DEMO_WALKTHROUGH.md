@@ -6,9 +6,9 @@ Use this structured 5-minute demonstration script during the **Aptech Project De
 
 ## Pre-Demo Readiness Checklist (30 Seconds Before Viva)
 
-1. Start server: `.\.venv\Scripts\python.exe manage.py runserver`
-2. Keep `docs/aptech_submission/sample_aptech_test_dataset.csv` ready on Desktop or easy file picker path.
-3. Open `http://127.0.0.1:8000/auth/` in the browser (Ocean Blue Light mode default; ready to toggle Dark mode anytime).
+1. Start server locally (`.\.venv\Scripts\python.exe manage.py runserver`) or open the live Vercel deployment at **https://edupredict.vercel.app**.
+2. Keep the **`sample_datasets/`** folder ready (`admin_master_training_dataset.csv` for Admin one-time ML training + 6 teacher class CSVs: `teacher_cs101_class.csv`, `teacher_ds301_class.csv`, `teacher_se210_class.csv`, `teacher_ml401_class.csv`, `teacher_ai205_class.csv`, `teacher_la110_class.csv`), plus `docs/aptech_submission/sample_aptech_test_dataset.csv` if demonstrating legacy header auto-mapping.
+3. Open `http://127.0.0.1:8000/` (21st.dev Provably Hero + Live Testimonial Globe) and `/auth/` in the browser (Ocean Blue Light mode default; ready to toggle Dark mode anytime).
 
 ---
 
@@ -21,17 +21,18 @@ Use this structured 5-minute demonstration script during the **Aptech Project De
 2. **Admin User Governance (`/admin-panel/users/`):**
    - Show the **Table-First Compact Directory** with the `[Table | Cards]` toggle and **1-click Copy ID** button.
    - Click the **Pending Approval** filter pill (`?role=PENDING`) and highlight both **Approve** and **Reject** (`openRejectUserModal` requiring an audited reason that blocks rejected login and logs `REJECT_USER`).
-3. **Portal Settings & Branding (`/admin-panel/settings/`):**
-   - Show dynamic **Portal Name (`institution_name`)** and **Current Term (`current_term`)** fields plus **Theme & Appearance Live Studio** (restricted strictly to Admin).
+3. **Admin Master Training CSV & Portal Settings (`/admin-panel/`, `/admin-panel/settings/`):**
+   - Upload `sample_datasets/admin_master_training_dataset.csv` (200 historical rows, stored with `is_training_dataset=True` so it trains ML models without appearing in live teacher rosters).
+   - Show dynamic **Portal Name (`institution_name`)** and **Current Term (`current_term`)** fields plus the **21st.dev Curated Theme Studio** (restricted strictly to Admin).
 
 ---
 
-## Minute 2 (1:00 – 2:15): Teacher Hyper-Automation, Smart CSV Mapper & Student 360°
+## Minute 2 (1:00 – 2:15): Teacher Class CSV Auto-Provisioning, Credentials Export & Student 360°
 
-1. **Upload Marks & Smart CSV Auto-Mapper (`/teacher-panel/ingest/`):**
-   - Click **Upload Spreadsheet** and choose `docs/aptech_submission/sample_aptech_test_dataset.csv`.
-   - Before the 1.2s cancelable auto-upload fires (click **Cancel** on the toast if you want examiners to inspect the preview longer), point out the **Smart CSV Column Auto-Mapper** preview showing non-standard headers (`Roll_No -> student_id`, `Att_% -> attendance_pct`, `Test_Score -> internal_marks`, `Prev_GPA -> previous_gpa`, `LMS_Hours -> lms_hours_weekly`) and the 3-row preview table.
-   - Click **Upload & Auto-Process** to show automatic missing-value imputation + zero-click ML prediction + automatic `< 75%` and High-Risk alert generation.
+1. **Upload Class CSV & Auto-Provision Student Logins (`/teacher-panel/ingest/`):**
+   - Click **Upload Spreadsheet** and choose any class CSV from `sample_datasets/` (e.g. `sample_datasets/teacher_cs101_class.csv` with 18 students) — or `docs/aptech_submission/sample_aptech_test_dataset.csv` to showcase the **Smart CSV Column Auto-Mapper** (`Roll_No -> student_id`, `Att_% -> attendance_pct`, `Test_Score -> internal_marks`).
+   - Show that EduPredict isolates the uploaded class strictly to this Teacher, auto-provisions each Student login (`<student_id>` username + `<first_name>@<birth_date>` password), and runs zero-click ML predictions + `< 75%` / High-Risk auto-alerts.
+   - Click **Download Credentials CSV** (`/teacher-panel/credentials/download/`) inside the **Class Login Credentials Ready** card to export `class_student_credentials.csv` for class distribution.
 2. **Student 360° Slide-Over Drawer (`/teacher-panel/students/`):**
    - Click any Student name or the `360` action button to slide open the **Student 360° Drawer** showing the animated **SVG Attendance Ring**, Predicted GPA, **AI Risk Reasons**, enrolled courses, and recent alerts.
 3. **Risk Alerts Automation (`/teacher-panel/alerts/`):**
@@ -42,13 +43,14 @@ Use this structured 5-minute demonstration script during the **Aptech Project De
 
 ## Minute 3 (2:15 – 3:30): Student Portal, Official PDF Transcript & Instant Alerts
 
-1. **Student Dashboard (`/student-panel/`):**
-   - Sign in as a Student (or showcase Student role) showing the Attendance Progress Ring, Predicted GPA, Class Rank, Earned Credits, and Marks vs. Class Average chart.
-2. **Report Card & Dynamic Official PDF (`/student-panel/report/`):**
+1. **Student ID Login & Strictly Read-Only Dashboard (`/auth/` -> `/student-panel/`):**
+   - Sign in at `/auth/` using an auto-provisioned Student ID and password (`<student_id>` / `<first_name>@<birth_date>`, e.g., `EDU-2026-101` / `maham@2005-03-19` after uploading `teacher_cs101_class.csv`).
+   - Showcase the clean read-only dashboard: Attendance Progress Ring, Predicted GPA, Class Rank, Earned Credits, Assigned Teacher card, and Marks vs. Class Average chart.
+2. **Report Card & Dynamic Official A4 PDF (`/student-panel/report/`):**
    - Point out the **Portal / Term** metadata row inside the Report Summary card (`institution_name · current_term` synced from Admin Portal Settings).
-   - Click **Download PDF Transcript** (`/student-panel/report/download-pdf/`) and open the generated **ReportLab PDF** showing the institutional header branding, subject comparison table, letter grades, and AI advisory block.
-3. **Instant Notifications & Feedback (`/student-panel/notifications/`):**
-   - Highlight `visibilitychange` instant notification refresh and the global **Need Help** modal supporting `Ctrl+V` screenshot paste and **Cropper.js** aspect cropping.
+   - Click **Download PDF Transcript** (`/student-panel/report/download-pdf/`) and open the generated **ReportLab A4 PDF** showing the institutional header branding, subject comparison table, letter grades, and AI advisory block.
+3. **Instant Notifications & Dual Feedback (`/student-panel/notifications/`):**
+   - Highlight `visibilitychange` instant notification refresh and **Dual Feedback** allowing students to message either their **Assigned Teacher** (routed to Teacher Alerts inbox) or **Portal Admin** (routed to Admin Tickets), with `Ctrl+V` screenshot paste and **Cropper.js** cropping.
 
 ---
 

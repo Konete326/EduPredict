@@ -22,6 +22,7 @@ urlpatterns = [
     path('teacher-panel/', views_teacher.teacher_dashboard, name='teacher_dashboard'),
     path('teacher-panel/students/', views_teacher.teacher_students, name='teacher_students'),
     path('teacher-panel/students/export-pdf/', views_teacher.teacher_roster_pdf, name='teacher_roster_pdf'),
+    path('teacher-panel/credentials/download/', views_teacher.teacher_credentials_csv, name='teacher_credentials_csv'),
     path('teacher-panel/alerts/', views_teacher.teacher_alerts, name='teacher_alerts'),
     path('teacher-panel/ingest/', views_teacher.teacher_ingest, name='teacher_ingest'),
     path('student-panel/', views_student.student_dashboard, name='student_dashboard'),

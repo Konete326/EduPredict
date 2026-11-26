@@ -1,9 +1,9 @@
 # EduPredict - Educational Analytics & Early Warning Portal
 
-EduPredict is an enterprise-grade academic analytics and early warning platform built with Python 3.12, Django (MVT architecture), MongoDB Atlas, Tailwind CSS, Vanilla JS, and ReportLab. It identifies student attrition patterns, predicts semester GPA, flags academic anomalies, and empowers educators with real-time intervention tools.
+EduPredict is an enterprise-grade academic analytics and early warning platform built with Python 3.12, Django (MVT architecture), MongoDB Atlas, Tailwind CSS, Vanilla JS, and ReportLab. It identifies student attrition patterns, predicts semester GPA, flags academic anomalies, and empowers educators with real-time intervention tools, a single-institute CSV auto-provisioning workflow, a Multi-Agent AI Message Dock, and a 21st.dev-inspired public showcase & Curated Theme Studio.
 
 - **GitHub Repository:** https://github.com/Konete326/EduPredict
-- **Live Hosting:** Deployed on **Vercel** (`vercel.json` + `config/wsgi.py`), automatically synced from GitHub `main` on every push.
+- **Live Deployment (Vercel):** https://edupredict.vercel.app (`vercel.json` + `config/wsgi.py`, auto-deployed from GitHub `main` on every push)
 
 ---
 
@@ -12,29 +12,61 @@ EduPredict is an enterprise-grade academic analytics and early warning platform 
 EduPredict strictly isolates four role-based dashboard panels:
 
 1. **Admin Panel (`/admin-panel/`)**
-   - User lifecycle management with role protection and self-deactivation guards (`data-is-self="true"`).
-   - Course catalog, capacity limits, and instructor assignments.
-   - Comprehensive system activity audit logs with actor attribution and manual notes.
-   - Dynamic portal settings (risk thresholds, minimum attendance rules).
-   - Full-database backup exports in JSON and CSV formats (`export_backup` command & portal export).
+   - **Master Training CSV Ingestion:** One-time historical dataset upload (`is_training_dataset=True`) to train the ML suite without polluting live teacher/admin class rosters.
+   - **User Lifecycle & Teacher Approvals:** Approve or reject pending Teacher signups with audited reasons, plus role protection and self-deactivation guards (`data-is-self="true"`).
+   - **Course Catalog & Portal Settings:** Manage courses, capacity limits, risk thresholds, and the **Admin-only Curated Theme Studio** (21st.dev presets with per-theme text contrast tokens).
+   - **Audit Logs & Backups:** Filterable activity logs, incoming Admin support tickets, and full-database JSON/CSV backup exports (`export_backup`).
 
 2. **Teacher Panel (`/teacher-panel/`)**
-   - Real-time student roster with search, filter, and 5-row pagination.
-   - Frictionless inline marks and attendance updates.
-   - Instant student risk notifications and alert history.
-   - Official academic class roster PDF export with sign-off blocks (`/teacher-panel/students/export-pdf/`).
+   - **Strict Teacher Data Isolation:** Each approved Teacher views and manages only their own uploaded class records and assigned courses.
+   - **Class CSV Upload & Auto Student Provisioning:** Uploading a class CSV (`student_id, full_name, birth_date, course_code, marks, attendance`) automatically creates/updates student accounts (`student_id` + `<first_name>@<birth_date>`) and runs live ML GPA/risk predictions.
+   - **1-Click Credentials CSV Download:** Export `class_student_credentials.csv` directly via `/teacher-panel/credentials/download/` to share login details with students.
+   - **Student 360°, Risk Alerts & Feedback Inbox:** Inline marks/attendance editing, Student 360° drawer, 1-click high-risk alerts, incoming Student Feedback inbox, and official A4 PDF class roster export (`/teacher-panel/students/export-pdf/`).
 
 3. **Student Panel (`/student-panel/`)**
-   - Personal academic performance dashboard, subject comparisons, and batch standing.
-   - AI-driven study recommendations and attendance recovery plans.
-   - Printable and downloadable official report card in PDF and CSV formats (`/student-panel/report/download-pdf/`).
-   - Notification center for alerts dispatched by course instructors.
+   - **Student ID Login & Strictly Read-Only Dashboard:** Students sign in at `/auth/` with their `student_id` and `<first_name>@<birth_date>` to view live marks, attendance, predicted GPA, dropout risk status, and assigned teacher details.
+   - **Dual Feedback System:** Send feedback or support requests directly to either the **Assigned Teacher** (routed to Teacher Alerts inbox) or **Portal Admin** (routed to Admin Tickets).
+   - **AI Study Tips & Official A4 Report Card:** Personalized weekly recovery plans plus zero-UI monochrome A4 printable & downloadable PDF/CSV transcripts (`/student-panel/report/download-pdf/`).
 
 4. **Data Analyst Panel (`/analyst-panel/`)**
-   - High-throughput CSV/Excel dataset ingestion with automated missing-data imputation.
-   - Machine learning evaluation pipeline with leakage-free train/test splits.
-   - Comparative model diagnostics (Random Forest Classifier, Ridge Regression, Isolation Forest).
-   - Automated risk alert dispatch on high-risk prediction generation.
+   - **Big Data & ML Evaluation Hub:** Leakage-free train/test diagnostics for `RandomForestClassifier`, `Ridge`, and `IsolationForest` with automated missing-value imputation.
+   - **Live LMS Stream Simulator:** Real-time streaming ticks (`/analyst-panel/stream-tick/`) with live Recent Uploads sync, prediction table auto-hydration, and background tab pause guards.
+
+---
+
+## Single-Institute Workflow (End-to-End)
+
+1. **Admin Uploads Master Training CSV:** Sign in as Admin and upload `sample_datasets/admin_master_training_dataset.csv` at `/admin-panel/`. Records are stored with `is_training_dataset=True` to train the ML models while staying isolated from live class rosters.
+2. **Teacher Approval:** Teachers register at `/auth/` and wait for Admin approval in `/admin-panel/users/`.
+3. **Teacher Uploads Class CSV & Auto-Provisions Students:** Approved Teachers upload their class CSV (e.g., `sample_datasets/teacher_cs101_class.csv`) at `/teacher-panel/ingest/`. EduPredict automatically tags records to that teacher, creates/updates student logins (`student_id` + `<first_name>@<birth_date>`), and generates ML predictions.
+4. **Teacher Downloads Student Credentials CSV:** Click **Download Credentials CSV** (`/teacher-panel/credentials/download/`) to export `class_student_credentials.csv` for class distribution.
+5. **Student Sign-In & Dual Feedback:** Students sign in at `/auth/` using their `student_id` and `<first_name>@<birth_date>`, inspect their read-only academic progress & A4 report card, and send feedback to either their Teacher or Admin.
+
+---
+
+## Sample Datasets Guide (`sample_datasets/`)
+
+Ready-to-use CSVs are included in [`sample_datasets/`](sample_datasets/README.md) for instant end-to-end testing and demos:
+
+| File | Rows | Scope | Key Columns |
+| :--- | ---: | :--- | :--- |
+| `admin_master_training_dataset.csv` | 200 | Admin one-time ML training (`LOW`: 70, `MEDIUM`: 65, `HIGH`: 65) | `student_id,full_name,birth_date,department,course_code,attendance_pct,internal_marks,assignment_score,lms_hours_per_week,previous_gpa,final_gpa,dropout_risk` |
+| `teacher_cs101_class.csv` | 18 | `CS-101` (Computer Science) | `student_id,full_name,birth_date,course_code,marks,attendance` |
+| `teacher_ds301_class.csv` | 18 | `DS-301` (Data Science) | `student_id,full_name,birth_date,course_code,marks,attendance` |
+| `teacher_se210_class.csv` | 18 | `SE-210` (Software Engineering) | `student_id,full_name,birth_date,course_code,marks,attendance` |
+| `teacher_ml401_class.csv` | 18 | `ML-401` (Machine Learning) | `student_id,full_name,birth_date,course_code,marks,attendance` |
+| `teacher_ai205_class.csv` | 18 | `AI-205` (Artificial Intelligence) | `student_id,full_name,birth_date,course_code,marks,attendance` |
+| `teacher_la110_class.csv` | 18 | `LA-110` (Mathematics) | `student_id,full_name,birth_date,course_code,marks,attendance` |
+
+**Example Student Login (after uploading `teacher_cs101_class.csv`):** Username `EDU-2026-101`, Password `maham@2005-03-19`.
+
+---
+
+## Public Showcase & Curated Theme Studio (21st.dev Upgrades)
+
+- **21st.dev Provably Hero & Live Walkthrough:** Public landing page (`/`) dynamically hydrates live student credential cards and walkthrough previews directly from MongoDB via `accounts/public_data.py` (60s TTL cache).
+- **Live Testimonial Globe:** Interactive global campus testimonial showcase backed by real MongoDB `support_tickets` and active `users`.
+- **Curated Theme Studio:** 21st.dev-curated Light/Dark theme presets with per-theme text contrast tokens (`static/css/global.css`), Ocean Blue default, and scoped persistence.
 
 ---
 
@@ -245,11 +277,11 @@ Endpoints such as `/health/` use an in-memory rate limiter that returns `X-RateL
 
 ## Default Admin & Role Onboarding Credentials
 
-| Role | Email | Password | Primary Route | Notes |
+| Role | Username / Email | Password | Primary Route | Notes |
 | :--- | :--- | :--- | :--- | :--- |
 | **Admin** | `admin@gmail.com` | `admin123` | `/admin-panel/` | Seeded automatically via `ADMIN_EMAIL` / `ADMIN_PASSWORD` |
-| **Student** | Self-Register | User-Chosen | `/student-panel/` | Instant onboarding at `/auth/` (`STUDENT-ID` auto/manual) |
 | **Teacher** | Self-Register / Admin Invite | User-Chosen | `/teacher-panel/` | Pending Admin approval in `/admin-panel/users/` |
+| **Student** | `student_id` (e.g. `EDU-2026-101`) | `<first_name>@<birth_date>` | `/student-panel/` | Auto-provisioned when Teacher uploads class CSV (exportable via `/teacher-panel/credentials/download/`) |
 | **Analyst** | Created by Admin | Admin-Assigned | `/analyst-panel/` | Provisioned inside `/admin-panel/users/` |
 
 ---

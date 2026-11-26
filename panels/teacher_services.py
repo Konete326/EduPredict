@@ -33,7 +33,7 @@ def _scope_key(teacher_user):
 
 def _teacher_student_query(teacher_user=None):
     if _is_admin(teacher_user):
-        return {}
+        return {"is_training_dataset": {"$ne": True}}
     uid = str(teacher_user.get("user_id") or "").strip()
     email = str(teacher_user.get("email") or "").strip().lower()
     tname = str(teacher_user.get("full_name") or "").strip().lower()
@@ -52,7 +52,21 @@ def _teacher_student_query(teacher_user=None):
         clauses.append({"teacher_email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}})
     if assigned_codes:
         clauses.append({"course_code": {"$in": assigned_codes}})
-    return {"$or": clauses} if clauses else {"student_id": "__NO_TEACHER_MATCH__"}
+    return {"is_training_dataset": {"$ne": True}, "$or": clauses} if clauses else {"student_id": "__NO_TEACHER_MATCH__"}
+
+
+def get_teacher_credentials_export_rows(teacher_user_id, teacher_email, role="TEACHER", full_name=""):
+    scope = {"user_id": teacher_user_id, "email": teacher_email, "role": role, "full_name": full_name}
+    rows = []
+    for rec in student_records_col().find(_teacher_student_query(scope), {"_id": 0, "student_id": 1, "full_name": 1, "course_code": 1, "birth_date": 1}).sort("student_id", 1):
+        sid = str(rec.get("student_id") or "").strip()
+        if not sid:
+            continue
+        name = str(rec.get("full_name") or sid).strip()
+        bdate = str(rec.get("birth_date") or "").strip()
+        first = name.split()[0].lower() if name.split() else sid.lower()
+        rows.append({"student_id": sid, "full_name": name, "course_code": str(rec.get("course_code") or "").strip().upper(), "birth_date": bdate, "login_username": sid, "default_password": f"{first}@{bdate}" if bdate else "Pending birth_date"})
+    return rows
 
 
 def classify_performance_badge(att, marks, risk_level):

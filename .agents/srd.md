@@ -61,3 +61,11 @@ v                                               v
   - MongoDB Atlas (Cloud URI via `pymongo` / `mongoengine` or `djongo`)
   - Pandas, NumPy, Scikit-Learn, OpenPyXL (Latest Stable)
   - Tailwind CSS + FontAwesome Icons + Chart.js (Configured globally in `base.html`)
+
+## 5. Phases 81–86 System & Workflow Specifications
+- **Training vs. Live Roster Isolation (`is_training_dataset`):** Historical datasets uploaded by Admin (`admin_master_training_dataset.csv`) are flagged `is_training_dataset=True` in `student_records` so `analytics/ml_engine.py` trains on full historical cohorts while live Teacher/Admin class rosters filter out training rows (`{"is_training_dataset": {"$ne": True}}`).
+- **Single-Institute Auto-Provisioning & `student_id` Authentication:** Teacher class CSV ingestion (`analytics/data_pipeline.py` & `panels/teacher_services.py`) tags every live record with `teacher_user_id`, `teacher_name`, `teacher_email`, and `birth_date`, and upserts `users` documents with `student_id` as login username, PBKDF2-hashed `<first_name_lowercase>@<birth_date>` password, and `assigned_teacher_id`. `/auth/` accepts either email or `student_id`.
+- **Teacher Credentials CSV Stream (`/teacher-panel/credentials/download/`):** Role-protected (`TEACHER`, `ADMIN`) endpoint (`panels:teacher_credentials_csv`) streaming UTF-8 `class_student_credentials.csv` (`student_id,full_name,course_code,birth_date,login_username,default_password`) scoped strictly to the authenticated teacher's live students.
+- **Dual Student Feedback Routing:** Student feedback submissions carry `target_role` (`TEACHER` or `ADMIN`) and `target_teacher_id`, routing teacher-directed feedback into the assigned teacher's `/teacher-panel/alerts/` inbox and admin-directed tickets into `/admin-panel/tickets/`.
+- **Live Public Showcase & Curated Theme Tokens (`accounts/public_data.py`):** 60s TTL-cached aggregation (`public:landing_showcase`) feeds real MongoDB credentials, walkthroughs, and campus testimonials to the 21st.dev Provably Hero and Live Testimonial Globe; Curated Theme Studio enforces per-theme text contrast tokens.
+- **Reproducible Sample Dataset Pack (`sample_datasets/`):** Includes `admin_master_training_dataset.csv` (200 balanced rows) plus 6 class CSVs (`CS-101`, `DS-301`, `SE-210`, `ML-401`, `AI-205`, `LA-110`) for live UAT and defense demonstrations.

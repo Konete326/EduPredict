@@ -12,9 +12,10 @@ from panels.directory_card_services import build_teacher_student_cards
 from panels.pdf_services import generate_teacher_roster_pdf
 from panels.teacher_alert_services import clean_teacher_student_cards, get_teacher_portal_meta, toggle_teacher_auto_alerts
 from panels.teacher_services import (
-    delete_student_record, get_teacher_alerts_context, get_teacher_dashboard_context,
-    get_teacher_ingest_context, get_teacher_students_context, notify_all_high_risk_students,
-    provision_student_accounts, reply_teacher_feedback, send_student_alert, update_student_record_inline,
+    delete_student_record, get_teacher_alerts_context, get_teacher_credentials_export_rows,
+    get_teacher_dashboard_context, get_teacher_ingest_context, get_teacher_students_context,
+    notify_all_high_risk_students, provision_student_accounts, reply_teacher_feedback,
+    send_student_alert, update_student_record_inline,
 )
 
 
@@ -151,6 +152,19 @@ def teacher_roster_pdf(request):
         return redirect("panels:teacher_students")
     response = HttpResponse(generate_teacher_roster_pdf(data), content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="edupredict_class_roster.pdf"'
+    return response
+
+
+@role_required(["TEACHER", "ADMIN"])
+def teacher_credentials_csv(request):
+    user = request.session.get("user") or {}
+    rows = get_teacher_credentials_export_rows(user.get("user_id"), user.get("email"), role=user.get("role") or "TEACHER", full_name=user.get("full_name") or "")
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="class_student_credentials.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["student_id", "full_name", "course_code", "birth_date", "login_username", "default_password"])
+    for r in rows:
+        writer.writerow([r["student_id"], r["full_name"], r["course_code"], r["birth_date"], r["login_username"], r["default_password"]])
     return response
 
 

@@ -48,33 +48,15 @@ def compute_course_demand(df):
     if df is None or df.empty or "course_code" not in df.columns:
         return []
     work = df.copy()
-    work["previous_gpa"] = (
-        pd.to_numeric(work.get("previous_gpa"), errors="coerce")
-        .replace([np.inf, -np.inf], np.nan)
-        .fillna(3.0)
-        .clip(0.0, 4.0)
-    )
-    work["attendance_pct"] = (
-        pd.to_numeric(work.get("attendance_pct"), errors="coerce")
-        .replace([np.inf, -np.inf], np.nan)
-        .fillna(80.0)
-        .clip(0.0, 100.0)
-    )
+    work["previous_gpa"] = pd.to_numeric(work.get("previous_gpa"), errors="coerce").replace([np.inf, -np.inf], np.nan).fillna(3.0).clip(0.0, 4.0)
+    work["attendance_pct"] = pd.to_numeric(work.get("attendance_pct"), errors="coerce").replace([np.inf, -np.inf], np.nan).fillna(80.0).clip(0.0, 100.0)
     demand_rows = []
     for course_code, group in work.groupby("course_code"):
-        enrolled = int(len(group))
-        avg_gpa = round(float(group["previous_gpa"].mean()), 2)
-        avg_att = float(group["attendance_pct"].mean())
+        enrolled, avg_gpa, avg_att = int(len(group)), round(float(group["previous_gpa"].mean()), 2), float(group["attendance_pct"].mean())
         factor = 1.0 + max(-0.08, min(0.35, (avg_gpa - 2.4) * 0.14 + (avg_att - 70.0) * 0.002))
         projected = max(1, int(round(enrolled * factor)))
         growth = round(((projected - enrolled) / max(enrolled, 1)) * 100.0, 1)
-        demand_rows.append({
-            "course_code": str(course_code),
-            "current_enrolled": enrolled,
-            "avg_gpa": avg_gpa,
-            "projected_demand": projected,
-            "growth_pct": growth,
-        })
+        demand_rows.append({"course_code": str(course_code), "current_enrolled": enrolled, "avg_gpa": avg_gpa, "projected_demand": projected, "growth_pct": growth})
     demand_rows.sort(key=lambda item: item["projected_demand"], reverse=True)
     return demand_rows
 
@@ -96,29 +78,8 @@ def _prepare_dataframe(records):
     df = df[df["student_id"] != ""].copy()
     if df.empty:
         raise ValueError("No valid student records found after checking 'student_id'.")
-
-    if "course_code" in df.columns:
-        df["course_code"] = (
-            df["course_code"]
-            .fillna("CS-101")
-            .astype(str)
-            .str.strip()
-            .replace("", "CS-101")
-            .str.upper()
-        )
-    else:
-        df["course_code"] = "CS-101"
-
-    if "full_name" in df.columns:
-        df["full_name"] = (
-            df["full_name"]
-            .fillna("Student")
-            .astype(str)
-            .str.strip()
-            .replace("", "Student")
-        )
-    else:
-        df["full_name"] = "Student"
+    df["course_code"] = df["course_code"].fillna("CS-101").astype(str).str.strip().replace("", "CS-101").str.upper() if "course_code" in df.columns else "CS-101"
+    df["full_name"] = df["full_name"].fillna("Student").astype(str).str.strip().replace("", "Student") if "full_name" in df.columns else "Student"
     return df
 
 
@@ -288,47 +249,42 @@ def run_prediction_pipeline(records=None, persist=True, test_size=DEFAULT_TEST_S
         iso_preds = iso_pipeline.predict(features)
 
     imputed_features = rf_pipeline.named_steps["imputer"].transform(features)
+    training_mask = df["is_training_dataset"].fillna(False).astype(bool).to_numpy() if "is_training_dataset" in df.columns else np.zeros(len(df), dtype=bool)
+    live_mask = ~training_mask
     now = datetime.now(timezone.utc)
     pred_ops, notif_ops, pred_docs = [], [], []
-    counts = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
-    anomaly_count = 0
-
+    counts, anomaly_count = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}, 0
     high_t, med_t = cfg["high_risk_threshold"] / 100.0, cfg["medium_risk_threshold"] / 100.0
     drop_lim, min_att = float(cfg["anomaly_drop_pct"]), float(cfg["min_attendance_pct"])
     for idx, row in enumerate(df.to_dict(orient="records")):
+        if training_mask[idx]:
+            continue
         sid = row["student_id"]
         att, marks, assign, lms, gpa = [float(imputed_features[idx, col_i]) for col_i in range(5)]
-        risk_score = round(float(risk_probs[idx]), 4)
-        pred_gpa = round(float(predicted_gpas[idx]), 2)
+        risk_score, pred_gpa = round(float(risk_probs[idx]), 4), round(float(predicted_gpas[idx]), 2)
         risk_level = classify_dropout_risk(risk_score, high_t, med_t)
         anomaly_reason = _build_anomaly_reason(att, marks, gpa, int(iso_preds[idx]), drop_limit=drop_lim)
         is_anomaly = bool(anomaly_reason)
         recommendation = _build_recommendation(risk_level, is_anomaly, att, marks, assign, lms, min_att=min_att)
-
         counts[risk_level] += 1
         if is_anomaly:
             anomaly_count += 1
-
         pred_doc = {
             "student_id": sid, "predicted_gpa": pred_gpa, "dropout_risk_score": risk_score,
             "risk_level": risk_level, "is_anomaly": is_anomaly, "anomaly_reason": anomaly_reason,
-            "recommendation": recommendation, "model_version": MODEL_VERSION, "generated_at": now,
+            "recommendation": recommendation, "model_version": MODEL_VERSION, "is_training_dataset": False, "generated_at": now,
         }
         pred_docs.append(pred_doc)
         pred_ops.append(UpdateOne({"student_id": sid}, {"$set": pred_doc}, upsert=True))
-
         if risk_level == "HIGH" or is_anomaly or att < min_att:
             if risk_level == "HIGH":
-                severity = "DANGER"
-                title = f"High Dropout Risk: {sid}"
+                severity, title = "DANGER", f"High Dropout Risk: {sid}"
                 detail = anomaly_reason if anomaly_reason else f"Dropout risk score {round(risk_score * 100)}%"
             elif is_anomaly:
-                severity = "WARNING"
-                title = f"Academic Anomaly Flagged: {sid}"
+                severity, title = "WARNING", f"Academic Anomaly Flagged: {sid}"
                 detail = anomaly_reason if anomaly_reason else f"Dropout risk score {round(risk_score * 100)}%"
             else:
-                severity = "WARNING"
-                title = f"Low Attendance Alert: {sid}"
+                severity, title = "WARNING", f"Low Attendance Alert: {sid}"
                 detail = f"Attendance {att:.1f}% is below {int(round(min_att))}% minimum"
             targets = ([("TEACHER", sid)] if cfg["auto_teacher_alerts"] else []) + ([("STUDENT", sid)] if cfg["auto_student_alerts"] else [])
             for target_role, target_uid in targets:
@@ -343,16 +299,19 @@ def run_prediction_pipeline(records=None, persist=True, test_size=DEFAULT_TEST_S
                 ))
 
     if persist:
-        _write_ops(predictions_col(), pred_ops)
+        if pred_ops:
+            _write_ops(predictions_col(), pred_ops)
         if notif_ops:
             _write_ops(notifications_col(), notif_ops)
         invalidate_cache()
 
+    live_df = df.loc[live_mask]
     result = {
         "status": "COMPLETED", "model_version": MODEL_VERSION, "predictions_generated": len(pred_docs),
+        "training_records_used": int(len(df)), "live_records_scored": len(pred_docs),
         "high_risk_count": counts["HIGH"], "medium_risk_count": counts["MEDIUM"],
         "low_risk_count": counts["LOW"], "anomalies_count": anomaly_count,
-        "course_demand": compute_course_demand(df), "applied_settings": cfg,
+        "course_demand": compute_course_demand(live_df), "applied_settings": cfg,
         "training_modes": {
             "dropout_classifier": dropout_mode, "gpa_regressor": gpa_mode,
             "anomaly_detector": "unsupervised_isolation_forest",

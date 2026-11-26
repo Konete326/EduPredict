@@ -38,7 +38,8 @@ edupredict/
 │   ├── ai_dom_actions.py           # PRD-aware DOM automation, RBAC guards & interactive polls
 │   └── theme_services.py           # Per-user/per-panel theme, login sync & profile/password updates
 ├── accounts/                       # Auth & User Session App
-│   ├── services.py                 # Auth, registration, session serialization
+│   ├── public_data.py              # 60s TTL-cached live MongoDB showcase (Provably Hero & Globe)
+│   ├── services.py                 # Auth (email + student_id), registration, session serialization
 │   ├── views.py
 │   └── urls.py
 ├── panels/                         # Role-Based Dashboards App (Modular Views & Services)
@@ -142,6 +143,7 @@ Every route must be cleanly named so templates only use `{% url 'route_name' %}`
 - `/admin-panel/backup/` -> `panels:admin_backup_export`
 - `/teacher-panel/` -> `panels:teacher_dashboard`
 - `/teacher-panel/students/` -> `panels:teacher_students`
+- `/teacher-panel/credentials/download/` -> `panels:teacher_credentials_csv` (Teacher-scoped UTF-8 `class_student_credentials.csv` export)
 - `/teacher-panel/ingest/` -> `panels:teacher_ingest`
 - `/teacher-panel/alerts/` -> `panels:teacher_alerts`
 - `/student-panel/` -> `panels:student_dashboard`
@@ -175,3 +177,9 @@ Every route must be cleanly named so templates only use `{% url 'route_name' %}`
   - **Authentic A4 Monochrome PDFs & Print CSS:** `panels/pdf_services.py` renders formal black-on-white `A4` Registrar transcripts and class rosters (never copying web UI cards), paired with `@media print` in `static/css/global.css`.
   - **Single Desktop Toggle & 17" Viewport-Fit Layouts:** `#mobile-sidebar-close` carries `lg:hidden` so desktop displays only the topbar toggle; `user_profile.html` (`/profile/`) stays untouched; `/notifications/`, `/student-panel/`, `/student-panel/tips/`, and `/analyst-panel/accuracy/` fit 17" desktop screens cleanly via compact rows and 2-tab layouts.
 - **Phase 77 (Vercel Live Hosting & GitHub Auto-Sync):** Connected to `https://github.com/Konete326/EduPredict` (`main` branch) and deployed on **Vercel** (`vercel.json` -> `config/wsgi.py`) with automatic live deployments on every GitHub `main` push (not Hugging Face Spaces), cloud `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS`/`SECURE_PROXY_SSL_HEADER` in `config/settings.py`, and blank `GEMINI_BACKEND_KEY_3=` in tracked `.env` (`GH013` safe).
+- **Phases 81–86 (Public 21st.dev Showcase, Curated Theme Studio, Training Isolation & Single-Institute Provisioning):**
+  - **Public Live Showcase (`accounts/public_data.py`):** `get_public_landing_showcase()` (60s TTL cache `public:landing_showcase`) hydrates the 21st.dev Provably Hero credential cards, walkthrough preview, and Live Testimonial Globe directly from MongoDB (`users`, `courses`, `student_records`, `predictions`, `support_tickets`).
+  - **21st.dev Curated Theme Studio:** Adds curated 21st.dev presets and per-theme text contrast CSS variables in `static/css/global.css` + `core/theme_services.py`.
+  - **Training vs. Live Roster Separation:** Admin master training uploads tag `student_records` with `is_training_dataset=True`; ML training reads training/historical data while live Admin/Teacher rosters exclude `is_training_dataset=True` rows.
+  - **Teacher CSV Auto-Provisioning & Credentials Export:** Teacher class CSV uploads (`sample_datasets/teacher_*.csv`) tag `teacher_user_id`/`birth_date`, auto-provision `users` (`student_id` username + PBKDF2 `<first_name>@<birth_date>` password + `assigned_teacher_id`), trigger `run_prediction_pipeline()`, and expose `GET /teacher-panel/credentials/download/` (`panels:teacher_credentials_csv`) streaming `class_student_credentials.csv`.
+  - **Read-Only Student Panel, Dual Feedback & Sample Pack (`sample_datasets/`):** Student panel is strictly read-only with assigned teacher attribution and Dual Feedback (`support_tickets.target_role` = `TEACHER` | `ADMIN`, `target_teacher_id`); `sample_datasets/` ships `admin_master_training_dataset.csv` + 6 teacher class CSVs (`CS-101`, `DS-301`, `SE-210`, `ML-401`, `AI-205`, `LA-110`); live deployment runs at `https://edupredict.vercel.app`.
