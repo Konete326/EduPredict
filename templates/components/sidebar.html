@@ -152,12 +152,6 @@
           <i class="fa-solid fa-bell w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Alerts History</span>
         </a>
-        {% if active_role == 'ADMIN' %}
-        <a href="{% url 'panels:admin_settings' %}"{% if request.resolver_match.view_name == 'panels:admin_settings' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:admin_settings' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-          <i class="fa-solid fa-sliders w-5 text-center shrink-0 text-sm"></i>
-          <span class="truncate">Portal Settings</span>
-        </a>
-        {% endif %}
         <button type="button" onclick="openThemeStudioModal()" title="Customize theme colors" class="flex w-full items-center justify-between gap-2 rounded-[12px] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
           <span class="flex items-center gap-2.5 min-w-0">
             <i class="fa-solid fa-palette w-5 text-center shrink-0 text-sm text-[var(--accent-primary)]" aria-hidden="true"></i>

@@ -1,11 +1,11 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en" data-user-id="{{ current_user.user_id|default:'guest' }}" data-active-role="{{ active_role|default:'PORTAL' }}" data-shell-theme="{{ theme_prefs.shell_theme|default:'blue' }}" class="{% if theme_prefs.mode == 'dark' %}dark{% endif %}{% if theme_prefs.density == 'compact' %} density-compact{% endif %}"{% if theme_prefs.tokens %} style="--bg-canvas:{{ theme_prefs.tokens.bg_canvas }};--bg-surface:{{ theme_prefs.tokens.bg_surface }};--bg-elevated:{{ theme_prefs.tokens.bg_elevated }};--bg-overlay:{{ theme_prefs.tokens.bg_overlay }};--text-primary:{{ theme_prefs.tokens.text_primary }};--text-secondary:{{ theme_prefs.tokens.text_secondary }};--text-muted:{{ theme_prefs.tokens.text_muted }};--border-subtle:{{ theme_prefs.tokens.border_subtle }};--accent-primary:{{ theme_prefs.tokens.accent_primary }};--accent-hover:{{ theme_prefs.tokens.accent_hover }};--accent-soft:{{ theme_prefs.tokens.accent_soft }};--shell-sidebar-bg:{{ theme_prefs.tokens.shell_sidebar_bg }};--shell-topbar-bg:{{ theme_prefs.tokens.shell_topbar_bg }};"{% endif %}>
+<html lang="en" data-user-id="{{ current_user.user_id|default:'guest' }}" data-active-role="{{ active_role|default:'PORTAL' }}" data-shell-theme="{{ theme_prefs.shell_theme|default:'green' }}" class="{% if theme_prefs.mode == 'dark' %}dark{% endif %}{% if theme_prefs.density == 'compact' %} density-compact{% endif %}"{% if theme_prefs.tokens %} style="--bg-canvas:{{ theme_prefs.tokens.bg_canvas }};--bg-surface:{{ theme_prefs.tokens.bg_surface }};--bg-elevated:{{ theme_prefs.tokens.bg_elevated }};--bg-overlay:{{ theme_prefs.tokens.bg_overlay }};--text-primary:{{ theme_prefs.tokens.text_primary }};--text-secondary:{{ theme_prefs.tokens.text_secondary }};--text-muted:{{ theme_prefs.tokens.text_muted }};--border-subtle:{{ theme_prefs.tokens.border_subtle }};--accent-primary:{{ theme_prefs.tokens.accent_primary }};--accent-hover:{{ theme_prefs.tokens.accent_hover }};--accent-soft:{{ theme_prefs.tokens.accent_soft }};--shell-sidebar-bg:{{ theme_prefs.tokens.shell_sidebar_bg }};--shell-topbar-bg:{{ theme_prefs.tokens.shell_topbar_bg }};"{% endif %}>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232563eb'/%3E%3Cpath d='M16 7L3 13l13 6 13-6-13-6z' fill='%23ffffff'/%3E%3Cpath d='M9 16.8v4.2c0 2 3.1 3.5 7 3.5s7-1.5 7-3.5v-4.2l-7 3.2-7-3.2z' fill='%23ffffff'/%3E%3Crect x='25.5' y='13.5' width='2' height='7' rx='1' fill='%23ffffff'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2310b981'/%3E%3Cpath d='M16 7L3 13l13 6 13-6-13-6z' fill='%23ffffff'/%3E%3Cpath d='M9 16.8v4.2c0 2 3.1 3.5 7 3.5s7-1.5 7-3.5v-4.2l-7 3.2-7-3.2z' fill='%23ffffff'/%3E%3Crect x='25.5' y='13.5' width='2' height='7' rx='1' fill='%23ffffff'/%3E%3C/svg%3E">
   <title>Sign In | EduPredict</title>
   <script>
     (function () {
@@ -128,8 +128,8 @@
             {% csrf_token %}
             <input type="hidden" name="action" value="login">
             <div class="space-y-1">
-              <label for="login-email" class="block text-xs font-medium text-[var(--text-secondary)]">Email or Student ID</label>
-              <input id="login-email" name="email" type="text" autocomplete="username" required value="{{ login_email|default:'' }}" placeholder="you@edupredict.edu or STD-2026-001" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+              <label for="login-email" class="block text-xs font-medium text-[var(--text-secondary)]">Email, Student ID, or Name</label>
+              <input id="login-email" name="email" type="text" autocomplete="username" required value="{{ login_email|default:'' }}" placeholder="you@edupredict.edu, STD-2026-001, or sameer" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
             </div>
             <div class="space-y-1">
               <label for="login-password" class="block text-xs font-medium text-[var(--text-secondary)]">Password</label>
@@ -189,32 +189,20 @@
               </div>
               <div class="space-y-1">
                 <label for="reg-role" class="block text-xs font-medium text-[var(--text-secondary)]">Role</label>
-                {% with selected_role=register_data.role|default:"STUDENT"|upper %}
+                {% with selected_role=register_data.role|default:"TEACHER"|upper %}
                 <select id="reg-role" name="role" required class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
-                  <option value="STUDENT" {% if selected_role == 'STUDENT' %}selected{% endif %}>Student</option>
-                  <option value="TEACHER" {% if selected_role == 'TEACHER' %}selected{% endif %}>Teacher</option>
+                  <option value="TEACHER" {% if selected_role != 'ANALYST' %}selected{% endif %}>Teacher</option>
                   <option value="ANALYST" {% if selected_role == 'ANALYST' %}selected{% endif %}>Data Analyst</option>
                 </select>
                 {% endwith %}
               </div>
               <div id="teacher-approval-notice" class="rounded-lg border border-[var(--status-warning)] bg-[var(--bg-elevated)] px-3 py-2 text-[11px] text-[var(--text-secondary)]">
                 <i class="fa-solid fa-circle-info mr-1 text-[var(--status-warning)]"></i>
-                <span>Teacher and Student accounts require Admin approval before first sign-in.</span>
+                <span>Teacher and Data Analyst accounts require Admin approval before first sign-in. Students sign in directly using their Student ID or name and generated password.</span>
               </div>
             </div>
 
             <div data-wizard-step="1" class="hidden space-y-3">
-              <div id="reg-teacher-field-wrap" class="space-y-1">
-                <label for="reg-assigned-teacher" class="block text-xs font-medium text-[var(--text-secondary)]">Assigned Teacher</label>
-                {% with selected_tid=register_data.assigned_teacher_id|default:"" %}
-                <select id="reg-assigned-teacher" name="assigned_teacher_id" required class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
-                  <option value="">Select your approved teacher</option>
-                  {% for t in approved_teachers %}
-                  <option value="{{ t.user_id }}" {% if selected_tid == t.user_id %}selected{% endif %}>{{ t.full_name }} ({{ t.department }})</option>
-                  {% endfor %}
-                </select>
-                {% endwith %}
-              </div>
               <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 <div class="space-y-1">
                   <label for="reg-department" class="block text-xs font-medium text-[var(--text-secondary)]">Department</label>
@@ -323,25 +311,5 @@
   <script src="{% static 'js/ui_widgets.js' %}?v=17"></script>
   <script src="{% static 'js/theme_studio.js' %}?v=17"></script>
   <script src="{% static 'js/auth_wizard.js' %}?v=17"></script>
-  <script>
-    (function () {
-      const roleEl = document.getElementById('reg-role');
-      const wrap = document.getElementById('reg-teacher-field-wrap');
-      const sel = document.getElementById('reg-assigned-teacher');
-      const notice = document.getElementById('teacher-approval-notice');
-      function syncStudentTeacher() {
-        const r = roleEl ? String(roleEl.value || '').toUpperCase() : 'STUDENT';
-        const isStu = r === 'STUDENT';
-        if (wrap) wrap.classList.toggle('hidden', !isStu);
-        if (sel) {
-          sel.required = isStu;
-          if (isStu && !sel.value && sel.options.length === 2) sel.selectedIndex = 1;
-        }
-        if (notice) notice.classList.toggle('hidden', r !== 'TEACHER' && r !== 'STUDENT');
-      }
-      if (roleEl) roleEl.addEventListener('change', syncStudentTeacher);
-      syncStudentTeacher();
-    })();
-  </script>
 </body>
 </html>

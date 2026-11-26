@@ -61,29 +61,37 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 90 Astryx Theme Studio, Sidebar & Navbar Polish"
-active_branch_merged_to_main: "feature/astryx-theme-nav-sidebar -> main"
-project_phase: "Phase 90: Astryx Design System Alignment for Theme Studio Modal, Sidebar & Topbar Navbar"
+last_updated_by_agent: "Phase 91-92 Floo Public Pages, Green Default Theme & Multi-Format Training"
+active_branch_merged_to_main: "feature/p91-auth-training-ui -> main"
+project_phase: "Phase 92: Floo Scroll-Story Landing Page, Emerald Green Default Theme, Multi-Format ML Training & Strict Auth/UI Polish"
 
 completed_modules:
-  - "Phase 1-89: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Multi-Agent AI Dock (stationary quadrant-aware popover), Vercel Auto-Deploy, Provably Hero & Live Testimonial Globe, Single-Institute Datasets, Student-ID Auth, Teacher CSV Isolation & Credentials Export, Training vs Live Separation, Bento Grid Modals, 4-Col Minimal Lists + View Details Modal, Dedicated /admin-panel/training/ Page, Clean-Start DB Reset & Astryx Panel Polish."
-  - "Phase 90 (Astryx Theme Studio, Sidebar & Navbar Polish):"
-      - "templates/components/theme_studio_modal.html: removed decorative h-9 w-9 boxed icon, standardized rounded-[16px] modal / rounded-[12px] controls / rounded-[8px] inner thumbnails, removed all 9 shouty uppercase tracking-wider labels in favor of clean sentence-case Astryx labels."
-      - "templates/components/sidebar.html, templates/components/topbar.html, static/css/global.css: aligned sidebar & navbar to unified h-14 (56px) height with persistent hairline border-bottom, unified h-9 (36px) rounded-[12px] topbar controls, quiet sentence-case role subtitles, and 3px inset left accent bar on .ep-nav-link.is-active."
+  - "Phase 1-90: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Multi-Agent AI Dock (stationary quadrant-aware popover), Vercel Auto-Deploy, Single-Institute Datasets, Student-ID Auth, Teacher CSV Isolation & Credentials Export, Training vs Live Separation, Bento Grid Modals, 4-Col Minimal Lists + View Details Modal, Dedicated /admin-panel/training/ Page, Astryx Design System Alignment."
+  - "Phase 91 (Auth, Training View Modal & UI Polish):"
+      - "templates/components/sidebar.html: removed Portal Settings link from Settings nav group."
+      - "templates/components/metric_card.html: added truncate max-w-full and full-value title tooltip on [data-kpi-counter]."
+      - "templates/components/ai_message_dock.html: simplified #ep-agent-dock-toggle to clean icon-only h-11 w-11 rounded-full button."
+      - "accounts/{services,views}.py, templates/accounts/auth.html, static/js/auth_wizard.js, panels/teacher_services.py: restricted self-registration to Teacher & Analyst (Admin approval required), enabled Email/Student ID/Name login with last_login_at tracking, auto-provisioned Students on CSV upload."
+      - "panels/{admin_services,admin_directory_services}.py, templates/panels/{admin_users,admin_training}.html: added preview_rows/columns on datasets_log + View modal on /admin-panel/training/ + Student ID/Last Login in user View modal."
+  - "Phase 92 (Green Default Theme, Theme Studio Polish, Multi-Format Training & Floo Public Pages):"
+      - "core/theme_services.py, static/css/global.css, static/js/theme_studio.js, templates/{base.html,accounts/auth.html,components/theme_studio_modal.html}: switched default theme from Blue/Ocean (#2563eb) to Emerald Green (shell_theme='green', accent='emerald', #10b981); added hover title tooltips on Theme Studio labels and mobile-first Live Preview (order-first lg:order-last)."
+      - "analytics/data_pipeline.py, templates/panels/{admin_training,analyst_dashboard,teacher_ingest}.html: added multi-format dataset ingestion & ML training (.csv, .xlsx, .json, .jsonl, .ndjson, .tsv, .txt)."
+      - "templates/public/{_base,landing,about,contact}.html, static/{css,js}/landing_provably.{css,js}: ported Floo 1440x1036 ResizeObserver-scaled scroll-story (STORY=2600) to Pure Django MVT + Vanilla JS/CSS in Emerald Green with Newsreader/Inter typography, live EduPredict metrics, and prefers-reduced-motion support."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check: all static/js/*.js files exited 0."
-  - "Zero-comment & line-cap audit: 0 comments across all 4 modified files; all within caps (<= 350)."
-  - "manage.py test: Ran 137 tests in 96.122s (137/137 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 8.22s - System 100% Operational."
-  - "Live Browser QA (http://127.0.0.1:8000/admin-panel/settings/): verified h-14 sidebar/navbar, 36px rounded-[12px] aligned topbar controls, active left bar, Theme & Appearance modal sentence-case sections, 0 HTTP 4xx/5xx & 0 console errors, and cleaned MongoDB Atlas back to 1 Admin user only."
+  - "Zero-comment & line-cap audit: LINE_CAP_FAILS: [], COMMENT_FAILS: []."
+  - "manage.py test: Ran 138 tests in 84.264s (138/138 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 10.21s - System 100% Operational."
+  - "MongoDB Atlas cleaned back to 1 Admin user (admin@gmail.com) only."
 
 active_routes_and_files:
-  - "static/css/global.css, templates/components/{sidebar,theme_studio_modal,topbar}.html, .agents/git-sync.md"
+  - "core/theme_services.py, analytics/data_pipeline.py, static/css/{global,landing_provably}.css, static/js/{theme_studio,landing_provably}.js, templates/public/{_base,landing,about,contact}.html, templates/components/{sidebar,metric_card,ai_message_dock,theme_studio_modal}.html, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."
+  - "Optional: Re-run live browser visual QA once browser subagent quota resets."
 
 important_notes_for_next_agent:
   - "Project is connected from GitHub Konete326/EduPredict (main branch) to Vercel: every push to main automatically builds and deploys live on Vercel."

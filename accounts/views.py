@@ -121,14 +121,14 @@ def _handle_register(request):
     if password != confirm_password:
         messages.error(request, "Passwords do not match.")
         return _render_auth(request, active_tab="register", register_data=register_data)
-    if role not in SELF_REGISTER_ROLES:
-        messages.error(request, "Select Student, Teacher, or Data Analyst. Admin accounts are managed internally.")
+    if role == "STUDENT":
+        messages.error(request, "Student accounts are created automatically by your teacher's class upload. Please sign in using your Student ID and password.")
         return _render_auth(request, active_tab="register", register_data=register_data)
-    if role == "STUDENT" and not assigned_teacher_id:
-        messages.error(request, "Please select an approved Teacher for your class.")
+    if role not in SELF_REGISTER_ROLES:
+        messages.error(request, "Select Teacher or Data Analyst. Admin accounts are managed internally.")
         return _render_auth(request, active_tab="register", register_data=register_data)
     try:
-        user_doc, error = register_user(full_name=full_name, email=email, password=password, role=role, department=department, batch=batch, phone=phone, bio=bio, program_level=program_level, assigned_teacher_id=assigned_teacher_id)
+        user_doc, error = register_user(full_name=full_name, email=email, password=password, role=role, department=department, batch=batch, phone=phone, bio=bio, program_level=program_level)
     except Exception:
         messages.error(request, "Unable to complete registration right now. Please try again.")
         return _render_auth(request, active_tab="register", register_data=register_data)
@@ -136,7 +136,7 @@ def _handle_register(request):
         messages.error(request, error or "Registration failed.")
         return _render_auth(request, active_tab="register", register_data=register_data)
     if str(user_doc.get("approval_status") or "").strip().upper() == "PENDING":
-        role_label = "student" if role == "STUDENT" else "teacher"
+        role_label = "analyst" if role == "ANALYST" else "teacher"
         request.session["pending_approval"] = {"user_id": user_doc.get("user_id"), "email": email, "full_name": full_name, "role": role}
         messages.warning(request, f"Your {role_label} account was created and is waiting for Admin approval. This page will sign you in automatically once approved.")
         return _render_auth(request, active_tab="login", login_email=email, pending_teacher_approval=True)

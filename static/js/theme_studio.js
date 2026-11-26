@@ -1,6 +1,6 @@
 (function () {
   const TOKEN_TO_CSS = { bg_canvas: '--bg-canvas', bg_surface: '--bg-surface', bg_elevated: '--bg-elevated', bg_overlay: '--bg-overlay', text_primary: '--text-primary', text_secondary: '--text-secondary', text_muted: '--text-muted', border_subtle: '--border-subtle', accent_primary: '--accent-primary', accent_hover: '--accent-hover', accent_soft: '--accent-soft', shell_sidebar_bg: '--shell-sidebar-bg', shell_topbar_bg: '--shell-topbar-bg' };
-  const DEFAULTS = { mode: 'light', shell_theme: 'blue', accent: 'ocean', preset: 'neutral', density: 'comfortable', sync_shell: true };
+  const DEFAULTS = { mode: 'light', shell_theme: 'green', accent: 'emerald', preset: 'neutral', density: 'comfortable', sync_shell: true };
   const STUDIO_CONTROLS = [['[data-theme-mode]', 'data-theme-mode', 'mode'], ['[data-shell-theme-btn]', 'data-shell-theme-btn', 'shell_theme'], ['[data-accent-swatch]', 'data-accent-swatch', 'accent'], ['[data-surface-preset]', 'data-surface-preset', 'preset'], ['[data-theme-density]', 'data-theme-density', 'density']];
 
   let catalog = { modes: [], shell_themes: [], swatches: [], presets: [], save_url: '/theme/preferences/' };
@@ -19,20 +19,20 @@
     return out;
   };
   function computeTokens(prefs) {
-    const isDark = prefs.mode === 'dark', shell = shellMap[prefs.shell_theme] || shellMap.blue || shellMap.white || {}, swatch = swatchMap[prefs.accent] || swatchMap.ocean || swatchMap.indigo || {}, preset = presetMap[prefs.preset] || presetMap.neutral || {};
+    const isDark = prefs.mode === 'dark', shell = shellMap[prefs.shell_theme] || shellMap.green || shellMap.white || {}, swatch = swatchMap[prefs.accent] || swatchMap.emerald || swatchMap.teal || {}, preset = presetMap[prefs.preset] || presetMap.neutral || {};
     return {
-      bg_canvas: isDark ? (preset.canvas_dark || '#090d16') : (preset.canvas_light || '#f8fafc'), bg_surface: isDark ? (preset.surface_dark || '#111827') : (preset.surface_light || '#ffffff'), bg_elevated: isDark ? (preset.elevated_dark || '#1e293b') : (preset.elevated_light || '#f1f5f9'),
-      bg_overlay: isDark ? 'rgba(2, 6, 23, 0.78)' : 'rgba(15, 23, 42, 0.55)', text_primary: isDark ? (preset.text_dark || '#f4f4f5') : (preset.text_light || '#0f172a'), text_secondary: isDark ? (preset.secondary_dark || '#d4d4d8') : (preset.secondary_light || '#475569'), text_muted: isDark ? (preset.muted_dark || '#a1a1aa') : (preset.muted_light || '#64748b'), border_subtle: isDark ? (preset.border_dark || 'rgba(255, 255, 255, 0.08)') : (preset.border_light || '#e2e8f0'),
-      accent_primary: swatch.hex || (isDark ? '#3b82f6' : '#2563eb'), accent_hover: swatch.hover || (isDark ? '#60a5fa' : '#1d4ed8'), accent_soft: isDark ? (swatch.soft_dark || 'rgba(59, 130, 246, 0.16)') : (swatch.soft_light || '#eff6ff'),
-      shell_sidebar_bg: isDark ? (shell.sidebar_bg_dark || '#0d182b') : (shell.sidebar_bg_light || '#eff6ff'), shell_topbar_bg: isDark ? (shell.topbar_bg_dark || '#112038') : (shell.topbar_bg_light || '#f5f9ff'), force_dark_chrome: Boolean(shell.force_dark_chrome)
+      bg_canvas: isDark ? (preset.canvas_dark || '#09090b') : (preset.canvas_light || '#f8fafc'), bg_surface: isDark ? (preset.surface_dark || '#111114') : (preset.surface_light || '#ffffff'), bg_elevated: isDark ? (preset.elevated_dark || '#1b1b20') : (preset.elevated_light || '#f1f5f9'),
+      bg_overlay: isDark ? 'rgba(9, 9, 11, 0.78)' : 'rgba(15, 23, 42, 0.55)', text_primary: isDark ? (preset.text_dark || '#f4f4f5') : (preset.text_light || '#0f172a'), text_secondary: isDark ? (preset.secondary_dark || '#d4d4d8') : (preset.secondary_light || '#475569'), text_muted: isDark ? (preset.muted_dark || '#a1a1aa') : (preset.muted_light || '#64748b'), border_subtle: isDark ? (preset.border_dark || 'rgba(255, 255, 255, 0.08)') : (preset.border_light || '#e2e8f0'),
+      accent_primary: swatch.hex || '#10b981', accent_hover: swatch.hover || (isDark ? '#34d399' : '#059669'), accent_soft: isDark ? (swatch.soft_dark || 'rgba(16, 185, 129, 0.16)') : (swatch.soft_light || '#ecfdf5'),
+      shell_sidebar_bg: isDark ? (shell.sidebar_bg_dark || '#0b1d18') : (shell.sidebar_bg_light || '#ecfdf5'), shell_topbar_bg: isDark ? (shell.topbar_bg_dark || '#102620') : (shell.topbar_bg_light || '#f2fbf7'), force_dark_chrome: Boolean(shell.force_dark_chrome)
     };
   }
 
   function normalizePrefs(raw) {
     const base = Object.assign({}, DEFAULTS, currentPrefs || {}, raw || {}), doc = document.documentElement;
     const mode = base.mode === 'dark' ? 'dark' : 'light';
-    const shellTheme = shellMap[base.shell_theme] ? base.shell_theme : (Object.keys(shellMap).length ? 'blue' : (base.shell_theme || 'blue'));
-    const accent = swatchMap[base.accent] ? base.accent : (Object.keys(swatchMap).length ? 'ocean' : (base.accent || 'ocean'));
+    const shellTheme = shellMap[base.shell_theme] ? base.shell_theme : (Object.keys(shellMap).length ? 'green' : (base.shell_theme || 'green'));
+    const accent = swatchMap[base.accent] ? base.accent : (Object.keys(swatchMap).length ? 'emerald' : (base.accent || 'emerald'));
     const preset = presetMap[base.preset] ? base.preset : (Object.keys(presetMap).length ? 'neutral' : (base.preset || 'neutral'));
     const density = base.density === 'compact' ? 'compact' : 'comfortable';
     const role = String(base.role || doc.getAttribute('data-active-role') || 'PORTAL').toUpperCase();

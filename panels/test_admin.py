@@ -131,7 +131,7 @@ class AdminLogsAndSettingsTests(_AdminTestBase):
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
         self.assertIn('id="admin-logs-table"', html)
-        for text in ("Total Events", "Admin Actions", "Data & ML Events", "Security Events", "?category=USERS", "?category=COURSES", "?category=TICKETS", "?category=DATA", "?category=SYSTEM", reverse("panels:admin_logs"), reverse("panels:admin_settings")):
+        for text in ("Total Events", "Admin Actions", "Data & ML Events", "Security Events", "?category=USERS", "?category=COURSES", "?category=TICKETS", "?category=DATA", "?category=SYSTEM", reverse("panels:admin_logs")):
             self.assertIn(text, html)
         self.assertNotIn('data-coming-title="Activity Logs"', html)
         self.assertNotIn('data-coming-title="Settings"', html)

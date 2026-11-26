@@ -114,8 +114,8 @@ def normalize_theme_prefs(raw, role="PORTAL", user_id="guest"):
     clean_role = str(role or "PORTAL").strip().upper() or "PORTAL"
     clean_uid = str(user_id or "guest").strip() or "guest"
     mode = _pick(source, "mode", _MODE_SLUGS, "light")
-    shell_theme = _pick(source, "shell_theme", _SHELL_MAP, "blue")
-    accent = _pick(source, "accent", _SWATCH_MAP, "ocean")
+    shell_theme = _pick(source, "shell_theme", _SHELL_MAP, "green")
+    accent = _pick(source, "accent", _SWATCH_MAP, "emerald")
     preset = _pick(source, "preset", _PRESET_MAP, "neutral")
     density = _pick(source, "density", _DENSITY_VALUES, "comfortable")
     sync_shell = _parse_bool(source.get("sync_shell"), default=True)

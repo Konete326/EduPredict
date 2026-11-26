@@ -5,7 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
 from accounts.services import serialize_session_user
-from analytics.data_pipeline import generate_sample_dataset_df
+from analytics.data_pipeline import _load_dataframe, generate_sample_dataset_df, ingest_dataset
 from analytics.tests import _build_genuine_labelled_records
 from core.cloudinary_services import upload_user_avatar
 from core.db import invalidate_cache
@@ -219,9 +219,9 @@ class ThemePreferencesTests(TestCase):
         data = resp.json()
         self.assertTrue(data["ok"])
         prefs = data["theme_prefs"]
-        self.assertEqual((prefs["role"], prefs["user_id"], prefs["mode"], prefs["shell_theme"], prefs["accent"], prefs["preset"], prefs["density"]), ("PORTAL", "guest", "light", "blue", "ocean", "neutral", "comfortable"))
+        self.assertEqual((prefs["role"], prefs["user_id"], prefs["mode"], prefs["shell_theme"], prefs["accent"], prefs["preset"], prefs["density"]), ("PORTAL", "guest", "light", "green", "emerald", "neutral", "comfortable"))
         self.assertTrue(prefs["sync_shell"])
-        self.assertEqual(prefs["tokens"]["accent_primary"], "#2563eb")
+        self.assertEqual(prefs["tokens"]["accent_primary"], "#10b981")
         self.assertEqual(mock_users_col.call_count, 0)
 
         req = RequestFactory().get("/teacher-panel/")
@@ -251,7 +251,7 @@ class ThemePreferencesTests(TestCase):
 
         self._set_user(client, "ADMIN", "USR-T1")
         admin_get = client.get(reverse("panels:theme_preferences")).json()["theme_prefs"]
-        self.assertEqual((admin_get["role"], admin_get["mode"], admin_get["shell_theme"], admin_get["accent"], admin_get["preset"]), ("ADMIN", "light", "blue", "ocean", "neutral"))
+        self.assertEqual((admin_get["role"], admin_get["mode"], admin_get["shell_theme"], admin_get["accent"], admin_get["preset"]), ("ADMIN", "light", "green", "emerald", "neutral"))
 
         admin_post = client.post(reverse("panels:theme_preferences"), data=json.dumps({"mode": "dark", "shell_theme": "red", "accent": "crimson", "preset": "gothic", "sync_shell": False}), content_type="application/json").json()["theme_prefs"]
         self.assertEqual((admin_post["role"], admin_post["shell_theme"], admin_post["accent"], admin_post["preset"], admin_post["sync_shell"]), ("ADMIN", "red", "crimson", "gothic", False))
@@ -260,7 +260,7 @@ class ThemePreferencesTests(TestCase):
         reset_resp = client.post(reverse("panels:theme_preferences"), data=json.dumps({"action": "reset"}), content_type="application/json")
         self.assertEqual(reset_resp.status_code, 200)
         reset_prefs = reset_resp.json()["theme_prefs"]
-        self.assertEqual((reset_prefs["role"], reset_prefs["mode"], reset_prefs["shell_theme"], reset_prefs["accent"], reset_prefs["preset"], reset_prefs["density"]), ("TEACHER", "light", "blue", "ocean", "neutral", "comfortable"))
+        self.assertEqual((reset_prefs["role"], reset_prefs["mode"], reset_prefs["shell_theme"], reset_prefs["accent"], reset_prefs["preset"], reset_prefs["density"]), ("TEACHER", "light", "green", "emerald", "neutral", "comfortable"))
         self.assertEqual(client.session["theme_prefs_by_role"]["ADMIN"]["shell_theme"], "red")
 
     @patch("core.theme_services.invalidate_cache")
@@ -343,3 +343,22 @@ class ThemePreferencesTests(TestCase):
         synced_keep = sync_theme_prefs_on_login(req, {"user_id": "USR-T9", "role": "TEACHER", "theme_prefs": {"TEACHER": {"mode": "light", "accent": "emerald"}}})
         self.assertEqual((synced_keep["TEACHER"]["mode"], synced_keep["TEACHER"]["accent"]), ("light", "emerald"))
         mock_users_col.return_value.update_one.assert_not_called()
+
+
+class MultiFormatIngestionTests(TestCase):
+    def test_load_dataframe_and_ingest_json_and_tsv(self):
+        json_bytes = json.dumps({"records": [{"student_id": "STD-J1", "full_name": "Amina Noor", "marks": 84, "attendance": 91}]}).encode("utf-8")
+        tsv_bytes = b"student_id\tfull_name\tmarks\tattendance\nSTD-T1\tBilal Raza\t76\t88\n"
+        j_name, j_df, j_err = _load_dataframe(SimpleUploadedFile("batch.json", json_bytes, content_type="application/json"), "upload")
+        t_name, t_df, t_err = _load_dataframe(SimpleUploadedFile("batch.tsv", tsv_bytes, content_type="text/tab-separated-values"), "upload")
+        self.assertEqual((j_name, j_err, len(j_df)), ("batch.json", None, 1))
+        self.assertEqual((t_name, t_err, len(t_df)), ("batch.tsv", None, 1))
+
+        sr_col, log_col = MagicMock(), MagicMock()
+        sr_col.find.return_value = []
+        with patch("analytics.data_pipeline.ensure_indexes"), patch("analytics.data_pipeline.invalidate_cache"), patch("analytics.data_pipeline.student_records_col", return_value=sr_col), patch("analytics.data_pipeline.datasets_log_col", return_value=log_col):
+            j_res = ingest_dataset(SimpleUploadedFile("batch.json", json_bytes), uploaded_by="Analyst")
+            t_res = ingest_dataset(SimpleUploadedFile("batch.tsv", tsv_bytes), uploaded_by="Analyst")
+        self.assertEqual((j_res["status"], j_res["rows_processed"]), ("COMPLETED", 1))
+        self.assertEqual((t_res["status"], t_res["rows_processed"]), ("COMPLETED", 1))
+        self.assertEqual(log_col.insert_one.call_count, 2)

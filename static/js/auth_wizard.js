@@ -63,8 +63,8 @@ function initAuthStepper() {
 
   function syncRoleDefaults() {
     if (!roleSelect) return;
-    if (teacherNotice) teacherNotice.classList.toggle('hidden', roleSelect.value !== 'TEACHER');
-    if (batchInput && !batchEdited) batchInput.value = roleSelect.value === 'STUDENT' ? '2026-A' : 'ALL';
+    if (teacherNotice) teacherNotice.classList.remove('hidden');
+    if (batchInput && !batchEdited) batchInput.value = 'ALL';
   }
 
   function renderReviewSummary() {

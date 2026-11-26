@@ -14,7 +14,7 @@
     <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Ingest datasets, fill missing values with Scikit-Learn, and forecast student dropout risks</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
-    <button type="button" onclick="openAnalystUploadModal()" title="Upload CSV or Excel dataset and run ML predictions" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
+    <button type="button" onclick="openAnalystUploadModal()" title="Upload CSV, Excel, JSON, JSONL, TSV, or TXT dataset and run ML predictions" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
       <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
       <span>Upload &amp; Auto-Predict</span>
     </button>
@@ -149,7 +149,7 @@
     <div class="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
       <div>
         <h3 class="text-base font-semibold text-[var(--text-primary)]">Upload Student Dataset</h3>
-        <p class="text-xs text-[var(--text-muted)]">Choose a .csv or .xlsx file up to 25 MB. Missing values are cleaned automatically.</p>
+        <p class="text-xs text-[var(--text-muted)]">Choose a .csv, .xlsx, .json, .jsonl, .ndjson, .tsv, or .txt file up to 25 MB. Missing values are cleaned automatically.</p>
       </div>
       <button type="button" onclick="closeAnalystUploadModal()" aria-label="Close upload modal" class="inline-flex h-8 w-8 items-center justify-center rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
         <i class="fa-solid fa-xmark text-sm"></i>
@@ -158,7 +158,7 @@
     <form method="post" action="{% url 'analytics:upload_dataset' %}" enctype="multipart/form-data" class="space-y-3.5">
       {% csrf_token %}
       <input type="hidden" name="mode" value="upload">
-      {% include 'components/gradient_file_uploader.html' with input_id="dataset-file-input" input_name="dataset_file" accept=".csv,.xlsx" max_mb=25 auto_submit=True title="Drop Dataset (.csv / .xlsx)" subtitle="Missing values are cleaned automatically" %}
+      {% include 'components/gradient_file_uploader.html' with input_id="dataset-file-input" input_name="dataset_file" accept=".csv,.xlsx,.json,.jsonl,.ndjson,.tsv,.txt" max_mb=25 auto_submit=True title="Drop Dataset (.csv, .xlsx, .json, .jsonl, .tsv, .txt)" subtitle="Missing values are cleaned automatically" %}
       <details class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2">
         <summary class="cursor-pointer select-none text-[11px] font-semibold text-[var(--text-muted)]">Needed Columns ({{ required_columns|length }})</summary>
         <div class="mt-2 flex flex-wrap gap-1.5">

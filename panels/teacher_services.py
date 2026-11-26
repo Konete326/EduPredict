@@ -4,17 +4,12 @@ from django.contrib.auth.hashers import make_password
 from pymongo import DESCENDING
 from analytics.data_pipeline import REQUIRED_COLUMNS
 from analytics.ml_engine import _resolve_runtime_settings, run_prediction_pipeline
-from core.db import (
-    courses_col, datasets_log_col, get_cached, invalidate_cache,
-    notifications_col, predictions_col, student_records_col, support_tickets_col, users_col,
-)
+from core.db import courses_col, datasets_log_col, get_cached, invalidate_cache, notifications_col, predictions_col, student_records_col, support_tickets_col, users_col
 
 
 def _safe_float(val, default=0.0):
-    try:
-        return float(val)
-    except (TypeError, ValueError):
-        return default
+    try: return float(val)
+    except (TypeError, ValueError): return default
 
 
 def _action(label, icon, onclick, title, attrs, variant="default"): return {"label": label, "icon": icon, "variant": variant, "title": title, "onclick": onclick, "attrs": attrs}
@@ -26,8 +21,7 @@ def _is_admin(teacher_user):
 
 
 def _scope_key(teacher_user):
-    if _is_admin(teacher_user):
-        return "all"
+    if _is_admin(teacher_user): return "all"
     return str(teacher_user.get("user_id") or "").strip() or str(teacher_user.get("email") or "").strip().lower() or str(teacher_user.get("full_name") or "").strip().lower() or "none"
 
 
@@ -55,17 +49,23 @@ def _teacher_student_query(teacher_user=None):
     return {"is_training_dataset": {"$ne": True}, "$or": clauses} if clauses else {"student_id": "__NO_TEACHER_MATCH__"}
 
 
+def _student_default_password(sid, full_name, bdate="", batch=""):
+    first = (full_name.split()[0].lower() if full_name.split() else sid.lower()) or "student"
+    clean_bdate = str(bdate or "").strip()
+    if clean_bdate: return first, f"{first}@{clean_bdate}"
+    trailing = sid.split("-")[-1].strip().lower() if "-" in sid else ""
+    return first, f"{first}@{trailing or str(batch or '').strip().lower() or '2026'}"
+
+
 def get_teacher_credentials_export_rows(teacher_user_id, teacher_email, role="TEACHER", full_name=""):
     scope = {"user_id": teacher_user_id, "email": teacher_email, "role": role, "full_name": full_name}
     rows = []
-    for rec in student_records_col().find(_teacher_student_query(scope), {"_id": 0, "student_id": 1, "full_name": 1, "course_code": 1, "birth_date": 1}).sort("student_id", 1):
+    for rec in student_records_col().find(_teacher_student_query(scope), {"_id": 0, "student_id": 1, "full_name": 1, "course_code": 1, "birth_date": 1, "batch": 1}).sort("student_id", 1):
         sid = str(rec.get("student_id") or "").strip()
-        if not sid:
-            continue
-        name = str(rec.get("full_name") or sid).strip()
-        bdate = str(rec.get("birth_date") or "").strip()
-        first = name.split()[0].lower() if name.split() else sid.lower()
-        rows.append({"student_id": sid, "full_name": name, "course_code": str(rec.get("course_code") or "").strip().upper(), "birth_date": bdate, "login_username": sid, "default_password": f"{first}@{bdate}" if bdate else "Pending birth_date"})
+        if not sid: continue
+        name, bdate = str(rec.get("full_name") or sid).strip(), str(rec.get("birth_date") or "").strip()
+        _, default_pw = _student_default_password(sid, name, bdate, rec.get("batch") or "")
+        rows.append({"student_id": sid, "full_name": name, "course_code": str(rec.get("course_code") or "").strip().upper(), "birth_date": bdate, "login_username": sid, "default_password": default_pw})
     return rows
 
 
@@ -120,13 +120,14 @@ def provision_student_accounts(rows, teacher_user=None):
     now, col, creds = datetime.now(timezone.utc), users_col(), []
     for row in rows or []:
         sid, full_name, bdate = str(row.get("student_id") or "").strip(), str(row.get("full_name") or "").strip(), str(row.get("birth_date") or "").strip()
-        if not (sid and full_name and bdate):
+        if not (sid and full_name):
             continue
-        raw_pw = f"{full_name.split()[0].lower()}@{bdate}"
+        batch_val = str(row.get("batch") or "2026-A").strip() or "2026-A"
+        first_name_lower, raw_pw = _student_default_password(sid, full_name, bdate, batch_val)
         default_email = f"{re.sub(r'[^a-z0-9._-]', '', sid.lower())}@student.edupredict.edu"
         existing = col.find_one({"student_id": sid}, {"_id": 0, "email": 1, "user_id": 1}) or col.find_one({"email": default_email}, {"_id": 0, "email": 1, "user_id": 1}) or {}
         email, user_id = str(existing.get("email") or default_email).strip().lower(), str(existing.get("user_id") or f"USR-{sid}").strip()
-        doc = {"student_id": sid, "user_id": user_id, "full_name": full_name, "birth_date": bdate, "email": email, "password_hash": make_password(raw_pw), "role": "STUDENT", "is_active": True, "approval_status": "APPROVED", "batch": str(row.get("batch") or "2026-A").strip(), "updated_at": now}
+        doc = {"student_id": sid, "user_id": user_id, "username": first_name_lower, "full_name": full_name, "birth_date": bdate, "email": email, "password_hash": make_password(raw_pw), "role": "STUDENT", "is_active": True, "approval_status": "APPROVED", "batch": batch_val, "updated_at": now}
         if t_uid:
             doc["assigned_teacher_id"] = t_uid
             doc["assigned_teacher_name"] = t_name
@@ -231,7 +232,7 @@ def update_student_record_inline(post_data, teacher_user=None):
         doc["teacher_name"] = str(teacher_user.get("full_name") or "Teacher").strip()
         doc["teacher_email"] = str(teacher_user.get("email") or "").strip().lower()
     student_records_col().update_one({"student_id": sid}, {"$set": doc}, upsert=True)
-    if bdate and full_name:
+    if full_name:
         provision_student_accounts([doc], teacher_user)
     run_prediction_pipeline()
     invalidate_cache()

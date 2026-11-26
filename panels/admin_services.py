@@ -69,7 +69,7 @@ def _load_users(normalized):
         if role in role_counts: role_counts[role] += 1
         if approval_status in ("PENDING", "REJECTED"): role_counts[approval_status] += 1
         if normalized == "ALL" or (normalized in ("PENDING", "REJECTED") and approval_status == normalized) or role == normalized:
-            users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "program_level": str(doc.get("program_level") or ("BS / Undergraduate" if role == "STUDENT" else "")), "phone": str(doc.get("phone") or ""), "bio": str(doc.get("bio") or ""), "is_active": is_active, "approval_status": approval_status, "rejection_reason": str(doc.get("rejection_reason") or ""), "student_id": str(doc.get("student_id") or ""), "assigned_teacher_id": str(doc.get("assigned_teacher_id") or ""), "assigned_teacher_name": str(doc.get("assigned_teacher_name") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at"))})
+            users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "program_level": str(doc.get("program_level") or ("BS / Undergraduate" if role == "STUDENT" else "")), "phone": str(doc.get("phone") or ""), "bio": str(doc.get("bio") or ""), "is_active": is_active, "approval_status": approval_status, "rejection_reason": str(doc.get("rejection_reason") or ""), "student_id": str(doc.get("student_id") or ""), "assigned_teacher_id": str(doc.get("assigned_teacher_id") or ""), "assigned_teacher_name": str(doc.get("assigned_teacher_name") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at")), "last_login_str": _format_dt(doc.get("last_login_at")) if doc.get("last_login_at") else ""})
     return users, role_counts
 def list_users(role_filter="ALL"):
     normalized = str(role_filter or "ALL").strip().upper()
@@ -142,7 +142,7 @@ def ingest_master_training_dataset(file_obj, actor_name="System Admin", is_train
     try:
         log_col = datasets_log_col()
         latest = next(iter(log_col.find({"filename": filename, "status": "COMPLETED"}).sort("uploaded_at", DESCENDING).limit(1)), None)
-        marker = {"is_training_dataset": True, "model_trained": True, "model_version": str(pred_res.get("model_version") or ""), "predictions_generated": int(pred_res.get("predictions_generated") or 0), "trained_at": now}
+        marker = {"is_training_dataset": True, "model_trained": True, "model_version": str(pred_res.get("model_version") or ""), "predictions_generated": int(pred_res.get("predictions_generated") or 0), "columns": list((ingest_res.get("column_mappings") or {}).values())[:12], "preview_rows": (ingest_res.get("preview_rows") or [])[:5], "trained_at": now}
         if latest and latest.get("_id") is not None: log_col.update_one({"_id": latest["_id"]}, {"$set": marker})
         else: log_col.insert_one({"filename": filename, "uploaded_by": actor_name or "System Admin", "rows_processed": rows_count, "missing_values_fixed": int(ingest_res.get("missing_values_fixed") or 0), "status": "COMPLETED", "uploaded_at": now, **marker})
     except Exception:
@@ -161,19 +161,18 @@ def get_master_training_status():
             return {"trained": False, "records_count": 0, "filename": "", "uploaded_at": ""}
     return get_cached("admin:ml_status", _fetch, ttl=20.0)
 def _load_training_uploads():
-    uploads, rows = [], []
+    uploads = []
     try:
         query = {"$or": [{"is_training_dataset": True}, {"uploaded_by": {"$regex": "admin", "$options": "i"}}]}
         for d in datasets_log_col().find(query, {"_id": 0}).sort("uploaded_at", DESCENDING).limit(20):
             fn, by, rc, preds, st, dt = str(d.get("filename") or "master.csv"), str(d.get("uploaded_by") or "System Admin"), int(d.get("rows_processed") or 0), int(d.get("predictions_generated") or 0), str(d.get("status") or "COMPLETED").upper(), _format_dt(d.get("uploaded_at"))
-            uploads.append({"filename": fn, "uploaded_by": by, "rows_processed": rc, "predictions_generated": preds, "status": st, "uploaded_at_str": dt})
-            rows.append([fn, by, rc, preds, {"text": st, "status": "success" if st == "COMPLETED" else "warning"}, dt])
+            uploads.append({"filename": fn, "uploaded_by": by, "rows_processed": rc, "predictions_generated": preds, "missing_values_fixed": int(d.get("missing_values_fixed") or 0), "model_version": str(d.get("model_version") or ""), "columns": list(d.get("columns") or []), "preview_rows": list(d.get("preview_rows") or []), "status": st, "uploaded_at_str": dt})
     except Exception:
         pass
-    return uploads, rows
+    return uploads, build_training_upload_rows(uploads)
 def get_admin_training_context():
     uploads, rows = get_cached("admin:training_uploads", _load_training_uploads, ttl=20.0)
-    return {"ml_status": get_master_training_status(), "training_uploads": uploads, "training_headers": ["Filename", "Uploaded By", "Rows", "Predictions", "Status", "Uploaded At"], "training_rows": rows}
+    return {"ml_status": get_master_training_status(), "training_uploads": uploads, "training_headers": ["Filename", "Uploaded By", "Rows", "Predictions", "Status", "Uploaded At", "Actions"], "training_rows": rows}
 def delete_user_record(user_id, actor_user_id=None, actor_email="", actor_name="System Admin"):
     clean_uid, col = str(user_id or "").strip(), users_col()
     existing = col.find_one({"user_id": clean_uid}, {"_id": 1, "email": 1})
@@ -298,4 +297,4 @@ def mark_notifications_read(user_doc):
     modified = int(notifications_col().update_many({"is_read": False, "$or": targets}, {"$set": {"is_read": True}}).modified_count)
     invalidate_cache()
     return modified
-from panels.admin_directory_services import build_course_table_data, build_ticket_table_data, build_user_table_data
+from panels.admin_directory_services import build_course_table_data, build_ticket_table_data, build_training_upload_rows, build_user_table_data

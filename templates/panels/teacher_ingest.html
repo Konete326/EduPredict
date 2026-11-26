@@ -4,10 +4,10 @@
 <header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
     <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Upload Marks &amp; Attendance</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Upload your class CSV to auto-create student logins, calculate predicted GPA, and update risk warnings</p>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Upload your class dataset (.csv, .xlsx, .json, .jsonl, .ndjson, .tsv, or .txt) to auto-create student logins, calculate predicted GPA, and update risk warnings</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
-    <button type="button" onclick="openUploadSheetModal()" title="Upload CSV or Excel spreadsheet" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
+    <button type="button" onclick="openUploadSheetModal()" title="Upload CSV, Excel, JSON, JSONL, TSV, or TXT dataset" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
       <i class="fa-solid fa-file-csv text-xs"></i>
       <span>Upload Class CSV</span>
     </button>
@@ -98,8 +98,8 @@
   <div class="w-full max-w-lg rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-xl space-y-4">
     <div class="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
       <div>
-        <h3 class="text-base font-semibold text-[var(--text-primary)]">Upload Class CSV / Excel</h3>
-        <p class="text-xs text-[var(--text-muted)]">Columns: student_id, full_name, birth_date, course_code, marks, attendance</p>
+        <h3 class="text-base font-semibold text-[var(--text-primary)]">Upload Class Dataset</h3>
+        <p class="text-xs text-[var(--text-muted)]">Formats: .csv, .xlsx, .json, .jsonl, .ndjson, .tsv, .txt · Columns: student_id, full_name, birth_date, course_code, marks, attendance</p>
       </div>
       <button type="button" onclick="closeUploadSheetModal()" aria-label="Close upload modal" class="inline-flex h-8 w-8 items-center justify-center rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
         <i class="fa-solid fa-xmark text-sm"></i>
@@ -109,7 +109,7 @@
     <form method="post" action="{% url 'panels:teacher_ingest' %}" enctype="multipart/form-data" class="space-y-3.5">
       {% csrf_token %}
       <input type="hidden" name="mode" value="upload">
-      {% include 'components/gradient_file_uploader.html' with input_id="teacher-dataset-file" input_name="dataset_file" accept=".csv,.xlsx" max_mb=25 auto_submit=True title="Drop Class CSV or Excel Sheet" subtitle="student_id, full_name, birth_date, course_code, marks, attendance" %}
+      {% include 'components/gradient_file_uploader.html' with input_id="teacher-dataset-file" input_name="dataset_file" accept=".csv,.xlsx,.json,.jsonl,.ndjson,.tsv,.txt" max_mb=25 auto_submit=True title="Drop Class Dataset (.csv, .xlsx, .json, .jsonl, .tsv, .txt)" subtitle="student_id, full_name, birth_date, course_code, marks, attendance" %}
       <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
         <a href="{% url 'panels:teacher_ingest' %}?template=csv" data-no-lock="true" title="Download sample spreadsheet template" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors">
           <i class="fa-solid fa-download text-[11px]"></i>

@@ -18,12 +18,23 @@ import panels.admin_audit_services as audit_svc
 import panels.admin_seed as admin_seed
 from panels.admin_services import create_user_record
 from panels.pdf_services import generate_student_report_card_pdf, generate_teacher_roster_pdf
+from panels.teacher_services import provision_student_accounts
 from panels.test_phase74 import _Phase74MemCol
 
 
 class _Phase75MemCol(_Phase74MemCol):
     def estimated_document_count(self):
         return len(self.docs)
+
+    def _matches(self, doc, query):
+        for k, v in (query or {}).items():
+            if isinstance(v, dict) and "$regex" in v:
+                flags = re.IGNORECASE if "i" in str(v.get("$options") or "") else 0
+                if not re.search(v["$regex"], str(doc.get(k) or ""), flags):
+                    return False
+            elif not super()._matches(doc, {k: v}):
+                return False
+        return True
 
 
 class Phase75VerificationTests(TestCase):
@@ -240,16 +251,23 @@ class Phase75VerificationTests(TestCase):
         reg_resp = client.post(reverse("accounts:auth_view"), {
             "action": "register", "full_name": "Ayesha Siddiqui", "email": "ayesha.new@edupredict.edu",
             "password": "password123", "confirm_password": "password123", "role": "STUDENT",
-            "department": "Software Engineering", "batch": "2026-A", "assigned_teacher_id": "USR-T750",
+            "department": "Software Engineering", "batch": "2026-A",
         })
         self.assertEqual(reg_resp.status_code, 200)
-        signup_user = self.cols["users"].find_one({"email": "ayesha.new@edupredict.edu"})
-        self.assertIsNotNone(signup_user)
-        self.assertEqual(signup_user["approval_status"], "PENDING")
-        self.cols["users"].update_one({"user_id": signup_user["user_id"]}, {"$set": {"is_active": True, "approval_status": "APPROVED"}})
-        login_resp = client.post(reverse("accounts:auth_view"), {"action": "login", "email": "ayesha.new@edupredict.edu", "password": "password123"})
+        self.assertIn("class upload", reg_resp.content.decode("utf-8"))
+        self.assertIsNone(self.cols["users"].find_one({"email": "ayesha.new@edupredict.edu"}))
+
+        creds = provision_student_accounts([{"student_id": "STD-2026-750", "full_name": "Ayesha Siddiqui", "birth_date": "2004-05-12", "batch": "2026-A", "course_code": "CS-101"}], teacher_user={"user_id": "USR-T750", "full_name": "Prof. Phase75"})
+        self.assertEqual(creds[0]["password"], "ayesha@2004-05-12")
+        provisioned = self.cols["users"].find_one({"student_id": "STD-2026-750"})
+        self.assertIsNotNone(provisioned)
+        self.assertEqual((provisioned["is_active"], provisioned["approval_status"], provisioned["username"]), (True, "APPROVED", "ayesha"))
+        login_resp = client.post(reverse("accounts:auth_view"), {"action": "login", "email": "STD-2026-750", "password": "ayesha@2004-05-12"})
         self.assertRedirects(login_resp, reverse("panels:student_dashboard"), fetch_redirect_response=False)
-        self.assertTrue(str(signup_user.get("student_id") or "").startswith("STD-"))
+        self.assertIsNotNone(self.cols["users"].find_one({"student_id": "STD-2026-750"}).get("last_login_at"))
+        for alt_id in ("ayesha", "Ayesha Siddiqui"):
+            alt_resp = Client().post(reverse("accounts:auth_view"), {"action": "login", "email": alt_id, "password": "ayesha@2004-05-12"})
+            self.assertRedirects(alt_resp, reverse("panels:student_dashboard"), fetch_redirect_response=False)
         self.assertEqual(self.cols["student_records"].count_documents({}), 0)
 
         created_doc, create_err = create_user_record("Bilal Ahmad", "bilal.std@edupredict.edu", "password123", "STUDENT", "IT", "2026-B")

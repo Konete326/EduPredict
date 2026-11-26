@@ -1,288 +1,191 @@
 {% extends 'public/_base.html' %}
 {% load static %}
-{% block title %}Early Academic Risk &amp; Analytics{% endblock %}
+{% block title %}Academic Early Warning &amp; Analytics{% endblock %}
 {% block extra_head %}
   <link rel="stylesheet" href="{% static 'css/landing_provably.css' %}?v=18">
 {% endblock %}
 {% block content %}
-<section id="cv-hero" class="cv-hero">
-  <div class="cv-grid" aria-hidden="true">
-    <div class="cv-grid-line"><span class="cv-pulse"></span></div>
-    <div class="cv-grid-line"></div>
-    <div class="cv-grid-line"><span class="cv-pulse"></span></div>
-    <div class="cv-grid-line"></div>
-    <div class="cv-grid-line"></div>
-    <div class="cv-grid-line"><span class="cv-pulse"></span></div>
-    <div class="cv-grid-line"></div>
-    <div class="cv-grid-line"></div>
-  </div>
-  <div class="cv-glint" aria-hidden="true"></div>
-  <div id="cv-wave" class="cv-wave" data-state="mono" aria-hidden="true"></div>
-  <div class="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
-    <div class="mx-auto max-w-3xl text-center space-y-5">
-      <a href="{% url 'accounts:about_view' %}" class="relative z-10 mx-auto inline-flex w-fit items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-canvas)]/90 p-1 pr-3 text-xs backdrop-blur transition-colors hover:border-[var(--accent-primary)]">
-        <span class="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 font-semibold text-[var(--accent-primary)]">{{ metrics.current_term|default:portal_current_term }}</span>
-        <span class="font-medium text-[var(--text-secondary)]">Live Campus Early Warning</span>
-        <i class="fa-solid fa-arrow-right text-[10px] text-[var(--text-muted)]" aria-hidden="true"></i>
-      </a>
-      <h1 class="cv-headline">
-        <span class="relative z-10 block">We make</span>
-        <span class="relative z-10 block">academic</span>
-        <span class="inline-flex items-baseline justify-center">
-          <button id="cv-verify-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle live verification" class="cv-toggle">
-            <span class="cv-toggle-knob"><i class="fa-solid fa-check text-[0.34em]" aria-hidden="true"></i></span>
-          </button>
-          <span class="relative z-10">fficial.</span>
+<section id="floo-story" class="floo-story" aria-label="EduPredict Interactive Story">
+  <div id="floo-sticky" class="floo-sticky">
+    <div id="floo-stage" class="floo-stage">
+      <div class="floo-sky-grid" aria-hidden="true"></div>
+
+      <div id="floo-fold" class="floo-fold">
+        <span class="floo-hero-kicker">
+          <span class="h-2 w-2 rounded-full bg-[#10b981]" aria-hidden="true"></span>
+          <span>{{ portal_institution_name|default:"EduPredict" }} &middot; {{ portal_current_term|default:"Fall 2026" }}</span>
         </span>
-      </h1>
-      <p class="relative z-10 mx-auto max-w-xl text-sm leading-relaxed text-[var(--text-secondary)] sm:text-base">
-        Verified student records, teacher-assigned courses, ML GPA predictions, and official A4 transcripts in one structured campus portal.
-      </p>
-      <div class="relative z-10 flex flex-wrap items-center justify-center gap-3">
-        <a href="{% url 'accounts:auth_view' %}?tab=register" class="cv-sweep inline-flex items-center gap-2 rounded-full bg-[var(--accent-primary)] px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-[var(--accent-hover)]">
-          <span>Get Started</span>
-          <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
-        </a>
-        <a href="#how-it-works" class="cv-sweep inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-6 py-2.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">
-          <i class="fa-solid fa-play text-[10px] text-[var(--accent-primary)]" aria-hidden="true"></i>
-          <span>See how it works</span>
-        </a>
-      </div>
-      <p id="cv-hero-hint" class="relative z-10 font-mono text-[11px] text-[var(--text-muted)]">Click or drag the switch, or press V to verify</p>
-    </div>
-    <div class="relative z-10 mt-10 grid grid-cols-1 items-center gap-6 lg:grid-cols-12">
-      <div class="lg:col-span-4">
-        <div id="cv-stats-card" class="cv-stats-card rounded-2xl p-5 space-y-4">
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-xs font-semibold text-[var(--text-secondary)]">Live ML Predictions</span>
-            <span id="cv-stats-state" class="rounded-full bg-[var(--bg-elevated)] px-2.5 py-0.5 font-mono text-[11px] font-semibold uppercase text-[var(--accent-primary)]">tracked</span>
-          </div>
-          <div class="flex items-baseline justify-between gap-2">
-            <p id="cv-stats-count" data-target-count="{{ metrics.predictions_count|default:62 }}" class="text-3xl font-bold tabular-nums text-[var(--text-primary)]">{{ metrics.predictions_count|default:62 }}</p>
-            <span class="text-xs text-[var(--text-muted)]">{{ metrics.students_count|default:0 }} tracked students</span>
-          </div>
-          <div class="grid h-16 grid-cols-5 items-end gap-2 pt-1" aria-hidden="true">
-            <div class="cv-bar" style="--bar-h-idle: 26%; --bar-h-live: 52%;"></div>
-            <div class="cv-bar" style="--bar-h-idle: 34%; --bar-h-live: 68%;"></div>
-            <div class="cv-bar" style="--bar-h-idle: 24%; --bar-h-live: 84%;"></div>
-            <div class="cv-bar" data-tone="success" style="--bar-h-idle: 38%; --bar-h-live: 94%;"></div>
-            <div class="cv-bar" data-tone="success" style="--bar-h-idle: 30%; --bar-h-live: 88%;"></div>
-          </div>
+        <h1 class="floo-hero-title">
+          Academic <em>foresight</em>,<br>without the noise.
+        </h1>
+        <p class="floo-hero-sub">
+          Bring classroom marks, attendance, Scikit-Learn risk predictions, and official A4 transcripts together in one calm, role-isolated workspace.
+        </p>
+        <div class="floo-hero-actions">
+          <a href="{% url 'accounts:auth_view' %}?tab=register" class="inline-flex items-center gap-2 rounded-full bg-[#10b981] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#059669]">
+            <span>Get Started</span>
+            <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
+          </a>
+          <a href="{% url 'accounts:auth_view' %}" class="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-6 py-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+            <span>Sign In</span>
+          </a>
+          <a href="{% url 'accounts:about_view' %}" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+            <span>How it works</span>
+            <i class="fa-solid fa-chevron-right text-[10px]" aria-hidden="true"></i>
+          </a>
         </div>
       </div>
-      <div class="lg:col-span-4 flex flex-col items-center gap-4">
-        <button id="cv-wax-seal" type="button" class="cv-wax-seal" aria-label="Flip official verification seal">
-          <span class="cv-wax-inner">
-            <span class="cv-wax-face">
-              <i class="fa-solid fa-shield-halved text-base text-[var(--accent-primary)]" aria-hidden="true"></i>
-              <span id="cv-wax-label" class="font-mono text-[8.5px] font-bold leading-tight tracking-wider text-[var(--text-primary)]">READY TO VERIFY</span>
+
+      <div id="floo-grass" class="floo-grass" aria-hidden="true">
+        <div class="floo-grass-hill floo-grass-hill-back"></div>
+        <div class="floo-grass-hill floo-grass-hill-mid"></div>
+        <div class="floo-grass-hill floo-grass-hill-front"></div>
+      </div>
+
+      <article id="floo-crm" class="crm">
+        <div class="crm-cursor" aria-hidden="true">
+          <i class="fa-solid fa-arrow-pointer text-xl"></i>
+        </div>
+        <div class="crm-topbar">
+          <div class="flex items-center gap-3">
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-hover)]">
+              <i class="fa-solid fa-layer-group text-sm" aria-hidden="true"></i>
             </span>
-            <span class="cv-wax-face cv-wax-back">
-              <span class="font-mono text-[8.5px] font-semibold uppercase leading-tight text-[var(--accent-primary)]">EduPredict Seal</span>
-              <span class="text-[11px] font-semibold text-[var(--text-primary)]">{{ metrics.current_term|default:portal_current_term }}</span>
-              <span class="text-[10px] text-[var(--text-muted)]">Click to flip</span>
-            </span>
-          </span>
-        </button>
-        <div class="grid w-full grid-cols-2 gap-2.5 text-center">
-          <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><p class="text-base font-bold tabular-nums text-[var(--text-primary)]">{{ metrics.students_count|default:0 }}</p><p class="text-[11px] text-[var(--text-muted)]">Students</p></div>
-          <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><p class="text-base font-bold tabular-nums text-[var(--text-primary)]">{{ metrics.teachers_count|default:0 }}</p><p class="text-[11px] text-[var(--text-muted)]">Faculty</p></div>
-          <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><p class="text-base font-bold tabular-nums text-[var(--text-primary)]">{{ metrics.courses_count|default:0 }}</p><p class="text-[11px] text-[var(--text-muted)]">Courses</p></div>
-          <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2"><p class="text-base font-bold tabular-nums text-[var(--accent-primary)]">{{ metrics.predictions_count|default:0 }}</p><p class="text-[11px] text-[var(--text-muted)]">Predictions</p></div>
-        </div>
-      </div>
-      <div class="lg:col-span-4 space-y-3">
-        <div id="cv-cert-stack" class="cv-cert-stage" role="region" aria-label="Sample academic transcripts stack">
-          {% for cred in landing_showcase.credentials %}
-          <article class="cv-cert-card flex flex-col justify-between" data-cert-idx="{{ forloop.counter0 }}" data-pos="{{ forloop.counter0 }}" tabindex="{% if forloop.first %}0{% else %}-1{% endif %}">
-            <div class="flex items-start justify-between gap-2">
-              <div><p class="font-mono text-[10px] font-semibold uppercase text-[var(--accent-primary)]">{{ cred.id }}</p><h3 class="mt-0.5 text-sm font-bold text-[var(--text-primary)]">{{ cred.short_course }}</h3></div>
-              <span class="cv-cert-stamp rounded-full border border-[var(--border-subtle)] px-2 py-0.5 font-mono text-[10px] font-semibold text-[var(--text-muted)] cv-cert-stamp-text">PENDING</span>
+            <div>
+              <p class="text-sm font-semibold text-[var(--text-primary)]">{{ portal_institution_name|default:"EduPredict" }} Live Workspace</p>
+              <p class="text-xs text-[var(--text-muted)]">MongoDB Atlas &middot; {{ portal_current_term|default:"Fall 2026" }}</p>
             </div>
-            <div class="grid grid-cols-2 gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-2.5 text-xs">
-              <div><span class="text-[10px] text-[var(--text-muted)]">Student</span><p class="font-semibold text-[var(--text-primary)]">{{ cred.student_name }}</p></div>
-              <div><span class="text-[10px] text-[var(--text-muted)]">Predicted GPA</span><p class="font-bold text-[var(--status-success)]">{{ cred.gpa }} · {{ cred.risk_short }}</p></div>
-            </div>
-            <div class="flex items-center justify-between text-[11px] text-[var(--text-muted)]"><span>{% if forloop.first %}Click card to inspect{% else %}Drag or click to inspect{% endif %}</span><i class="fa-solid fa-up-right-from-square text-[10px]" aria-hidden="true"></i></div>
-          </article>
-          {% empty %}
-          <article class="cv-cert-card flex flex-col justify-between" data-cert-idx="0" data-pos="0" tabindex="0">
-            <div class="flex items-start justify-between gap-2">
-              <div><p class="font-mono text-[10px] font-semibold uppercase text-[var(--accent-primary)]">LIVE PORTAL</p><h3 class="mt-0.5 text-sm font-bold text-[var(--text-primary)]">No student records yet</h3></div>
-              <span class="cv-cert-stamp rounded-full border border-[var(--border-subtle)] px-2 py-0.5 font-mono text-[10px] font-semibold text-[var(--text-muted)] cv-cert-stamp-text">PENDING</span>
-            </div>
-            <p class="text-xs text-[var(--text-secondary)]">Upload marks from the Teacher Panel to display live verified academic credentials here.</p>
-          </article>
-          {% endfor %}
-        </div>
-        <div class="flex items-center justify-between pt-2 text-xs">
-          <span class="text-[var(--text-muted)]">Drag cards or use arrows</span>
-          <div class="inline-flex items-center gap-2">
-            <button id="cv-cert-prev" type="button" aria-label="Previous record" class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
-            <span id="cv-cert-index" class="font-mono text-[11px] text-[var(--text-muted)]">1 / {{ landing_showcase.credentials|length|default:1 }}</span>
-            <button id="cv-cert-next" type="button" aria-label="Next record" class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+          </div>
+          <div class="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
+            <span class="crm-loader" aria-hidden="true"></span>
+            <span>Live Telemetry</span>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-  <dialog id="cv-credential-dialog" closedby="any" aria-labelledby="cv-dlg-course" class="cv-modal">
-    <div id="cv-credential-panel" class="p-6 space-y-4">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <p id="cv-dlg-id" class="font-mono text-xs font-semibold text-[var(--accent-primary)]">CERT-CS101-8821</p>
-          <h3 id="cv-dlg-course" class="mt-0.5 text-base font-bold text-[var(--text-primary)]">CS-101 · Intro to Computer Science</h3>
-        </div>
-        <button id="cv-dialog-close" type="button" aria-label="Close modal" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-xmark text-sm"></i></button>
-      </div>
-      <div class="grid grid-cols-2 gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 text-xs">
-        <div><span class="text-[10px] text-[var(--text-muted)]">Student</span><p id="cv-dlg-student" class="font-semibold text-[var(--text-primary)]"></p></div>
-        <div><span class="text-[10px] text-[var(--text-muted)]">Program</span><p id="cv-dlg-program" class="font-semibold text-[var(--text-primary)]"></p></div>
-        <div><span class="text-[10px] text-[var(--text-muted)]">Predicted GPA</span><p id="cv-dlg-gpa" class="font-bold text-[var(--accent-primary)]"></p></div>
-        <div><span class="text-[10px] text-[var(--text-muted)]">Risk Tier</span><p id="cv-dlg-risk" class="font-bold text-[var(--status-success)]"></p></div>
-        <div><span class="text-[10px] text-[var(--text-muted)]">Term</span><p id="cv-dlg-term" class="font-medium text-[var(--text-secondary)]"></p></div>
-        <div><span class="text-[10px] text-[var(--text-muted)]">Signed By</span><p id="cv-dlg-issuer" class="font-medium text-[var(--text-secondary)]"></p></div>
-      </div>
-      <div class="flex flex-wrap items-center justify-end gap-2">
-        <button id="cv-dialog-copy" type="button" class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">Copy Verification ID</button>
-        <button id="cv-dialog-verify" type="button" class="rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white hover:bg-[var(--accent-hover)]">Verify Live Record</button>
-      </div>
-    </div>
-  </dialog>
-</section>
-<section id="how-it-works" class="mx-auto max-w-6xl px-4 py-12 sm:px-6 space-y-5">
-  <div class="flex flex-wrap items-end justify-between gap-3">
-    <div class="space-y-1">
-      <p class="text-xs font-semibold uppercase tracking-wider text-[var(--accent-primary)]">Interactive Walkthrough</p>
-      <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-2xl">See how a student record flows end-to-end</h2>
-    </div>
-    <a href="{% url 'accounts:about_view' %}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--accent-primary)] hover:underline">
-      <span>Full Architecture Guide</span>
-      <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
-    </a>
-  </div>
-  <div id="ep-motion-player" class="overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-sm">
-    <div class="grid grid-cols-1 lg:grid-cols-12">
-      <div class="border-b border-[var(--border-subtle)] p-4 sm:p-5 space-y-2.5 lg:col-span-5 lg:border-b-0 lg:border-r">
-        <div class="flex items-center justify-between pb-1">
-          <span class="font-mono text-[11px] font-semibold text-[var(--text-muted)]">4-BEAT WORKFLOW</span>
-          <div class="flex items-center gap-2">
-            <span id="ep-motion-time" class="font-mono text-[11px] tabular-nums text-[var(--text-muted)]">00:00 · f00</span>
-            <button id="ep-motion-play" type="button" aria-label="Play or pause walkthrough" class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i id="ep-motion-play-icon" class="fa-solid fa-pause text-[10px]" aria-hidden="true"></i></button>
+
+        <div class="crm-kpi-grid">
+          <div class="crm-kpi-box">
+            <p class="text-[11px] font-medium text-[var(--text-muted)]">Students Tracked</p>
+            <p class="mt-1 text-2xl font-bold tabular-nums text-[var(--text-primary)]">{{ metrics.students_count|default:0 }}</p>
+          </div>
+          <div class="crm-kpi-box">
+            <p class="text-[11px] font-medium text-[var(--text-muted)]">Active Courses</p>
+            <p class="mt-1 text-2xl font-bold tabular-nums text-[var(--text-primary)]">{{ metrics.courses_count|default:0 }}</p>
+          </div>
+          <div class="crm-kpi-box">
+            <p class="text-[11px] font-medium text-[var(--text-muted)]">Faculty</p>
+            <p class="mt-1 text-2xl font-bold tabular-nums text-[var(--text-primary)]">{{ metrics.teachers_count|default:0 }}</p>
+          </div>
+          <div class="crm-kpi-box">
+            <p class="text-[11px] font-medium text-[var(--text-muted)]">ML Predictions</p>
+            <p class="mt-1 text-2xl font-bold tabular-nums text-[#10b981]">{{ metrics.predictions_count|default:0 }}</p>
           </div>
         </div>
-        <button type="button" data-motion-beat="0" aria-pressed="true" class="w-full rounded-xl border border-[var(--accent-primary)] bg-[var(--accent-soft)] p-3 text-left transition-colors"><p class="text-xs font-semibold text-[var(--text-primary)]">01 &middot; Admin Configures Courses &amp; Teachers</p><p class="mt-0.5 text-[11px] text-[var(--text-secondary)]">Links registered faculty and Program/Batch levels.</p></button>
-        <button type="button" data-motion-beat="1" aria-pressed="false" class="w-full rounded-xl border border-[var(--border-subtle)] p-3 text-left transition-colors hover:bg-[var(--bg-elevated)]"><p class="text-xs font-semibold text-[var(--text-primary)]">02 &middot; Teacher Uploads 3-Col Marks</p><p class="mt-0.5 text-[11px] text-[var(--text-secondary)]">CSV/Excel or Quick Entry updates student records.</p></button>
-        <button type="button" data-motion-beat="2" aria-pressed="false" class="w-full rounded-xl border border-[var(--border-subtle)] p-3 text-left transition-colors hover:bg-[var(--bg-elevated)]"><p class="text-xs font-semibold text-[var(--text-primary)]">03 &middot; ML Pipeline Scores Risk &amp; GPA</p><p class="mt-0.5 text-[11px] text-[var(--text-secondary)]">RandomForest, Ridge &amp; IsolationForest run automatically.</p></button>
-        <button type="button" data-motion-beat="3" aria-pressed="false" class="w-full rounded-xl border border-[var(--border-subtle)] p-3 text-left transition-colors hover:bg-[var(--bg-elevated)]"><p class="text-xs font-semibold text-[var(--text-primary)]">04 &middot; Student Views Report &amp; AI Coach</p><p class="mt-0.5 text-[11px] text-[var(--text-secondary)]">Prints monochrome A4 PDF &amp; checks study tips.</p></button>
-        <div class="h-1 w-full overflow-hidden rounded-full bg-[var(--bg-elevated)]"><div id="ep-motion-progress" class="h-full w-0 bg-[var(--accent-primary)] transition-[width] duration-75"></div></div>
-      </div>
-      <div class="flex min-h-[240px] items-center justify-center bg-[var(--bg-canvas)] p-5 sm:p-8 lg:col-span-7">
-        <div data-motion-scene="0" class="w-full max-w-md rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-sm space-y-3">
-          <div class="flex items-center justify-between text-xs"><span class="font-mono text-[var(--accent-primary)]">/admin-panel/courses/</span><span class="rounded bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--accent-primary)]">Step 01</span></div>
-          <p class="text-sm font-semibold text-[var(--text-primary)]">{{ landing_showcase.walkthrough.course_label }}</p>
-          <div class="grid grid-cols-2 gap-2 text-xs">
-            <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5"><span class="text-[10px] text-[var(--text-muted)]">Program</span><p class="font-medium">{{ landing_showcase.walkthrough.course_program }}</p></div>
-            <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5"><span class="text-[10px] text-[var(--text-muted)]">Assigned Teacher</span><p class="font-medium">{{ landing_showcase.walkthrough.course_teacher }}</p></div>
+
+        <div class="mt-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
+          <div class="flex items-center justify-between text-xs font-semibold text-[var(--text-secondary)] pb-2.5 border-b border-[var(--border-subtle)]">
+            <span>Recent Verified Records</span>
+            <span class="font-mono text-[11px] text-[#10b981]">Ridge &middot; RandomForest &middot; IsolationForest</span>
           </div>
-        </div>
-        <div data-motion-scene="1" class="hidden w-full max-w-md rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-sm space-y-3">
-          <div class="flex items-center justify-between text-xs"><span class="font-mono text-[var(--status-success)]">/teacher-panel/ingest/</span><span class="rounded bg-[var(--bg-elevated)] px-2 py-0.5 text-[10px] font-semibold text-[var(--status-success)]">Step 02</span></div>
-          <p class="text-sm font-semibold text-[var(--text-primary)]">3-Column Sheet Ingested</p>
-          <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3 font-mono text-[11px] text-[var(--text-secondary)]">student_id: {{ landing_showcase.walkthrough.student_id }} &middot; marks: {{ landing_showcase.walkthrough.marks }} &middot; attendance: {{ landing_showcase.walkthrough.attendance }}%</div>
-        </div>
-        <div data-motion-scene="2" class="hidden w-full max-w-md rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-sm space-y-3">
-          <div class="flex items-center justify-between text-xs"><span class="font-mono text-[var(--accent-primary)]">/analyst-panel/</span><span class="rounded bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--accent-primary)]">Step 03</span></div>
-          <p class="text-sm font-semibold text-[var(--text-primary)]">Scikit-Learn Prediction Generated</p>
-          <div class="grid grid-cols-2 gap-2 text-xs">
-            <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5"><span class="text-[10px] text-[var(--text-muted)]">Predicted GPA</span><p class="text-base font-semibold text-[var(--text-primary)]">{{ landing_showcase.walkthrough.gpa }}</p></div>
-            <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5"><span class="text-[10px] text-[var(--text-muted)]">Dropout Risk</span><p class="text-base font-semibold text-[var(--status-success)]">{{ landing_showcase.walkthrough.risk }}</p></div>
-          </div>
-        </div>
-        <div data-motion-scene="3" class="hidden w-full max-w-md rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-sm space-y-3">
-          <div class="flex items-center justify-between text-xs"><span class="font-mono text-[var(--status-warning)]">/student-panel/report/</span><span class="rounded bg-[var(--bg-elevated)] px-2 py-0.5 text-[10px] font-semibold text-[var(--status-warning)]">Step 04</span></div>
-          <p class="text-sm font-semibold text-[var(--text-primary)]">Official A4 Transcript &amp; AI Coach</p>
-          <p class="text-xs text-[var(--text-secondary)]">Student checks course marks, assigned teachers, study tips, and prints a formal monochrome A4 report card.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-<section id="feedback" class="border-y border-[var(--border-subtle)] bg-[var(--bg-surface)]">
-  <div id="ep-testimonial-globe" tabindex="0" class="mx-auto max-w-6xl px-4 py-12 sm:px-6 space-y-6 outline-none">
-    <div class="flex flex-wrap items-end justify-between gap-3">
-      <div class="space-y-1">
-        <p class="text-xs font-semibold uppercase tracking-wider text-[var(--accent-primary)]">Campus Voices</p>
-        <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-2xl">Trusted by educators, students, and analysts</h2>
-      </div>
-      <div class="flex flex-wrap items-center gap-3">
-        <span class="font-mono text-[11px] text-[var(--text-muted)]">Drag globe or click any pin</span>
-        <a href="{% url 'accounts:contact_view' %}" class="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1 text-xs font-semibold text-[var(--accent-primary)] hover:border-[var(--accent-primary)]">
-          <span>Submit Feedback</span>
-          <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
-        </a>
-      </div>
-    </div>
-    <div class="grid grid-cols-1 items-center gap-8 lg:grid-cols-12">
-      <div class="lg:col-span-6">
-        <div id="ep-globe-stage" class="ep-globe-stage">
-          <canvas id="ep-globe-canvas" class="ep-globe-canvas"></canvas>
-          <div id="ep-globe-pins" class="absolute inset-0"></div>
-        </div>
-      </div>
-      <div class="lg:col-span-6">
-        <div class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-6 sm:p-7 shadow-sm space-y-5">
-          <div class="flex items-center justify-between gap-2">
-            <div id="ep-globe-stars" class="flex items-center gap-1" aria-label="5 out of 5 stars"></div>
-            <span id="ep-globe-index" class="font-mono text-xs font-semibold text-[var(--text-muted)]">01 / 06</span>
-          </div>
-          <blockquote id="ep-globe-quote" class="text-sm sm:text-base leading-relaxed text-[var(--text-primary)] font-medium"></blockquote>
-          <div class="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--border-subtle)] pt-4">
-            <div class="flex items-center gap-3">
-              <img id="ep-globe-avatar" src="" alt="" class="h-11 w-11 rounded-full border border-[var(--border-subtle)] object-cover">
-              <div>
-                <p id="ep-globe-author" class="text-sm font-semibold text-[var(--text-primary)]"></p>
-                <p id="ep-globe-role" class="text-xs text-[var(--text-secondary)]"></p>
-                <p id="ep-globe-loc" class="font-mono text-[11px] text-[var(--accent-primary)]"></p>
+          <div class="mt-2.5 divide-y divide-[var(--border-subtle)]">
+            {% for cred in landing_showcase.credentials|slice:":3" %}
+            <div class="flex items-center justify-between gap-3 py-2.5 text-xs">
+              <div class="min-w-0">
+                <p class="truncate font-semibold text-[var(--text-primary)]">{{ cred.student_name }} <span class="font-mono text-[11px] text-[var(--text-muted)]">({{ cred.student_id }})</span></p>
+                <p class="truncate text-[11px] text-[var(--text-secondary)]">{{ cred.short_course }} &middot; {{ cred.program }}</p>
+              </div>
+              <div class="flex items-center gap-2.5 shrink-0">
+                <span class="font-mono font-semibold text-[var(--text-primary)]">GPA {{ cred.gpa }}</span>
+                <span class="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 font-mono text-[10px] font-semibold text-[var(--accent-hover)]">{{ cred.risk_short }}</span>
               </div>
             </div>
-            <div class="flex items-center gap-2">
-              <button id="ep-globe-prev" type="button" aria-label="Previous testimonial" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-arrow-left text-xs"></i></button>
-              <button id="ep-globe-next" type="button" aria-label="Next testimonial" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-arrow-right text-xs"></i></button>
+            {% empty %}
+            <div class="py-4 text-center text-xs text-[var(--text-muted)]">
+              No student records uploaded yet. Upload marks from the Teacher Panel to populate live campus predictions.
             </div>
+            {% endfor %}
           </div>
         </div>
+      </article>
+
+      <aside id="floo-panel" class="panel" aria-label="Interactive AI and Role Panels Showcase">
+        <div class="flex items-center gap-2" role="tablist" aria-label="Platform Views">
+          <button type="button" role="tab" aria-selected="true" data-floo-tab="ai-agents" class="floo-tab-btn flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] transition-colors cursor-pointer">
+            AI Agents
+          </button>
+          <button type="button" role="tab" aria-selected="false" data-floo-tab="role-panels" class="floo-tab-btn flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] transition-colors cursor-pointer">
+            4 Role Panels
+          </button>
+        </div>
+
+        <div class="mt-4 space-y-1">
+          <h2 id="floo-panel-title" class="font-editorial text-2xl font-medium text-[var(--text-primary)]">Role-aware campus assistants</h2>
+          <p id="floo-panel-desc" class="text-xs leading-relaxed text-[var(--text-secondary)]">Zero saved chat clutter. Auto-handoff across academic coaching, ML diagnostics, course ops, and support.</p>
+        </div>
+
+        <div id="floo-sub-list" class="mt-4 grid grid-cols-2 gap-2"></div>
+
+        <div class="pic space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <span id="floo-pic-badge" class="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--accent-hover)]">Student Mentor</span>
+            <span id="floo-pic-route" class="font-mono text-[11px] text-[var(--text-muted)]">/student-panel/</span>
+          </div>
+          <p id="floo-pic-title" class="text-base font-semibold text-[var(--text-primary)]">EduCoach AI</p>
+          <p id="floo-pic-desc" class="text-xs leading-relaxed text-[var(--text-secondary)]">Interprets predicted GPA, course marks, and attendance thresholds into clear study priorities.</p>
+          <div class="pt-2 flex flex-wrap items-center gap-2 border-t border-[var(--border-subtle)]">
+            <a href="{% url 'accounts:auth_view' %}" class="inline-flex items-center gap-1.5 rounded-lg bg-[#10b981] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#059669] transition-colors">
+              <span>Open Portal</span>
+              <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
+            </a>
+            <a href="{% url 'accounts:about_view' %}" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-canvas)] transition-colors">
+              <span>Full Architecture</span>
+            </a>
+          </div>
+        </div>
+      </aside>
+
+      <div id="floo-scroll-cue" class="floo-scroll-cue" aria-hidden="true">
+        <i class="fa-solid fa-computer-mouse text-[var(--accent-primary)]"></i>
+        <span>Scroll to explore workspace</span>
       </div>
     </div>
   </div>
 </section>
-<section class="mx-auto max-w-6xl px-4 py-12 sm:px-6 space-y-5">
-  <div class="space-y-1">
-    <p class="text-xs font-semibold uppercase tracking-wider text-[var(--accent-primary)]">Platform Capabilities</p>
-    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-2xl">Designed for clarity across every campus role</h2>
-  </div>
-  <div class="grid grid-cols-1 gap-3.5 md:grid-cols-3">
-    <article class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 transition-colors hover:border-[var(--accent-primary)]">
-      <div class="flex items-center justify-between"><span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-primary)]"><i class="fa-solid fa-sitemap text-sm" aria-hidden="true"></i></span><span class="rounded-md bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">Live Hierarchy</span></div>
-      <h3 class="mt-3.5 text-base font-semibold text-[var(--text-primary)]">Program, Class &amp; Teacher Mapping</h3>
-      <p class="mt-1 text-xs sm:text-sm text-[var(--text-secondary)]">Every student carries Program Level, Department, and Batch/Class linked directly to registered faculty.</p>
-    </article>
-    <article class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 transition-colors hover:border-[var(--accent-primary)]">
-      <div class="flex items-center justify-between"><span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--bg-elevated)] text-[var(--status-success)]"><i class="fa-solid fa-file-csv text-sm" aria-hidden="true"></i></span><span class="rounded-md bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">Zero Friction</span></div>
-      <h3 class="mt-3.5 text-base font-semibold text-[var(--text-primary)]">3-Column Marks Upload</h3>
-      <p class="mt-1 text-xs sm:text-sm text-[var(--text-secondary)]">Upload <span class="font-mono text-xs">student_id, marks, attendance</span> CSV/Excel files or use Quick Entry.</p>
-    </article>
-    <article class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 transition-colors hover:border-[var(--accent-primary)]">
-      <div class="flex items-center justify-between"><span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--bg-elevated)] text-[var(--accent-primary)]"><i class="fa-solid fa-file-pdf text-sm" aria-hidden="true"></i></span><span class="rounded-md bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">Registrar Ready</span></div>
-      <h3 class="mt-3.5 text-base font-semibold text-[var(--text-primary)]">Monochrome A4 PDFs</h3>
-      <p class="mt-1 text-xs sm:text-sm text-[var(--text-secondary)]">Formal black-on-white A4 student transcripts and class rosters with zero browser chrome.</p>
-    </article>
+
+<section class="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+  <div class="mx-auto max-w-6xl px-4 py-14 sm:px-6 space-y-8">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div class="max-w-2xl space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-wider text-[var(--accent-hover)]">Built for Real Campuses</p>
+        <h2 class="font-editorial text-3xl font-medium text-[var(--text-primary)] sm:text-4xl">From 3-column class sheets to formal registrar PDFs.</h2>
+      </div>
+      <div class="flex flex-wrap items-center gap-2.5">
+        <a href="{% url 'accounts:about_view' %}" class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-2 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">About Workflow</a>
+        <a href="{% url 'accounts:contact_view' %}" class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-2 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">Contact Support</a>
+        <a href="{% url 'accounts:auth_view' %}?tab=register" class="rounded-xl bg-[#10b981] px-4 py-2 text-xs font-semibold text-white hover:bg-[#059669] transition-colors">Create Account</a>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <article class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-6 space-y-2.5">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-hover)]"><i class="fa-solid fa-file-import text-sm" aria-hidden="true"></i></span>
+        <h3 class="text-base font-semibold text-[var(--text-primary)]">Multi-Format Ingestion</h3>
+        <p class="text-xs leading-relaxed text-[var(--text-secondary)]">Teachers upload .csv, .xlsx, .json, .jsonl, .tsv, or .txt marks sheets with automatic Student ID provisioning.</p>
+      </article>
+      <article class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-6 space-y-2.5">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-hover)]"><i class="fa-solid fa-chart-line text-sm" aria-hidden="true"></i></span>
+        <h3 class="text-base font-semibold text-[var(--text-primary)]">Scikit-Learn Risk Engine</h3>
+        <p class="text-xs leading-relaxed text-[var(--text-secondary)]">Ridge Regression, RandomForest, and IsolationForest compute GPA predictions, risk tiers, and anomaly alerts.</p>
+      </article>
+      <article class="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-6 space-y-2.5">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-hover)]"><i class="fa-solid fa-file-pdf text-sm" aria-hidden="true"></i></span>
+        <h3 class="text-base font-semibold text-[var(--text-primary)]">Monochrome A4 Transcripts</h3>
+        <p class="text-xs leading-relaxed text-[var(--text-secondary)]">Students and faculty print formal black-on-white A4 report cards and class rosters with zero browser chrome.</p>
+      </article>
+    </div>
   </div>
 </section>
 {% endblock %}
 {% block extra_js %}
   {{ landing_showcase.credentials|json_script:"ep-landing-credentials-data" }}
-  {{ landing_showcase.testimonials|json_script:"ep-landing-testimonials-data" }}
   <script src="{% static 'js/landing_provably.js' %}?v=18"></script>
-  <script src="{% static 'js/landing_globe.js' %}?v=18"></script>
 {% endblock %}

@@ -9,7 +9,7 @@ from pymongo.errors import DuplicateKeyError
 from core.db import courses_col, ensure_indexes, get_cached, invalidate_cache, notifications_col, predictions_col, resolve_portal_branding, student_records_col, support_tickets_col, users_col
 
 VALID_ROLES = ("ADMIN", "TEACHER", "STUDENT", "ANALYST")
-SELF_REGISTER_ROLES = ("STUDENT", "TEACHER", "ANALYST")
+SELF_REGISTER_ROLES = ("TEACHER", "ANALYST")
 PROGRAM_LEVELS = (
     "School / Junior",
     "College / Intermediate",
@@ -159,9 +159,16 @@ def authenticate_user(identifier, password):
         except Exception:
             user_doc = None
     if user_doc is None:
+        user_doc = col.find_one({"username": lower_id})
+    if user_doc is None:
+        try:
+            user_doc = col.find_one({"full_name": {"$regex": f"^{re.escape(raw_id)}$", "$options": "i"}})
+        except Exception:
+            user_doc = None
+    if user_doc is None:
         return None, "Invalid email/student ID or password."
     role = str(user_doc.get("role") or "").strip().upper()
-    role_label = "student" if role == "STUDENT" else "teacher"
+    role_label = "student" if role == "STUDENT" else ("analyst" if role == "ANALYST" else "teacher")
     approval_status = str(user_doc.get("approval_status") or "").strip().upper()
     if approval_status == "PENDING":
         return None, f"Your {role_label} account is pending Admin approval. Please wait until an administrator approves your account."
@@ -174,32 +181,30 @@ def authenticate_user(identifier, password):
         return None, "Invalid email/student ID or password."
     if role not in VALID_ROLES:
         return None, "Account role is invalid. Please contact an administrator."
+    col.update_one({"_id": user_doc["_id"]}, {"$set": {"last_login_at": datetime.now(timezone.utc)}})
+    if role == "STUDENT":
+        invalidate_cache("admin:")
     return user_doc, None
 
 
 def register_user(full_name, email, password, role, department, batch, phone="", bio="", program_level="", assigned_teacher_id="", assigned_teacher_name=""):
     normalized_role = str(role or "").strip().upper()
+    if normalized_role == "STUDENT":
+        return None, "Student accounts are created automatically by your teacher's class upload. Please sign in using your Student ID and password."
     if normalized_role not in SELF_REGISTER_ROLES:
-        return None, "Administrator accounts can only be created by an existing Admin."
+        return None, "Only Teacher and Data Analyst accounts can be registered here. Admin accounts are managed internally."
     ensure_accounts_indexes_once()
     col, normalized_email = users_col(), email.strip().lower()
     if col.find_one({"email": normalized_email}, {"_id": 1}) is not None:
         return None, "An account with this email already exists."
 
     resolved_department = department.strip() or "General"
-    resolved_batch = batch.strip() or ("2026" if normalized_role == "STUDENT" else "ALL")
+    resolved_batch = batch.strip() or "ALL"
     raw_level = str(program_level or "").strip()
     resolved_program_level = raw_level if raw_level in PROGRAM_LEVELS else ""
-    clean_teacher_id = str(assigned_teacher_id or "").strip()
-    clean_teacher_name = str(assigned_teacher_name or "").strip()
-    if normalized_role == "STUDENT" and clean_teacher_id:
-        teacher_doc = col.find_one({"user_id": clean_teacher_id, "role": "TEACHER", "is_active": True}, {"_id": 0, "user_id": 1, "full_name": 1})
-        if teacher_doc is None:
-            return None, "Please select a valid approved Teacher."
-        clean_teacher_name = str(teacher_doc.get("full_name") or clean_teacher_name).strip()
 
     user_id = generate_unique_user_id(col)
-    needs_approval = normalized_role in ("TEACHER", "STUDENT")
+    needs_approval = normalized_role in ("TEACHER", "ANALYST")
     user_doc = {
         "user_id": user_id,
         "full_name": full_name.strip(),
@@ -216,12 +221,6 @@ def register_user(full_name, email, password, role, department, batch, phone="",
         "created_at": datetime.now(timezone.utc),
     }
 
-    if normalized_role == "STUDENT":
-        user_doc["student_id"] = generate_unique_student_id(student_records_col(), user_id)
-        if clean_teacher_id:
-            user_doc["assigned_teacher_id"] = clean_teacher_id
-            user_doc["assigned_teacher_name"] = clean_teacher_name
-
     try:
         col.insert_one(user_doc)
     except DuplicateKeyError:
@@ -229,9 +228,8 @@ def register_user(full_name, email, password, role, department, batch, phone="",
 
     if needs_approval:
         try:
-            role_title = "Teacher" if normalized_role == "TEACHER" else "Student"
-            teacher_note = f", Teacher: {clean_teacher_name}" if clean_teacher_name else ""
-            notifications_col().insert_one({"title": f"{role_title} Approval Needed", "message": f"{full_name.strip()} ({normalized_email}, {resolved_department}{teacher_note}) registered as {role_title} and is waiting for Admin approval.", "severity": "WARNING", "category": "APPROVAL", "target_role": "ADMIN", "is_read": False, "created_at": datetime.now(timezone.utc)})
+            role_title = "Teacher" if normalized_role == "TEACHER" else "Analyst"
+            notifications_col().insert_one({"title": f"{role_title} Approval Needed", "message": f"{full_name.strip()} ({normalized_email}, {resolved_department}) registered as {role_title} and is waiting for Admin approval.", "severity": "WARNING", "category": "APPROVAL", "target_role": "ADMIN", "is_read": False, "created_at": datetime.now(timezone.utc)})
             invalidate_cache("notifs:")
         except Exception:
             pass

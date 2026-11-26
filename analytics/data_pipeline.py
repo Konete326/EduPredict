@@ -1,4 +1,6 @@
 from datetime import datetime, timezone
+import io
+import json
 import re
 import numpy as np
 import pandas as pd
@@ -102,6 +104,24 @@ def _failed_result(filename, uploaded_by, error, missing_fixed=0):
     return {"status": "FAILED", "error": error, "rows_processed": 0, "missing_values_fixed": int(missing_fixed)}
 
 
+def _read_text_stream(file_obj):
+    raw = file_obj.read()
+    return raw.decode("utf-8-sig", errors="replace") if isinstance(raw, bytes) else str(raw or "")
+
+
+def _parse_json_dataframe(raw_text):
+    try:
+        parsed = json.loads(raw_text)
+    except Exception:
+        return pd.read_json(io.StringIO(raw_text))
+    if isinstance(parsed, list):
+        return pd.DataFrame(parsed)
+    if isinstance(parsed, dict):
+        matched = next((parsed[k] for k in ("records", "data", "students", "rows", "items") if isinstance(parsed.get(k), list)), None)
+        return pd.DataFrame(matched) if matched is not None else pd.read_json(io.StringIO(raw_text))
+    return pd.read_json(io.StringIO(raw_text))
+
+
 def _load_dataframe(file_obj, mode):
     if mode == "sample" or file_obj is None:
         return "edupredict_sample_batch.csv", generate_sample_dataset_df(60), None
@@ -118,16 +138,38 @@ def _load_dataframe(file_obj, mode):
     if file_size is not None and file_size > MAX_UPLOAD_BYTES:
         return filename, None, "Dataset file exceeds the 25 MB upload limit."
     if hasattr(file_obj, "seek"):
-        file_obj.seek(0)
+        try:
+            file_obj.seek(0)
+        except Exception:
+            pass
     try:
         if lower_name.endswith(".csv"):
             chunks = list(pd.read_csv(file_obj, chunksize=2000))
-            return (filename, pd.concat(chunks, ignore_index=True), None) if chunks else (filename, None, "Uploaded CSV file is empty.")
-        if lower_name.endswith(".xlsx"):
-            return filename, pd.read_excel(file_obj, engine="openpyxl"), None
-        return filename, None, "Unsupported file format. Upload a .csv or .xlsx file."
+            df = pd.concat(chunks, ignore_index=True) if chunks else pd.DataFrame()
+        elif lower_name.endswith(".xlsx"):
+            df = pd.read_excel(file_obj, engine="openpyxl")
+        elif lower_name.endswith(".json"):
+            raw_text = _read_text_stream(file_obj)
+            if not raw_text.strip():
+                return filename, None, "Uploaded dataset file is empty."
+            df = _parse_json_dataframe(raw_text)
+        elif lower_name.endswith((".jsonl", ".ndjson")):
+            raw_text = _read_text_stream(file_obj)
+            if not raw_text.strip():
+                return filename, None, "Uploaded dataset file is empty."
+            df = pd.read_json(io.StringIO(raw_text), lines=True)
+        elif lower_name.endswith((".tsv", ".txt")):
+            raw_text = _read_text_stream(file_obj)
+            if not raw_text.strip():
+                return filename, None, "Uploaded dataset file is empty."
+            df = pd.read_csv(io.StringIO(raw_text), sep=None, engine="python")
+        else:
+            return filename, None, "Unsupported file format. Upload a .csv, .xlsx, .json, .jsonl, .ndjson, .tsv, or .txt file."
+        if df is None or df.empty or len(df.columns) == 0:
+            return filename, None, "Uploaded dataset file is empty."
+        return filename, df, None
     except pd.errors.EmptyDataError:
-        return filename, None, "Uploaded CSV file is empty."
+        return filename, None, "Uploaded dataset file is empty."
     except Exception as exc:
         return filename, None, f"Failed to read dataset file: {exc}"
 
@@ -250,7 +292,7 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload", teacher_user=No
         if t_meta:
             doc.update(t_meta)
         ingested_rows.append({"student_id": sid, "full_name": doc["full_name"], "birth_date": bdate, "course_code": doc["course_code"], "batch": doc["batch"]})
-        if len(preview_rows) < 3:
+        if len(preview_rows) < 5:
             preview_rows.append({k: doc[k] for k in ("student_id", "full_name", "batch", "course_code", "attendance_pct", "internal_marks", "previous_gpa")})
         for has_flag, key, cast in ((has_dropout_label, "dropout_label", int), (has_actual_gpa, "actual_gpa", float), (has_anomaly_label, "anomaly_label", int)):
             if has_flag:
@@ -263,7 +305,7 @@ def ingest_dataset(file_obj=None, uploaded_by="", mode="upload", teacher_user=No
     try:
         ensure_indexes()
         _write_ops(student_records_col(), operations)
-        log_doc = {"filename": filename, "uploaded_by": uploaded_by or "Analyst", "rows_processed": len(operations), "missing_values_fixed": missing_values_fixed, "is_training_dataset": bool(is_training_dataset), "status": "COMPLETED", "uploaded_at": now}
+        log_doc = {"filename": filename, "uploaded_by": uploaded_by or "Analyst", "rows_processed": len(operations), "missing_values_fixed": missing_values_fixed, "is_training_dataset": bool(is_training_dataset), "columns": list(df.columns)[:12], "preview_rows": preview_rows, "status": "COMPLETED", "uploaded_at": now}
         if t_meta.get("teacher_user_id"):
             log_doc["teacher_user_id"] = t_meta["teacher_user_id"]
         datasets_log_col().insert_one(log_doc)

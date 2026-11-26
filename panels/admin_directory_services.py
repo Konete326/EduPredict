@@ -45,12 +45,14 @@ def build_user_table_data(users, filter_role, actor_user_id, actor_email=""):
             "badge": status_badge["text"],
             "items": [
                 {"label": "User ID", "value": uid or "-"},
+                *([{"label": "Student ID", "value": str(u.get("student_id") or "-")}] if (role == "STUDENT" or u.get("student_id")) else []),
                 {"label": "Email", "value": email or "-"},
                 {"label": "Department", "value": dept or "-"},
                 {"label": "Program / Level", "value": program_level or "-"},
                 {"label": "Batch", "value": batch or "-"},
                 {"label": "Assigned Teacher", "value": str(u.get("assigned_teacher_name") or "-")},
                 {"label": "Joined Date", "value": str(u.get("created_at_str") or "-"), "fullWidth": True},
+                {"label": "Last Login", "value": str(u.get("last_login_str") or "Not logged in yet"), "fullWidth": True},
                 *([{"label": "Rejection Reason", "value": str(u["rejection_reason"]), "fullWidth": True}] if u.get("rejection_reason") else []),
             ],
         }
@@ -131,3 +133,47 @@ def build_ticket_table_data(tickets, filter_status):
         ]
         rows.append([t["subject"], t.get("user_name") or "User", {"text": status, "status": "success" if status == "RESOLVED" else "warning"}, {"actions": actions}])
     return headers, rows
+
+
+def build_training_upload_rows(uploads):
+    rows = []
+    for u in uploads or []:
+        fn = str(u.get("filename") or "master.csv")
+        by = str(u.get("uploaded_by") or "System Admin")
+        rc = int(u.get("rows_processed") or 0)
+        preds = int(u.get("predictions_generated") or 0)
+        st = str(u.get("status") or "COMPLETED").upper()
+        dt = str(u.get("uploaded_at_str") or "-")
+        cols = [str(c) for c in (u.get("columns") or []) if c]
+        preview_lines = []
+        for r in (u.get("preview_rows") or [])[:5]:
+            if not isinstance(r, dict):
+                continue
+            sid = str(r.get("student_id") or "-")
+            name = str(r.get("full_name") or "").strip()
+            parts = [f"{sid} ({name})" if name else sid]
+            if r.get("attendance_pct") is not None:
+                parts.append(f"Att {r.get('attendance_pct')}%")
+            if r.get("internal_marks") is not None:
+                parts.append(f"Marks {r.get('internal_marks')}")
+            if r.get("previous_gpa") is not None:
+                parts.append(f"GPA {r.get('previous_gpa')}")
+            preview_lines.append(" · ".join(parts))
+        view_payload = {
+            "title": fn,
+            "subtitle": f"{by} · {dt}",
+            "badge": st,
+            "items": [
+                {"label": "Filename", "value": fn},
+                {"label": "Uploaded By", "value": by},
+                {"label": "Rows Processed", "value": str(rc)},
+                {"label": "Predictions", "value": str(preds)},
+                {"label": "Missing Fixed", "value": str(int(u.get("missing_values_fixed") or 0))},
+                {"label": "Model Version", "value": str(u.get("model_version") or "-")},
+                {"label": "Uploaded At", "value": dt},
+                {"label": "Columns", "value": ", ".join(cols) if cols else "-"},
+                {"label": "Sample Preview", "value": "\n".join(preview_lines) if preview_lines else "No preview rows available.", "fullWidth": True},
+            ],
+        }
+        rows.append([fn, by, rc, preds, {"text": st, "status": "success" if st == "COMPLETED" else "warning"}, dt, {"actions": [_view_action(f"View {fn}", view_payload)]}])
+    return rows

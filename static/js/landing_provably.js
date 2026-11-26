@@ -1,345 +1,198 @@
 (function () {
-  function readCredentialsData() {
-    try {
-      const node = document.getElementById('ep-landing-credentials-data');
-      const parsed = node ? JSON.parse(node.textContent || '[]') : [];
-      if (Array.isArray(parsed) && parsed.length) return parsed;
-    } catch (e) {}
-    return [{ id: 'LIVE PORTAL', program: 'BS / Undergraduate', course: 'No student records yet', student: 'Pending Upload', gpa: '0.00', risk: 'PENDING', term: 'Current Term', issuer: 'Registrar' }];
-  }
-  const CREDENTIALS = readCredentialsData();
+  const STORY = 2600;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = (t) => t * t * (3 - 2 * t);
 
-  function initProvablyHero() {
-    const hero = document.getElementById('cv-hero');
-    const wave = document.getElementById('cv-wave');
-    const toggle = document.getElementById('cv-verify-toggle');
-    if (!hero || !wave || !toggle) return;
+  const TAB_DATA = {
+    'ai-agents': {
+      badge: '4 Ephemeral AI Agents',
+      title: 'Role-aware campus assistants',
+      desc: 'Zero saved chat clutter. Auto-handoff across academic coaching, ML diagnostics, course ops, and support.',
+      items: [
+        { key: 'educoach', label: 'EduCoach AI', role: 'Student Mentor', route: '/student-panel/', summary: 'Interprets predicted GPA, course marks, and attendance thresholds into clear study priorities.' },
+        { key: 'pulseml', label: 'PulseML AI', role: 'ML Analyst', route: '/analyst-panel/accuracy/', summary: 'Monitors Ridge, RandomForest, and IsolationForest runs plus live LMS stream accuracy.' },
+        { key: 'courseops', label: 'CourseOps AI', role: 'Faculty & Admin', route: '/teacher-panel/ingest/', summary: 'Guides 3-column CSV/Excel marks uploads, course mapping, and student risk alerts.' },
+        { key: 'helpdesk', label: 'HelpDesk AI', role: 'Support Triage', route: '/contact/', summary: 'Routes staff approval questions and portal access inquiries directly to Admin tickets.' }
+      ]
+    },
+    'role-panels': {
+      badge: 'Strict Role Isolation',
+      title: '4 Purpose-Built Role Panels',
+      desc: 'Every user sees only their authorized workspace, KPIs, and A4 PDF tools.',
+      items: [
+        { key: 'admin', label: 'Admin Panel', role: 'Governance', route: '/admin-panel/', summary: 'Creates courses, maps Teachers, approves Teacher & Analyst signups, and handles support tickets.' },
+        { key: 'teacher', label: 'Teacher Panel', role: 'Marks & Alerts', route: '/teacher-panel/', summary: 'Uploads .csv/.xlsx/.json/.tsv marks sheets, auto-provisions students, and sends alerts.' },
+        { key: 'student', label: 'Student Panel', role: 'Forecast & PDF', route: '/student-panel/', summary: 'Tracks live GPA forecasts, attendance warnings, study tips, and monochrome A4 transcripts.' },
+        { key: 'analyst', label: 'Analyst Panel', role: 'ML Pipeline', route: '/analyst-panel/', summary: 'Cleans batch datasets, runs Scikit-Learn predictions, and audits anomaly flags.' }
+      ]
+    }
+  };
 
-    const statsCard = document.getElementById('cv-stats-card');
-    const statsState = document.getElementById('cv-stats-state');
-    const statsCount = document.getElementById('cv-stats-count');
-    const certStack = document.getElementById('cv-cert-stack');
-    const certCards = Array.from(hero.querySelectorAll('.cv-cert-card'));
-    const certPrev = document.getElementById('cv-cert-prev');
-    const certNext = document.getElementById('cv-cert-next');
-    const certLabel = document.getElementById('cv-cert-index');
-    const waxSeal = document.getElementById('cv-wax-seal');
-    const waxLabel = document.getElementById('cv-wax-label');
-    const hintEl = document.getElementById('cv-hero-hint');
+  function initFlooStory() {
+    const story = document.getElementById('floo-story');
+    const sticky = document.getElementById('floo-sticky');
+    const stage = document.getElementById('floo-stage');
+    if (!story || !sticky || !stage) return;
 
-    const dialog = document.getElementById('cv-credential-dialog');
-    const dlgClose = document.getElementById('cv-dialog-close');
-    const dlgCopy = document.getElementById('cv-dialog-copy');
-    const dlgVerify = document.getElementById('cv-dialog-verify');
-    let supportsDisplayTransition;
+    const fold = document.getElementById('floo-fold');
+    const grass = document.getElementById('floo-grass');
+    const crm = document.getElementById('floo-crm');
+    const panel = document.getElementById('floo-panel');
+    const cue = document.getElementById('floo-scroll-cue');
 
-    const canTransitionDisplay = () => {
-      if (supportsDisplayTransition !== undefined) return supportsDisplayTransition;
-      if (!window.CSS || !window.CSS.supports || !window.CSS.supports('transition-behavior', 'allow-discrete') || !document.body) {
-        return false;
-      }
-      const probe = document.createElement('div');
-      probe.style.cssText = 'transition: display 1s allow-discrete !important; display: block;';
-      document.body.appendChild(probe);
-      window.getComputedStyle(probe).display;
-      probe.style.display = 'none';
-      supportsDisplayTransition = window.getComputedStyle(probe).display === 'block';
-      probe.remove();
-      return supportsDisplayTransition;
-    };
+    const reducedMq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+    const isReduced = () => Boolean(reducedMq && reducedMq.matches);
+    const isMobile = () => window.innerWidth < 768;
 
-    const closeTopLayer = async (el) => {
-      if (!el || !el.open) return;
-      const supportsTopExit = window.CSS && window.CSS.supports && window.CSS.supports('overlay', 'auto') && canTransitionDisplay();
-      if (!supportsTopExit) {
-        el.setAttribute('data-closing', '');
-        const anims = typeof el.getAnimations === 'function' ? el.getAnimations({ subtree: true }) : [];
-        if (anims.length > 0) {
-          await Promise.race([
-            Promise.allSettled(anims.map((a) => a.finished)),
-            new Promise((r) => window.setTimeout(r, 600))
-          ]);
-        }
-        if (!el.hasAttribute('data-closing')) return;
-        el.removeAttribute('data-closing');
-      }
-      el.close();
-    };
-
-    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const targetCount = parseInt((statsCount && statsCount.getAttribute('data-target-count')) || '62', 10) || 62;
-    let verified = false;
-    let frontIdx = 0;
-    let userInteracted = false;
-    let waveRaf = 0;
-    let countRaf = 0;
-    let autoTimer = 0;
-    let activeDialogCred = CREDENTIALS[0];
-
-    const animateCount = (fromVal, toVal, durationMs) => {
-      if (!statsCount) return;
-      if (countRaf) window.cancelAnimationFrame(countRaf);
-      if (reduced || durationMs <= 0) {
-        statsCount.textContent = String(toVal);
+    const scaleStage = () => {
+      if (isReduced() || isMobile()) {
+        stage.style.transform = '';
         return;
       }
-      const start = performance.now();
-      const step = (now) => {
-        const t = Math.min(1, (now - start) / durationMs);
-        const eased = 1 - Math.pow(1 - t, 3);
-        statsCount.textContent = String(Math.round(fromVal + (toVal - fromVal) * eased));
-        if (t < 1) countRaf = window.requestAnimationFrame(step);
-      };
-      countRaf = window.requestAnimationFrame(step);
+      const rect = sticky.getBoundingClientRect();
+      const s = Math.min(rect.width / 1440, rect.height / 1036);
+      stage.style.transform = 'scale(' + Math.max(0.45, Math.min(1.12, s)).toFixed(4) + ')';
     };
 
-    const syncStampedUi = (isOn) => {
-      toggle.setAttribute('aria-checked', isOn ? 'true' : 'false');
-      toggle.style.setProperty('--cv-knob-x', isOn ? '110%' : '0%');
-      if (statsCard) statsCard.classList.toggle('is-stamped', isOn);
-      if (certStack) certStack.classList.toggle('is-stamped', isOn);
-      if (waxSeal) waxSeal.classList.toggle('is-stamped', isOn);
-      if (statsState) statsState.textContent = isOn ? 'verified' : 'tracked';
-      if (waxLabel) waxLabel.textContent = isOn ? 'OFFICIALLY VERIFIED' : 'READY TO VERIFY';
-      if (hintEl) hintEl.textContent = isOn ? 'Color verified · press V or click switch to reset' : 'Click or drag the switch, or press V to verify';
-      if (dlgVerify) dlgVerify.textContent = isOn ? 'Verified Active' : 'Verify Live Record';
-      hero.querySelectorAll('.cv-cert-stamp-text').forEach((el) => {
-        el.textContent = isOn ? 'VERIFIED' : 'PENDING';
-      });
-      animateCount(isOn ? Math.max(0, Math.round(targetCount * 0.45)) : targetCount, isOn ? targetCount : Math.max(1, Math.round(targetCount * 0.45)), 650);
-    };
-
-    const runColorWave = (nextVerified) => {
-      if (waveRaf) window.cancelAnimationFrame(waveRaf);
-      const heroRect = hero.getBoundingClientRect();
-      const togRect = toggle.getBoundingClientRect();
-      const wx = Math.round(togRect.left - heroRect.left + togRect.width / 2);
-      const wy = Math.round(togRect.top - heroRect.top + togRect.height / 2);
-      hero.style.setProperty('--cv-wx', wx + 'px');
-      hero.style.setProperty('--cv-wy', wy + 'px');
-
-      const maxDx = Math.max(wx, heroRect.width - wx);
-      const maxDy = Math.max(wy, heroRect.height - wy);
-      const maxR = Math.ceil(Math.hypot(maxDx, maxDy) + 120);
-
-      if (reduced) {
-        wave.setAttribute('data-state', nextVerified ? 'clear' : 'mono');
-        syncStampedUi(nextVerified);
+    const applyProgress = (p) => {
+      story.style.setProperty('--floo-p', p.toFixed(4));
+      if (isReduced() || isMobile()) {
+        if (fold) { fold.style.transform = ''; fold.style.opacity = '1'; }
+        if (grass) { grass.style.transform = ''; grass.style.opacity = '0'; }
+        if (crm) { crm.style.transform = ''; crm.style.opacity = '1'; }
+        if (panel) { panel.style.transform = ''; panel.style.opacity = '1'; }
+        if (cue) cue.style.opacity = '0';
         return;
       }
 
-      wave.setAttribute('data-state', 'moving');
-      const start = performance.now();
-      const dur = 820;
-      const tick = (now) => {
-        const p = Math.min(1, (now - start) / dur);
-        const eased = 1 - Math.pow(1 - p, 3);
-        const r = nextVerified ? eased * maxR : (1 - eased) * maxR;
-        hero.style.setProperty('--cv-r0', Math.max(0, r - 110).toFixed(0) + 'px');
-        hero.style.setProperty('--cv-r1', (r + 40).toFixed(0) + 'px');
-        if (p < 1) {
-          waveRaf = window.requestAnimationFrame(tick);
-        } else {
-          wave.setAttribute('data-state', nextVerified ? 'clear' : 'mono');
-          waveRaf = 0;
-        }
-      };
-      waveRaf = window.requestAnimationFrame(tick);
-      syncStampedUi(nextVerified);
+      const foldT = smooth(clamp(p / 0.36, 0, 1));
+      if (fold) {
+        fold.style.transform = 'translate3d(0, ' + lerp(0, -140, foldT).toFixed(1) + 'px, 0) scale(' + lerp(1, 0.9, foldT).toFixed(3) + ')';
+        fold.style.opacity = lerp(1, 0, clamp(p / 0.3, 0, 1)).toFixed(3);
+      }
+
+      const grassT = smooth(clamp((p - 0.04) / 0.36, 0, 1));
+      if (grass) {
+        grass.style.transform = 'translate3d(0, ' + lerp(0, 260, grassT).toFixed(1) + 'px, 0)';
+        grass.style.opacity = lerp(1, 0.08, grassT).toFixed(3);
+      }
+
+      const crmEnter = smooth(clamp((p - 0.14) / 0.32, 0, 1));
+      const crmShift = smooth(clamp((p - 0.48) / 0.28, 0, 1));
+      if (crm) {
+        const crmY = lerp(520, 48, crmEnter);
+        const crmX = lerp(268, 0, crmShift);
+        const crmS = lerp(0.92, 1, crmEnter);
+        crm.style.transform = 'translate3d(' + crmX.toFixed(1) + 'px, ' + crmY.toFixed(1) + 'px, 0) scale(' + crmS.toFixed(3) + ')';
+        crm.style.opacity = clamp((p - 0.12) / 0.16, 0, 1).toFixed(3);
+      }
+
+      const panelEnter = smooth(clamp((p - 0.46) / 0.32, 0, 1));
+      if (panel) {
+        const pY = lerp(260, 48, panelEnter);
+        const pX = lerp(64, 0, panelEnter);
+        panel.style.transform = 'translate3d(' + pX.toFixed(1) + 'px, ' + pY.toFixed(1) + 'px, 0)';
+        panel.style.opacity = panelEnter.toFixed(3);
+      }
+
+      if (cue) cue.style.opacity = lerp(1, 0, clamp(p / 0.12, 0, 1)).toFixed(3);
     };
 
-    const setVerified = (nextVal, manual) => {
-      if (manual) {
-        userInteracted = true;
-        if (autoTimer) { window.clearTimeout(autoTimer); autoTimer = 0; }
-      }
-      const target = Boolean(nextVal);
-      if (target === verified && wave.getAttribute('data-state') !== 'moving') {
-        syncStampedUi(verified);
+    const updateFromScroll = () => {
+      if (isReduced() || isMobile()) {
+        applyProgress(1);
         return;
       }
-      verified = target;
-      runColorWave(verified);
+      const rect = story.getBoundingClientRect();
+      const totalTravel = Math.max(1, Math.min(STORY, story.offsetHeight - sticky.offsetHeight));
+      const p = clamp(-rect.top / totalTravel, 0, 1);
+      applyProgress(p);
     };
 
-    let dragState = null;
-    toggle.addEventListener('pointerdown', (e) => {
-      userInteracted = true;
-      if (autoTimer) { window.clearTimeout(autoTimer); autoTimer = 0; }
-      const rect = toggle.getBoundingClientRect();
-      dragState = { id: e.pointerId, startX: e.clientX, moved: false, maxMove: Math.max(12, rect.width * 0.52), baseOn: verified };
-      toggle.setPointerCapture(e.pointerId);
-    });
-    toggle.addEventListener('pointermove', (e) => {
-      if (!dragState || e.pointerId !== dragState.id) return;
-      const dx = e.clientX - dragState.startX;
-      if (Math.abs(dx) > 4) dragState.moved = true;
-      const basePct = dragState.baseOn ? 110 : 0;
-      const deltaPct = (dx / dragState.maxMove) * 110;
-      const clamped = Math.max(0, Math.min(110, basePct + deltaPct));
-      toggle.style.setProperty('--cv-knob-x', clamped.toFixed(1) + '%');
-    });
-    const endToggleDrag = (e) => {
-      if (!dragState || e.pointerId !== dragState.id) return;
-      const dx = e.clientX - dragState.startX;
-      const moved = dragState.moved;
-      const wasOn = dragState.baseOn;
-      dragState = null;
-      if (!moved) {
-        setVerified(!wasOn, true);
-      } else {
-        const nextOn = wasOn ? dx > -12 : dx > 12;
-        setVerified(nextOn, true);
-      }
-    };
-    toggle.addEventListener('pointerup', endToggleDrag);
-    toggle.addEventListener('pointercancel', endToggleDrag);
-
-    const layoutStack = () => {
-      const total = certCards.length;
-      if (!total) return;
-      certCards.forEach((card, i) => {
-        const pos = ((i - frontIdx) % total + total) % total;
-        card.setAttribute('data-pos', String(pos));
-        card.setAttribute('tabindex', pos === 0 ? '0' : '-1');
+    if (typeof ResizeObserver === 'function') {
+      const ro = new ResizeObserver(() => {
+        scaleStage();
+        updateFromScroll();
       });
-      if (certLabel) certLabel.textContent = String(frontIdx + 1) + ' / ' + String(total);
-    };
-
-    const cycleCert = (delta) => {
-      const total = certCards.length;
-      if (!total) return;
-      frontIdx = ((frontIdx + delta) % total + total) % total;
-      layoutStack();
-    };
-
-    const openDialog = (credIdx) => {
-      if (!dialog) return;
-      const cred = CREDENTIALS[credIdx] || CREDENTIALS[0];
-      activeDialogCred = cred;
-      const setField = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
-      setField('cv-dlg-id', cred.id);
-      setField('cv-dlg-program', cred.program);
-      setField('cv-dlg-course', cred.course);
-      setField('cv-dlg-student', cred.student);
-      setField('cv-dlg-gpa', cred.gpa);
-      setField('cv-dlg-risk', cred.risk);
-      setField('cv-dlg-term', cred.term);
-      setField('cv-dlg-issuer', cred.issuer);
-      if (dlgCopy) dlgCopy.textContent = 'Copy Verification ID';
-      dialog.removeAttribute('data-closing');
-      if (!dialog.open) dialog.showModal();
-    };
-
-    const closeDialog = () => {
-      if (dialog && dialog.open) closeTopLayer(dialog);
-    };
-
-    if (certStack && certCards.length) {
-      let cDrag = null;
-      certStack.addEventListener('pointerdown', (e) => {
-        const card = e.target.closest('.cv-cert-card');
-        if (!card) return;
-        cDrag = { id: e.pointerId, x: e.clientX, dx: 0, card: card };
-      });
-      certStack.addEventListener('pointermove', (e) => {
-        if (!cDrag || e.pointerId !== cDrag.id) return;
-        cDrag.dx = e.clientX - cDrag.x;
-        if (Math.abs(cDrag.dx) > 6 && cDrag.card.getAttribute('data-pos') === '0') {
-          cDrag.card.style.transform = 'translate3d(' + (cDrag.dx * 0.45).toFixed(0) + 'px, 0, 0) rotate(' + (cDrag.dx * 0.03).toFixed(1) + 'deg)';
-        }
-      });
-      const finishCardDrag = (e) => {
-        if (!cDrag || e.pointerId !== cDrag.id) return;
-        const { dx, card } = cDrag;
-        cDrag = null;
-        card.style.transform = '';
-        if (Math.abs(dx) >= 52) {
-          cycleCert(dx < 0 ? 1 : -1);
-        } else if (Math.abs(dx) < 8) {
-          if (card.getAttribute('data-pos') === '0') {
-            openDialog(parseInt(card.getAttribute('data-cert-idx') || '0', 10));
-          } else {
-            cycleCert(1);
-          }
-        }
-      };
-      certStack.addEventListener('pointerup', finishCardDrag);
-      certStack.addEventListener('pointercancel', () => { if (cDrag) { cDrag.card.style.transform = ''; cDrag = null; } });
-      certStack.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowRight') { e.preventDefault(); cycleCert(1); }
-        else if (e.key === 'ArrowLeft') { e.preventDefault(); cycleCert(-1); }
-        else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDialog(frontIdx); }
-      });
+      ro.observe(sticky);
+    }
+    window.addEventListener('resize', () => { scaleStage(); updateFromScroll(); }, { passive: true });
+    if (!isReduced()) {
+      window.addEventListener('scroll', updateFromScroll, { passive: true });
+    }
+    if (reducedMq && typeof reducedMq.addEventListener === 'function') {
+      reducedMq.addEventListener('change', () => { scaleStage(); updateFromScroll(); });
     }
 
-    if (certPrev) certPrev.addEventListener('click', () => cycleCert(-1));
-    if (certNext) certNext.addEventListener('click', () => cycleCert(1));
-
-    if (dialog) {
-      dialog.addEventListener('cancel', (e) => {
-        e.preventDefault();
-        closeDialog();
-      });
-      if (!('closedBy' in HTMLDialogElement.prototype)) {
-        dialog.addEventListener('click', (e) => {
-          if (e.target !== dialog) return;
-          const r = dialog.getBoundingClientRect();
-          const inside = r.top <= e.clientY && e.clientY <= r.top + r.height && r.left <= e.clientX && e.clientX <= r.left + r.width;
-          if (!inside) closeDialog();
-        });
-      }
-      if (dlgClose) dlgClose.addEventListener('click', closeDialog);
-      if (dlgVerify) dlgVerify.addEventListener('click', () => setVerified(!verified, true));
-      if (dlgCopy) {
-        dlgCopy.addEventListener('click', () => {
-          const text = activeDialogCred.id + ' · ' + activeDialogCred.course + ' · GPA ' + activeDialogCred.gpa;
-          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(() => {});
-          dlgCopy.textContent = 'Copied to Clipboard';
-        });
-      }
-    }
-
-    if (waxSeal) {
-      waxSeal.addEventListener('click', () => waxSeal.classList.toggle('is-flipped'));
-      waxSeal.addEventListener('pointermove', (e) => {
-        const r = waxSeal.getBoundingClientRect();
-        waxSeal.style.setProperty('--sx', Math.round(((e.clientX - r.left) / r.width) * 100) + '%');
-        waxSeal.style.setProperty('--sy', Math.round(((e.clientY - r.top) / r.height) * 100) + '%');
-      });
-    }
-
-    let glintRaf = 0;
-    hero.addEventListener('pointermove', (e) => {
-      if (glintRaf) return;
-      glintRaf = window.requestAnimationFrame(() => {
-        glintRaf = 0;
-        const r = hero.getBoundingClientRect();
-        hero.style.setProperty('--cv-mx', Math.round(e.clientX - r.left) + 'px');
-        hero.style.setProperty('--cv-my', Math.round(e.clientY - r.top) + 'px');
-      });
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        if (waxSeal && waxSeal.classList.contains('is-flipped')) waxSeal.classList.remove('is-flipped');
-        return;
-      }
-      const tag = document.activeElement && document.activeElement.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === 'v' || e.key === 'V') setVerified(!verified, true);
-    });
-
-    layoutStack();
-    syncStampedUi(false);
-    wave.setAttribute('data-state', 'mono');
-    if (!reduced) {
-      autoTimer = window.setTimeout(() => {
-        if (!userInteracted && !verified) setVerified(true, false);
-      }, 2600);
-    }
+    scaleStage();
+    updateFromScroll();
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initProvablyHero);
-  else initProvablyHero();
+  function initShowcaseTabs() {
+    const root = document.getElementById('floo-panel');
+    if (!root) return;
+    const tabs = Array.from(root.querySelectorAll('[data-floo-tab]'));
+    const subWrap = document.getElementById('floo-sub-list');
+    const picBadge = document.getElementById('floo-pic-badge');
+    const picTitle = document.getElementById('floo-pic-title');
+    const picRoute = document.getElementById('floo-pic-route');
+    const picDesc = document.getElementById('floo-pic-desc');
+    const panelTitle = document.getElementById('floo-panel-title');
+    const panelDesc = document.getElementById('floo-panel-desc');
+
+    let activeTab = 'ai-agents';
+    let activeItemIdx = 0;
+
+    const renderSub = () => {
+      const cfg = TAB_DATA[activeTab] || TAB_DATA['ai-agents'];
+      if (panelTitle) panelTitle.textContent = cfg.title;
+      if (panelDesc) panelDesc.textContent = cfg.desc;
+      if (subWrap) {
+        subWrap.innerHTML = '';
+        cfg.items.forEach((item, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'floo-sub-btn rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-left transition-colors cursor-pointer hover:border-[var(--accent-primary)]';
+          btn.setAttribute('aria-pressed', idx === activeItemIdx ? 'true' : 'false');
+          const top = document.createElement('p');
+          top.className = 'text-xs font-semibold text-[var(--text-primary)]';
+          top.textContent = item.label;
+          const sub = document.createElement('p');
+          sub.className = 'text-[11px] text-[var(--text-muted)]';
+          sub.textContent = item.role;
+          btn.append(top, sub);
+          btn.addEventListener('click', () => {
+            activeItemIdx = idx;
+            renderSub();
+          });
+          subWrap.appendChild(btn);
+        });
+      }
+      const chosen = cfg.items[activeItemIdx] || cfg.items[0];
+      if (picBadge) picBadge.textContent = chosen.role;
+      if (picTitle) picTitle.textContent = chosen.label;
+      if (picRoute) picRoute.textContent = chosen.route;
+      if (picDesc) picDesc.textContent = chosen.summary;
+    };
+
+    tabs.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activeTab = btn.getAttribute('data-floo-tab') || 'ai-agents';
+        activeItemIdx = 0;
+        tabs.forEach((b) => b.setAttribute('aria-selected', b === btn ? 'true' : 'false'));
+        renderSub();
+      });
+    });
+
+    renderSub();
+  }
+
+  function boot() {
+    initFlooStory();
+    initShowcaseTabs();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();

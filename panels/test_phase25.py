@@ -63,18 +63,26 @@ class Phase25IntegrationTests(TestCase):
         session.save()
         return client
 
-    def test_student_self_signup_approves_and_redirects(self):
-        self.cols["users"].insert_one({"user_id": "USR-T900", "full_name": "Prof. Assigned", "email": "assigned@edupredict.edu", "role": "TEACHER", "department": "Computer Science", "is_active": True, "approval_status": "APPROVED"})
+    def test_student_self_signup_rejected_and_analyst_approval_flow(self):
         client = Client()
-        resp = client.post(reverse("accounts:auth_view"), {"action": "register", "full_name": "Sara Ahmed", "email": "sara@edupredict.edu", "password": "password123", "confirm_password": "password123", "role": "STUDENT", "department": "Computer Science", "batch": "2026-A", "phone": "0300-1234567", "bio": "BSCS Student", "assigned_teacher_id": "USR-T900"})
-        self.assertEqual(resp.status_code, 200)
-        saved = self.cols["users"].find_one({"email": "sara@edupredict.edu"})
+        std_resp = client.post(reverse("accounts:auth_view"), {"action": "register", "full_name": "Sara Ahmed", "email": "sara@edupredict.edu", "password": "password123", "confirm_password": "password123", "role": "STUDENT", "department": "Computer Science", "batch": "2026-A"})
+        self.assertEqual(std_resp.status_code, 200)
+        self.assertIn("class upload", std_resp.content.decode("utf-8"))
+        self.assertIsNone(self.cols["users"].find_one({"email": "sara@edupredict.edu"}))
+
+        reg_resp = client.post(reverse("accounts:auth_view"), {"action": "register", "full_name": "Nadia Khan", "email": "nadia@edupredict.edu", "password": "password123", "confirm_password": "password123", "role": "ANALYST", "department": "Analytics", "batch": "ALL"})
+        self.assertEqual(reg_resp.status_code, 200)
+        saved = self.cols["users"].find_one({"email": "nadia@edupredict.edu"})
         self.assertIsNotNone(saved)
-        self.assertEqual((saved["phone"], saved["bio"], saved["assigned_teacher_id"], saved["approval_status"], saved["is_active"]), ("0300-1234567", "BSCS Student", "USR-T900", "PENDING", False))
+        self.assertEqual((saved["role"], saved["approval_status"], saved["is_active"]), ("ANALYST", "PENDING", False))
+        self.assertIsNotNone(self.cols["notifications"].find_one({"target_role": "ADMIN", "title": "Analyst Approval Needed"}))
+        blocked = client.post(reverse("accounts:auth_view"), {"action": "login", "email": "nadia@edupredict.edu", "password": "password123"})
+        self.assertEqual(blocked.status_code, 200)
+        self.assertNotIn("user", client.session)
         self._login_admin_client().post(reverse("panels:admin_users"), {"action": "toggle", "user_id": saved["user_id"], "filter_role": "PENDING"})
-        login_resp = client.post(reverse("accounts:auth_view"), {"action": "login", "email": "sara@edupredict.edu", "password": "password123"})
-        self.assertRedirects(login_resp, reverse("panels:student_dashboard"), fetch_redirect_response=False)
-        self.assertEqual(client.session["user"]["role"], "STUDENT")
+        login_resp = client.post(reverse("accounts:auth_view"), {"action": "login", "email": "nadia@edupredict.edu", "password": "password123"})
+        self.assertRedirects(login_resp, reverse("panels:analyst_dashboard"), fetch_redirect_response=False)
+        self.assertEqual(client.session["user"]["role"], "ANALYST")
 
     def test_teacher_self_signup_is_pending_and_blocks_login_until_approved(self):
         anon = Client()
@@ -282,7 +290,7 @@ class Phase25IntegrationTests(TestCase):
         self.assertEqual(ingest_res["column_mappings"]["Test_Score"], "internal_marks")
         self.assertEqual(ingest_res["column_mappings"]["Prev_GPA"], "previous_gpa")
         self.assertEqual(ingest_res["column_mappings"]["LMS_Hours"], "lms_hours_weekly")
-        self.assertEqual(len(ingest_res["preview_rows"]), 3)
+        self.assertEqual(len(ingest_res["preview_rows"]), 5)
 
         rf_model = build_dropout_pipeline().named_steps["model"]
         self.assertIsInstance(rf_model, RandomForestClassifier)
