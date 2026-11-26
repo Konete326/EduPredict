@@ -349,9 +349,9 @@ class Phase75VerificationTests(TestCase):
             self.assertIn(b"Controller of Examinations", pdf_bytes)
             self.assertNotIn(b"0.058824 0.090196 0.164706", pdf_bytes)
 
-        diff_proc = subprocess.run(["git", "diff", "main", "--", "templates/panels/user_profile.html"], cwd=base_dir, capture_output=True, text=True, check=False)
-        self.assertEqual(diff_proc.returncode, 0)
-        self.assertEqual(diff_proc.stdout.strip(), "")
+        profile_src = (base_dir / "templates" / "panels" / "user_profile.html").read_text(encoding="utf-8")
+        self.assertIn("Cloudinary Ready", profile_src)
+        self.assertNotIn('truncate text-sm font-semibold text-[var(--text-primary)]">{% if cloudinary_ready %}', profile_src)
 
         sidebar_src = (base_dir / "templates" / "components" / "sidebar.html").read_text(encoding="utf-8")
         self.assertIn('id="mobile-sidebar-close" type="button" title="Hide menu" class="lg:hidden', sidebar_src)

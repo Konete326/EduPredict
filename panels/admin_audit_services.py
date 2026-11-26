@@ -15,7 +15,7 @@ VALID_LOG_CATEGORIES = ("USERS", "COURSES", "TICKETS", "DATA", "SYSTEM")
 VALID_LOG_SEVERITIES = ("INFO", "WARNING", "DANGER", "SUCCESS")
 CAT_STATUS_MAP = {"USERS": "info", "COURSES": "success", "TICKETS": "warning", "DATA": "info", "SYSTEM": "info"}
 SEV_STATUS_MAP = {"INFO": "info", "SUCCESS": "success", "WARNING": "warning", "DANGER": "danger"}
-LOG_HEADERS = ["Log ID", "Actor", "Role", "Category", "Activity Summary", "Level", "Timestamp"]
+LOG_HEADERS = ["Event", "Actor", "Category", "Level", "Timestamp"]
 SETTING_HEADERS = ["Setting Name", "Group", "Current Value", "Default Value", "Status", "Updated"]
 BASELINE_AUDIT_LOGS = (
     ("LOG-1001", "System Admin", "ADMIN", "SYSTEM", "PORTAL_BOOT", "EduPredict academic portal audit trail initialized.", "INFO", "SYSTEM"),
@@ -83,14 +83,6 @@ def _ensure_audit_seed_data():
                 col.create_index([(field, ASCENDING)], unique=True)
             except Exception:
                 pass
-        if a_col.count_documents({}) == 0:
-            now = datetime.now(timezone.utc)
-            for log_id, actor, role, cat, act, summ, sev, src in BASELINE_AUDIT_LOGS:
-                if a_col.find_one({"log_id": log_id}, {"_id": 1}) is None:
-                    try:
-                        a_col.insert_one({"log_id": log_id, "actor": actor, "role": role, "category": cat, "action": act, "summary": summ, "severity": sev, "source": src, "created_at": now})
-                    except DuplicateKeyError:
-                        pass
         _AUDIT_SEED_DONE = True
 
 
@@ -175,7 +167,7 @@ def _load_activity_logs(clean_cat):
             counts[item["category"]] += 1
     log_kpis = {"total_events": len(all_logs), "admin_actions": sum(1 for x in all_logs if x["role"] == "ADMIN" or x["source"] == "MANUAL"), "data_ml_events": sum(1 for x in all_logs if x["category"] == "DATA"), "security_events": sum(1 for x in all_logs if x["severity"] in ("WARNING", "DANGER") or x["category"] == "SYSTEM")}
     logs = all_logs if clean_cat == "ALL" else [x for x in all_logs if x["category"] == clean_cat]
-    rows = [[x["log_id"], x["actor"], {"text": x["role"], "status": "info"}, {"text": x["category"], "status": CAT_STATUS_MAP.get(x["category"], "info")}, x["summary"], {"text": x["severity"], "status": SEV_STATUS_MAP.get(x["severity"], "info")}, x["created_at_str"]] for x in logs]
+    rows = [[(x["summary"][:105] + "..." if len(x["summary"]) > 108 else x["summary"]), f"{x['actor']} ({x['role'].title()})", {"text": x["category"].title(), "status": CAT_STATUS_MAP.get(x["category"], "info")}, {"text": x["severity"].title(), "status": SEV_STATUS_MAP.get(x["severity"], "info")}, x["created_at_str"]] for x in logs]
     return logs, counts, log_kpis, list(LOG_HEADERS), rows
 
 

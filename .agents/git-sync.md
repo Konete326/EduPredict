@@ -61,16 +61,15 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 86 Final Verifier & Release Shepherd"
-active_branch_merged_to_main: "feature/training-creds-docs -> main"
-project_phase: "Phase 86: Training vs Live Dataset Isolation, Teacher Credentials CSV Export & Full Docs Sync Complete"
+last_updated_by_agent: "Phase 87 Clean-Start & UI Polish"
+active_branch_merged_to_main: "feature/clean-start-ui-polish -> main"
+project_phase: "Phase 87: Clean-Start DB Reset, Decent Activity Logs, Draggable AI Dock & Sidebar Training Link"
 
 completed_modules:
-  - "Phase 1-85: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline & Leakage-Free Evaluation, Admin Activity Logs & Portal Settings, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Enterprise Visual Polish, Multi-Agent AI Dock (Gemini live + RBAC/DOM control), Vercel Auto-Deploy, Public 21st.dev Header/Footer/About/Contact, Provably Hero & Interactive 3D Testimonial Globe, Single-Institute Sample Datasets, Student-ID Auth & Approval, Teacher CSV Isolation, Read-Only Student Panel & Dual Feedback."
-  - "Phase 86 (Training vs Live Isolation, Teacher Credentials CSV Export & Full Docs Sync):"
-      - "analytics/data_pipeline.py (276/350), analytics/ml_engine.py (323/350), panels/views_admin.py (250/250), panels/admin_services.py (349/350): added is_training_dataset flag on ingest_dataset (True + source=ADMIN_MASTER_TRAINING on Admin Master CSV upload, False on live class uploads); ML engine trains RandomForest/Ridge/IsolationForest on all student_records including master training rows while scoring predictions/notifications/course_demand strictly on live non-training records; Admin overview KPIs & course stats exclude is_training_dataset=True."
-      - "panels/teacher_services.py (349/350), panels/views_teacher.py (240/250), panels/urls.py (36/350), templates/panels/teacher_ingest.html (248/350), templates/panels/teacher_students.html (182/350): excluded is_training_dataset=True from _teacher_student_query; added get_teacher_credentials_export_rows and @role_required(['TEACHER', 'ADMIN']) route /teacher-panel/credentials/download/ (panels:teacher_credentials_csv) streaming UTF-8 class_student_credentials.csv; added 1-click Download Credentials CSV links on teacher_ingest.html and teacher_students.html."
-      - "README.md, .agents/{prd,srd,trd}.md, docs/aptech_submission/{DEMO_WALKTHROUGH,INSTALLATION_README}.md: synced full architecture, Single-Institute Workflow, sample_datasets/ guide, is_training_dataset separation, credentials CSV export, 21st.dev UI & Vercel deployment docs."
+  - "Phase 1-86: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Multi-Agent AI Dock, Vercel Auto-Deploy, Provably Hero & Live Testimonial Globe, Single-Institute Datasets, Student-ID Auth, Teacher CSV Isolation & Credentials Export, Training vs Live Separation & Full Docs Sync."
+  - "Phase 87 (Clean-Start DB Reset, Decent Activity Logs, Draggable AI Dock & Sidebar Training Link):"
+      - "panels/admin_seed.py, panels/admin_audit_services.py, core/management/commands/verify_uat.py: disabled dummy/seed auto-insertion on startup, purged all non-ADMIN MongoDB data for a clean start, simplified Activity Logs to 5 clean columns (Event, Actor, Category, Level, Timestamp), and ensured verify_uat cleans up its own activity_logs."
+      - "templates/components/sidebar.html, templates/panels/admin_dashboard.html, templates/panels/user_profile.html, templates/components/ai_message_dock.html, static/js/ai_agent_dock.js: added Training Data link in Admin Core sidebar pointing to #master-training-upload, fixed Cloudinary Ready truncation on /profile/, and made #ep-agent-dock-toggle draggable anywhere with localStorage persistence."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."

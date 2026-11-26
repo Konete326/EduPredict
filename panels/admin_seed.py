@@ -93,32 +93,9 @@ def ensure_admin_seed_data():
             return
         ensure_accounts_indexes_once()
         ensure_default_admin()
-        now = datetime.now(timezone.utc)
-        c_col, u_col, t_col = courses_col(), users_col(), support_tickets_col()
+        c_col, t_col = courses_col(), support_tickets_col()
         _ensure_unique_index(c_col, "course_code")
         _ensure_unique_index(t_col, "ticket_id")
-
-        if c_col.count_documents({}) == 0:
-            for code, title, dept, batch, inst, credits, cap in SEED_COURSES:
-                if c_col.find_one({"course_code": code}, {"_id": 1}) is None:
-                    c_col.insert_one({"course_code": code, "title": title, "department": dept, "batch": batch, "instructor": inst, "credits": credits, "capacity": cap, "status": "ACTIVE", "created_at": now})
-
-        if u_col.count_documents({}) <= 1:
-            pwd_hash = make_password("EduPredict@2026")
-            for uid, name, email, role, dept, batch, sid in SEED_USERS:
-                if u_col.find_one({"$or": [{"email": email}, {"user_id": uid}]}, {"_id": 1}) is None:
-                    doc = {"user_id": uid, "full_name": name, "email": email, "password_hash": pwd_hash, "role": role, "department": dept, "batch": batch, "is_active": True, "created_at": now}
-                    if sid:
-                        doc["student_id"] = sid
-                    try:
-                        u_col.insert_one(doc)
-                    except DuplicateKeyError:
-                        pass
-
-        if t_col.count_documents({}) == 0:
-            for tid, uid, uname, role, subj, msg, status in SEED_TICKETS:
-                if t_col.find_one({"ticket_id": tid}, {"_id": 1}) is None:
-                    t_col.insert_one({"ticket_id": tid, "user_id": uid, "user_name": uname, "role": role, "subject": subj, "message": msg, "status": status, "created_at": now})
         _ADMIN_SEED_DONE = True
 
 

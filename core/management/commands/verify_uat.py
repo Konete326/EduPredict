@@ -182,6 +182,8 @@ class Command(BaseCommand):
         support_tickets_col().delete_one({"ticket_id": tkt_id})
         notifications_col().delete_many({"ticket_id": tkt_id})
         notifications_col().delete_many({"message": {"$regex": "Simulated UAT message"}})
+        from core.db import get_collection
+        get_collection("activity_logs").delete_many({"$or": [{"summary": {"$regex": tkt_id}}, {"actor": "Zainab Raza"}, {"summary": {"$regex": "System Administrator \\(USR-1000\\)"}}]})
         theme_get = student_client.get(reverse("panels:theme_preferences"))
         if theme_get.status_code != 200 or not theme_get.json().get("ok"):
             raise CommandError(f"Theme preferences GET failed with status {theme_get.status_code}")

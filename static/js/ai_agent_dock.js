@@ -316,11 +316,23 @@
       }
     } catch (e) {}
   }
+  function bindDockDrag(el) {
+    if (!el.root || !el.toggleBtn || el.toggleBtn.dataset.dragBound === '1') return;
+    el.toggleBtn.dataset.dragBound = '1';
+    const POS_KEY = 'ep_agent_dock_pos'; let drag = null, suppressClick = false;
+    const applyPos = (r, b) => { el.root.style.right = Math.max(12, Math.min(Math.max(12, window.innerWidth - (el.root.offsetWidth || 160) - 12), r)) + 'px'; el.root.style.bottom = Math.max(12, Math.min(Math.max(12, window.innerHeight - (el.toggleBtn.offsetHeight || 44) - 12), b)) + 'px'; };
+    try { const s = JSON.parse(sessionStorage.getItem(POS_KEY) || 'null'); if (s && typeof s.r === 'number' && typeof s.b === 'number') applyPos(s.r, s.b); } catch (e) {}
+    el.toggleBtn.addEventListener('pointerdown', (e) => { drag = { id: e.pointerId, x: e.clientX, y: e.clientY, r: parseFloat(el.root.style.right || '16') || 16, b: parseFloat(el.root.style.bottom || '16') || 16, moved: false }; if (el.toggleBtn.setPointerCapture) el.toggleBtn.setPointerCapture(e.pointerId); });
+    el.toggleBtn.addEventListener('pointermove', (e) => { if (!drag || e.pointerId !== drag.id) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) > 5 || Math.abs(dy) > 5) drag.moved = true; if (drag.moved) applyPos(drag.r - dx, drag.b - dy); });
+    const endDrag = (e) => { if (!drag || e.pointerId !== drag.id) return; if (drag.moved) { suppressClick = true; try { sessionStorage.setItem(POS_KEY, JSON.stringify({ r: parseFloat(el.root.style.right || '16'), b: parseFloat(el.root.style.bottom || '16') })); } catch (err) {} } drag = null; };
+    el.toggleBtn.addEventListener('pointerup', endDrag); el.toggleBtn.addEventListener('pointercancel', endDrag);
+    el.toggleBtn.addEventListener('click', (e) => { if (suppressClick) { suppressClick = false; e.stopImmediatePropagation(); return; } setDockOpen(!isDockOpen); });
+  }
   function initAiAgentDock() {
     const el = getEls(); if (!el.root) return;
     if (el.root.dataset.dockBound === '1') { schedulePendingRun(); return; }
     el.root.dataset.dockBound = '1';
-    if (el.toggleBtn) el.toggleBtn.addEventListener('click', () => setDockOpen(!isDockOpen));
+    bindDockDrag(el);
     if (el.closeBtn) el.closeBtn.addEventListener('click', () => { setChatOpen(false); resetConversation(true); clearActiveSession(); });
     if (el.clearBtn) el.clearBtn.addEventListener('click', () => { resetConversation(false); clearActiveSession(); const cur = getEls(); if (cur.input && typeof cur.input.focus === 'function') cur.input.focus(); });
     el.root.querySelectorAll('[data-dock-agent]').forEach((btn) => btn.addEventListener('click', () => selectAgent(btn.getAttribute('data-dock-agent'), false)));
@@ -330,10 +342,7 @@
   }
   function openAiAgentDock(agentId) { setDockOpen(true); if (agentId) selectAgent(resolveAgentId(agentId), false); else { const el = getEls(); if (el.input && typeof el.input.focus === 'function') el.input.focus(); } }
   const closeAiAgentDock = () => setDockOpen(false);
-  if (typeof window.reinitEduPredictUI === 'function' && !window.reinitEduPredictUI._aiDockWrapped) {
-    const orig = window.reinitEduPredictUI, wrapped = function () { orig(); initAiAgentDock(); };
-    wrapped._aiDockWrapped = true; window.reinitEduPredictUI = wrapped;
-  }
+  if (typeof window.reinitEduPredictUI === 'function' && !window.reinitEduPredictUI._aiDockWrapped) { const orig = window.reinitEduPredictUI, wrapped = function () { orig(); initAiAgentDock(); }; wrapped._aiDockWrapped = true; window.reinitEduPredictUI = wrapped; }
   Object.assign(window, { initAiAgentDock, openAiAgentDock, closeAiAgentDock, executeAiDomActions: executeDomActions });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAiAgentDock); else initAiAgentDock();
 })();

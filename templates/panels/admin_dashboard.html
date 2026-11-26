@@ -37,7 +37,7 @@
   {% include 'components/metric_card.html' with title="System Health" value=kpis.system_status badge=kpis.open_tickets|stringformat:"s"|add:" open tickets" status="success" icon="fa-solid fa-heart-pulse" %}
 </section>
 
-<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+<section id="master-training-upload" class="scroll-mt-20 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div class="min-w-0 space-y-1">
       <div class="flex flex-wrap items-center gap-2">
@@ -129,7 +129,7 @@
   </div>
 </section>
 
-<section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+<section id="master-training-upload" class="scroll-mt-20 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
   {% include 'components/data_table.html' with table_id="admin-recent-tickets-table" table_title="Latest Help Tickets" headers=recent_ticket_headers rows=recent_ticket_rows page_size=5 empty_message="No help tickets yet." %}
 </section>
 {% endblock %}
