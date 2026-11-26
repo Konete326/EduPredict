@@ -93,6 +93,7 @@
 <body class="floo-public min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased flex flex-col">
   <div id="ep-top-progress" class="fixed top-0 left-0 z-60 h-[3px] w-0 opacity-0 bg-[var(--accent-primary)] transition-[width,opacity] duration-200 pointer-events-none" aria-hidden="true"></div>
 
+  {% block public_header %}
   <header id="ep-public-header" class="sticky top-0 z-40 w-full border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]/90 backdrop-blur-md transition-shadow">
     <nav class="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 sm:px-6" aria-label="Primary navigation">
       <a href="{% url 'root' %}" class="inline-flex items-center gap-2.5 rounded-lg py-1 pr-2 text-sm font-semibold tracking-tight text-[var(--text-primary)]">
@@ -139,11 +140,13 @@
       <a href="{% url 'accounts:auth_view' %}?tab=register" class="w-full rounded-xl bg-[#10b981] px-4 py-2.5 text-center text-sm font-semibold text-white">Get Started</a>
     </div>
   </div>
+  {% endblock %}
 
   <main class="flex-1 w-full min-w-0">
     {% block content %}{% endblock %}
   </main>
 
+  {% block public_footer %}
   <footer class="w-full border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
     <div class="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <div class="flex flex-wrap items-center gap-3">
@@ -165,6 +168,7 @@
       </div>
     </div>
   </footer>
+  {% endblock %}
 
   {% include 'components/toast.html' %}
   {{ theme_prefs|json_script:"ep-theme-prefs-data" }}

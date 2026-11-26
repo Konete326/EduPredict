@@ -61,37 +61,28 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 91-92 Floo Public Pages, Green Default Theme & Multi-Format Training"
-active_branch_merged_to_main: "feature/p91-auth-training-ui -> main"
-project_phase: "Phase 92: Floo Scroll-Story Landing Page, Emerald Green Default Theme, Multi-Format ML Training & Strict Auth/UI Polish"
+last_updated_by_agent: "Phase 93 Exact FlooLandingScroll Port (EduPredict Content + Emerald Green)"
+active_branch_merged_to_main: "feature/p93-exact-floo-landing -> main"
+project_phase: "Phase 93: Exact 1440x1036 FlooLandingScroll Architecture with EduPredict Content"
 
 completed_modules:
-  - "Phase 1-90: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Multi-Agent AI Dock (stationary quadrant-aware popover), Vercel Auto-Deploy, Single-Institute Datasets, Student-ID Auth, Teacher CSV Isolation & Credentials Export, Training vs Live Separation, Bento Grid Modals, 4-Col Minimal Lists + View Details Modal, Dedicated /admin-panel/training/ Page, Astryx Design System Alignment."
-  - "Phase 91 (Auth, Training View Modal & UI Polish):"
-      - "templates/components/sidebar.html: removed Portal Settings link from Settings nav group."
-      - "templates/components/metric_card.html: added truncate max-w-full and full-value title tooltip on [data-kpi-counter]."
-      - "templates/components/ai_message_dock.html: simplified #ep-agent-dock-toggle to clean icon-only h-11 w-11 rounded-full button."
-      - "accounts/{services,views}.py, templates/accounts/auth.html, static/js/auth_wizard.js, panels/teacher_services.py: restricted self-registration to Teacher & Analyst (Admin approval required), enabled Email/Student ID/Name login with last_login_at tracking, auto-provisioned Students on CSV upload."
-      - "panels/{admin_services,admin_directory_services}.py, templates/panels/{admin_users,admin_training}.html: added preview_rows/columns on datasets_log + View modal on /admin-panel/training/ + Student ID/Last Login in user View modal."
-  - "Phase 92 (Green Default Theme, Theme Studio Polish, Multi-Format Training & Floo Public Pages):"
-      - "core/theme_services.py, static/css/global.css, static/js/theme_studio.js, templates/{base.html,accounts/auth.html,components/theme_studio_modal.html}: switched default theme from Blue/Ocean (#2563eb) to Emerald Green (shell_theme='green', accent='emerald', #10b981); added hover title tooltips on Theme Studio labels and mobile-first Live Preview (order-first lg:order-last)."
-      - "analytics/data_pipeline.py, templates/panels/{admin_training,analyst_dashboard,teacher_ingest}.html: added multi-format dataset ingestion & ML training (.csv, .xlsx, .json, .jsonl, .ndjson, .tsv, .txt)."
-      - "templates/public/{_base,landing,about,contact}.html, static/{css,js}/landing_provably.{css,js}: ported Floo 1440x1036 ResizeObserver-scaled scroll-story (STORY=2600) to Pure Django MVT + Vanilla JS/CSS in Emerald Green with Newsreader/Inter typography, live EduPredict metrics, and prefers-reduced-motion support."
+  - "Phase 1-92: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Emerald Green Default Theme, Multi-Format Training (.csv/.xlsx/.json/.jsonl/.ndjson/.tsv/.txt), Astryx UI, Vercel Auto-Deploy."
+  - "Phase 93 (Exact FlooLandingScroll Port):"
+      - "templates/public/_base.html: wrapped header and footer in {% block public_header %} and {% block public_footer %} so landing.html renders the full-bleed 100vh Floo stage without a duplicate top navbar."
+      - "templates/public/landing.html, static/css/landing_provably.css, static/js/landing_provably.js: ported exact 1440x1036 ResizeObserver-zoomed FlooLandingScroll (.fld / .fld-body 3636px / .stage / .hero collapsing into 364px header / .sky + .grass + .crm rising card + .cur EduCoach AI cursor + .panel 4 tabs with .bar i progress + .pic rock/rockfg + .glass + #intg 6-card grid + .wire + .ai) with EduPredict content, live metrics, Emerald Green (#10b981) tokens, and prefers-reduced-motion static fallback."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "node --check: all static/js/*.js files exited 0."
-  - "Zero-comment & line-cap audit: LINE_CAP_FAILS: [], COMMENT_FAILS: []."
-  - "manage.py test: Ran 138 tests in 84.264s (138/138 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 10.21s - System 100% Operational."
+  - "node --check static/js/landing_provably.js: exited 0."
+  - "manage.py test: Ran 138 tests in 113.099s (138/138 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 10.50s - System 100% Operational."
   - "MongoDB Atlas cleaned back to 1 Admin user (admin@gmail.com) only."
 
 active_routes_and_files:
-  - "core/theme_services.py, analytics/data_pipeline.py, static/css/{global,landing_provably}.css, static/js/{theme_studio,landing_provably}.js, templates/public/{_base,landing,about,contact}.html, templates/components/{sidebar,metric_card,ai_message_dock,theme_studio_modal}.html, .agents/git-sync.md"
+  - "templates/public/{_base,landing}.html, static/{css,js}/landing_provably.{css,js}, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."
-  - "Optional: Re-run live browser visual QA once browser subagent quota resets."
 
 important_notes_for_next_agent:
   - "Project is connected from GitHub Konete326/EduPredict (main branch) to Vercel: every push to main automatically builds and deploys live on Vercel."

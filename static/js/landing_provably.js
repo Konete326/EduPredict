@@ -1,196 +1,169 @@
 (function () {
-  const STORY = 2600;
-  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-  const lerp = (a, b, t) => a + (b - a) * t;
-  const smooth = (t) => t * t * (3 - 2 * t);
+  var W = 1440;
+  var H = 1036;
+  var STORY = 2600;
 
-  const TAB_DATA = {
-    'ai-agents': {
-      badge: '4 Ephemeral AI Agents',
-      title: 'Role-aware campus assistants',
-      desc: 'Zero saved chat clutter. Auto-handoff across academic coaching, ML diagnostics, course ops, and support.',
-      items: [
-        { key: 'educoach', label: 'EduCoach AI', role: 'Student Mentor', route: '/student-panel/', summary: 'Interprets predicted GPA, course marks, and attendance thresholds into clear study priorities.' },
-        { key: 'pulseml', label: 'PulseML AI', role: 'ML Analyst', route: '/analyst-panel/accuracy/', summary: 'Monitors Ridge, RandomForest, and IsolationForest runs plus live LMS stream accuracy.' },
-        { key: 'courseops', label: 'CourseOps AI', role: 'Faculty & Admin', route: '/teacher-panel/ingest/', summary: 'Guides 3-column CSV/Excel marks uploads, course mapping, and student risk alerts.' },
-        { key: 'helpdesk', label: 'HelpDesk AI', role: 'Support Triage', route: '/contact/', summary: 'Routes staff approval questions and portal access inquiries directly to Admin tickets.' }
-      ]
-    },
-    'role-panels': {
-      badge: 'Strict Role Isolation',
-      title: '4 Purpose-Built Role Panels',
-      desc: 'Every user sees only their authorized workspace, KPIs, and A4 PDF tools.',
-      items: [
-        { key: 'admin', label: 'Admin Panel', role: 'Governance', route: '/admin-panel/', summary: 'Creates courses, maps Teachers, approves Teacher & Analyst signups, and handles support tickets.' },
-        { key: 'teacher', label: 'Teacher Panel', role: 'Marks & Alerts', route: '/teacher-panel/', summary: 'Uploads .csv/.xlsx/.json/.tsv marks sheets, auto-provisions students, and sends alerts.' },
-        { key: 'student', label: 'Student Panel', role: 'Forecast & PDF', route: '/student-panel/', summary: 'Tracks live GPA forecasts, attendance warnings, study tips, and monochrome A4 transcripts.' },
-        { key: 'analyst', label: 'Analyst Panel', role: 'ML Pipeline', route: '/analyst-panel/', summary: 'Cleans batch datasets, runs Scikit-Learn predictions, and audits anomaly flags.' }
-      ]
+  function run(root, scroller) {
+    var $ = function (id) { return root.querySelector('#' + id); };
+    var D = scroller;
+    var all = function (q) { return [].slice.call(root.querySelectorAll(q)); };
+    var hero = $('hero'), scene = $('scene'), nav = $('nav'), logo = $('logo'), badge = $('badge');
+    var h1s = [].slice.call($('h1').children), cta = $('cta'), hint = $('hint'), crm = $('crm'), cur = $('cur'), spin = $('spin');
+    var fps = [].slice.call($('found').children), h2s = [].slice.call($('h2').children), h2 = $('h2');
+    var panel = $('panel'), tabs = $('tabs'), tab0 = $('tab0'), tab1 = $('tab1');
+    var bar0 = $('bar0').firstElementChild, bar1 = $('bar1').firstElementChild, copyA = $('copyA'), copyB = $('copyB');
+    var pic = $('pic'), rock = $('rock'), rockfg = $('rockfg'), glass = $('glass');
+    var gmsg = $('gmsg'), glook = $('glook'), spin2 = $('spin2'), gfound = $('gfound'), gfs = [].slice.call(gfound.children);
+    var ints = all('.int'), wire = $('wire'), ai = $('ai');
+
+    function cl(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+    function p(t, a, b) { return cl((t - a) / (b - a)); }
+    function eo(x) { return 1 - Math.pow(1 - x, 3); }
+    function eio(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+    function blur(el, k, amt, dy, o) {
+      el.style.opacity = (o == null ? k : k * o).toFixed(3);
+      el.style.filter = 'blur(' + ((1 - k) * (amt || 14)).toFixed(2) + 'px)';
+      el.style.transform = 'translateY(' + ((1 - k) * 10 + (dy || 0)).toFixed(2) + 'px)';
     }
-  };
+    function reveal(el, k) {
+      el.style.opacity = k.toFixed(3);
+      el.style.maxHeight = (k * 40).toFixed(1) + 'px';
+      el.style.marginTop = el.previousElementSibling ? (k * 12).toFixed(1) + 'px' : '0';
+      el.style.filter = 'blur(' + ((1 - k) * 4).toFixed(2) + 'px)';
+    }
 
-  function initFlooStory() {
-    const story = document.getElementById('floo-story');
-    const sticky = document.getElementById('floo-sticky');
-    const stage = document.getElementById('floo-stage');
-    if (!story || !sticky || !stage) return;
+    var INTRO = 2.6, SPLIT = 0.74;
+    function render(t, s) {
+      var grow = eo(p(t, 0.1, 0.9)), collapse = eio(p(s, 0.2, 0.32));
+      hero.style.height = (1000 * grow - 636 * collapse).toFixed(1) + 'px';
+      nav.style.opacity = eo(p(t, 0.72, 1)).toFixed(3);
+      logo.style.transform = 'scale(' + (0.86 + 0.14 * eo(p(t, 0.72, 1.15))).toFixed(3) + ')';
 
-    const fold = document.getElementById('floo-fold');
-    const grass = document.getElementById('floo-grass');
-    const crm = document.getElementById('floo-crm');
-    const panel = document.getElementById('floo-panel');
-    const cue = document.getElementById('floo-scroll-cue');
+      var out = 1 - eio(p(s, 0.015, 0.1)), lift = -110 * eio(p(s, 0, 0.12));
+      blur(badge, eo(p(t, 0.95, 1.3)), 14, lift * 1.2, out);
+      blur(h1s[0], eo(p(t, 1.1, 1.65)), 14, lift, out);
+      blur(h1s[1], eo(p(t, 1.32, 1.87)), 14, lift * 0.9, out);
+      blur(h1s[2], eo(p(t, 1.55, 2.1)), 14, lift * 0.8, out);
+      blur(cta, eo(p(t, 1.85, 2.25)), 14, lift * 0.7, out);
 
-    const reducedMq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
-    const isReduced = () => Boolean(reducedMq && reducedMq.matches);
-    const isMobile = () => window.innerWidth < 768;
+      var up = eo(p(t, 1.3, 2.05)), climb = eio(p(s, 0.02, 0.13)), sink = eio(p(s, 0.17, 0.24));
+      crm.style.transform = 'translateY(' + (150 * (1 - up) - 250 * climb + 330 * sink).toFixed(1) + 'px) scale(' + (1 + climb * 0.04).toFixed(4) + ')';
+      crm.style.opacity = (up * (1 - p(s, 0.2, 0.25))).toFixed(3);
+      scene.style.transform = 'scale(' + (1 + 0.045 * climb * (1 - collapse)).toFixed(4) + ')';
+      reveal(fps[1], eo(p(s, 0.07, 0.1)));
+      reveal(fps[2], eo(p(s, 0.1, 0.13)));
+      spin.style.transform = 'rotate(' + (s * 2400).toFixed(0) + 'deg)';
 
-    const scaleStage = () => {
-      if (isReduced() || isMobile()) {
-        stage.style.transform = '';
-        return;
-      }
-      const rect = sticky.getBoundingClientRect();
-      const s = Math.min(rect.width / 1440, rect.height / 1036);
-      stage.style.transform = 'scale(' + Math.max(0.45, Math.min(1.12, s)).toFixed(4) + ')';
-    };
+      var ck = eio(p(s, 0.05, 0.16));
+      cur.style.opacity = (eo(p(s, 0.04, 0.07)) * (1 - p(s, 0.17, 0.2))).toFixed(3);
+      cur.style.transform = 'translate(' + (612 - 92 * ck).toFixed(1) + 'px,' + (40 + 266 * ck).toFixed(1) + 'px)';
+      hint.style.opacity = (p(t, 2.2, 2.6) * (1 - p(s, 0, 0.015))).toFixed(3);
 
-    const applyProgress = (p) => {
-      story.style.setProperty('--floo-p', p.toFixed(4));
-      if (isReduced() || isMobile()) {
-        if (fold) { fold.style.transform = ''; fold.style.opacity = '1'; }
-        if (grass) { grass.style.transform = ''; grass.style.opacity = '0'; }
-        if (crm) { crm.style.transform = ''; crm.style.opacity = '1'; }
-        if (panel) { panel.style.transform = ''; panel.style.opacity = '1'; }
-        if (cue) cue.style.opacity = '0';
-        return;
-      }
+      h2.style.opacity = s > 0.27 ? 1 : 0;
+      blur(h2s[0], eo(p(s, 0.28, 0.33)));
+      blur(h2s[1], eo(p(s, 0.3, 0.35)));
+      var pk = eo(p(s, 0.32, 0.4));
+      pic.style.opacity = pk.toFixed(3);
+      pic.style.filter = 'blur(' + ((1 - pk) * 10).toFixed(2) + 'px) brightness(' + (1 + (1 - pk) * 0.25).toFixed(3) + ')';
+      panel.style.opacity = eo(p(s, 0.34, 0.4)).toFixed(3);
+      tabs.style.opacity = eo(p(s, 0.36, 0.42)).toFixed(3);
 
-      const foldT = smooth(clamp(p / 0.36, 0, 1));
-      if (fold) {
-        fold.style.transform = 'translate3d(0, ' + lerp(0, -140, foldT).toFixed(1) + 'px, 0) scale(' + lerp(1, 0.9, foldT).toFixed(3) + ')';
-        fold.style.opacity = lerp(1, 0, clamp(p / 0.3, 0, 1)).toFixed(3);
-      }
+      var sw = eio(p(s, SPLIT - 0.035, SPLIT + 0.035));
+      var ak = eo(p(s, 0.38, 0.44));
+      copyA.style.opacity = (ak * (1 - sw)).toFixed(3);
+      copyA.style.transform = 'translateY(' + ((1 - ak) * 10 - sw * 14).toFixed(1) + 'px)';
+      copyA.style.filter = 'blur(' + ((1 - ak) * 6 + sw * 8).toFixed(2) + 'px)';
+      copyB.style.opacity = sw.toFixed(3);
+      copyB.style.transform = 'translateY(' + ((1 - sw) * 14).toFixed(1) + 'px)';
+      copyB.style.filter = 'blur(' + ((1 - sw) * 8).toFixed(2) + 'px)';
+      tab0.classList.toggle('off', sw > 0.5);
+      tab1.classList.toggle('off', sw <= 0.5);
 
-      const grassT = smooth(clamp((p - 0.04) / 0.36, 0, 1));
-      if (grass) {
-        grass.style.transform = 'translate3d(0, ' + lerp(0, 260, grassT).toFixed(1) + 'px, 0)';
-        grass.style.opacity = lerp(1, 0.08, grassT).toFixed(3);
-      }
+      var gk = eo(p(s, 0.4, 0.47)), go = 1 - sw;
+      glass.style.opacity = (gk * go).toFixed(3);
+      glass.style.transform = 'translateY(' + ((1 - gk) * 16).toFixed(1) + 'px) scale(' + (0.97 + gk * 0.03 - sw * 0.03).toFixed(4) + ')';
+      glass.style.filter = 'blur(' + ((1 - gk) * 8 + sw * 8).toFixed(2) + 'px)';
+      blur(gmsg, eo(p(s, 0.45, 0.49)), 6, -2);
+      blur(glook, eo(p(s, 0.5, 0.53)), 6, -4);
+      var fk = eo(p(s, 0.54, 0.58));
+      gfound.style.opacity = fk.toFixed(3);
+      gfound.style.transform = 'translateY(' + ((1 - fk) * 8).toFixed(1) + 'px)';
+      reveal(gfs[1], eo(p(s, 0.59, 0.63)));
+      reveal(gfs[2], eo(p(s, 0.64, 0.68)));
+      spin2.style.transform = 'rotate(' + (s * 2400).toFixed(0) + 'deg)';
 
-      const crmEnter = smooth(clamp((p - 0.14) / 0.32, 0, 1));
-      const crmShift = smooth(clamp((p - 0.48) / 0.28, 0, 1));
-      if (crm) {
-        const crmY = lerp(520, 48, crmEnter);
-        const crmX = lerp(268, 0, crmShift);
-        const crmS = lerp(0.92, 1, crmEnter);
-        crm.style.transform = 'translate3d(' + crmX.toFixed(1) + 'px, ' + crmY.toFixed(1) + 'px, 0) scale(' + crmS.toFixed(3) + ')';
-        crm.style.opacity = clamp((p - 0.12) / 0.16, 0, 1).toFixed(3);
-      }
-
-      const panelEnter = smooth(clamp((p - 0.46) / 0.32, 0, 1));
-      if (panel) {
-        const pY = lerp(260, 48, panelEnter);
-        const pX = lerp(64, 0, panelEnter);
-        panel.style.transform = 'translate3d(' + pX.toFixed(1) + 'px, ' + pY.toFixed(1) + 'px, 0)';
-        panel.style.opacity = panelEnter.toFixed(3);
-      }
-
-      if (cue) cue.style.opacity = lerp(1, 0, clamp(p / 0.12, 0, 1)).toFixed(3);
-    };
-
-    const updateFromScroll = () => {
-      if (isReduced() || isMobile()) {
-        applyProgress(1);
-        return;
-      }
-      const rect = story.getBoundingClientRect();
-      const totalTravel = Math.max(1, Math.min(STORY, story.offsetHeight - sticky.offsetHeight));
-      const p = clamp(-rect.top / totalTravel, 0, 1);
-      applyProgress(p);
-    };
-
-    if (typeof ResizeObserver === 'function') {
-      const ro = new ResizeObserver(() => {
-        scaleStage();
-        updateFromScroll();
+      ints.forEach(function (el, i) {
+        var k = eo(p(s, SPLIT + 0.02 + i * 0.022, SPLIT + 0.09 + i * 0.022));
+        el.style.opacity = k.toFixed(3);
+        el.style.transform = 'translateY(' + ((1 - k) * 14).toFixed(1) + 'px) scale(' + (0.96 + k * 0.04).toFixed(4) + ')';
+        el.style.filter = 'blur(' + ((1 - k) * 6).toFixed(2) + 'px)';
       });
-      ro.observe(sticky);
+      var wk = eo(p(s, 0.9, 0.94));
+      wire.style.opacity = wk.toFixed(3);
+      wire.style.transform = 'scaleY(' + wk.toFixed(3) + ')';
+      var mk = eo(p(s, 0.92, 0.98));
+      ai.style.opacity = mk.toFixed(3);
+      ai.style.transform = 'translateY(' + ((1 - mk) * 10).toFixed(1) + 'px)';
+      ai.style.filter = 'blur(' + ((1 - mk) * 6).toFixed(2) + 'px)';
+
+      bar0.style.width = (p(s, 0.4, SPLIT) * 100).toFixed(2) + '%';
+      bar0.style.background = sw > 0.5 ? 'var(--olive)' : 'var(--olive-d)';
+      bar1.style.width = (p(s, SPLIT, 1) * 100).toFixed(2) + '%';
+      var rz = 'scale(' + (1 + 0.04 * p(s, 0.4, 1)).toFixed(4) + ')';
+      rock.style.transform = rz;
+      rockfg.style.transform = rz;
     }
-    window.addEventListener('resize', () => { scaleStage(); updateFromScroll(); }, { passive: true });
-    if (!isReduced()) {
-      window.addEventListener('scroll', updateFromScroll, { passive: true });
+
+    var reducedMq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+    if (navigator.webdriver || (reducedMq && reducedMq.matches)) {
+      root.classList.add('still');
+      render(9, 0);
+      return function () {};
     }
-    if (reducedMq && typeof reducedMq.addEventListener === 'function') {
-      reducedMq.addEventListener('change', () => { scaleStage(); updateFromScroll(); });
+
+    var t0 = performance.now(), sT = 0, sC = 0, raf = 0;
+    function max() { return Math.max(1, D.scrollHeight - D.clientHeight); }
+    function tick(now) {
+      var t = (now - t0) / 1000;
+      sT = cl(D.scrollTop / max());
+      sC += (sT - sC) * 0.12;
+      if (Math.abs(sT - sC) < 0.0003) sC = sT;
+      render(t, sC);
+      raf = (t < INTRO || sC !== sT) ? requestAnimationFrame(tick) : 0;
     }
-
-    scaleStage();
-    updateFromScroll();
-  }
-
-  function initShowcaseTabs() {
-    const root = document.getElementById('floo-panel');
-    if (!root) return;
-    const tabs = Array.from(root.querySelectorAll('[data-floo-tab]'));
-    const subWrap = document.getElementById('floo-sub-list');
-    const picBadge = document.getElementById('floo-pic-badge');
-    const picTitle = document.getElementById('floo-pic-title');
-    const picRoute = document.getElementById('floo-pic-route');
-    const picDesc = document.getElementById('floo-pic-desc');
-    const panelTitle = document.getElementById('floo-panel-title');
-    const panelDesc = document.getElementById('floo-panel-desc');
-
-    let activeTab = 'ai-agents';
-    let activeItemIdx = 0;
-
-    const renderSub = () => {
-      const cfg = TAB_DATA[activeTab] || TAB_DATA['ai-agents'];
-      if (panelTitle) panelTitle.textContent = cfg.title;
-      if (panelDesc) panelDesc.textContent = cfg.desc;
-      if (subWrap) {
-        subWrap.innerHTML = '';
-        cfg.items.forEach((item, idx) => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'floo-sub-btn rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-left transition-colors cursor-pointer hover:border-[var(--accent-primary)]';
-          btn.setAttribute('aria-pressed', idx === activeItemIdx ? 'true' : 'false');
-          const top = document.createElement('p');
-          top.className = 'text-xs font-semibold text-[var(--text-primary)]';
-          top.textContent = item.label;
-          const sub = document.createElement('p');
-          sub.className = 'text-[11px] text-[var(--text-muted)]';
-          sub.textContent = item.role;
-          btn.append(top, sub);
-          btn.addEventListener('click', () => {
-            activeItemIdx = idx;
-            renderSub();
-          });
-          subWrap.appendChild(btn);
-        });
-      }
-      const chosen = cfg.items[activeItemIdx] || cfg.items[0];
-      if (picBadge) picBadge.textContent = chosen.role;
-      if (picTitle) picTitle.textContent = chosen.label;
-      if (picRoute) picRoute.textContent = chosen.route;
-      if (picDesc) picDesc.textContent = chosen.summary;
+    function wake() { if (!raf) raf = requestAnimationFrame(tick); }
+    D.addEventListener('scroll', wake, { passive: true });
+    window.addEventListener('resize', wake);
+    function go(s) { D.scrollTo({ top: s * max(), behavior: 'smooth' }); }
+    tab0.onclick = function () { go(0.66); };
+    tab1.onclick = function () { go(1); };
+    raf = requestAnimationFrame(tick);
+    return function () {
+      cancelAnimationFrame(raf);
+      D.removeEventListener('scroll', wake);
+      window.removeEventListener('resize', wake);
+      tab0.onclick = tab1.onclick = null;
     };
-
-    tabs.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        activeTab = btn.getAttribute('data-floo-tab') || 'ai-agents';
-        activeItemIdx = 0;
-        tabs.forEach((b) => b.setAttribute('aria-selected', b === btn ? 'true' : 'false'));
-        renderSub();
-      });
-    });
-
-    renderSub();
   }
 
   function boot() {
-    initFlooStory();
-    initShowcaseTabs();
+    var el = document.getElementById('fld-root');
+    var pg = document.getElementById('fld-body');
+    if (!el || !pg) return;
+    var fit = function () {
+      var z = Math.min(el.clientWidth / W, el.clientHeight / H) || 1;
+      var vh = el.clientHeight / z;
+      pg.style.zoom = String(z);
+      pg.style.height = (STORY + Math.max(vh, H)) + 'px';
+      pg.style.setProperty('--st', Math.max(0, (vh - H) / 2) + 'px');
+    };
+    if (typeof ResizeObserver === 'function') {
+      var ro = new ResizeObserver(fit);
+      ro.observe(el);
+    }
+    window.addEventListener('resize', fit, { passive: true });
+    fit();
+    run(el, el);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
