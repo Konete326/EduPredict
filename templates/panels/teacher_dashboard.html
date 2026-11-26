@@ -10,11 +10,11 @@
       </span>
     </div>
     <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Class Performance Overview</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Monitor class attendance averages, test marks, and students needing extra attention.</p>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Monitor your class attendance averages, test marks, and students needing extra attention.</p>
   </div>
   <a href="{% url 'panels:teacher_ingest' %}" title="Go to marks and attendance upload" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
     <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
-    <span>Upload Marks</span>
+    <span>Upload Class CSV</span>
   </a>
 </section>
 
@@ -22,6 +22,28 @@
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
   <i class="fa-solid fa-circle-exclamation mr-2"></i>Database notice: {{ db_error }}
 </div>
+{% endif %}
+
+{% if kpis.total_students == 0 and not db_error %}
+<section class="rounded-2xl border border-dashed border-[var(--accent-primary)] bg-[var(--bg-surface)] p-6 text-center space-y-3 shadow-sm">
+  <div class="mx-auto inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-primary)]">
+    <i class="fa-solid fa-file-csv text-lg"></i>
+  </div>
+  <div class="space-y-1 max-w-lg mx-auto">
+    <h3 class="text-base font-bold text-[var(--text-primary)]">No Class Students Uploaded Yet</h3>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Upload your class CSV with <code class="font-mono text-[11px] text-[var(--text-primary)]">student_id, full_name, birth_date, course_code, marks, attendance</code> to auto-create student logins and generate live GPA &amp; dropout risk predictions.</p>
+  </div>
+  <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
+    <a href="{% url 'panels:teacher_ingest' %}" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
+      <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+      <span>Upload Class CSV</span>
+    </a>
+    <a href="{% url 'panels:teacher_ingest' %}?template=csv" data-no-lock="true" class="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-2.5 text-xs sm:text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <i class="fa-solid fa-download text-xs text-[var(--accent-primary)]"></i>
+      <span>Download CSV Template</span>
+    </a>
+  </div>
+</section>
 {% endif %}
 
 <section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 sm:p-4">
@@ -36,7 +58,7 @@
   <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
     <a href="{% url 'panels:teacher_ingest' %}" class="flex items-center gap-2.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--accent-primary)] transition-colors">
       <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] font-bold text-[var(--accent-primary)]">1</span>
-      <span class="min-w-0 truncate">Upload CSV or Quick Marks</span>
+      <span class="min-w-0 truncate">Upload Class CSV &amp; Auto-Create Logins</span>
     </a>
     <a href="{% url 'panels:teacher_students' %}" class="flex items-center gap-2.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--accent-primary)] transition-colors">
       <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] font-bold text-[var(--accent-primary)]">2</span>
@@ -44,7 +66,7 @@
     </a>
     <a href="{% url 'panels:teacher_alerts' %}" class="flex items-center gap-2.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--accent-primary)] transition-colors">
       <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] font-bold text-[var(--accent-primary)]">3</span>
-      <span class="min-w-0 truncate">Alert &amp; Support At-Risk Students</span>
+      <span class="min-w-0 truncate">Alert Students &amp; Reply to Feedback</span>
     </a>
   </div>
 </section>
@@ -61,7 +83,7 @@
     <div class="mb-2.5 flex items-center justify-between gap-2">
       <div>
         <h3 class="text-sm font-semibold text-[var(--text-primary)]">Course Attendance &amp; Marks</h3>
-        <p class="text-xs text-[var(--text-muted)]">Average attendance and internal marks across courses</p>
+        <p class="text-xs text-[var(--text-muted)]">Average attendance and internal marks across your courses</p>
       </div>
       <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">{{ kpis.courses_count }} Courses</span>
     </div>
@@ -135,6 +157,7 @@
           { type: 'hidden', name: 'action', value: 'update_student' },
           { type: 'hidden', name: 'student_id', value: d.studentId || '' },
           { name: 'full_name', label: 'Student Name', type: 'text', value: d.fullName || '', required: true },
+          { name: 'birth_date', label: 'Birth Date (YYYY-MM-DD)', type: 'text', value: d.birthDate || '', placeholder: '2004-05-14' },
           { name: 'batch', label: 'Batch', type: 'text', value: d.batch || '2026-A', required: true },
           { name: 'course_code', label: 'Course Code', type: 'text', value: d.courseCode || 'CS-101', required: true },
           { name: 'attendance_pct', label: 'Attendance (%)', type: 'text', value: d.attendancePct || '85', required: true },

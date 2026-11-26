@@ -10,7 +10,7 @@
       </span>
     </div>
     <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">Student List &amp; Marks</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Search students, update internal test scores, dispatch alerts, and export roster.</p>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Search your class students, edit details or marks inline, message students, and export roster.</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
     <button type="button" onclick="openQuickEntryModal()" title="Quickly add or update student marks" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
@@ -27,7 +27,7 @@
     </a>
     <a href="{% url 'panels:teacher_ingest' %}" title="Add or upload student marks" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm">
       <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
-      <span>Upload Marks</span>
+      <span>Upload Class CSV</span>
     </a>
   </div>
 </section>
@@ -36,6 +36,17 @@
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
   <i class="fa-solid fa-circle-exclamation mr-2"></i>Database notice: {{ db_error }}
 </div>
+{% endif %}
+
+{% if not student_cards and selected_filters.batch == 'ALL' and selected_filters.course_code == 'ALL' and selected_filters.status == 'ALL' and not db_error %}
+<section class="rounded-2xl border border-dashed border-[var(--accent-primary)] bg-[var(--bg-surface)] p-5 text-center space-y-2.5">
+  <h3 class="text-sm font-bold text-[var(--text-primary)]">Your Class Roster Is Empty</h3>
+  <p class="text-xs text-[var(--text-secondary)]">Upload your class CSV to populate your roster, create student logins, and generate live risk predictions.</p>
+  <a href="{% url 'panels:teacher_ingest' %}" class="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white hover:bg-[var(--accent-hover)] transition-colors">
+    <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+    <span>Upload Class CSV</span>
+  </a>
+</section>
 {% endif %}
 
 <section class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-4">
@@ -78,14 +89,17 @@
     </div>
   </form>
 
-  {% include 'components/directory_cards.html' with grid_id="teacher-students-table" grid_title="Student Directory" cards=student_cards page_size=5 empty_message="No students match these filters. Upload class marks or reset filters." %}
+  {% include 'components/directory_cards.html' with grid_id="teacher-students-table" grid_title="Student Directory" cards=student_cards page_size=5 empty_message="No students match these filters. Upload your class CSV or reset filters." %}
 </section>
+{{ birth_map|json_script:"teacher-students-birth-map" }}
 {% endblock %}
 
 {% block extra_js %}
 <script>
   (function () {
     const TEACHER_STUDENTS_URL = "{% url 'panels:teacher_students' %}";
+    let birthMap = {};
+    try { birthMap = JSON.parse((document.getElementById('teacher-students-birth-map') || {}).textContent || '{}'); } catch (e) {}
 
     window.openQuickEntryModal = function () {
       window.openFormModal({
@@ -95,7 +109,8 @@
         fields: [
           { type: 'hidden', name: 'action', value: 'manual_entry' },
           { name: 'student_id', label: 'Student ID', type: 'text', placeholder: 'STD-2026-001', required: true },
-          { name: 'full_name', label: 'Student Name', type: 'text', placeholder: 'e.g. Ayesha Khan' },
+          { name: 'full_name', label: 'Student Name', type: 'text', placeholder: 'e.g. Ayesha Khan', required: true },
+          { name: 'birth_date', label: 'Birth Date (YYYY-MM-DD)', type: 'text', placeholder: '2004-05-14' },
           { name: 'batch', label: 'Batch', type: 'text', value: '2026-A', required: true },
           { name: 'course_code', label: 'Course Code', type: 'text', value: 'CS-101', required: true },
           { name: 'internal_marks', label: 'Marks (0-100)', type: 'number', value: '75', min: '0', max: '100', step: '0.1', required: true },
@@ -106,13 +121,15 @@
 
     window.openUpdateMarksModal = function (btn) {
       const d = btn ? btn.dataset : {};
+      const bdate = d.birthDate || birthMap[d.studentId] || '';
       window.openFormModal({
-        title: 'Update Marks & Attendance (' + (d.studentId || '') + ')',
+        title: 'Update Student (' + (d.studentId || '') + ')',
         actionUrl: TEACHER_STUDENTS_URL,
         fields: [
           { type: 'hidden', name: 'action', value: 'update_student' },
           { type: 'hidden', name: 'student_id', value: d.studentId || '' },
           { name: 'full_name', label: 'Student Name', type: 'text', value: d.fullName || '', required: true },
+          { name: 'birth_date', label: 'Birth Date (YYYY-MM-DD)', type: 'text', value: bdate, placeholder: '2004-05-14' },
           { name: 'batch', label: 'Batch', type: 'text', value: d.batch || '2026-A', required: true },
           { name: 'course_code', label: 'Course Code', type: 'text', value: d.courseCode || 'CS-101', required: true },
           { name: 'attendance_pct', label: 'Attendance (%)', type: 'text', value: d.attendancePct || '85', required: true },

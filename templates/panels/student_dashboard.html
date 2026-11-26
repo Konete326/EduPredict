@@ -5,30 +5,15 @@
   <div class="min-w-0 space-y-0.5">
     <div class="flex flex-wrap items-center gap-1.5">
       <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]"><i class="fa-solid fa-graduation-cap text-[10px]"></i><span>Student Portal</span></span>
+      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-muted)]">Read-Only Progress</span>
       {% if record.program_level %}<span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">{{ record.program_level }}</span>{% endif %}
-      {% if record.department %}<span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] text-[var(--text-secondary)]">{{ record.department }}</span>{% endif %}
       {% if record.batch %}<span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Batch {{ record.batch }}</span>{% endif %}
     </div>
     <h2 class="text-base sm:text-lg font-bold tracking-tight text-[var(--text-primary)]">Hello, {{ record.full_name|default:"Student" }}!</h2>
   </div>
   <div class="flex flex-wrap items-center gap-2">
-    <a href="{% url 'panels:student_notifications' %}" title="See teacher alerts and reminders" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-bell text-[var(--status-warning)]"></i><span>Alerts</span>{% if unread_alerts %}<span class="rounded-full bg-[var(--status-danger)] px-1.5 py-0.5 text-[10px] font-bold text-white tabular-nums">{{ unread_alerts }}</span>{% endif %}</a>
+    <a href="{% url 'panels:student_notifications' %}" title="See teacher alerts and send feedback" class="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-bell text-[var(--status-warning)]"></i><span>Alerts &amp; Feedback</span>{% if unread_alerts %}<span class="rounded-full bg-[var(--status-danger)] px-1.5 py-0.5 text-[10px] font-bold text-white tabular-nums">{{ unread_alerts }}</span>{% endif %}</a>
     <a href="{% url 'panels:student_report' %}" title="Open your report card" class="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent-primary)] px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] shadow-sm"><i class="fa-solid fa-file-lines text-xs"></i><span>My Report Card</span></a>
-  </div>
-</section>
-
-<section aria-label="How EduPredict Works" class="grid grid-cols-1 gap-2.5 md:grid-cols-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 py-2.5">
-  <div class="flex items-start gap-2.5">
-    <span class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--accent-soft)] text-[11px] font-bold text-[var(--accent-primary)]"><i class="fa-solid fa-file-arrow-up"></i></span>
-    <div class="min-w-0"><p class="text-xs font-semibold text-[var(--text-primary)]">1. Teacher Uploads Marks</p><p class="text-[11px] text-[var(--text-muted)]">Your teachers enter attendance &amp; internal marks for each course.</p></div>
-  </div>
-  <div class="flex items-start gap-2.5">
-    <span class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--accent-soft)] text-[11px] font-bold text-[var(--accent-primary)]"><i class="fa-solid fa-chart-line"></i></span>
-    <div class="min-w-0"><p class="text-xs font-semibold text-[var(--text-primary)]">2. ML Forecasts GPA &amp; Risk</p><p class="text-[11px] text-[var(--text-muted)]">EduPredict calculates your predicted GPA and risk standing.</p></div>
-  </div>
-  <div class="flex items-start gap-2.5">
-    <span class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--accent-soft)] text-[11px] font-bold text-[var(--accent-primary)]"><i class="fa-solid fa-file-pdf"></i></span>
-    <div class="min-w-0"><p class="text-xs font-semibold text-[var(--text-primary)]">3. Review Tips &amp; A4 Report</p><p class="text-[11px] text-[var(--text-muted)]">Read study tips, teacher alerts, and download your A4 PDF.</p></div>
   </div>
 </section>
 
@@ -37,22 +22,22 @@
 {% endif %}
 
 <div role="tablist" aria-label="Student dashboard tabs" class="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1.5 shadow-sm">
-  <button type="button" role="tab" aria-selected="true" data-student-tab="overview" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-semibold text-white transition-colors"><i class="fa-solid fa-chart-line text-xs" aria-hidden="true"></i><span>Overview &amp; Performance Contour</span></button>
-  <button type="button" role="tab" aria-selected="false" data-student-tab="courses" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-table-list text-xs" aria-hidden="true"></i><span>Course Breakdown &amp; Alerts</span></button>
+  <button type="button" role="tab" aria-selected="true" data-student-tab="overview" class="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-semibold text-white transition-colors"><i class="fa-solid fa-chart-line text-xs" aria-hidden="true"></i><span>Overview &amp; Progress</span></button>
+  <button type="button" role="tab" aria-selected="false" data-student-tab="courses" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-table-list text-xs" aria-hidden="true"></i><span>Course Marks &amp; Alerts</span></button>
 </div>
 
 <div id="student-panel-overview" role="tabpanel" data-student-panel="overview" class="space-y-3.5">
   <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 [&_[data-dot-kpi]]:py-2">
-    {% include 'components/metric_card.html' with title="My Attendance" value=record.avg_attendance|stringformat:"s"|add:"%" badge="All courses" status="success" icon="fa-solid fa-calendar-check" %}
-    {% include 'components/metric_card.html' with title="Predicted GPA" value=predicted_gpa_display badge="Expected final score" status="info" icon="fa-solid fa-chart-line" %}
-    {% include 'components/metric_card.html' with title="Class Standing" value=class_standing_display badge="By marks in your batch" status="info" icon="fa-solid fa-ranking-star" %}
-    {% include 'components/metric_card.html' with title="Earned Credits" value=credits_display badge="Across your courses" status="success" icon="fa-solid fa-layer-group" %}
+    {% include 'components/metric_card.html' with title="Average Marks" value=record.avg_marks|stringformat:"s"|add:" / 100" badge=class_standing_display status="success" icon="fa-solid fa-award" %}
+    {% include 'components/metric_card.html' with title="My Attendance" value=record.avg_attendance|stringformat:"s"|add:"%" badge="All courses" status="info" icon="fa-solid fa-calendar-check" %}
+    {% include 'components/metric_card.html' with title="Predicted GPA" value=predicted_gpa_display badge="AI forecast" status="info" icon="fa-solid fa-chart-line" %}
+    {% include 'components/metric_card.html' with title="Dropout Risk" value=record.risk_level badge="Current standing" status=risk_status icon="fa-solid fa-shield-halved" %}
   </section>
 
   <section class="grid grid-cols-1 gap-3.5 xl:grid-cols-12">
     <div class="xl:col-span-7 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 space-y-2.5">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <div><h3 class="text-sm font-semibold text-[var(--text-primary)]">Academic Progress &amp; Contour</h3><p class="text-[11px] text-[var(--text-muted)]">Live marks and course stability from MongoDB</p></div>
+        <div><h3 class="text-sm font-semibold text-[var(--text-primary)]">Academic Progress</h3><p class="text-[11px] text-[var(--text-muted)]">Read-only live marks and course stability</p></div>
         <div class="inline-flex items-center gap-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-0.5">
           <button type="button" data-chart-subtab="bars" aria-pressed="true" class="rounded-md bg-[var(--accent-primary)] px-2.5 py-1 text-[11px] font-semibold text-white transition-colors">Marks vs Class Avg</button>
           <button type="button" data-chart-subtab="contour" aria-pressed="false" class="rounded-md px-2.5 py-1 text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">Contour Strata</button>
@@ -93,9 +78,9 @@
         {% endif %}
       </div>
       <div class="grid grid-cols-1 gap-2 sm:grid-cols-3 pt-1">
-        <a href="{% url 'panels:student_report_pdf' %}" data-no-loading="true" title="Download printable A4 PDF transcript" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-2.5 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"><i class="fa-solid fa-file-pdf"></i><span>Download PDF Transcript</span></a>
+        <a href="{% url 'panels:student_report_pdf' %}" data-no-loading="true" title="Download printable A4 PDF transcript" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-2.5 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"><i class="fa-solid fa-file-pdf"></i><span>PDF Transcript</span></a>
         <a href="{% url 'panels:student_tips' %}" class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-2 text-[11px] font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-lightbulb text-[var(--status-warning)]"></i><span>Study Tips</span></a>
-        <button type="button" onclick="openFormModal({ title: 'Need Help', actionUrl: '{% url 'panels:submit_support_ticket' %}', fields: [{ name: 'subject', label: 'Subject', type: 'text', placeholder: 'Short title', required: true }, { name: 'message', label: 'Message', type: 'textarea', placeholder: 'Write your question or issue...', required: true }] })" class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-2 text-[11px] font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-headset text-[var(--accent-primary)]"></i><span>Ask for Help</span></button>
+        <a href="{% url 'panels:student_notifications' %}" class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-2 text-[11px] font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-paper-plane text-[var(--accent-primary)]"></i><span>Send Feedback</span></a>
       </div>
     </div>
   </section>
@@ -103,8 +88,8 @@
   <section class="grid grid-cols-1 gap-3.5 xl:grid-cols-12">
     <div class="xl:col-span-8 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 space-y-2">
       <div class="flex items-center justify-between gap-2">
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Enrolled Courses &amp; Assigned Teachers</h3>
-        <span class="text-[11px] text-[var(--text-muted)]">{{ record.program_level|default:"Undergraduate" }}{% if record.batch %} · Batch {{ record.batch }}{% endif %}</span>
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Enrolled Courses &amp; Teachers</h3>
+        <span class="text-[11px] text-[var(--text-muted)]">{{ credits_display }} cr{% if record.batch %} · Batch {{ record.batch }}{% endif %}</span>
       </div>
       {% if enrolled_courses %}
       <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -121,13 +106,17 @@
       {% endif %}
     </div>
     <div class="xl:col-span-4 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 flex flex-col justify-between gap-2">
-      <div class="space-y-1">
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Academic &amp; Admin Contact</h3>
-        <p class="text-xs text-[var(--text-secondary)]"><strong class="text-[var(--text-primary)]">Dept:</strong> {{ record.department|default:"General" }} · <strong class="text-[var(--text-primary)]">Batch:</strong> {{ record.batch|default:"-" }}</p>
+      <div class="space-y-1.5">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Assigned Teacher &amp; Admin</h3>
+        <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-2 space-y-0.5">
+          <p class="text-[11px] text-[var(--text-muted)]">Assigned Teacher</p>
+          <p class="text-xs font-semibold text-[var(--text-primary)]">{{ assigned_teacher.name|default:"Not assigned yet" }}</p>
+          {% if assigned_teacher.email %}<p class="text-[11px] font-mono text-[var(--accent-primary)] break-all">{{ assigned_teacher.email }}</p>{% endif %}
+        </div>
         <p class="text-xs text-[var(--text-secondary)]"><strong class="text-[var(--text-primary)]">Portal Admin:</strong> {{ admin_contact.name|default:"System Administrator" }}</p>
-        {% if admin_contact.email %}<p class="text-[11px] font-mono text-[var(--accent-primary)] break-all">{{ admin_contact.email }}</p>{% endif %}
+        {% if admin_contact.email %}<p class="text-[11px] font-mono text-[var(--text-muted)] break-all">{{ admin_contact.email }}</p>{% endif %}
       </div>
-      <a href="{% url 'panels:student_notifications' %}" class="text-[11px] font-semibold text-[var(--accent-primary)] hover:underline">Send support request &rarr;</a>
+      <a href="{% url 'panels:student_notifications' %}" class="text-[11px] font-semibold text-[var(--accent-primary)] hover:underline">Message Teacher or Admin &rarr;</a>
     </div>
   </section>
 </div>
@@ -138,7 +127,7 @@
   </section>
   <section class="grid grid-cols-1 gap-3.5 xl:grid-cols-12">
     <div class="xl:col-span-7 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 space-y-2">
-      <div class="flex items-center justify-between gap-2"><h3 class="text-sm font-semibold text-[var(--text-primary)]">Recent Reminders</h3><a href="{% url 'panels:student_notifications' %}" class="text-xs font-semibold text-[var(--accent-primary)] hover:underline">View all alerts</a></div>
+      <div class="flex items-center justify-between gap-2"><h3 class="text-sm font-semibold text-[var(--text-primary)]">Recent Teacher Alerts</h3><a href="{% url 'panels:student_notifications' %}" class="text-xs font-semibold text-[var(--accent-primary)] hover:underline">View all alerts</a></div>
       {% if teacher_alerts %}
       <div class="space-y-1.5">
         {% for alert in teacher_alerts|slice:":3" %}
@@ -146,14 +135,14 @@
         {% endfor %}
       </div>
       {% else %}
-      <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-5 text-center text-xs text-[var(--text-secondary)]">No reminders right now. You are all caught up.</div>
+      <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-5 text-center text-xs text-[var(--text-secondary)]">No teacher alerts right now. You are all caught up.</div>
       {% endif %}
     </div>
     <div class="xl:col-span-5 min-w-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 space-y-2">
-      <h3 class="text-sm font-semibold text-[var(--text-primary)]">Quick Actions</h3>
+      <h3 class="text-sm font-semibold text-[var(--text-primary)]">Exports &amp; Summary</h3>
       <a href="{% url 'panels:student_report_download' %}" data-no-loading="true" class="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><span class="flex items-center gap-2"><i class="fa-solid fa-file-csv text-[var(--status-success)]"></i><span>Download CSV report card</span></span><i class="fa-solid fa-download text-[10px] text-[var(--text-muted)]"></i></a>
       <a href="{% url 'panels:student_report_pdf' %}" data-no-loading="true" class="flex items-center justify-between rounded-lg bg-[var(--accent-primary)] px-3 py-2 text-xs font-semibold text-white hover:bg-[var(--accent-hover)]"><span class="flex items-center gap-2"><i class="fa-solid fa-file-pdf"></i><span>Open A4 PDF Transcript</span></span><i class="fa-solid fa-download text-[10px]"></i></a>
-      <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-xs text-[var(--text-secondary)]"><span class="font-semibold text-[var(--text-primary)]">Weekly study time:</span> {{ record.lms_hours_weekly|stringformat:"s"|add:" h" }} per week</div>
+      <div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-xs text-[var(--text-secondary)]"><span class="font-semibold text-[var(--text-primary)]">Earned credits:</span> {{ credits_display }} · <span class="font-semibold text-[var(--text-primary)]">Standing:</span> {{ class_standing_display }}</div>
     </div>
   </section>
 </div>

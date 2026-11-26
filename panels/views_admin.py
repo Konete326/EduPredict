@@ -6,7 +6,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from core.decorators import get_dashboard_route, login_required_custom, role_required
 from panels.admin_audit_services import VALID_LOG_CATEGORIES, clear_manual_audit_logs, export_activity_logs_csv, get_default_admin_logs_context, get_default_portal_settings_context, get_portal_settings, list_activity_logs, record_audit_log, reset_portal_settings, update_portal_settings
 from panels.admin_seed import get_default_admin_overview_context
-from panels.admin_services import build_backup_payload, build_course_table_data, build_ticket_table_data, build_user_table_data, create_course_record, create_ticket_record, create_user_record, delete_course_record, delete_ticket_record, delete_user_record, get_admin_overview_context, list_active_teachers, list_courses_with_stats, list_tickets, list_users, mark_notifications_read, reject_teacher_account, toggle_ticket_status, toggle_user_status, update_course_record, update_user_record
+from panels.admin_services import build_backup_payload, build_course_table_data, build_ticket_table_data, build_user_table_data, create_course_record, create_ticket_record, create_user_record, delete_course_record, delete_ticket_record, delete_user_record, get_admin_overview_context, get_master_training_status, ingest_master_training_dataset, list_active_teachers, list_courses_with_stats, list_tickets, list_users, mark_notifications_read, reject_teacher_account, toggle_ticket_status, toggle_user_status, update_course_record, update_user_record
 from panels.directory_card_services import build_admin_user_cards
 from panels.notification_services import delete_ticket_reply, reply_to_ticket
 
@@ -14,20 +14,16 @@ from panels.notification_services import delete_ticket_reply, reply_to_ticket
 def _param(request, key, default=""):
     return str(request.POST.get(key) or request.GET.get(key) or default).strip()
 
-
 def _actor_name(request):
     user = request.session.get("user") or {}
     return str(user.get("full_name") or user.get("email") or "System Admin").strip() or "System Admin"
-
 
 def _redirect_with_filter(route_name, param_name, param_value):
     base_url, clean_val = reverse(route_name), str(param_value or "").strip()
     return redirect(f"{base_url}?{param_name}={clean_val}") if clean_val and clean_val != "ALL" else redirect(base_url)
 
-
 def _flash_result(request, ok, error, success_msg):
     messages.error(request, error or "Operation could not be completed.") if (error or not ok) else messages.success(request, success_msg)
-
 
 def _download_response(content, content_type, filename):
     resp = HttpResponse(content, content_type=content_type)
@@ -37,9 +33,17 @@ def _download_response(content, content_type, filename):
 
 @role_required(["ADMIN"])
 def admin_dashboard(request):
-    context = {"page_title": "Admin Home", "active_role": "ADMIN", "db_error": None, **get_default_admin_overview_context()}
+    if request.method == "POST" and _param(request, "action").lower() == "upload_master_csv":
+        try:
+            res, err = ingest_master_training_dataset(request.FILES.get("dataset_file") or request.FILES.get("master_csv"), actor_name=_actor_name(request))
+            _flash_result(request, res is not None, err, f"Master CSV trained ({res['rows_processed']} records, {res['predictions_generated']} predictions)." if res else "")
+        except Exception as exc:
+            messages.error(request, f"Master CSV error: {exc}")
+        return redirect("panels:admin_dashboard")
+    context = {"page_title": "Admin Home", "active_role": "ADMIN", "db_error": None, "ml_status": {"trained": False, "records_count": 0, "filename": "", "uploaded_at": ""}, **get_default_admin_overview_context()}
     try:
         context.update(get_admin_overview_context())
+        context["ml_status"] = get_master_training_status()
     except Exception as exc:
         context["db_error"] = str(exc)
     return render(request, "panels/admin_dashboard.html", context)
@@ -64,7 +68,7 @@ def admin_users(request):
                 _flash_result(request, new_state is not None, err, f"User {user_id} {'activated' if new_state else 'deactivated'}.")
             elif action == "reject":
                 ok, err = reject_teacher_account(user_id, request.POST.get("rejection_reason") or request.POST.get("reason"), actor_user_id=actor_id, actor_email=actor_email, actor_name=actor)
-                _flash_result(request, ok, err, f"Teacher request {user_id} rejected.")
+                _flash_result(request, ok, err, f"Account request {user_id} rejected.")
             elif action == "delete":
                 ok, err = delete_user_record(user_id, actor_user_id=actor_id, actor_email=actor_email, actor_name=actor)
                 _flash_result(request, ok, err, f"User {user_id} deleted.")
@@ -80,7 +84,8 @@ def admin_users(request):
         db_error = str(exc)
     user_headers, user_rows = build_user_table_data(users, filter_role, actor_id, actor_email=actor_email)
     user_cards = build_admin_user_cards(users, filter_role, actor_id, actor_email=actor_email)
-    return render(request, "panels/admin_users.html", {"page_title": "Users", "active_role": "ADMIN", "users": users, "user_headers": user_headers, "user_rows": user_rows, "user_cards": user_cards, "role_counts": role_counts, "selected_role": filter_role, "db_error": db_error})
+    pending_users = [u for u in users if str(u.get("approval_status") or "").upper() == "PENDING"]
+    return render(request, "panels/admin_users.html", {"page_title": "Users", "active_role": "ADMIN", "users": users, "pending_users": pending_users, "user_headers": user_headers, "user_rows": user_rows, "user_cards": user_cards, "role_counts": role_counts, "selected_role": filter_role, "db_error": db_error})
 
 
 @role_required(["ADMIN"])

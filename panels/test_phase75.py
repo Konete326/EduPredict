@@ -232,15 +232,23 @@ class Phase75VerificationTests(TestCase):
         self.assertIn("AI_DOCK_E2E_OK", out)
 
     def test_real_signup_zero_dummy_records_student_empty_states_and_contour(self):
+        self.cols["users"].insert_one({
+            "user_id": "USR-T750", "full_name": "Prof. Phase75", "email": "t75@edupredict.edu",
+            "role": "TEACHER", "department": "Software Engineering", "is_active": True, "approval_status": "APPROVED",
+        })
         client = Client()
         reg_resp = client.post(reverse("accounts:auth_view"), {
             "action": "register", "full_name": "Ayesha Siddiqui", "email": "ayesha.new@edupredict.edu",
             "password": "password123", "confirm_password": "password123", "role": "STUDENT",
-            "department": "Software Engineering", "batch": "2026-A",
+            "department": "Software Engineering", "batch": "2026-A", "assigned_teacher_id": "USR-T750",
         })
-        self.assertRedirects(reg_resp, reverse("panels:student_dashboard"), fetch_redirect_response=False)
+        self.assertEqual(reg_resp.status_code, 200)
         signup_user = self.cols["users"].find_one({"email": "ayesha.new@edupredict.edu"})
         self.assertIsNotNone(signup_user)
+        self.assertEqual(signup_user["approval_status"], "PENDING")
+        self.cols["users"].update_one({"user_id": signup_user["user_id"]}, {"$set": {"is_active": True, "approval_status": "APPROVED"}})
+        login_resp = client.post(reverse("accounts:auth_view"), {"action": "login", "email": "ayesha.new@edupredict.edu", "password": "password123"})
+        self.assertRedirects(login_resp, reverse("panels:student_dashboard"), fetch_redirect_response=False)
         self.assertTrue(str(signup_user.get("student_id") or "").startswith("STD-"))
         self.assertEqual(self.cols["student_records"].count_documents({}), 0)
 

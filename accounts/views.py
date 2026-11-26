@@ -7,16 +7,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.debug import sensitive_post_parameters
 from accounts.public_data import get_public_landing_showcase
-from accounts.services import (
-    SELF_REGISTER_ROLES,
-    VALID_ROLES,
-    authenticate_user,
-    create_public_contact_ticket,
-    get_public_admin_contact,
-    get_public_portal_metrics,
-    register_user,
-    serialize_session_user,
-)
+from accounts.services import SELF_REGISTER_ROLES, VALID_ROLES, authenticate_user, create_public_contact_ticket, get_public_admin_contact, get_public_portal_metrics, list_approved_teachers, register_user, serialize_session_user
 from core.db import get_cached, predictions_col, users_col
 from core.decorators import get_dashboard_route
 from core.theme_services import sync_theme_prefs_on_login
@@ -83,36 +74,25 @@ def _get_live_stats():
 
 def _render_auth(request, active_tab="login", login_email="", register_data=None, pending_teacher_approval=False):
     stats = _get_live_stats()
-    return render(
-        request,
-        "accounts/auth.html",
-        {
-            "page_title": "Sign In & Registration",
-            "active_tab": active_tab,
-            "login_email": login_email,
-            "register_data": register_data or {},
-            "live_predictions_count": stats.get("predictions_count", 0),
-            "pending_teacher_approval": bool(pending_teacher_approval),
-        },
-    )
+    return render(request, "accounts/auth.html", {"page_title": "Sign In & Registration", "active_tab": active_tab, "login_email": login_email, "register_data": register_data or {}, "approved_teachers": list_approved_teachers(), "live_predictions_count": stats.get("predictions_count", 0), "pending_teacher_approval": bool(pending_teacher_approval)})
 
 
 def _handle_login(request):
-    email = (request.POST.get("email") or "").strip().lower()
+    identifier = (request.POST.get("email") or "").strip()
     password = request.POST.get("password") or ""
-    if not email or not password:
-        messages.error(request, "Email and password are required.")
-        return _render_auth(request, active_tab="login", login_email=email)
+    if not identifier or not password:
+        messages.error(request, "Email or Student ID and password are required.")
+        return _render_auth(request, active_tab="login", login_email=identifier)
     try:
-        user_doc, error = authenticate_user(email, password)
+        user_doc, error = authenticate_user(identifier, password)
     except Exception:
         time.sleep(0.05)
         messages.error(request, "Unable to connect to the database. Please try again.")
-        return _render_auth(request, active_tab="login", login_email=email)
+        return _render_auth(request, active_tab="login", login_email=identifier)
     if error or user_doc is None:
         time.sleep(0.05)
-        messages.error(request, error or "Invalid email or password.")
-        return _render_auth(request, active_tab="login", login_email=email)
+        messages.error(request, error or "Invalid email/student ID or password.")
+        return _render_auth(request, active_tab="login", login_email=identifier)
     session_user = serialize_session_user(user_doc)
     request.session["user"] = session_user
     sync_theme_prefs_on_login(request, user_doc)
@@ -121,17 +101,12 @@ def _handle_login(request):
 
 
 def _handle_register(request):
-    full_name = (request.POST.get("full_name") or "").strip()
-    email = (request.POST.get("email") or "").strip().lower()
-    password = request.POST.get("password") or ""
-    confirm_password = request.POST.get("confirm_password") or ""
-    role = (request.POST.get("role") or "").strip().upper()
-    department = (request.POST.get("department") or "").strip()
-    batch = (request.POST.get("batch") or "").strip()
-    program_level = (request.POST.get("program_level") or "").strip()
-    phone = (request.POST.get("phone") or "").strip()
-    bio = (request.POST.get("bio") or "").strip()
-    register_data = {"full_name": full_name, "email": email, "role": role, "department": department, "batch": batch, "program_level": program_level, "phone": phone, "bio": bio}
+    full_name, email = (request.POST.get("full_name") or "").strip(), (request.POST.get("email") or "").strip().lower()
+    password, confirm_password = request.POST.get("password") or "", request.POST.get("confirm_password") or ""
+    role, department, batch = (request.POST.get("role") or "").strip().upper(), (request.POST.get("department") or "").strip(), (request.POST.get("batch") or "").strip()
+    program_level, phone, bio = (request.POST.get("program_level") or "").strip(), (request.POST.get("phone") or "").strip(), (request.POST.get("bio") or "").strip()
+    assigned_teacher_id = (request.POST.get("assigned_teacher_id") or "").strip()
+    register_data = {"full_name": full_name, "email": email, "role": role, "department": department, "batch": batch, "program_level": program_level, "phone": phone, "bio": bio, "assigned_teacher_id": assigned_teacher_id}
     if not full_name:
         messages.error(request, "Full name is required.")
         return _render_auth(request, active_tab="register", register_data=register_data)
@@ -149,8 +124,11 @@ def _handle_register(request):
     if role not in SELF_REGISTER_ROLES:
         messages.error(request, "Select Student, Teacher, or Data Analyst. Admin accounts are managed internally.")
         return _render_auth(request, active_tab="register", register_data=register_data)
+    if role == "STUDENT" and not assigned_teacher_id:
+        messages.error(request, "Please select an approved Teacher for your class.")
+        return _render_auth(request, active_tab="register", register_data=register_data)
     try:
-        user_doc, error = register_user(full_name=full_name, email=email, password=password, role=role, department=department, batch=batch, phone=phone, bio=bio, program_level=program_level)
+        user_doc, error = register_user(full_name=full_name, email=email, password=password, role=role, department=department, batch=batch, phone=phone, bio=bio, program_level=program_level, assigned_teacher_id=assigned_teacher_id)
     except Exception:
         messages.error(request, "Unable to complete registration right now. Please try again.")
         return _render_auth(request, active_tab="register", register_data=register_data)
@@ -158,8 +136,9 @@ def _handle_register(request):
         messages.error(request, error or "Registration failed.")
         return _render_auth(request, active_tab="register", register_data=register_data)
     if str(user_doc.get("approval_status") or "").strip().upper() == "PENDING":
-        request.session["pending_approval"] = {"user_id": user_doc.get("user_id"), "email": email, "full_name": full_name}
-        messages.warning(request, "Your teacher account was created and is waiting for Admin approval. This page will sign you in automatically once approved.")
+        role_label = "student" if role == "STUDENT" else "teacher"
+        request.session["pending_approval"] = {"user_id": user_doc.get("user_id"), "email": email, "full_name": full_name, "role": role}
+        messages.warning(request, f"Your {role_label} account was created and is waiting for Admin approval. This page will sign you in automatically once approved.")
         return _render_auth(request, active_tab="login", login_email=email, pending_teacher_approval=True)
     session_user = serialize_session_user(user_doc)
     request.session["user"] = session_user

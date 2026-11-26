@@ -6,8 +6,10 @@ from django.core.validators import validate_email
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError
 from accounts.services import VALID_ROLES, ensure_accounts_indexes_once, generate_unique_student_id, generate_unique_user_id
+from analytics.data_pipeline import ingest_dataset
+from analytics.ml_engine import run_prediction_pipeline
 from core.cloudinary_services import encode_image_data_uri, is_cloudinary_configured, upload_ticket_attachment
-from core.db import get_cached, invalidate_cache, notifications_col, student_records_col, support_tickets_col, users_col
+from core.db import datasets_log_col, get_cached, invalidate_cache, notifications_col, predictions_col, student_records_col, support_tickets_col, users_col
 from panels.admin_audit_services import record_audit_log
 from panels.admin_seed import _format_dt, _safe_int, build_backup_payload, courses_col, ensure_admin_seed_data, get_admin_overview_context
 from panels.notification_services import create_notification
@@ -43,12 +45,10 @@ def _load_users(normalized):
         role, is_active = str(doc.get("role") or "").strip().upper(), bool(doc.get("is_active", True))
         approval_status = str(doc.get("approval_status") or ("APPROVED" if is_active else "INACTIVE")).upper()
         role_counts["ALL"] += 1
-        if role in role_counts:
-            role_counts[role] += 1
-        if approval_status in ("PENDING", "REJECTED"):
-            role_counts[approval_status] += 1
+        if role in role_counts: role_counts[role] += 1
+        if approval_status in ("PENDING", "REJECTED"): role_counts[approval_status] += 1
         if normalized == "ALL" or (normalized in ("PENDING", "REJECTED") and approval_status == normalized) or role == normalized:
-            users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "program_level": str(doc.get("program_level") or ("BS / Undergraduate" if role == "STUDENT" else "")), "phone": str(doc.get("phone") or ""), "bio": str(doc.get("bio") or ""), "is_active": is_active, "approval_status": approval_status, "rejection_reason": str(doc.get("rejection_reason") or ""), "student_id": str(doc.get("student_id") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at"))})
+            users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "program_level": str(doc.get("program_level") or ("BS / Undergraduate" if role == "STUDENT" else "")), "phone": str(doc.get("phone") or ""), "bio": str(doc.get("bio") or ""), "is_active": is_active, "approval_status": approval_status, "rejection_reason": str(doc.get("rejection_reason") or ""), "student_id": str(doc.get("student_id") or ""), "assigned_teacher_id": str(doc.get("assigned_teacher_id") or ""), "assigned_teacher_name": str(doc.get("assigned_teacher_name") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at"))})
     return users, role_counts
 
 def list_users(role_filter="ALL"):
@@ -57,38 +57,26 @@ def list_users(role_filter="ALL"):
 
 def _validate_user_input(full_name, email, role, department, batch):
     clean_name, clean_email, clean_role = str(full_name or "").strip(), str(email or "").strip().lower(), str(role or "").strip().upper()
-    if not clean_name:
-        return None, "Full name is required."
-    try:
-        validate_email(clean_email)
-    except ValidationError:
-        return None, "Please enter a valid email address."
-    if clean_role not in VALID_ROLES:
-        return None, "Select a valid role (ADMIN, TEACHER, STUDENT, or ANALYST)."
-    clean_dept, clean_batch = str(department or "").strip() or "General", str(batch or "").strip() or ("2026-A" if clean_role == "STUDENT" else "ALL")
-    return (clean_name, clean_email, clean_role, clean_dept, clean_batch), None
+    if not clean_name: return None, "Full name is required."
+    try: validate_email(clean_email)
+    except ValidationError: return None, "Please enter a valid email address."
+    if clean_role not in VALID_ROLES: return None, "Select a valid role (ADMIN, TEACHER, STUDENT, or ANALYST)."
+    return (clean_name, clean_email, clean_role, str(department or "").strip() or "General", str(batch or "").strip() or ("2026-A" if clean_role == "STUDENT" else "ALL")), None
 
 def create_user_record(full_name, email, password, role, department, batch, actor_name="System Admin", program_level=""):
     ensure_accounts_indexes_once()
     parsed, err = _validate_user_input(full_name, email, role, department, batch)
-    if err:
-        return None, err
+    if err: return None, err
     clean_name, clean_email, clean_role, clean_dept, clean_batch = parsed
-    if len(str(password or "")) < 6:
-        return None, "Password must be at least 6 characters long."
+    if len(str(password or "")) < 6: return None, "Password must be at least 6 characters long."
     col = users_col()
-    if col.find_one({"email": clean_email}, {"_id": 1}) is not None:
-        return None, "A user with this email already exists."
-
+    if col.find_one({"email": clean_email}, {"_id": 1}) is not None: return None, "A user with this email already exists."
     user_id = generate_unique_user_id(col)
     student_id = generate_unique_student_id(student_records_col(), user_id) if clean_role == "STUDENT" else None
     clean_level = str(program_level or "").strip() or ("BS / Undergraduate" if clean_role == "STUDENT" else "")
     doc = {"user_id": user_id, "full_name": clean_name, "email": clean_email, "password_hash": make_password(password), "role": clean_role, "department": clean_dept, "batch": clean_batch, "is_active": True, "created_at": datetime.now(timezone.utc), **({"program_level": clean_level} if clean_level else {}), **({"student_id": student_id} if student_id else {})}
-    try:
-        col.insert_one(doc)
-    except DuplicateKeyError:
-        return None, "A user with this email already exists."
-
+    try: col.insert_one(doc)
+    except DuplicateKeyError: return None, "A user with this email already exists."
     _audit("USERS", "CREATE_USER", f"Created user {clean_name} ({user_id}, {clean_role}).", "SUCCESS", actor=actor_name)
     invalidate_cache()
     return doc, None
@@ -96,29 +84,18 @@ def create_user_record(full_name, email, password, role, department, batch, acto
 def update_user_record(user_id, full_name, email, role, department, batch, password="", actor_user_id=None, actor_email="", actor_name="System Admin", program_level=None):
     col, clean_uid = users_col(), str(user_id or "").strip()
     existing = col.find_one({"user_id": clean_uid})
-    if existing is None:
-        return False, "User record not found."
+    if existing is None: return False, "User record not found."
     parsed, err = _validate_user_input(full_name, email, role, department, batch)
-    if err:
-        return False, err
+    if err: return False, err
     clean_name, clean_email, clean_role, clean_dept, clean_batch = parsed
-    if _is_self_target(existing, clean_uid, actor_user_id, actor_email) and clean_role != "ADMIN":
-        return False, "You cannot change your own active ADMIN role."
-    if col.find_one({"email": clean_email, "user_id": {"$ne": clean_uid}}, {"_id": 1}) is not None:
-        return False, "Another user already uses this email address."
-    if password and len(password) < 6:
-        return False, "New password must be at least 6 characters long."
-
+    if _is_self_target(existing, clean_uid, actor_user_id, actor_email) and clean_role != "ADMIN": return False, "You cannot change your own active ADMIN role."
+    if col.find_one({"email": clean_email, "user_id": {"$ne": clean_uid}}, {"_id": 1}) is not None: return False, "Another user already uses this email address."
+    if password and len(password) < 6: return False, "New password must be at least 6 characters long."
     updates = {"full_name": clean_name, "email": clean_email, "role": clean_role, "department": clean_dept, "batch": clean_batch}
-    if program_level is not None:
-        clean_level = str(program_level or "").strip()
-        updates["program_level"] = clean_level or ("BS / Undergraduate" if clean_role == "STUDENT" else "")
-    elif clean_role == "STUDENT" and not existing.get("program_level"):
-        updates["program_level"] = "BS / Undergraduate"
-    if password:
-        updates["password_hash"] = make_password(password)
-    if clean_role == "STUDENT" and not existing.get("student_id"):
-        updates["student_id"] = generate_unique_student_id(student_records_col(), clean_uid)
+    if program_level is not None: updates["program_level"] = str(program_level or "").strip() or ("BS / Undergraduate" if clean_role == "STUDENT" else "")
+    elif clean_role == "STUDENT" and not existing.get("program_level"): updates["program_level"] = "BS / Undergraduate"
+    if password: updates["password_hash"] = make_password(password)
+    if clean_role == "STUDENT" and not existing.get("student_id"): updates["student_id"] = generate_unique_student_id(student_records_col(), clean_uid)
     col.update_one({"_id": existing["_id"]}, {"$set": updates})
     _audit("USERS", "UPDATE_USER", f"Updated user {clean_uid} ({clean_role}).", "INFO", actor=actor_name)
     invalidate_cache()
@@ -127,26 +104,53 @@ def update_user_record(user_id, full_name, email, role, department, batch, passw
 def toggle_user_status(user_id, actor_user_id=None, actor_email="", actor_name="System Admin"):
     clean_uid, col = str(user_id or "").strip(), users_col()
     existing = col.find_one({"user_id": clean_uid})
-    if _is_self_target(existing, clean_uid, actor_user_id, actor_email):
-        return None, "You cannot deactivate your own active admin account."
-    if existing is None:
-        return None, "User record not found."
+    if _is_self_target(existing, clean_uid, actor_user_id, actor_email): return None, "You cannot deactivate your own active admin account."
+    if existing is None: return None, "User record not found."
     new_state = not bool(existing.get("is_active", True))
     is_pending_approve = new_state and str(existing.get("approval_status") or "").upper() == "PENDING"
     col.update_one({"_id": existing["_id"]}, {"$set": {"is_active": True, "approval_status": "APPROVED"} if is_pending_approve else {"is_active": new_state}})
     if is_pending_approve:
-        _audit("USERS", "APPROVE_USER", f"Approved teacher account {clean_uid}.", "SUCCESS", actor=actor_name)
-        create_notification("Account Approved", "Your EduPredict Teacher account has been approved by Admin. You can sign in now.", severity="SUCCESS", target_user_id=clean_uid, category="APPROVAL")
+        role_label = "Student" if str(existing.get("role") or "").strip().upper() == "STUDENT" else "Teacher"
+        _audit("USERS", "APPROVE_USER", f"Approved {role_label.lower()} account {clean_uid}.", "SUCCESS", actor=actor_name)
+        create_notification("Account Approved", f"Your EduPredict {role_label} account has been approved by Admin. You can sign in now.", severity="SUCCESS", target_user_id=clean_uid, category="APPROVAL")
     else:
         _audit("USERS", "TOGGLE_USER", f"{'Activated' if new_state else 'Deactivated'} user {clean_uid}.", "SUCCESS" if new_state else "WARNING", actor=actor_name)
     invalidate_cache()
     return new_state, None
 
+def ingest_master_training_dataset(file_obj, actor_name="System Admin"):
+    if file_obj is None: return None, "Please select a master training CSV or Excel file."
+    ingest_res = ingest_dataset(file_obj=file_obj, uploaded_by=actor_name, mode="upload")
+    if ingest_res.get("status") != "COMPLETED": return None, ingest_res.get("error") or "Master training dataset upload failed."
+    pred_res, now = run_prediction_pipeline(persist=True), datetime.now(timezone.utc)
+    rows_count, filename = int(ingest_res.get("rows_processed") or 0), str(ingest_res.get("filename") or "master_training.csv")
+    try:
+        log_col = datasets_log_col()
+        latest = next(iter(log_col.find({"filename": filename, "status": "COMPLETED"}).sort("uploaded_at", DESCENDING).limit(1)), None)
+        marker = {"is_training_dataset": True, "model_trained": True, "model_version": str(pred_res.get("model_version") or ""), "predictions_generated": int(pred_res.get("predictions_generated") or 0), "trained_at": now}
+        if latest and latest.get("_id") is not None: log_col.update_one({"_id": latest["_id"]}, {"$set": marker})
+        else: log_col.insert_one({"filename": filename, "uploaded_by": actor_name or "System Admin", "rows_processed": rows_count, "missing_values_fixed": int(ingest_res.get("missing_values_fixed") or 0), "status": "COMPLETED", "uploaded_at": now, **marker})
+    except Exception:
+        pass
+    _audit("DATA", "UPLOAD_MASTER_CSV", f"Uploaded master training CSV {filename} ({rows_count} records) and trained ML models.", "SUCCESS", actor=actor_name)
+    invalidate_cache()
+    return {"filename": filename, "rows_processed": rows_count, "missing_values_fixed": int(ingest_res.get("missing_values_fixed") or 0), "predictions_generated": int(pred_res.get("predictions_generated") or 0), "high_risk_count": int(pred_res.get("high_risk_count") or 0)}, None
+
+def get_master_training_status():
+    def _fetch():
+        try:
+            log_col = datasets_log_col()
+            doc = next(iter(log_col.find({"is_training_dataset": True, "status": "COMPLETED"}, {"_id": 0}).sort("uploaded_at", DESCENDING).limit(1)), None) or next(iter(log_col.find({"status": "COMPLETED"}, {"_id": 0}).sort("uploaded_at", DESCENDING).limit(1)), None)
+            pred_count, sr_count = int(predictions_col().count_documents({})), int(student_records_col().count_documents({}))
+            return {"trained": bool((doc and doc.get("is_training_dataset")) or (doc and pred_count > 0) or pred_count > 0), "records_count": int((doc or {}).get("rows_processed") or 0) or sr_count or pred_count, "filename": str((doc or {}).get("filename") or ""), "uploaded_at": _format_dt((doc or {}).get("uploaded_at")) if doc else ""}
+        except Exception:
+            return {"trained": False, "records_count": 0, "filename": "", "uploaded_at": ""}
+    return get_cached("admin:ml_status", _fetch, ttl=20.0)
+
 def delete_user_record(user_id, actor_user_id=None, actor_email="", actor_name="System Admin"):
     clean_uid, col = str(user_id or "").strip(), users_col()
     existing = col.find_one({"user_id": clean_uid}, {"_id": 1, "email": 1})
-    if _is_self_target(existing, clean_uid, actor_user_id, actor_email):
-        return False, "You cannot delete your own active admin account."
+    if _is_self_target(existing, clean_uid, actor_user_id, actor_email): return False, "You cannot delete your own active admin account."
     if col.delete_one({"user_id": clean_uid}).deleted_count:
         _audit("USERS", "DELETE_USER", f"Deleted user {clean_uid}.", "DANGER", actor=actor_name)
         invalidate_cache()

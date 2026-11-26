@@ -2,15 +2,17 @@ import csv
 from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-from django.urls import reverse
 from core.decorators import role_required
 from panels.admin_services import mark_notifications_read
+from panels.notification_services import submit_student_feedback
 from panels.pdf_services import _resolve_pdf_branding, generate_student_report_card_pdf
 from panels.student_services import (
     build_report_export_rows,
     get_student_alerts_context,
     get_student_overview_context,
+    list_student_feedback_tickets,
     mark_alert_read,
+    resolve_assigned_teacher,
 )
 
 
@@ -44,6 +46,11 @@ def _empty_overview_context():
         "teacher_alerts": [],
         "enrolled_courses": [],
         "admin_contact": {"name": "", "email": ""},
+        "assigned_teacher": {"teacher_id": "", "name": "", "email": ""},
+        "alerts": [],
+        "my_tickets": [],
+        "unread": 0,
+        "total": 0,
     }
 
 
@@ -56,27 +63,12 @@ def _safe_context(loader, *args):
 
 def _risk_status(risk_level):
     risk = str(risk_level or "").upper()
-    if risk == "HIGH":
-        return "danger"
-    if risk == "MEDIUM":
-        return "warning"
-    if risk == "PENDING":
-        return "info"
-    return "success"
+    return {"HIGH": "danger", "MEDIUM": "warning", "PENDING": "info"}.get(risk, "success")
 
 
 def _build_subject_table_rows(subject_rows):
     headers = ["Course", "My Marks", "Class Avg", "My Attendance", "Class Att", "Status"]
-    rows = []
-    for s in subject_rows:
-        rows.append([
-            s["course_code"],
-            f"{s['my_marks']:.1f}",
-            f"{s['class_marks']:.1f}",
-            f"{s['my_attendance']:.1f}%",
-            f"{s['class_attendance']:.1f}%",
-            s["status"],
-        ])
+    rows = [[s["course_code"], f"{s['my_marks']:.1f}", f"{s['class_marks']:.1f}", f"{s['my_attendance']:.1f}%", f"{s['class_attendance']:.1f}%", s["status"]] for s in subject_rows]
     return headers, rows
 
 
@@ -88,8 +80,6 @@ def student_dashboard(request):
     subject_headers, subject_table_rows = _build_subject_table_rows(data["subject_rows"])
     predicted_gpa_display = f"{record['predicted_gpa']:.2f}" if record["predicted_gpa"] is not None else "Pending"
     rank = data["rank"]
-    class_standing_display = f"#{rank['rank']} of {rank['total']}" if rank else "N/A"
-    credits_display = f"{data['credits']:.1f}"
     return render(request, "panels/student_dashboard.html", {
         "page_title": "My Dashboard",
         "active_role": "STUDENT",
@@ -103,12 +93,13 @@ def student_dashboard(request):
         "rank": rank,
         "unread_alerts": data["unread_alerts"],
         "credits": data["credits"],
-        "credits_display": credits_display,
+        "credits_display": f"{data['credits']:.1f}",
         "predicted_gpa_display": predicted_gpa_display,
-        "class_standing_display": class_standing_display,
+        "class_standing_display": f"#{rank['rank']} of {rank['total']}" if rank else "N/A",
         "teacher_alerts": data["teacher_alerts"],
         "enrolled_courses": data.get("enrolled_courses", []),
         "admin_contact": data.get("admin_contact", {}),
+        "assigned_teacher": data.get("assigned_teacher", {}),
         "db_error": db_error,
     })
 
@@ -119,16 +110,7 @@ def student_report(request):
     data, db_error = _safe_context(get_student_overview_context, student_id, user_id, role)
     inst_name, term_name = _resolve_pdf_branding(data)
     record = data["record"]
-    report_rows = []
-    for s in data["subject_rows"]:
-        report_rows.append([
-            s["course_code"],
-            f"{s['my_marks']:.1f}",
-            f"{s['class_marks']:.1f}",
-            f"{s['diff']:+.1f}",
-            f"{s['my_attendance']:.1f}%",
-            s["status"],
-        ])
+    report_rows = [[s["course_code"], f"{s['my_marks']:.1f}", f"{s['class_marks']:.1f}", f"{s['diff']:+.1f}", f"{s['my_attendance']:.1f}%", s["status"]] for s in data["subject_rows"]]
     return render(request, "panels/student_report.html", {
         "page_title": "My Report Card",
         "active_role": "STUDENT",
@@ -141,6 +123,7 @@ def student_report(request):
         "insight": data["insight"],
         "enrolled_courses": data.get("enrolled_courses", []),
         "admin_contact": data.get("admin_contact", {}),
+        "assigned_teacher": data.get("assigned_teacher", {}),
         "portal_institution_name": inst_name,
         "portal_current_term": term_name,
         "db_error": db_error,
@@ -199,45 +182,54 @@ def student_tips(request):
 @role_required(["STUDENT", "ADMIN"])
 def student_notifications(request):
     student_id, user_id, role, user = _student_identity(request)
+    assigned_teacher = resolve_assigned_teacher(student_id, user_id)
     if request.method == "POST":
         action = str(request.POST.get("action") or "").strip().lower()
         try:
             if action == "mark_read":
                 ok, err = mark_alert_read(request.POST.get("alert_id"), student_id, user_id, role)
-                if ok:
-                    messages.success(request, "Alert marked as read.")
-                else:
-                    messages.error(request, err or "Could not mark alert as read.")
+                messages.success(request, "Alert marked as read.") if ok else messages.error(request, err or "Could not mark alert as read.")
             elif action == "mark_all":
                 updated = mark_notifications_read({"user_id": user_id, "student_id": student_id, "role": role})
                 messages.success(request, f"{updated} alert(s) marked as read.")
+            elif action == "send_feedback":
+                if role == "ADMIN":
+                    messages.warning(request, "Admins manage help tickets directly and cannot send feedback to themselves.")
+                else:
+                    recipient = str(request.POST.get("recipient") or "ADMIN").strip().upper()
+                    created, err = submit_student_feedback(
+                        user_id=user_id,
+                        user_name=user.get("full_name") or user.get("email") or "Student",
+                        role=role,
+                        subject=request.POST.get("subject"),
+                        message=request.POST.get("message"),
+                        recipient=recipient,
+                        target_teacher_id=assigned_teacher.get("teacher_id", ""),
+                        target_teacher_name=assigned_teacher.get("name", ""),
+                        student_id=student_id,
+                    )
+                    if created:
+                        target_label = f"Teacher ({assigned_teacher.get('name') or 'Assigned'})" if recipient == "TEACHER" else "Institute Admin"
+                        messages.success(request, f"Feedback {created['ticket_id']} sent to {target_label}.")
+                    else:
+                        messages.error(request, err or "Could not send feedback.")
             else:
                 messages.error(request, "Unknown alert action.")
         except Exception as exc:
-            messages.error(request, f"Alert update failed: {exc}")
+            messages.error(request, f"Action failed: {exc}")
         return redirect("panels:student_notifications")
 
     data, db_error = _safe_context(get_student_alerts_context, student_id, user_id, role)
-    ticket_headers = ["Ticket ID", "Subject", "Message", "Status", "Date"]
-    ticket_rows = []
-    for t in data["my_tickets"]:
-        msg_preview = f"{t['message'][:60]}..." if len(t["message"]) > 60 else t["message"]
-        attachments = t.get("attachments") or []
-        if attachments:
-            msg_preview = f"{msg_preview} [{len(attachments)} img]"
-        ticket_rows.append([
-            t["ticket_id"],
-            t["subject"],
-            msg_preview,
-            t["status_badge"],
-            t["created"],
-        ])
+    try:
+        feedback_tickets = list_student_feedback_tickets(student_id, user_id)
+    except Exception:
+        feedback_tickets = []
     return render(request, "panels/student_notifications.html", {
-        "page_title": "Alerts & Support",
+        "page_title": "Alerts & Feedback",
         "active_role": "STUDENT",
         "alerts": data["alerts"],
-        "ticket_headers": ticket_headers,
-        "ticket_rows": ticket_rows,
+        "feedback_tickets": feedback_tickets,
+        "assigned_teacher": assigned_teacher,
         "unread": data["unread"],
         "total": data["total"],
         "db_error": db_error,

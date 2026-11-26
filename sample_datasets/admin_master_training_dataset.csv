@@ -1,0 +1,201 @@
+student_id,full_name,birth_date,department,course_code,attendance_pct,internal_marks,assignment_score,lms_hours_per_week,previous_gpa,final_gpa,dropout_risk
+EDU-2024-0001,Laiba Farooq,2002-01-05,Computer Science,CS-101,73.7,66.2,69.0,5.5,2.78,3.1,MEDIUM
+EDU-2024-0002,Sophia Niazi,2001-05-26,Data Science,DS-301,61.2,49.5,43.6,1.1,1.89,2.14,HIGH
+EDU-2024-0003,Sadia Hayes,2001-11-06,Software Engineering,SE-210,94.5,92.6,90.3,15.5,3.84,4.0,LOW
+EDU-2024-0004,Mateo Silva,2005-03-31,Machine Learning,ML-401,71.0,56.3,54.9,6.9,2.43,2.77,MEDIUM
+EDU-2024-0005,Nimra Morgan,2005-03-14,Artificial Intelligence,AI-205,75.6,60.9,63.5,6.1,2.74,2.85,MEDIUM
+EDU-2024-0006,Sumbul Abbasi,2004-05-08,Mathematics,LA-110,78.7,66.4,62.1,7.2,2.83,3.1,MEDIUM
+EDU-2024-0007,Kinza Khan,2001-05-18,Computer Science,CS-101,71.0,59.1,62.0,5.9,2.52,2.71,MEDIUM
+EDU-2024-0008,Taimoor Hussain,2001-06-29,Data Science,DS-301,77.4,64.3,63.1,6.9,2.69,2.98,MEDIUM
+EDU-2024-0009,Danish Foster,2005-10-27,Software Engineering,SE-210,73.5,66.2,65.5,8.2,2.59,2.88,MEDIUM
+EDU-2024-0010,Ayesha Rizvi,2003-09-25,Machine Learning,ML-401,87.5,76.6,77.8,14.3,3.64,3.95,LOW
+EDU-2024-0011,Fatima Ansari,2003-03-28,Artificial Intelligence,AI-205,53.6,47.1,52.9,3.4,1.99,2.14,HIGH
+EDU-2024-0012,Olivia Morgan,2001-05-16,Mathematics,LA-110,66.4,55.0,54.7,6.3,2.55,2.79,MEDIUM
+EDU-2024-0013,Karim Morales,2002-09-04,Computer Science,CS-101,88.6,82.5,79.5,11.3,3.62,4.0,LOW
+EDU-2024-0014,Zainab Bennett,2002-09-07,Data Science,DS-301,98.7,94.5,94.3,13.3,3.8,4.0,LOW
+EDU-2024-0015,Elena Alvarez,2003-03-15,Software Engineering,SE-210,46.2,42.1,47.8,2.7,1.48,1.55,HIGH
+EDU-2024-0016,Zeeshan Mensah,2004-12-04,Machine Learning,ML-401,35.1,28.8,27.6,2.6,1.53,1.24,HIGH
+EDU-2024-0017,Olivia Mirza,2002-04-12,Artificial Intelligence,AI-205,91.9,90.6,94.3,16.9,3.69,4.0,LOW
+EDU-2024-0018,Huda Hussain,2004-01-20,Mathematics,LA-110,49.4,46.2,43.8,3.4,1.59,1.74,HIGH
+EDU-2024-0019,Hannah Farooq,2004-11-15,Computer Science,CS-101,44.5,35.7,33.9,1.6,1.66,1.51,HIGH
+EDU-2024-0020,Kiran Sato,2002-11-23,Data Science,DS-301,98.5,94.2,92.4,9.9,3.84,4.0,LOW
+EDU-2024-0021,Amara Qureshi,2004-07-05,Software Engineering,SE-210,68.3,62.5,58.3,8.3,2.73,2.88,MEDIUM
+EDU-2024-0022,Sophia Morgan,2002-04-20,Machine Learning,ML-401,53.5,41.1,45.9,2.5,1.5,1.79,HIGH
+EDU-2024-0023,Sophia Sharma,2004-08-13,Artificial Intelligence,AI-205,58.3,51.7,54.0,1.6,2.01,2.04,HIGH
+EDU-2024-0024,Ayesha Naqvi,2004-07-16,Mathematics,LA-110,69.6,55.4,54.0,8.9,2.47,2.83,MEDIUM
+EDU-2024-0025,Mehwish Sheikh,2005-09-01,Computer Science,CS-101,52.9,50.9,48.9,3.5,1.74,1.92,HIGH
+EDU-2024-0026,Asad Morales,2005-02-09,Data Science,DS-301,45.0,39.3,39.4,2.6,3.65,1.69,HIGH
+EDU-2024-0027,Areeba Farooq,2003-11-13,Software Engineering,SE-210,75.0,60.8,60.1,7.7,2.75,3.06,MEDIUM
+EDU-2024-0028,Taimoor Farooq,2003-04-28,Machine Learning,ML-401,34.7,28.3,31.2,1.7,1.56,1.3,HIGH
+EDU-2024-0029,Kamran Kazmi,2001-07-21,Artificial Intelligence,AI-205,93.4,90.7,90.4,19.3,3.77,4.0,LOW
+EDU-2024-0030,Waqas Tanaka,2001-07-10,Mathematics,LA-110,81.1,67.5,67.5,8.7,2.87,3.1,MEDIUM
+EDU-2024-0031,Rizwan Hussain,2001-03-22,Computer Science,CS-101,78.7,65.6,66.2,7.6,2.79,2.99,MEDIUM
+EDU-2024-0032,Huda Bennett,2003-08-07,Data Science,DS-301,72.4,63.2,67.5,6.0,2.74,2.97,MEDIUM
+EDU-2024-0033,Areeba Bennett,2005-07-23,Software Engineering,SE-210,76.3,69.9,72.5,5.9,2.74,3.1,MEDIUM
+EDU-2024-0034,Lucas Farooq,2002-11-06,Machine Learning,ML-401,54.9,44.9,45.6,1.4,1.87,1.97,HIGH
+EDU-2024-0035,Fatima Rizvi,2003-02-26,Artificial Intelligence,AI-205,89.2,87.0,90.5,15.0,3.7,4.0,LOW
+EDU-2024-0036,Taimoor Shaikh,2003-11-27,Mathematics,LA-110,64.1,55.0,54.0,5.8,2.4,2.68,MEDIUM
+EDU-2024-0037,Noor Patel,2001-12-08,Computer Science,CS-101,43.8,42.0,46.7,4.8,1.57,1.69,HIGH
+EDU-2024-0038,Yusuf Okafor,2005-01-20,Data Science,DS-301,40.9,29.6,33.4,3.8,1.25,1.34,HIGH
+EDU-2024-0039,Daniel Khattak,2004-10-13,Software Engineering,SE-210,88.5,80.1,80.1,11.8,3.67,4.0,LOW
+EDU-2024-0040,Tariq Rizvi,2003-12-31,Machine Learning,ML-401,54.0,44.6,44.0,2.9,1.93,2.05,HIGH
+EDU-2024-0041,Hira Okafor,2004-09-01,Artificial Intelligence,AI-205,90.8,79.5,79.8,15.5,3.53,3.96,LOW
+EDU-2024-0042,Anam Gondal,2005-11-20,Mathematics,LA-110,90.5,81.1,86.1,12.0,3.64,4.0,LOW
+EDU-2024-0043,Shahzaib Malik,2004-11-27,Computer Science,CS-101,78.5,71.9,68.1,7.5,2.8,3.1,MEDIUM
+EDU-2024-0044,Kinza Morales,2002-08-05,Data Science,DS-301,83.7,74.8,75.5,16.6,3.49,3.98,LOW
+EDU-2024-0045,Iqra Ansari,2003-05-30,Software Engineering,SE-210,93.1,89.2,93.0,18.0,3.61,4.0,LOW
+EDU-2024-0046,Laiba Sato,2001-03-25,Machine Learning,ML-401,62.2,48.3,52.9,2.6,1.96,2.18,HIGH
+EDU-2024-0047,Elena Cheema,2005-06-24,Artificial Intelligence,AI-205,92.6,91.0,96.6,12.5,3.86,4.0,LOW
+EDU-2024-0048,Noah Bajwa,2003-10-12,Mathematics,LA-110,49.1,42.1,36.8,2.3,1.69,1.74,HIGH
+EDU-2024-0049,Karim Sheikh,2004-03-07,Computer Science,CS-101,95.8,92.0,90.3,15.9,3.83,4.0,LOW
+EDU-2024-0050,Taimoor Raza,2001-05-14,Data Science,DS-301,90.3,80.0,79.7,12.4,3.62,4.0,LOW
+EDU-2024-0051,Asad Chaudhry,2004-02-09,Software Engineering,SE-210,68.1,56.3,54.0,5.6,2.53,2.7,MEDIUM
+EDU-2024-0052,Maham Rizvi,2003-06-30,Machine Learning,ML-401,79.6,67.7,72.9,6.4,2.85,3.08,MEDIUM
+EDU-2024-0053,Zeeshan Sharma,2002-01-16,Artificial Intelligence,AI-205,40.3,37.5,33.3,4.7,1.5,1.53,HIGH
+EDU-2024-0054,Zara Raza,2005-04-29,Mathematics,LA-110,89.7,89.8,94.8,19.0,3.69,4.0,LOW
+EDU-2024-0055,Salman Shaikh,2005-04-17,Computer Science,CS-101,87.4,87.7,89.5,15.7,3.82,4.0,LOW
+EDU-2024-0056,Farhan Lodhi,2001-02-13,Data Science,DS-301,92.8,90.4,90.4,10.6,3.65,4.0,LOW
+EDU-2024-0057,Salman Ahmed,2002-09-09,Software Engineering,SE-210,45.0,31.7,35.1,4.0,1.45,1.48,HIGH
+EDU-2024-0058,Aarish Javed,2004-02-03,Machine Learning,ML-401,82.0,77.7,83.6,18.6,3.6,4.0,LOW
+EDU-2024-0059,Kinza Zaidi,2003-11-06,Artificial Intelligence,AI-205,83.2,79.8,81.5,14.3,3.56,4.0,LOW
+EDU-2024-0060,Yusuf Morales,2002-10-24,Mathematics,LA-110,92.6,88.0,84.5,14.4,3.82,4.0,LOW
+EDU-2024-0061,Layla Rizvi,2004-09-11,Computer Science,CS-101,72.1,68.6,67.4,9.0,2.67,2.98,MEDIUM
+EDU-2024-0062,Kinza Mensah,2003-09-12,Data Science,DS-301,47.3,33.2,35.1,4.3,1.43,1.45,HIGH
+EDU-2024-0063,Kenji Santos,2004-06-23,Software Engineering,SE-210,87.0,87.9,91.4,14.5,3.8,4.0,LOW
+EDU-2024-0064,Danish Kazmi,2005-02-15,Machine Learning,ML-401,83.8,83.3,86.8,14.9,3.72,4.0,LOW
+EDU-2024-0065,Zara Hashmi,2004-04-19,Artificial Intelligence,AI-205,96.5,86.8,92.3,19.5,3.62,4.0,LOW
+EDU-2024-0066,Areeba Bajwa,2001-05-29,Mathematics,LA-110,88.2,87.5,89.3,15.9,3.78,4.0,LOW
+EDU-2024-0067,Ayesha Morales,2004-12-15,Computer Science,CS-101,74.4,59.5,59.5,8.9,2.76,3.03,MEDIUM
+EDU-2024-0068,Sumbul Morgan,2001-07-07,Data Science,DS-301,80.9,67.8,67.7,8.9,2.7,3.1,MEDIUM
+EDU-2024-0069,Areeba Okafor,2003-11-25,Software Engineering,SE-210,67.5,60.2,59.9,5.3,2.51,2.8,MEDIUM
+EDU-2024-0070,Asad Mensah,2002-06-08,Machine Learning,ML-401,73.5,60.7,65.4,6.1,2.57,2.79,MEDIUM
+EDU-2024-0071,Nimra Rizvi,2002-09-18,Artificial Intelligence,AI-205,39.9,30.0,27.5,2.8,1.44,1.42,HIGH
+EDU-2024-0072,Iqra Hayes,2005-01-03,Mathematics,LA-110,74.7,69.8,65.3,5.7,2.66,3.05,MEDIUM
+EDU-2024-0073,Mahnoor Okafor,2004-08-26,Computer Science,CS-101,84.8,74.1,75.6,12.7,3.6,3.98,LOW
+EDU-2024-0074,Ethan Chaudhry,2003-06-26,Data Science,DS-301,83.5,75.4,79.5,9.5,3.51,3.82,LOW
+EDU-2024-0075,Yuki Virk,2001-03-04,Software Engineering,SE-210,48.8,44.9,47.7,2.4,1.81,1.84,HIGH
+EDU-2024-0076,Kiran Carter,2004-08-19,Machine Learning,ML-401,84.5,76.8,75.0,19.5,3.58,3.91,LOW
+EDU-2024-0077,Usman Hashmi,2003-03-07,Artificial Intelligence,AI-205,36.4,30.9,36.2,4.0,1.32,1.34,HIGH
+EDU-2024-0078,Lina Kazmi,2001-07-30,Mathematics,LA-110,89.0,79.2,75.9,10.2,3.53,4.0,LOW
+EDU-2024-0079,Fatima Khan,2005-04-08,Computer Science,CS-101,97.8,95.1,95.1,13.2,3.75,4.0,LOW
+EDU-2024-0080,Hannah Siddiqui,2003-12-23,Data Science,DS-301,66.1,62.7,61.6,6.6,2.59,2.95,MEDIUM
+EDU-2024-0081,Asad Sharma,2005-05-31,Software Engineering,SE-210,79.7,66.6,71.5,8.6,2.78,3.02,MEDIUM
+EDU-2024-0082,Noor Ahmed,2005-08-16,Machine Learning,ML-401,82.3,78.7,84.1,12.2,3.63,3.92,LOW
+EDU-2024-0083,Yusuf Chaudhry,2001-09-07,Artificial Intelligence,AI-205,72.8,67.0,68.9,8.6,2.69,3.1,MEDIUM
+EDU-2024-0084,Fatima Mensah,2005-10-01,Mathematics,LA-110,98.0,97.2,94.9,19.0,3.9,4.0,LOW
+EDU-2024-0085,Fatima Gondal,2005-09-25,Computer Science,CS-101,77.0,62.7,65.2,7.3,2.61,3.0,MEDIUM
+EDU-2024-0086,Faisal Okafor,2004-07-30,Data Science,DS-301,91.0,88.7,85.0,10.6,3.72,4.0,LOW
+EDU-2024-0087,Maham Siddiqui,2002-11-02,Software Engineering,SE-210,49.0,35.5,30.6,3.3,1.43,1.58,HIGH
+EDU-2024-0088,Maham Hayes,2005-08-26,Machine Learning,ML-401,44.4,35.5,30.6,3.5,1.75,1.61,HIGH
+EDU-2024-0089,Priya Hashmi,2002-04-21,Artificial Intelligence,AI-205,43.3,30.7,33.8,3.3,1.38,1.29,HIGH
+EDU-2024-0090,Waqas Mirza,2004-08-07,Mathematics,LA-110,60.6,53.5,55.0,1.5,1.86,1.98,HIGH
+EDU-2024-0091,Karim Khan,2005-02-21,Computer Science,CS-101,56.1,40.1,35.7,3.7,1.85,1.7,HIGH
+EDU-2024-0092,Kiran Sharma,2005-04-12,Data Science,DS-301,64.2,55.0,54.0,7.0,2.45,2.55,MEDIUM
+EDU-2024-0093,Rami Okafor,2001-02-02,Software Engineering,SE-210,89.0,84.9,83.4,19.2,3.73,4.0,LOW
+EDU-2024-0094,Sophia Javed,2001-05-23,Machine Learning,ML-401,44.2,36.8,33.8,1.6,1.48,1.69,HIGH
+EDU-2024-0095,Zara Siddiqui,2003-08-06,Artificial Intelligence,AI-205,53.8,50.1,47.4,2.0,1.9,2.02,HIGH
+EDU-2024-0096,Sumbul Bajwa,2001-07-10,Mathematics,LA-110,50.4,36.0,34.2,4.6,1.7,1.53,HIGH
+EDU-2024-0097,Iqra Cheema,2005-01-16,Computer Science,CS-101,83.9,74.0,77.4,19.3,3.44,3.92,LOW
+EDU-2024-0098,Nimra Hashmi,2004-04-16,Data Science,DS-301,84.4,75.4,78.9,19.1,3.67,4.0,LOW
+EDU-2024-0099,Hafsa Okafor,2002-09-04,Software Engineering,SE-210,45.3,34.4,33.1,4.2,1.49,1.37,HIGH
+EDU-2024-0100,Sadia Silva,2002-07-18,Machine Learning,ML-401,65.4,55.0,54.5,6.8,2.54,2.62,MEDIUM
+EDU-2024-0101,Zara Hussain,2001-09-08,Artificial Intelligence,AI-205,95.6,95.0,98.1,17.2,3.72,4.0,LOW
+EDU-2024-0102,Hannah Awan,2005-02-25,Mathematics,LA-110,47.9,43.9,45.1,1.6,1.54,1.71,HIGH
+EDU-2024-0103,Sumbul Mensah,2001-11-01,Computer Science,CS-101,33.7,35.2,35.6,2.0,1.48,1.47,HIGH
+EDU-2024-0104,Layla Ansari,2001-09-21,Data Science,DS-301,76.0,66.1,62.9,5.2,2.87,3.1,MEDIUM
+EDU-2024-0105,Kenji Qureshi,2004-07-01,Software Engineering,SE-210,72.1,61.0,61.7,8.0,2.62,2.88,MEDIUM
+EDU-2024-0106,Eman Lodhi,2005-09-21,Machine Learning,ML-401,74.1,68.6,74.4,8.1,2.77,3.1,MEDIUM
+EDU-2024-0107,Ayesha Sato,2002-10-25,Artificial Intelligence,AI-205,79.9,70.6,73.0,6.9,2.89,3.1,MEDIUM
+EDU-2024-0108,Ayesha Patel,2002-07-20,Mathematics,LA-110,74.4,66.2,61.3,5.2,2.82,3.1,MEDIUM
+EDU-2024-0109,Aarish Carter,2003-04-14,Computer Science,CS-101,75.7,67.3,71.2,8.7,2.76,3.1,MEDIUM
+EDU-2024-0110,Elena Ansari,2002-05-16,Data Science,DS-301,91.1,79.7,80.0,15.9,3.57,4.0,LOW
+EDU-2024-0111,Bushra Mensah,2005-11-20,Software Engineering,SE-210,62.3,53.5,52.9,1.8,1.98,2.1,HIGH
+EDU-2024-0112,Hassan Morales,2003-07-01,Machine Learning,ML-401,35.4,35.7,31.6,3.2,1.54,1.6,HIGH
+EDU-2024-0113,Bushra Khattak,2003-08-29,Artificial Intelligence,AI-205,88.8,85.2,83.5,15.4,3.56,4.0,LOW
+EDU-2024-0114,Farhan Cheema,2004-01-30,Mathematics,LA-110,67.6,64.8,70.6,7.0,2.77,3.1,MEDIUM
+EDU-2024-0115,Hira Kazmi,2005-02-18,Computer Science,CS-101,61.3,48.8,45.1,4.3,2.0,2.11,HIGH
+EDU-2024-0116,Zeeshan Mirza,2004-07-15,Data Science,DS-301,48.5,41.4,44.2,3.5,1.53,1.65,HIGH
+EDU-2024-0117,Huda Foster,2005-12-20,Software Engineering,SE-210,32.7,30.5,26.5,2.8,1.47,1.38,HIGH
+EDU-2024-0118,Lucas Gillani,2001-03-02,Machine Learning,ML-401,89.9,80.3,76.8,12.7,3.66,4.0,LOW
+EDU-2024-0119,Nimra Virk,2004-02-14,Artificial Intelligence,AI-205,84.2,82.1,82.0,17.4,3.53,4.0,LOW
+EDU-2024-0120,Chloe Virk,2003-05-28,Mathematics,LA-110,82.1,76.2,78.1,13.3,3.7,3.98,LOW
+EDU-2024-0121,Shahzaib Okafor,2005-03-08,Computer Science,CS-101,90.4,82.1,84.6,19.0,3.77,4.0,LOW
+EDU-2024-0122,Junaid Morales,2003-09-03,Data Science,DS-301,69.4,60.7,61.7,7.7,2.61,2.75,MEDIUM
+EDU-2024-0123,Darius Ansari,2003-01-03,Software Engineering,SE-210,85.0,82.8,83.7,16.0,3.66,4.0,LOW
+EDU-2024-0124,Mehwish Santos,2005-03-19,Machine Learning,ML-401,38.1,32.4,37.1,2.3,1.68,1.38,HIGH
+EDU-2024-0125,Kamran Awan,2002-12-03,Artificial Intelligence,AI-205,56.8,42.9,39.0,3.4,1.52,1.9,HIGH
+EDU-2024-0126,Kenji Raza,2001-06-29,Mathematics,LA-110,92.6,91.7,91.0,9.8,3.89,4.0,LOW
+EDU-2024-0127,Chloe Brooks,2001-07-08,Computer Science,CS-101,45.5,40.2,35.9,1.1,1.67,1.68,HIGH
+EDU-2024-0128,Liam Sato,2005-09-11,Data Science,DS-301,82.8,75.6,75.0,18.2,3.43,3.9,LOW
+EDU-2024-0129,Nimra Sato,2001-05-22,Software Engineering,SE-210,70.5,57.1,58.6,7.5,2.53,2.91,MEDIUM
+EDU-2024-0130,Mateo Bukhari,2003-10-11,Machine Learning,ML-401,96.2,86.1,87.8,10.0,3.58,4.0,LOW
+EDU-2024-0131,Hassan Virk,2001-04-02,Artificial Intelligence,AI-205,72.2,65.4,63.8,7.7,2.65,2.92,MEDIUM
+EDU-2024-0132,Talia Khan,2001-12-21,Mathematics,LA-110,92.3,88.7,87.4,14.2,3.6,4.0,LOW
+EDU-2024-0133,Usman Khattak,2001-12-16,Computer Science,CS-101,54.5,47.4,49.2,1.2,1.96,1.86,HIGH
+EDU-2024-0134,Chloe Qureshi,2004-11-04,Data Science,DS-301,65.4,55.0,59.3,9.0,2.51,2.73,MEDIUM
+EDU-2024-0135,Noah Alvarez,2001-12-20,Software Engineering,SE-210,60.3,53.5,50.6,3.6,1.87,2.04,HIGH
+EDU-2024-0136,Mariam Kazmi,2002-09-07,Machine Learning,ML-401,40.7,40.7,36.3,1.0,1.57,1.72,HIGH
+EDU-2024-0137,Arslan Virk,2005-07-06,Artificial Intelligence,AI-205,36.6,35.5,38.7,3.7,1.54,1.42,HIGH
+EDU-2024-0138,Olivia Mensah,2001-03-09,Mathematics,LA-110,69.6,59.4,65.1,5.4,2.6,2.73,MEDIUM
+EDU-2024-0139,Farhan Iqbal,2003-04-17,Computer Science,CS-101,88.3,88.3,86.8,16.1,3.63,4.0,LOW
+EDU-2024-0140,Salman Gondal,2002-10-09,Data Science,DS-301,40.1,33.5,30.7,3.1,1.74,1.59,HIGH
+EDU-2024-0141,Kinza Siddiqui,2001-05-30,Software Engineering,SE-210,38.7,26.9,25.4,3.4,1.6,1.29,HIGH
+EDU-2024-0142,Hannah Iqbal,2004-06-05,Machine Learning,ML-401,34.3,31.3,30.5,1.4,1.48,1.29,HIGH
+EDU-2024-0143,Liam Gillani,2002-06-09,Artificial Intelligence,AI-205,69.9,58.6,55.9,6.1,2.72,2.92,MEDIUM
+EDU-2024-0144,Maham Mirza,2001-12-14,Mathematics,LA-110,59.4,53.1,52.4,1.7,1.83,2.08,HIGH
+EDU-2024-0145,Elena Farooq,2003-04-26,Computer Science,CS-101,77.4,69.7,74.3,5.9,2.84,3.1,MEDIUM
+EDU-2024-0146,Taimoor Alvarez,2001-08-31,Data Science,DS-301,57.4,41.6,38.8,1.0,1.89,1.95,HIGH
+EDU-2024-0147,Rizwan Hashmi,2003-10-04,Software Engineering,SE-210,54.2,40.5,39.7,3.4,1.85,1.88,HIGH
+EDU-2024-0148,Noah Niazi,2001-10-13,Machine Learning,ML-401,77.5,69.7,65.0,5.4,2.82,3.1,MEDIUM
+EDU-2024-0149,Adeel Alvarez,2004-09-27,Artificial Intelligence,AI-205,76.8,67.3,70.3,6.5,2.64,3.1,MEDIUM
+EDU-2024-0150,Sami Ansari,2004-05-25,Mathematics,LA-110,86.0,80.6,78.9,12.1,3.55,4.0,LOW
+EDU-2024-0151,Bilal Alvarez,2001-03-04,Computer Science,CS-101,65.9,55.0,54.0,6.4,2.41,2.51,MEDIUM
+EDU-2024-0152,Lina Malik,2004-06-27,Data Science,DS-301,98.5,89.7,87.0,15.4,3.75,4.0,LOW
+EDU-2024-0153,Tariq Khan,2003-04-24,Software Engineering,SE-210,79.2,64.6,65.8,8.9,2.56,2.9,MEDIUM
+EDU-2024-0154,Nimra Okafor,2004-09-09,Machine Learning,ML-401,40.5,38.7,34.0,3.6,1.48,1.57,HIGH
+EDU-2024-0155,Anam Butt,2002-08-10,Artificial Intelligence,AI-205,98.7,92.0,92.2,15.9,3.78,4.0,LOW
+EDU-2024-0156,Sana Zaidi,2004-04-22,Mathematics,LA-110,70.8,62.3,65.9,5.5,2.54,2.94,MEDIUM
+EDU-2024-0157,Imran Shaikh,2001-01-31,Computer Science,CS-101,96.7,93.9,97.5,13.8,3.74,4.0,LOW
+EDU-2024-0158,Farhan Butt,2002-04-16,Data Science,DS-301,39.4,34.7,30.8,2.1,1.41,1.54,HIGH
+EDU-2024-0159,Hannah Butt,2003-02-25,Software Engineering,SE-210,84.9,79.8,79.2,13.9,3.48,4.0,LOW
+EDU-2024-0160,Adeel Naqvi,2001-10-31,Machine Learning,ML-401,68.0,60.4,61.4,8.9,2.7,2.85,MEDIUM
+EDU-2024-0161,Faisal Khan,2003-03-13,Artificial Intelligence,AI-205,45.0,44.0,48.6,2.8,1.66,1.64,HIGH
+EDU-2024-0162,Taimoor Bennett,2003-01-27,Mathematics,LA-110,75.8,62.2,64.8,7.5,2.58,2.89,MEDIUM
+EDU-2024-0163,Yusuf Hayes,2004-07-12,Computer Science,CS-101,39.1,28.1,26.4,3.4,1.49,1.31,HIGH
+EDU-2024-0164,Sadia Malik,2005-08-23,Data Science,DS-301,66.1,55.0,57.0,9.0,2.59,2.79,MEDIUM
+EDU-2024-0165,Sana Sato,2005-09-07,Software Engineering,SE-210,59.0,48.2,53.9,3.6,1.95,1.96,HIGH
+EDU-2024-0166,Aarish Zaidi,2003-10-15,Machine Learning,ML-401,69.6,65.7,60.7,8.5,2.67,3.02,MEDIUM
+EDU-2024-0167,Eman Tanaka,2005-10-25,Artificial Intelligence,AI-205,87.8,79.0,80.0,10.5,3.53,3.98,LOW
+EDU-2024-0168,Rohan Brooks,2004-06-05,Mathematics,LA-110,85.7,81.0,83.0,14.3,3.73,4.0,LOW
+EDU-2024-0169,Taimoor Siddiqui,2004-11-12,Computer Science,CS-101,85.1,80.3,83.9,13.7,3.63,4.0,LOW
+EDU-2024-0170,Bushra Chaudhry,2003-04-06,Data Science,DS-301,60.0,43.3,49.2,4.0,1.65,1.75,HIGH
+EDU-2024-0171,Kinza Hashmi,2004-03-23,Software Engineering,SE-210,33.8,26.1,28.5,2.5,1.25,1.29,HIGH
+EDU-2024-0172,Imran Bukhari,2002-06-01,Machine Learning,ML-401,41.5,33.5,38.9,1.3,1.35,1.48,HIGH
+EDU-2024-0173,Layla Raza,2002-09-20,Artificial Intelligence,AI-205,98.3,92.1,89.3,12.4,3.76,4.0,LOW
+EDU-2024-0174,Danish Santos,2005-10-30,Mathematics,LA-110,61.1,51.4,51.0,4.3,2.06,2.04,HIGH
+EDU-2024-0175,Daniel Qureshi,2001-09-20,Computer Science,CS-101,75.1,69.9,75.7,6.7,2.67,3.09,MEDIUM
+EDU-2024-0176,Darius Chaudhry,2001-11-19,Data Science,DS-301,69.3,61.9,63.4,5.3,2.51,2.99,MEDIUM
+EDU-2024-0177,Farhan Hussain,2005-10-06,Software Engineering,SE-210,78.6,64.7,61.5,5.9,2.74,2.96,MEDIUM
+EDU-2024-0178,Amina Sato,2001-08-24,Machine Learning,ML-401,80.2,68.9,72.7,8.9,2.63,3.1,MEDIUM
+EDU-2024-0179,Ananya Butt,2003-12-07,Artificial Intelligence,AI-205,74.9,60.8,57.6,8.4,2.78,3.05,MEDIUM
+EDU-2024-0180,Mehwish Cheema,2005-11-11,Mathematics,LA-110,42.8,29.7,24.9,4.0,1.55,1.53,HIGH
+EDU-2024-0181,Bilal Mirza,2002-12-10,Computer Science,CS-101,96.4,93.7,96.5,18.6,3.79,4.0,LOW
+EDU-2024-0182,Kinza Niazi,2004-08-29,Data Science,DS-301,96.0,93.2,90.4,14.3,3.82,4.0,LOW
+EDU-2024-0183,Hannah Cheema,2002-03-09,Software Engineering,SE-210,74.5,68.4,68.9,8.2,2.68,2.99,MEDIUM
+EDU-2024-0184,Bushra Farooq,2001-06-16,Machine Learning,ML-401,80.3,73.5,76.0,8.6,2.78,3.1,MEDIUM
+EDU-2024-0185,Kamran Mensah,2002-02-08,Artificial Intelligence,AI-205,65.0,55.0,57.8,9.4,2.64,2.69,MEDIUM
+EDU-2024-0186,Zainab Brooks,2005-04-26,Mathematics,LA-110,82.8,78.1,82.6,10.4,3.57,3.91,LOW
+EDU-2024-0187,Noman Raza,2005-07-01,Computer Science,CS-101,96.6,92.0,94.4,10.5,3.7,4.0,LOW
+EDU-2024-0188,Yusuf Naqvi,2001-10-04,Data Science,DS-301,44.3,41.6,47.5,2.2,1.89,1.94,HIGH
+EDU-2024-0189,Hafsa Patel,2003-01-08,Software Engineering,SE-210,88.8,85.8,90.1,18.7,3.74,4.0,LOW
+EDU-2024-0190,Arslan Morales,2001-12-17,Machine Learning,ML-401,72.7,64.1,64.8,8.8,2.62,2.93,MEDIUM
+EDU-2024-0191,Salman Silva,2003-04-12,Artificial Intelligence,AI-205,94.8,90.3,89.0,11.4,3.87,4.0,LOW
+EDU-2024-0192,Fatima Alvarez,2001-08-30,Mathematics,LA-110,41.4,29.5,32.8,1.5,1.45,1.43,HIGH
+EDU-2024-0193,Rabia Niazi,2005-02-01,Computer Science,CS-101,72.2,57.8,60.8,6.0,2.52,2.66,MEDIUM
+EDU-2024-0194,Maham Shaikh,2003-07-14,Data Science,DS-301,56.2,49.2,52.5,1.3,1.91,1.95,HIGH
+EDU-2024-0195,Talia Hussain,2004-01-24,Software Engineering,SE-210,97.8,93.5,92.2,13.9,3.67,4.0,LOW
+EDU-2024-0196,Anam Patel,2002-09-28,Machine Learning,ML-401,93.3,91.8,87.8,15.2,3.73,4.0,LOW
+EDU-2024-0197,Darius Sharma,2003-02-21,Artificial Intelligence,AI-205,92.2,88.2,90.9,14.6,3.8,4.0,LOW
+EDU-2024-0198,Sami Brooks,2005-09-02,Mathematics,LA-110,77.6,68.3,66.0,7.0,2.73,3.1,MEDIUM
+EDU-2024-0199,Noah Hayes,2005-12-23,Computer Science,CS-101,94.6,91.8,96.0,14.2,3.7,4.0,LOW
+EDU-2024-0200,Huda Patel,2003-08-25,Data Science,DS-301,95.2,83.5,85.8,15.9,3.71,4.0,LOW

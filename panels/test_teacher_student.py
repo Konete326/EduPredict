@@ -178,7 +178,7 @@ class StudentPanelTests(TestCase):
             ("/student-panel/", "student-subject-table"),
             ("/student-panel/report/", "student-report-table"),
             ("/student-panel/tips/", "My Study Tips"),
-            ("/student-panel/notifications/", "student-tickets-table"),
+            ("/student-panel/notifications/", "My Sent Feedback &amp; Replies"),
         ):
             resp = client.get(path)
             self.assertEqual(resp.status_code, 200)
