@@ -86,7 +86,7 @@ body {
 header.ep-topbar {
   background-color: var(--shell-topbar-bg);
   background-color: color-mix(in srgb, var(--shell-topbar-bg) 88%, transparent);
-  border-bottom: 1px solid transparent;
+  border-bottom: 1px solid var(--border-subtle);
   transition: background-color 175ms cubic-bezier(0.24, 1, 0.4, 1), border-color 175ms cubic-bezier(0.24, 1, 0.4, 1);
 }
 header.ep-topbar.is-scrolled {
@@ -103,6 +103,7 @@ header.ep-topbar.is-scrolled {
   background-color: var(--accent-soft);
   color: var(--accent-primary);
   font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--accent-primary);
 }
 
 html[data-shell-theme="dark"] #mobile-sidebar-drawer,

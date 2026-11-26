@@ -1,4 +1,4 @@
-<header class="ep-topbar sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-3 sm:gap-4 px-3 sm:px-5 lg:px-6">
+<header class="ep-topbar sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-3 sm:gap-4 px-3 sm:px-5 lg:px-6">
   <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
     <button id="mobile-sidebar-toggle" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors shrink-0" title="Show or hide menu" aria-label="Show or hide menu" aria-controls="mobile-sidebar-drawer" aria-expanded="true">
       <i class="fa-solid fa-bars-staggered text-sm"></i>
@@ -13,7 +13,7 @@
   <div class="flex items-center gap-2 shrink-0">
     <div class="relative hidden md:flex items-center">
       <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]"></i>
-      <input id="topbar-quick-search" type="search" data-table-search="" placeholder="Filter table or Ctrl+K..." aria-label="Quick search" class="w-44 lg:w-60 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] py-1.5 pl-8 pr-14 text-xs sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none transition-colors">
+      <input id="topbar-quick-search" type="search" data-table-search="" placeholder="Filter table or Ctrl+K..." aria-label="Quick search" class="h-9 w-44 lg:w-60 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] pl-8 pr-14 text-xs sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none transition-colors">
       <button id="open-command-search-btn" type="button" onclick="openCommandSearchModal()" title="Quick Search &amp; Jump (Ctrl+K)" aria-label="Open command search (Ctrl+K)" class="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] font-mono font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)]">Ctrl+K</button>
     </div>
     <button type="button" onclick="openCommandSearchModal()" title="Quick Search (Ctrl+K)" aria-label="Open command search" class="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">

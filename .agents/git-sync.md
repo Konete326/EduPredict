@@ -61,27 +61,26 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 89 AI Dock Popover Fix & Meta Astryx Unslop Polish"
-active_branch_merged_to_main: "feature/astryx-dock-polish -> main"
-project_phase: "Phase 89: Stationary Quadrant-Aware AI Dock Popover & Full Meta Astryx + unslop UI Alignment"
+last_updated_by_agent: "Phase 90 Astryx Theme Studio, Sidebar & Navbar Polish"
+active_branch_merged_to_main: "feature/astryx-theme-nav-sidebar -> main"
+project_phase: "Phase 90: Astryx Design System Alignment for Theme Studio Modal, Sidebar & Topbar Navbar"
 
 completed_modules:
-  - "Phase 1-88: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Multi-Agent AI Dock, Vercel Auto-Deploy, Provably Hero & Live Testimonial Globe, Single-Institute Datasets, Student-ID Auth, Teacher CSV Isolation & Credentials Export, Training vs Live Separation, Bento Grid Modals, 4-Col Minimal Lists + View Details Modal, Dedicated /admin-panel/training/ Page, Clean-Start DB Reset & Full Docs Sync."
-  - "Phase 89 (AI Dock Popover Fix & Meta Astryx Design System + unslop Across All Panels):"
-      - "templates/components/ai_message_dock.html, static/js/ai_agent_dock.js, templates/base.html: converted #ep-message-dock and #ep-agent-chat-panel into position:absolute popovers inside a compact toggle-sized #ep-agent-dock-root with syncDockPlacement(el) quadrant anchoring, eliminating sideways button jump when clicking dragged #ep-agent-dock-toggle; switched Tailwind sans font stack to Figtree."
-      - "static/css/global.css, templates/components/{data_table,metric_card,topbar,form_modal,confirm_modal}.html: added Astryx radius tokens (--radius-inner/element/container), 14px/20px body scale, .ep-page-header hairline layout, rounded-[16px] flat cards (zero shadow-sm), rounded-[12px] controls, sentence-case table headers, and StatusDot indicators for normal states."
-      - "templates/panels/{admin_*,teacher_*,student_*,analyst_*}.html (all 17 panel templates): replaced boxed card-soup headers with flat ep-page-header, removed shouty role eyebrow pills/uppercase tracked headings, kept monochrome A4 print sheet (#ep-a4-print-sheet) and 17-inch viewport-fit tabs intact."
+  - "Phase 1-89: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Theme Studio & 21st.dev Curated Presets, Cloudinary Avatars, Real-Time Notifications, Feedback Reply CRUD, Stepper Signup, Teacher Approval/Reject Guard, Official Monochrome A4 PDFs, Cgroup Health, Rate Limits, Encrypted Backups, Multi-Agent AI Dock (stationary quadrant-aware popover), Vercel Auto-Deploy, Provably Hero & Live Testimonial Globe, Single-Institute Datasets, Student-ID Auth, Teacher CSV Isolation & Credentials Export, Training vs Live Separation, Bento Grid Modals, 4-Col Minimal Lists + View Details Modal, Dedicated /admin-panel/training/ Page, Clean-Start DB Reset & Astryx Panel Polish."
+  - "Phase 90 (Astryx Theme Studio, Sidebar & Navbar Polish):"
+      - "templates/components/theme_studio_modal.html: removed decorative h-9 w-9 boxed icon, standardized rounded-[16px] modal / rounded-[12px] controls / rounded-[8px] inner thumbnails, removed all 9 shouty uppercase tracking-wider labels in favor of clean sentence-case Astryx labels."
+      - "templates/components/sidebar.html, templates/components/topbar.html, static/css/global.css: aligned sidebar & navbar to unified h-14 (56px) height with persistent hairline border-bottom, unified h-9 (36px) rounded-[12px] topbar controls, quiet sentence-case role subtitles, and 3px inset left accent bar on .ep-nav-link.is-active."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check: all static/js/*.js files exited 0."
-  - "Zero-comment & line-cap audit: 0 comments across all 26 modified code files; all within caps (<= 350)."
-  - "manage.py test: Ran 137 tests in 72.671s (137/137 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 8.40s - System 100% Operational."
-  - "Live Browser QA (http://127.0.0.1:8000): verified Figtree font load, dragged #ep-agent-dock-toggle click deltaX=0 / deltaY=0 with dock/chat opening inside viewport, flat ep-page-header + StatusDot tables + Bento Add Course modal across Admin pages, and cleaned MongoDB Atlas back to 1 Admin user only."
+  - "Zero-comment & line-cap audit: 0 comments across all 4 modified files; all within caps (<= 350)."
+  - "manage.py test: Ran 137 tests in 96.122s (137/137 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 8.22s - System 100% Operational."
+  - "Live Browser QA (http://127.0.0.1:8000/admin-panel/settings/): verified h-14 sidebar/navbar, 36px rounded-[12px] aligned topbar controls, active left bar, Theme & Appearance modal sentence-case sections, 0 HTTP 4xx/5xx & 0 console errors, and cleaned MongoDB Atlas back to 1 Admin user only."
 
 active_routes_and_files:
-  - "static/css/global.css, static/js/ai_agent_dock.js, templates/base.html, templates/components/{ai_message_dock,confirm_modal,data_table,form_modal,metric_card,topbar}.html, templates/panels/{admin_courses,admin_dashboard,admin_logs,admin_settings,admin_tickets,admin_training,admin_users,analyst_accuracy,analyst_dashboard,student_dashboard,student_notifications,student_report,student_tips,teacher_alerts,teacher_dashboard,teacher_ingest,teacher_students}.html, .agents/git-sync.md"
+  - "static/css/global.css, templates/components/{sidebar,theme_studio_modal,topbar}.html, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."
