@@ -1,4 +1,5 @@
 {% extends 'public/_base.html' %}
+{% load static %}
 
 {% block title %}About EduPredict{% endblock %}
 
@@ -45,14 +46,16 @@
       <video
         data-targo-video="about-page"
         class="targo-about-video"
-        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260823_063501_2e2c8971-de1e-473a-8611-a0c9ae7ee186.mp4"
         autoplay
         muted
         loop
         playsinline
         preload="auto"
         aria-hidden="true"
-      ></video>
+      >
+        <source src="{% static 'video/targo_about.mp4' %}?v=18" type="video/mp4">
+        <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260823_063501_2e2c8971-de1e-473a-8611-a0c9ae7ee186.mp4" type="video/mp4">
+      </video>
       <div class="targo-about-tint" aria-hidden="true"></div>
     </div>
   </div>

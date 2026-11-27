@@ -10,14 +10,16 @@
   <video
     data-targo-video="hero"
     class="targo-hero-video"
-    src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260823_050407_500d0339-ab28-41c1-9688-132a74a3b5aa.mp4"
     autoplay
     muted
     loop
     playsinline
     preload="auto"
     aria-hidden="true"
-  ></video>
+  >
+    <source src="{% static 'video/targo_hero.mp4' %}?v=18" type="video/mp4">
+    <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260823_050407_500d0339-ab28-41c1-9688-132a74a3b5aa.mp4" type="video/mp4">
+  </video>
   <div class="targo-scrim" aria-hidden="true"></div>
 
   <nav class="targo-nav" aria-label="Primary navigation">
@@ -90,14 +92,16 @@
       <video
         data-targo-video="about"
         class="targo-about-video"
-        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260823_063501_2e2c8971-de1e-473a-8611-a0c9ae7ee186.mp4"
         autoplay
         muted
         loop
         playsinline
         preload="auto"
         aria-hidden="true"
-      ></video>
+      >
+        <source src="{% static 'video/targo_about.mp4' %}?v=18" type="video/mp4">
+        <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260823_063501_2e2c8971-de1e-473a-8611-a0c9ae7ee186.mp4" type="video/mp4">
+      </video>
       <div class="targo-about-tint" aria-hidden="true"></div>
     </div>
   </div>
