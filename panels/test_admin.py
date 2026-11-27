@@ -7,7 +7,7 @@ from core.db import _MEMORY_CACHE, invalidate_cache
 import panels.admin_audit_services as audit_svc
 import panels.admin_seed as admin_seed
 from panels.admin_services import (
-    build_user_table_data, create_course_record, create_ticket_record,
+    build_user_table_data, create_ticket_record,
     delete_user_record, list_users, toggle_user_status, update_user_record,
 )
 

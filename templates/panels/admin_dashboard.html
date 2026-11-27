@@ -4,7 +4,7 @@
 <header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
     <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">System Overview</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Live MongoDB Atlas metrics, class capacity comparisons, and student risk breakdown</p>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Live MongoDB Atlas metrics, user accounts, and student risk breakdown</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
     <a href="{% url 'panels:admin_backup_export' %}?format=json" title="Save full database backup as JSON" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
@@ -26,7 +26,7 @@
 
 <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
   {% include 'components/metric_card.html' with title="Total Students" value=kpis.total_students badge=kpis.student_accounts|stringformat:"s"|add:" accounts" status="info" icon="fa-solid fa-user-graduate" %}
-  {% include 'components/metric_card.html' with title="Active Teachers" value=kpis.active_teachers badge=kpis.active_courses|stringformat:"s"|add:" active courses" status="success" icon="fa-solid fa-chalkboard-user" %}
+  {% include 'components/metric_card.html' with title="Active Teachers" value=kpis.active_teachers badge="Faculty accounts" status="success" icon="fa-solid fa-chalkboard-user" %}
   {% include 'components/metric_card.html' with title="High Risk Students" value=kpis.high_risk_count badge=kpis.total_predictions|stringformat:"s"|add:" checked" status="danger" icon="fa-solid fa-triangle-exclamation" %}
   {% include 'components/metric_card.html' with title="System Health" value=kpis.system_status badge=kpis.open_tickets|stringformat:"s"|add:" open tickets" status="success" icon="fa-solid fa-heart-pulse" %}
 </section>
@@ -35,12 +35,12 @@
   <div class="xl:col-span-7 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
     <div class="mb-2.5 flex items-center justify-between gap-2">
       <div>
-        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Students by Department</h3>
-        <p class="text-xs text-[var(--text-muted)]">Joined students compared to total class seats</p>
+        <h3 class="text-sm font-semibold text-[var(--text-primary)]">User Accounts Breakdown</h3>
+        <p class="text-xs text-[var(--text-muted)]">Active accounts across university roles</p>
       </div>
-      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">{{ kpis.total_courses }} Courses</span>
+      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Users</span>
     </div>
-    <div class="relative h-48 w-full"><canvas id="chart-admin-departments"></canvas></div>
+    <div class="relative h-48 w-full"><canvas id="chart-admin-roles"></canvas></div>
   </div>
 
   <div class="xl:col-span-5 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
@@ -68,26 +68,25 @@
       const node = document.getElementById('admin-chart-data');
       if (!node || typeof window.createThemedChart !== 'function') return;
       const payload = JSON.parse(node.textContent || '{}');
-      const dept = payload.departments || { labels: [], enrolled: [], capacity: [] };
+      const roles = payload.roles_breakdown || { labels: ['Admin', 'Teacher', 'Student', 'Analyst'], counts: [0, 0, 0, 0] };
       const risk = payload.risk_breakdown || { labels: ['Low Risk', 'Medium Risk', 'High Risk'], counts: [0, 0, 0] };
 
-      window.createThemedChart('chart-admin-departments', function (tokens) {
+      window.createThemedChart('chart-admin-roles', function (tokens) {
         return {
           type: 'bar',
           data: {
-            labels: dept.labels || [],
+            labels: roles.labels || [],
             datasets: [
-              { label: 'Joined', data: dept.enrolled || [], backgroundColor: tokens.accentPrimary, borderRadius: 6 },
-              { label: 'Seats', data: dept.capacity || [], backgroundColor: tokens.accentSoft, borderColor: tokens.accentPrimary, borderWidth: 1.5, borderRadius: 6 }
+              { label: 'Accounts', data: roles.counts || [], backgroundColor: tokens.accentPrimary, borderRadius: 6 }
             ]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } } },
+            plugins: { legend: { display: false } },
             scales: {
               x: { grid: { display: false }, ticks: { color: tokens.textMuted } },
-              y: { beginAtZero: true, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted } }
+              y: { beginAtZero: true, ticks: { precision: 0, color: tokens.textMuted }, grid: { color: tokens.borderSubtle } }
             }
           }
         };

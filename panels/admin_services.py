@@ -11,39 +11,27 @@ from analytics.ml_engine import run_prediction_pipeline
 from core.cloudinary_services import encode_image_data_uri, is_cloudinary_configured, upload_ticket_attachment
 from core.db import datasets_log_col, get_cached, invalidate_cache, notifications_col, predictions_col, student_records_col, support_tickets_col, users_col
 from panels.admin_audit_services import record_audit_log
-from panels.admin_seed import _format_dt, _infer_department_from_code, _safe_int, build_backup_payload, courses_col, ensure_admin_seed_data, get_admin_overview_context as _base_admin_overview
+from panels.admin_seed import _format_dt, _safe_int, build_backup_payload, ensure_admin_seed_data, get_admin_overview_context as _base_admin_overview
 from panels.notification_services import create_notification
 from panels.phase62_services import reject_teacher_account
-VALID_TICKET_STATUSES, VALID_COURSE_STATUSES = ("OPEN", "RESOLVED"), ("ACTIVE", "ARCHIVED")
+VALID_TICKET_STATUSES = ("OPEN", "RESOLVED")
 VALID_PROGRAM_LEVELS = ("School / Junior", "College / Intermediate", "BS / Undergraduate", "MS / Graduate")
 LIVE_RECORD_QUERY = {"is_training_dataset": {"$ne": True}}
 def _load_live_admin_overview():
     base = _base_admin_overview()
     kpis, charts = dict(base.get("kpis") or {}), {k: dict(v) for k, v in (base.get("chart_data") or {}).items()}
-    sr_col, u_col, c_col, p_col = student_records_col(), users_col(), courses_col(), predictions_col()
+    sr_col, u_col, p_col = student_records_col(), users_col(), predictions_col()
     live_sr_count, student_accounts = sr_col.count_documents(LIVE_RECORD_QUERY), int(kpis.get("student_accounts") or u_col.count_documents({"role": "STUDENT"}))
-    course_dept_map, dept_capacity = {}, {}
-    for c in c_col.find({}, {"_id": 0, "course_code": 1, "department": 1, "capacity": 1}):
-        code, dept = str(c.get("course_code") or "").strip().upper(), str(c.get("department") or "General").strip()
-        if code: course_dept_map[code] = dept
-        dept_capacity[dept] = dept_capacity.get(dept, 0) + _safe_int(c.get("capacity"), 60, 0, 10000)
-    dept_enrolled, att_sum, att_count = {d: 0 for d in dept_capacity}, 0.0, 0
-    for rec in sr_col.find(LIVE_RECORD_QUERY, {"_id": 0, "course_code": 1, "attendance_pct": 1}):
-        code = str(rec.get("course_code") or "").strip().upper()
-        dept = course_dept_map.get(code) or _infer_department_from_code(code)
-        dept_enrolled[dept] = dept_enrolled.get(dept, 0) + 1
+    att_sum, att_count = 0.0, 0
+    for rec in sr_col.find(LIVE_RECORD_QUERY, {"_id": 0, "attendance_pct": 1}):
         try:
             att_sum, att_count = att_sum + float(rec.get("attendance_pct") or 0.0), att_count + 1
         except (TypeError, ValueError):
             pass
-    if att_count == 0:
-        for usr in u_col.find({"role": "STUDENT"}, {"_id": 0, "department": 1}):
-            dept = str(usr.get("department") or "General").strip()
-            dept_enrolled[dept] = dept_enrolled.get(dept, 0) + 1
-    dept_labels = sorted(set(dept_capacity.keys()) | set(dept_enrolled.keys()))
     low_r, med_r, high_r = p_col.count_documents({**LIVE_RECORD_QUERY, "risk_level": "LOW"}), p_col.count_documents({**LIVE_RECORD_QUERY, "risk_level": "MEDIUM"}), p_col.count_documents({**LIVE_RECORD_QUERY, "risk_level": "HIGH"})
+    role_counts = [u_col.count_documents({"role": r}) for r in ("ADMIN", "TEACHER", "STUDENT", "ANALYST")]
     kpis.update({"total_students": live_sr_count if live_sr_count > 0 else student_accounts, "avg_attendance": round(att_sum / att_count, 1) if att_count > 0 else 0.0, "high_risk_count": high_r, "total_predictions": p_col.count_documents(LIVE_RECORD_QUERY)})
-    charts["departments"] = {"labels": dept_labels, "enrolled": [dept_enrolled.get(d, 0) for d in dept_labels], "capacity": [dept_capacity.get(d, 0) for d in dept_labels]}
+    charts["roles_breakdown"] = {"labels": ["Admin", "Teacher", "Student", "Analyst"], "counts": role_counts}
     charts["risk_breakdown"] = {"labels": ["Low Risk", "Medium Risk", "High Risk"], "counts": [low_r, med_r, high_r]}
     return {**base, "kpis": kpis, "chart_data": charts}
 def get_admin_overview_context(): return get_cached("admin:overview:live", _load_live_admin_overview, ttl=30.0)
@@ -183,58 +171,6 @@ def delete_user_record(user_id, actor_user_id=None, actor_email="", actor_name="
         return True, None
     return False, "User record not found."
 def list_active_teachers(): return get_cached("admin:active_teachers", lambda: [{"user_id": str(d.get("user_id") or ""), "full_name": str(d.get("full_name") or ""), "email": str(d.get("email") or ""), "department": str(d.get("department") or "General")} for d in users_col().find({"role": "TEACHER", "is_active": True}, {"_id": 0, "user_id": 1, "full_name": 1, "email": 1, "department": 1}).sort("full_name", ASCENDING)], ttl=30.0)
-def _load_courses_with_stats(clean_dept):
-    ensure_admin_seed_data()
-    enrolled_map = {str(r.get("_id") or "").strip().upper(): int(r.get("count") or 0) for r in student_records_col().aggregate([{"$match": LIVE_RECORD_QUERY}, {"$group": {"_id": "$course_code", "count": {"$sum": 1}}}]) if r.get("_id")}
-    all_courses, dept_counts = [], {"ALL": 0}
-    for doc in courses_col().find({}, {"_id": 0}).sort("course_code", ASCENDING):
-        code, dept = str(doc.get("course_code") or "").strip().upper(), str(doc.get("department") or "General").strip()
-        cap, enrolled = _safe_int(doc.get("capacity"), 60, 1, 2000), enrolled_map.get(code, 0)
-        dept_counts["ALL"] += 1
-        dept_counts[dept] = dept_counts.get(dept, 0) + 1
-        all_courses.append({"course_code": code, "title": str(doc.get("title") or ""), "department": dept, "batch": str(doc.get("batch") or "2026-A"), "program_level": str(doc.get("program_level") or ""), "instructor": str(doc.get("instructor") or "TBA"), "instructor_id": str(doc.get("instructor_id") or ""), "instructor_email": str(doc.get("instructor_email") or ""), "credits": _safe_int(doc.get("credits"), 3, 1, 12), "capacity": cap, "enrolled_count": enrolled, "fill_pct": min(100, round((enrolled * 100) / cap)) if cap else 0, "status": str(doc.get("status") or "ACTIVE").upper(), "created_at_str": _format_dt(doc.get("created_at"))})
-    return (all_courses if clean_dept == "ALL" else [c for c in all_courses if c["department"] == clean_dept]), sorted(d for d in dept_counts if d != "ALL"), dept_counts
-def list_courses_with_stats(dept_filter="ALL"):
-    clean_dept = str(dept_filter or "ALL").strip()
-    return get_cached(f"admin:courses:{clean_dept}", lambda: _load_courses_with_stats(clean_dept), ttl=30.0)
-def _resolve_course_teacher(instructor, instructor_id, instructor_email, fallback=None):
-    fb, clean_iid, clean_name, clean_email = fallback or {}, str(instructor_id or "").strip(), str(instructor or "").strip(), str(instructor_email or "").strip()
-    if clean_iid:
-        teacher = users_col().find_one({"user_id": clean_iid, "role": "TEACHER"}, {"_id": 0, "full_name": 1, "email": 1})
-        if teacher: clean_name, clean_email = clean_name or str(teacher.get("full_name") or "").strip(), clean_email or str(teacher.get("email") or "").strip()
-    return clean_name or fb.get("instructor") or "TBA", clean_iid, clean_email
-def _course_fields(title, department, batch, instructor, credits, capacity, status, fallback=None, instructor_id="", instructor_email="", program_level=""):
-    fb, clean_status, clean_level = fallback or {}, str(status or "ACTIVE").strip().upper(), str(program_level or "").strip()
-    t_name, t_id, t_email = _resolve_course_teacher(instructor, instructor_id, instructor_email, fb)
-    return {"title": str(title or "").strip(), "department": str(department or "").strip() or fb.get("department") or "General", "batch": str(batch or "").strip() or fb.get("batch") or "2026-A", "instructor": t_name, "instructor_id": t_id, "instructor_email": t_email, **({"program_level": clean_level} if clean_level else {}), "credits": _safe_int(credits, 3, 1, 12), "capacity": _safe_int(capacity, 60, 1, 2000), "status": clean_status if clean_status in VALID_COURSE_STATUSES else "ACTIVE"}
-def create_course_record(course_code, title, department, batch, instructor, credits, capacity, status="ACTIVE", actor_name="System Admin", instructor_id="", instructor_email="", program_level=""):
-    clean_code, clean_title = str(course_code or "").strip().upper(), str(title or "").strip()
-    if len(clean_code) < 2 or not clean_title: return None, "Course code and title are required."
-    col = courses_col()
-    if col.find_one({"course_code": clean_code}, {"_id": 1}) is not None: return None, f"Course {clean_code} already exists."
-    doc = {"course_code": clean_code, "created_at": datetime.now(timezone.utc), **_course_fields(title, department, batch, instructor, credits, capacity, status, instructor_id=instructor_id, instructor_email=instructor_email, program_level=program_level)}
-    col.insert_one(doc)
-    _audit("COURSES", "CREATE_COURSE", f"Added course {clean_code} ({clean_title}).", "SUCCESS", actor=actor_name)
-    invalidate_cache()
-    return doc, None
-def update_course_record(course_code, title, department, batch, instructor, credits, capacity, status="ACTIVE", actor_name="System Admin", instructor_id="", instructor_email="", program_level=""):
-    clean_code, clean_title = str(course_code or "").strip().upper(), str(title or "").strip()
-    if not clean_code or not clean_title: return False, "Course code and title are required."
-    col = courses_col()
-    existing = col.find_one({"course_code": clean_code})
-    if existing is None: return False, "Course record not found."
-    updates = {**_course_fields(title, department, batch, instructor, credits, capacity, status, fallback=existing, instructor_id=instructor_id, instructor_email=instructor_email, program_level=program_level), "updated_at": datetime.now(timezone.utc)}
-    col.update_one({"_id": existing["_id"]}, {"$set": updates})
-    _audit("COURSES", "UPDATE_COURSE", f"Updated course {clean_code} ({clean_title}).", "INFO", actor=actor_name)
-    invalidate_cache()
-    return True, None
-def delete_course_record(course_code, actor_name="System Admin"):
-    clean_code = str(course_code or "").strip().upper()
-    if courses_col().delete_one({"course_code": clean_code}).deleted_count:
-        _audit("COURSES", "DELETE_COURSE", f"Removed course {clean_code}.", "DANGER", actor=actor_name)
-        invalidate_cache()
-        return True, None
-    return False, "Course record not found."
 def _load_tickets(clean_status):
     ensure_admin_seed_data()
     counts, tickets = {"ALL": 0, "OPEN": 0, "RESOLVED": 0}, []
@@ -297,4 +233,4 @@ def mark_notifications_read(user_doc):
     modified = int(notifications_col().update_many({"is_read": False, "$or": targets}, {"$set": {"is_read": True}}).modified_count)
     invalidate_cache()
     return modified
-from panels.admin_directory_services import build_course_table_data, build_ticket_table_data, build_training_upload_rows, build_user_table_data
+from panels.admin_directory_services import build_ticket_table_data, build_training_upload_rows, build_user_table_data

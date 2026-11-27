@@ -165,46 +165,6 @@ def get_teacher_dashboard_context(teacher_user=None):
     return get_cached(f"teacher:dashboard:{_scope_key(teacher_user)}", lambda: _load_teacher_dashboard_context(teacher_user), ttl=30.0)
 
 
-def _load_teacher_students_context(batch_f, course_f, status_f, teacher_user=None):
-    students = _load_joined_students(teacher_user)
-    filtered = [s for s in students if (batch_f == "ALL" or s["batch"] == batch_f) and (course_f == "ALL" or s["course_code"] == course_f) and (status_f == "ALL" or s["badge"]["text"].upper() == status_f.upper())]
-    rows, export_rows = [], []
-    for s in filtered:
-        gpa_str = f"{s['predicted_gpa']:.2f}" if s["predicted_gpa"] is not None else f"{s['previous_gpa']:.2f}"
-        view_payload = {"title": s["full_name"], "subtitle": f"{s['student_id']} · {s['course_code']}", "badge": s["badge"]["text"], "items": [{"label": "Student ID", "value": s["student_id"]}, {"label": "Birth Date", "value": s.get("birth_date") or "-"}, {"label": "Course", "value": s["course_code"]}, {"label": "Marks", "value": f"{s['internal_marks']:.1f}"}, {"label": "Attendance", "value": f"{s['attendance_pct']:.1f}%"}, {"label": "Predicted GPA", "value": gpa_str}, {"label": "Risk", "value": s["badge"]["text"], "fullWidth": True}]}
-        actions = [_view_action(f"View {s['full_name']}", view_payload), _action("Edit", "fa-solid fa-pen-to-square", "openUpdateMarksModal(this)", f"Edit marks for {s['full_name']}", _student_attrs(s)), _action("Alert", "fa-solid fa-bell", "openSendAlertModal(this)", f"Send alert to {s['full_name']}", _alert_attrs(s), variant="primary"), _action("Delete", "fa-solid fa-trash", "openDeleteStudentModal(this)", f"Delete {s['full_name']}", _delete_attrs(s), variant="danger")]
-        rows.append([s["full_name"], f"{s['internal_marks']:.1f} / {s['attendance_pct']:.1f}%", s["badge"], {"actions": actions}])
-        export_rows.append({"student_id": s["student_id"], "full_name": s["full_name"], "batch": s["batch"], "course_code": s["course_code"], "attendance_pct": f"{s['attendance_pct']:.1f}", "internal_marks": f"{s['internal_marks']:.1f}", "predicted_gpa": gpa_str, "status": s["badge"]["text"]})
-    return {"filter_options": {"batches": sorted({s["batch"] for s in students if s["batch"]}), "courses": sorted({s["course_code"] for s in students if s["course_code"]}), "statuses": ["Excellent", "Stable", "Needs Help", "High Risk"]}, "student_headers": ["Student", "Marks & Att", "Risk", "Actions"], "student_rows": rows, "students_raw": filtered, "export_rows": export_rows, "birth_map": {s["student_id"]: s["birth_date"] for s in filtered if s.get("birth_date")}}
-
-
-def get_teacher_students_context(batch_filter="ALL", course_filter="ALL", status_filter="ALL", teacher_user=None):
-    b, c, s = str(batch_filter or "ALL").strip() or "ALL", str(course_filter or "ALL").strip() or "ALL", str(status_filter or "ALL").strip() or "ALL"
-    return get_cached(f"teacher:students:{_scope_key(teacher_user)}:{b}:{c}:{s}", lambda: _load_teacher_students_context(b, c, s, teacher_user), ttl=30.0)
-
-
-def _load_teacher_ingest_context(teacher_user=None):
-    students = _load_joined_students(teacher_user)
-    roster_rows = [[s["student_id"], s["full_name"], s["batch"], s["course_code"], f"{s['attendance_pct']:.1f}%", f"{s['internal_marks']:.1f}", f"{s['previous_gpa']:.2f}", {"actions": [_action("Update Marks", "fa-solid fa-pen-to-square", "openUpdateMarksModal(this)", f"Edit marks for {s['full_name']}", _student_attrs(s)), _action("Delete", "fa-solid fa-trash", "openDeleteStudentModal(this)", f"Delete {s['full_name']}", _delete_attrs(s), variant="danger")]}] for s in students]
-    log_query = {}
-    if not _is_admin(teacher_user):
-        uid, name = str(teacher_user.get("user_id") or "").strip(), str(teacher_user.get("full_name") or "").strip()
-        clauses = [c for c in ({"teacher_user_id": uid} if uid else None, {"uploaded_by": name} if name else None) if c]
-        log_query = {"$or": clauses} if clauses else {"teacher_user_id": "__NONE__"}
-    log_rows = [[str(l.get("filename") or "dataset.csv"), int(l.get("rows_processed") or 0), int(l.get("missing_values_fixed") or 0), {"text": str(l.get("status") or "COMPLETED").upper(), "status": "success" if str(l.get("status") or "COMPLETED").upper() == "COMPLETED" else "danger"}, l["uploaded_at"].strftime("%Y-%m-%d %H:%M") if hasattr(l.get("uploaded_at"), "strftime") else "-"] for l in datasets_log_col().find(log_query, {"_id": 0}).sort("uploaded_at", DESCENDING).limit(10)]
-    course_codes = {str(c.get("course_code") or "").strip().upper() for c in courses_col().find({}, {"_id": 0, "course_code": 1}) if c.get("course_code")} | {s["course_code"] for s in students if s["course_code"]}
-    return {
-        "roster_headers": ["Student ID", "Name", "Batch", "Course", "Attendance", "Marks", "GPA", "Actions"], "roster_rows": roster_rows, "roster_raw": students,
-        "log_headers": ["File Name", "Rows", "Fixed", "Status", "Uploaded"], "log_rows": log_rows, "courses_list": sorted(course_codes) or ["CS-101"],
-        "students_picker": [{"student_id": s["student_id"], "full_name": s["full_name"], "birth_date": s["birth_date"], "course_code": s["course_code"], "internal_marks": s["internal_marks"], "attendance_pct": s["attendance_pct"]} for s in students],
-        "birth_map": {s["student_id"]: s["birth_date"] for s in students if s.get("birth_date")}, "required_columns": REQUIRED_COLUMNS,
-    }
-
-
-def get_teacher_ingest_context(teacher_user=None):
-    return get_cached(f"teacher:ingest:{_scope_key(teacher_user)}", lambda: _load_teacher_ingest_context(teacher_user), ttl=30.0)
-
-
 def update_student_record_inline(post_data, teacher_user=None):
     raw_sid = str(post_data.get("student_id") or "").strip()
     if len(raw_sid) < 2:
@@ -278,34 +238,6 @@ def _load_teacher_feedback_inbox(teacher_user=None):
         attrs = {"data-ticket-id": tid, "data-student-name": student_name, "data-subject": subj, "data-message": msg, "data-reply": reply}
         rows.append([tid or "-", student_name, subj, f"{msg} | Reply: {reply}" if reply else msg, badge, created.strftime("%b %d, %H:%M") if hasattr(created, "strftime") else "-", {"actions": [_action("Reply / Resolve" if st != "RESOLVED" else "Update Reply", "fa-solid fa-reply", "openReplyFeedbackModal(this)", f"Reply to {student_name}", attrs, variant="primary" if st != "RESOLVED" else "default")]}])
     return rows, open_count
-
-
-def _load_teacher_alerts_scoped(teacher_user=None):
-    students = _load_joined_students(teacher_user)
-    at_risk = sorted([s for s in students if s["badge"]["text"] in ("High Risk", "Needs Help")], key=lambda x: (0 if x["badge"]["text"] == "High Risk" else 1, x["attendance_pct"]))
-    roster_rows = [[s["student_id"], s["full_name"], s["course_code"], f"{s['attendance_pct']:.1f}%", f"{s['internal_marks']:.1f}", s["badge"], {"actions": [_action("Send Alert", "fa-solid fa-bell", "openSendAlertModal(this)", f"Send alert to {s['full_name']}", _alert_attrs(s), variant="primary")]}] for s in at_risk]
-    q = {"target_role": "STUDENT", "title": {"$regex": "^Teacher Alert"}}
-    if not _is_admin(teacher_user):
-        uid, tname = str(teacher_user.get("user_id") or "").strip(), str(teacher_user.get("full_name") or "").strip()
-        clauses = [c for c in ({"sender_user_id": uid} if uid else None, {"sender_name": {"$regex": f"^{re.escape(tname)}$", "$options": "i"}} if tname else None) if c]
-        if clauses:
-            q["$or"] = clauses
-    history = list(notifications_col().find(q, {"_id": 0}).sort("created_at", DESCENDING).limit(30))
-    history_rows = [[str(a.get("title") or "Teacher Alert"), str(a.get("student_id") or a.get("target_user_id") or "-"), str(a.get("message") or ""), {"text": str(a.get("severity") or "INFO").upper(), "status": {"DANGER": "danger", "WARNING": "warning"}.get(str(a.get("severity") or "").upper(), "info")}, {"text": "Read" if a.get("is_read") else "Unread", "status": "success" if a.get("is_read") else "warning"}, a["created_at"].strftime("%b %d, %H:%M") if hasattr(a.get("created_at"), "strftime") else "-"] for a in history]
-    feedback_rows, open_fb = _load_teacher_feedback_inbox(teacher_user)
-    return {
-        "kpis": {"at_risk_count": len(at_risk), "high_risk_count": sum(1 for s in students if s["risk_level"] == "HIGH"), "medium_risk_count": sum(1 for s in students if s["risk_level"] == "MEDIUM"), "alerts_sent": len(history), "unread_alerts": sum(1 for a in history if not a.get("is_read")), "open_feedback_count": open_fb},
-        "roster_headers": ["Student ID", "Name", "Course", "Attendance", "Marks", "Status", "Actions"], "roster_rows": roster_rows,
-        "history_headers": ["Title", "Student", "Message", "Level", "Read", "Date"], "history_rows": history_rows,
-        "feedback_headers": ["Ticket", "Student", "Subject", "Message", "Status", "Date", "Actions"], "feedback_rows": feedback_rows,
-        "students_picker": [{"student_id": s["student_id"], "full_name": s["full_name"], "course_code": s["course_code"]} for s in students],
-        "auto_alerts_enabled": bool(_resolve_runtime_settings(persist=True).get("auto_student_alerts", True)),
-        "high_risk_only_count": sum(1 for s in students if s["risk_level"] == "HIGH" or s["badge"]["text"] == "High Risk"),
-    }
-
-
-def get_teacher_alerts_context(teacher_user=None):
-    return get_cached(f"teacher:alerts:{_scope_key(teacher_user)}", lambda: _load_teacher_alerts_scoped(teacher_user), ttl=30.0)
 
 
 def notify_all_high_risk_students(sender_name="Teacher", sender_user_id="", teacher_user=None):

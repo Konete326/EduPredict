@@ -61,26 +61,24 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 98 Targo Auth/404, University-Only Fields & Panel Scope Cleanup"
-active_branch_merged_to_main: "feature/p98-targo-auth-404 -> main"
-project_phase: "Phase 98: Targo /auth/ & Standalone /404/ Auto-Redirect + Admin/Teacher/Student Scope Cleanup"
+last_updated_by_agent: "Phase 99 Clean Admin Dashboard & Unused Service Helpers"
+active_branch_merged_to_main: "feature/p99-clean-admin-services -> main"
+project_phase: "Phase 99: Clean Admin Dashboard & Unused Course/Teacher Subpage Service Helpers"
 
 completed_modules:
-  - "Phase 1-97: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Targo Public Pages + Local Videos/Posters, Vercel Auto-Deploy."
-  - "Phase 98 (Targo Auth/404 & Panel Cleanup):"
-      - "templates/accounts/auth.html, templates/404.html, accounts/views.py: styled /auth/ with Targo Quantico + #15BCDF theme; converted 404.html to standalone Targo page extending public/_base.html with 4s auto-redirect to user's panel (if signed in) or / (if guest)."
-      - "templates/public/_base.html, templates/components/topbar.html, templates/components/sidebar.html: kept HOME/ABOUT/CONTACT in .targo-links, icon-only #theme-toggle-btn, renamed Class Home -> Dashboard & Alerts History -> Notification."
-      - "panels/urls.py, panels/views_{admin,teacher,student}.py, templates/panels/{admin_users,teacher_dashboard,student_dashboard}.html, core/ai_dom_actions.py: removed Activity Logs, Courses, Student List, Upload Marks, Risk Alerts, Student Report/Tips/Notifications routes/views/templates, and removed Program/Level + Department from User Create/Edit & Registration."
+  - "Phase 1-98: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Targo Public/Auth/404 Pages, University-Only Fields & Panel Scope Cleanup."
+  - "Phase 99 (Admin Dashboard & Unused Service Helpers Cleanup):"
+      - "templates/panels/admin_dashboard.html, panels/admin_services.py: replaced Students by Department / Courses / Class Capacity cards and active_courses badge with User Accounts Breakdown (Admin, Teacher, Student, Analyst) chart and Faculty accounts badge."
+      - "panels/admin_services.py, panels/admin_directory_services.py, panels/teacher_services.py, panels/teacher_alert_services.py, panels/test_admin.py: removed unused course CRUD/table helpers and removed teacher subpage context helpers (build_course_table_data, list_courses_with_stats, create_course_record, update_course_record, delete_course_record, get_teacher_students_context, get_teacher_ingest_context, get_teacher_alerts_context)."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "node --check static/js/{landing_provably,ai_agent_dock}.js: exited 0."
-  - "manage.py test: Ran 128 tests in 70.720s (128/128 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 9.03s - System 100% Operational."
+  - "manage.py test: Ran 128 tests in 70.377s (128/128 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 8.57s - System 100% Operational."
   - "MongoDB Atlas cleaned back to 1 Admin user (admin@gmail.com) only."
 
 active_routes_and_files:
-  - "accounts/views.py, panels/{urls,views_admin,views_teacher,views_student}.py, core/ai_dom_actions.py, templates/{404,accounts/auth,public/_base,components/sidebar,components/topbar}.html, .agents/git-sync.md"
+  - "templates/panels/admin_dashboard.html, panels/{admin_services,admin_directory_services,teacher_services,teacher_alert_services,test_admin}.py, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

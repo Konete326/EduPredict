@@ -74,32 +74,6 @@ def build_user_table_data(users, filter_role, actor_user_id, actor_email=""):
     return headers, rows
 
 
-def build_course_table_data(courses, filter_dept):
-    headers = ["Course", "Teacher", "Status", "Actions"]
-    rows = []
-    for c in courses or []:
-        code, title, status = c["course_code"], c["title"], c["status"]
-        view_payload = {
-            "title": f"{code} · {title}",
-            "subtitle": c["department"],
-            "badge": status,
-            "items": [
-                {"label": "Code", "value": code},
-                {"label": "Title", "value": title},
-                {"label": "Department", "value": c["department"]},
-                {"label": "Program / Level", "value": c.get("program_level") or "-"},
-                {"label": "Batch", "value": c["batch"]},
-                {"label": "Credits", "value": str(c["credits"])},
-                {"label": "Enrolled / Capacity", "value": f"{c['enrolled_count']} / {c['capacity']} ({c['fill_pct']}%)", "fullWidth": True},
-            ],
-        }
-        edit_attrs = {"data-course-code": code, "data-title": title, "data-department": c["department"], "data-batch": c["batch"], "data-program-level": c.get("program_level", ""), "data-instructor": c["instructor"], "data-instructor-id": c.get("instructor_id", ""), "data-instructor-email": c.get("instructor_email", ""), "data-credits": str(c["credits"]), "data-capacity": str(c["capacity"]), "data-status": status, "data-filter-dept": filter_dept}
-        del_attrs = {"data-course-code": code, "data-title": title, "data-filter-dept": filter_dept}
-        actions = [_view_action(f"View {code}", view_payload), _action("Edit", "fa-solid fa-pen-to-square", "openEditCourseModal(this)", f"Edit {code}", edit_attrs), _action("Delete", "fa-solid fa-trash", "openDeleteCourseModal(this)", f"Delete {code}", del_attrs, variant="danger")]
-        rows.append([f"{code} · {title}", c["instructor"], {"text": status, "status": "success" if status == "ACTIVE" else "warning"}, {"actions": actions}])
-    return headers, rows
-
-
 def build_ticket_table_data(tickets, filter_status):
     headers = ["Subject", "User", "Status", "Actions"]
     rows = []
