@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
+  <div class="min-w-0 space-y-1">
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Courses</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Create courses and assign each course to a Class, Semester, and Teacher</p>
+  </div>
+  <button type="button" onclick="openCreateCourseModal()" title="Add a new course" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
+    <i class="fa-solid fa-plus text-xs"></i>
+    <span>Add Course</span>
+  </button>
+</header>
+
+{% if db_error %}
+<div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database message: {{ db_error }}
+</div>
+{% endif %}
+
+<section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+  {% include 'components/metric_card.html' with title="Total Courses" value=total_courses|default:0 badge="Course catalog" status="info" icon="fa-solid fa-book-open" %}
+  {% include 'components/metric_card.html' with title="Active Courses" value=active_courses|default:0 badge="Currently offered" status="success" icon="fa-solid fa-circle-check" %}
+  {% include 'components/metric_card.html' with title="Assigned Teachers" value=teacher_options|length|default:0 badge="Active faculty" status="info" icon="fa-solid fa-chalkboard-user" %}
+</section>
+
+<section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+  {% include 'components/data_table.html' with table_id="admin-courses-table" table_title="Course Catalog" headers=course_headers rows=course_rows page_size=5 empty_message="No courses created yet. Click Add Course to create your first course." %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+{{ class_options|json_script:"course-class-options-data" }}
+{{ semester_options|json_script:"course-semester-options-data" }}
+{{ teacher_options|json_script:"course-teacher-options-data" }}
+<script>
+  (function () {
+    const coursesUrl = "{% url 'panels:admin_courses' %}";
+    const rawClasses = JSON.parse((document.getElementById('course-class-options-data') || {}).textContent || '[]');
+    const rawSemesters = JSON.parse((document.getElementById('course-semester-options-data') || {}).textContent || '[]');
+    const rawTeachers = JSON.parse((document.getElementById('course-teacher-options-data') || {}).textContent || '[]');
+    const statusOptions = [
+      { value: 'ACTIVE', label: 'Active' },
+      { value: 'INACTIVE', label: 'Inactive' }
+    ];
+
+    function buildClassOptions() {
+      const opts = [{ value: '', label: 'Select Class' }];
+      rawClasses.forEach(function (c) { opts.push({ value: c.id, label: c.label || c.name || c.id }); });
+      return opts;
+    }
+
+    function buildSemesterOptions(classId) {
+      const cid = String(classId || '');
+      const filtered = cid ? rawSemesters.filter(function (s) { return String(s.class_id || '') === cid; }) : rawSemesters;
+      const opts = [{ value: '', label: cid ? 'Select Semester' : 'Select Class First' }];
+      filtered.forEach(function (s) { opts.push({ value: s.id, label: s.name || s.label || s.id }); });
+      return opts;
+    }
+
+    function buildTeacherOptions() {
+      const opts = [{ value: '', label: 'Select Teacher' }];
+      rawTeachers.forEach(function (t) { opts.push({ value: t.id, label: t.label || t.name || t.id }); });
+      return opts;
+    }
+
+    function bindClassSemesterFilter(initialSemId) {
+      const form = document.getElementById('form-modal-element');
+      if (!form) return;
+      const classSelect = form.querySelector('[name="class_id"]');
+      const semSelect = form.querySelector('[name="semester_id"]');
+      if (!classSelect || !semSelect) return;
+
+      function refreshSemesters(preferredVal) {
+        const opts = buildSemesterOptions(classSelect.value);
+        semSelect.innerHTML = '';
+        opts.forEach(function (o) {
+          const optEl = document.createElement('option');
+          optEl.value = o.value;
+          optEl.textContent = o.label;
+          if (preferredVal && String(o.value) === String(preferredVal)) optEl.selected = true;
+          semSelect.appendChild(optEl);
+        });
+        if (!preferredVal && opts.length === 2) {
+          semSelect.value = opts[1].value;
+        }
+      }
+
+      refreshSemesters(initialSemId || '');
+      classSelect.addEventListener('change', function () {
+        refreshSemesters('');
+      });
+    }
+
+    window.openCreateCourseModal = function () {
+      const defaultClassId = rawClasses.length === 1 ? rawClasses[0].id : '';
+      const defaultTeacherId = rawTeachers.length === 1 ? rawTeachers[0].id : '';
+      window.openFormModal({
+        title: 'Add Course',
+        actionUrl: coursesUrl,
+        fields: [
+          { type: 'hidden', name: 'action', value: 'create_course' },
+          { name: 'course_code', label: 'Course Code', type: 'text', placeholder: 'CS-101', required: true },
+          { name: 'title', label: 'Course Title', type: 'text', placeholder: 'Programming Fundamentals', required: true },
+          { name: 'class_id', label: 'Class', type: 'select', options: buildClassOptions(), value: defaultClassId },
+          { name: 'semester_id', label: 'Semester', type: 'select', options: buildSemesterOptions(defaultClassId), value: '' },
+          { name: 'instructor_id', label: 'Teacher', type: 'select', options: buildTeacherOptions(), value: defaultTeacherId },
+          { name: 'credits', label: 'Credits', type: 'number', value: 3, min: 1, max: 10, required: true },
+          { name: 'status', label: 'Status', type: 'select', options: statusOptions, value: 'ACTIVE', required: true }
+        ]
+      });
+      bindClassSemesterFilter('');
+    };
+
+    window.openEditCourseModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      window.openFormModal({
+        title: 'Edit Course (' + (d.courseCode || '') + ')',
+        actionUrl: coursesUrl,
+        fields: [
+          { type: 'hidden', name: 'action', value: 'edit_course' },
+          { type: 'hidden', name: 'original_course_code', value: d.courseCode || '' },
+          { name: 'course_code', label: 'Course Code', type: 'text', value: d.courseCode || '', required: true },
+          { name: 'title', label: 'Course Title', type: 'text', value: d.title || '', required: true },
+          { name: 'class_id', label: 'Class', type: 'select', options: buildClassOptions(), value: d.classId || '' },
+          { name: 'semester_id', label: 'Semester', type: 'select', options: buildSemesterOptions(d.classId || ''), value: d.semesterId || '' },
+          { name: 'instructor_id', label: 'Teacher', type: 'select', options: buildTeacherOptions(), value: d.instructorId || '' },
+          { name: 'credits', label: 'Credits', type: 'number', value: d.credits || 3, min: 1, max: 10, required: true },
+          { name: 'status', label: 'Status', type: 'select', options: statusOptions, value: d.status || 'ACTIVE', required: true }
+        ]
+      });
+      bindClassSemesterFilter(d.semesterId || '');
+    };
+
+    window.openDeleteCourseModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      window.openConfirmModal({
+        title: 'Delete Course',
+        message: 'Delete ' + (d.courseCode || '') + ' (' + (d.title || '') + ') forever?',
+        confirmText: 'Delete',
+        onConfirmUrl: coursesUrl,
+        fields: {
+          action: 'delete_course',
+          course_code: d.courseCode || ''
+        }
+      });
+    };
+  })();
+</script>
+{% endblock %}

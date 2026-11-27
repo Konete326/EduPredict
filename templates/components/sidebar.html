@@ -32,6 +32,22 @@
           <i class="fa-solid fa-users w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Users</span>
         </a>
+        <a href="{% url 'panels:admin_teachers' %}"{% if request.resolver_match.view_name == 'panels:admin_teachers' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:admin_teachers' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-chalkboard-user w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Teachers</span>
+        </a>
+        <a href="{% url 'panels:admin_students' %}"{% if request.resolver_match.view_name == 'panels:admin_students' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:admin_students' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-user-graduate w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Students</span>
+        </a>
+        <a href="{% url 'panels:admin_classes' %}"{% if request.resolver_match.view_name == 'panels:admin_classes' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:admin_classes' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-layer-group w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Classes &amp; Semesters</span>
+        </a>
+        <a href="{% url 'panels:admin_courses' %}"{% if request.resolver_match.view_name == 'panels:admin_courses' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:admin_courses' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-book-open w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Courses</span>
+        </a>
         <a href="{% url 'panels:admin_training' %}"{% if request.resolver_match.view_name == 'panels:admin_training' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:admin_training' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-brain w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Training Data</span>

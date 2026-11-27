@@ -125,10 +125,10 @@ class _AdminTestBase(TestCase):
 
 
 class AdminLogsAndSettingsTests(_AdminTestBase):
-    def test_removed_admin_logs_and_courses_return_404(self):
+    def test_removed_admin_logs_returns_404_and_courses_200(self):
         client = self._login_as("ADMIN")
         self.assertEqual(client.get("/admin-panel/logs/").status_code, 404)
-        self.assertEqual(client.get("/admin-panel/courses/").status_code, 404)
+        self.assertEqual(client.get("/admin-panel/courses/").status_code, 200)
 
     def test_admin_settings_get_update_and_reset_defaults(self):
         client = self._login_as("ADMIN")

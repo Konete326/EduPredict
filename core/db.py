@@ -49,6 +49,7 @@ def invalidate_cache(prefix=""):
 COLLECTIONS = (
     "users", "student_records", "predictions",
     "datasets_log", "notifications", "support_tickets", "courses",
+    "classes", "semesters",
 )
 
 
@@ -222,6 +223,14 @@ def support_tickets_col():
 
 def courses_col():
     return get_collection("courses")
+
+
+def classes_col():
+    return get_collection("classes")
+
+
+def semesters_col():
+    return get_collection("semesters")
 
 
 def ensure_indexes():

@@ -62,14 +62,14 @@ def _load_users(normalized):
 def list_users(role_filter="ALL"):
     normalized = str(role_filter or "ALL").strip().upper()
     return get_cached(f"admin:users:{normalized}", lambda: _load_users(normalized), ttl=30.0)
-def _validate_user_input(full_name, email, role, department, batch):
+def _validate_user_input(full_name, email, role, department, batch=""):
     clean_name, clean_email, clean_role = str(full_name or "").strip(), str(email or "").strip().lower(), str(role or "").strip().upper()
     if not clean_name: return None, "Full name is required."
     try: validate_email(clean_email)
     except ValidationError: return None, "Please enter a valid email address."
     if clean_role not in VALID_ROLES: return None, "Select a valid role (ADMIN, TEACHER, STUDENT, or ANALYST)."
-    return (clean_name, clean_email, clean_role, str(department or "").strip() or "General", str(batch or "").strip() or ("2026-A" if clean_role == "STUDENT" else "ALL")), None
-def create_user_record(full_name, email, password, role, department, batch, actor_name="System Admin", program_level=""):
+    return (clean_name, clean_email, clean_role, str(department or "").strip() or "General", str(batch or "").strip()), None
+def create_user_record(full_name, email, password, role, department="", batch="", actor_name="System Admin", program_level=""):
     ensure_accounts_indexes_once()
     parsed, err = _validate_user_input(full_name, email, role, department, batch)
     if err: return None, err
@@ -86,7 +86,7 @@ def create_user_record(full_name, email, password, role, department, batch, acto
     _audit("USERS", "CREATE_USER", f"Created user {clean_name} ({user_id}, {clean_role}).", "SUCCESS", actor=actor_name)
     invalidate_cache()
     return doc, None
-def update_user_record(user_id, full_name, email, role, department, batch, password="", actor_user_id=None, actor_email="", actor_name="System Admin", program_level=None):
+def update_user_record(user_id, full_name, email, role, department="", batch="", password="", actor_user_id=None, actor_email="", actor_name="System Admin", program_level=None):
     col, clean_uid = users_col(), str(user_id or "").strip()
     existing = col.find_one({"user_id": clean_uid})
     if existing is None: return False, "User record not found."

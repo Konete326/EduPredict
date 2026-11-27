@@ -1,5 +1,5 @@
 from django.urls import path
-from panels import views_admin, views_analyst, views_notifications, views_student, views_teacher, views_theme
+from panels import views_admin, views_admin_academic, views_analyst, views_notifications, views_student, views_teacher, views_theme
 
 app_name = 'panels'
 
@@ -8,6 +8,10 @@ urlpatterns = [
     path('profile/', views_theme.user_profile_view, name='user_profile'),
     path('admin-panel/', views_admin.admin_dashboard, name='admin_dashboard'),
     path('admin-panel/users/', views_admin.admin_users, name='admin_users'),
+    path('admin-panel/teachers/', views_admin_academic.admin_teachers, name='admin_teachers'),
+    path('admin-panel/students/', views_admin_academic.admin_students, name='admin_students'),
+    path('admin-panel/classes/', views_admin_academic.admin_classes, name='admin_classes'),
+    path('admin-panel/courses/', views_admin_academic.admin_courses, name='admin_courses'),
     path('admin-panel/training/', views_admin.admin_training, name='admin_training'),
     path('admin-panel/tickets/', views_admin.admin_tickets, name='admin_tickets'),
     path('admin-panel/settings/', views_admin.admin_settings, name='admin_settings'),

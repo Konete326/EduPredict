@@ -21,6 +21,10 @@ ROLE_ROUTES = {
     "ADMIN": (
         ("/admin-panel/", "Admin Dashboard", ("dashboard", "home", "admin panel", "overview")),
         ("/admin-panel/users/", "Users", ("users", "user management", "manage users", "accounts")),
+        ("/admin-panel/teachers/", "Teachers", ("teachers", "faculty", "instructors", "manage teachers")),
+        ("/admin-panel/students/", "Students", ("students", "student directory", "manage students", "enrollments")),
+        ("/admin-panel/classes/", "Classes & Semesters", ("classes", "semesters", "class", "semester", "manage classes")),
+        ("/admin-panel/courses/", "Courses", ("courses", "subjects", "course catalog", "manage courses")),
         ("/admin-panel/training/", "Training Data", ("training", "training data", "dataset")),
         ("/admin-panel/tickets/", "Help Tickets", ("tickets", "help tickets", "support tickets", "feedback")),
         ("/admin-panel/settings/", "Portal Settings", ("settings", "portal settings", "thresholds", "backup")),
@@ -33,7 +37,7 @@ ROLE_PRD_CAPS = {
     "STUDENT": "Student scope: personal attendance %, marks, predicted GPA, risk level, notifications, and own profile/password.",
     "TEACHER": "Teacher scope: class dashboard overview, notifications, support tickets, and own profile/password.",
     "ANALYST": "Analyst scope: Data & ML Hub, dataset upload, RandomForest/Ridge/IsolationForest predictions, retrain & run ML, model evaluation metrics, live LMS stream simulation, model health & thresholds, and own profile/password.",
-    "ADMIN": "Admin scope: portal overview, user CRUD & teacher approval/rejection, training data upload, support ticket replies & lightbox review, MongoDB backups, portal settings, Theme Studio, and own profile/password.",
+    "ADMIN": "Admin scope: portal overview, user CRUD & teacher approval/rejection, teachers, students, classes & semesters, courses, training data upload, support ticket replies & lightbox review, MongoDB backups, portal settings, Theme Studio, and own profile/password.",
 }
 
 ROLE_POLLS = {
@@ -75,7 +79,7 @@ _FORM_SPEC_MAP = {spec[0]: spec for spec in _FORM_SPECS}
 
 
 def _form_route(role, kind):
-    return {"support_ticket": "/notifications/", "profile_update": "/profile/", "create_user": "/admin-panel/users/"}.get(kind, "/profile/")
+    return {"support_ticket": "/notifications/", "profile_update": "/profile/", "create_user": "/admin-panel/users/", "create_course": "/admin-panel/courses/"}.get(kind, "/profile/")
 
 
 def _build_click_action(role, action_name, auto=True, label_override=None):

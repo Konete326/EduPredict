@@ -121,7 +121,6 @@
 
     window.openCreateUserModal = function () {
       const defaultRole = selectedRole !== 'ALL' && selectedRole !== 'PENDING' && selectedRole !== 'REJECTED' ? selectedRole : 'STUDENT';
-      const defaultBatch = defaultRole === 'STUDENT' ? '2026-A' : 'ALL';
       window.openFormModal({
         title: 'Add User',
         actionUrl: adminUsersUrl,
@@ -131,16 +130,13 @@
           { name: 'full_name', label: 'Full Name', type: 'text', placeholder: 'Dr. Ayesha Khan', required: true },
           { name: 'email', label: 'Email', type: 'email', placeholder: 'user@edupredict.edu', required: true },
           { name: 'password', label: 'Password', type: 'password', value: 'edupredict123', placeholder: 'At least 6 characters', required: true },
-          { name: 'role', label: 'Role', type: 'select', options: roleOptions, value: defaultRole, required: true },
-          { name: 'batch', label: 'Batch / Class', type: 'text', value: defaultBatch, placeholder: '2026-A or ALL' }
+          { name: 'role', label: 'Role', type: 'select', options: roleOptions, value: defaultRole, required: true }
         ]
       });
       const form = document.getElementById('form-modal-element');
       if (!form) return;
       const nameInput = form.querySelector('[name="full_name"]');
       const emailInput = form.querySelector('[name="email"]');
-      const roleSelect = form.querySelector('[name="role"]');
-      const batchInput = form.querySelector('[name="batch"]');
       let emailEdited = false;
       if (emailInput) {
         emailInput.addEventListener('input', function (e) {
@@ -153,11 +149,6 @@
           if (e.isComposing || e.keyCode === 229 || emailEdited) return;
           const slug = nameInput.value.trim().toLowerCase().replace(/^(dr|prof|mr|mrs|ms)\.?\s+/i, '').replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '');
           emailInput.value = slug ? slug + '@edupredict.edu' : '';
-        });
-      }
-      if (roleSelect && batchInput) {
-        roleSelect.addEventListener('change', function () {
-          batchInput.value = roleSelect.value === 'STUDENT' ? '2026-A' : 'ALL';
         });
       }
     };
@@ -181,7 +172,6 @@
           { name: 'full_name', label: 'Full Name', type: 'text', value: d.fullName || '', required: true },
           { name: 'email', label: 'Email', type: 'email', value: d.email || '', required: true },
           ...roleFields,
-          { name: 'batch', label: 'Batch / Class', type: 'text', value: d.batch || 'ALL' },
           { name: 'password', label: 'New Password (optional)', type: 'password', placeholder: 'Leave blank to keep current password' }
         ]
       });

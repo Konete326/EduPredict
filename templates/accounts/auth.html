@@ -180,15 +180,9 @@
           </div>
 
           <div data-wizard-step="1" class="hidden space-y-3">
-            <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              <div class="targo-field">
-                <label for="reg-batch">BATCH / TERM</label>
-                <input id="reg-batch" name="batch" type="text" required value="{{ register_data.batch|default:'' }}" placeholder="2026-A" class="targo-auth-input">
-              </div>
-              <div class="targo-field">
-                <label for="reg-phone">PHONE (OPTIONAL)</label>
-                <input id="reg-phone" name="phone" type="tel" value="{{ register_data.phone|default:'' }}" placeholder="+92 300 0000000" class="targo-auth-input">
-              </div>
+            <div class="targo-field">
+              <label for="reg-phone">PHONE (OPTIONAL)</label>
+              <input id="reg-phone" name="phone" type="tel" value="{{ register_data.phone|default:'' }}" placeholder="+92 300 0000000" class="targo-auth-input">
             </div>
             <div class="targo-field">
               <label for="reg-bio">BIO (OPTIONAL)</label>
