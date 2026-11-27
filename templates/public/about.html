@@ -11,7 +11,7 @@
       <span class="targo-h2-indent">EDUPREDICT</span>
     </h1>
     <p class="targo-about-copy">
-      Built with Python Django, MongoDB Atlas, and Scikit-Learn, EduPredict replaces scattered spreadsheets with one calm early-warning system for {{ portal_current_term|default:"Fall 2026" }}.
+      Built with Python Django, MongoDB Atlas, and Scikit-Learn, EduPredict replaces scattered spreadsheets with one calm early-warning platform for {{ portal_current_term|default:"Fall 2026" }}.
     </p>
 
     <div class="targo-metrics-row">
@@ -38,6 +38,7 @@
         <span>GET STARTED</span>
         <span class="targo-cta-line" aria-hidden="true"></span>
       </a>
+      <a href="{% url 'accounts:auth_view' %}" class="targo-btn-outline">SIGN IN</a>
     </div>
   </div>
 
@@ -46,6 +47,7 @@
       <video
         data-targo-video="about-page"
         class="targo-about-video"
+        poster="{% static 'video/targo_about.jpg' %}?v=18"
         autoplay
         muted
         loop
@@ -64,8 +66,8 @@
 <section class="targo-roles-section">
   <div class="targo-roles-header">
     <h2 class="targo-h2">
-      <span>CAMPUS</span>
-      <span class="targo-h2-indent">ARCHITECTURE</span>
+      <span>EDUPREDICT</span>
+      <span class="targo-h2-indent">WORKFLOW</span>
     </h2>
     <div class="targo-roles-actions">
       <a href="{% url 'accounts:contact_view' %}" class="targo-btn-outline">CONTACT SUPPORT</a>

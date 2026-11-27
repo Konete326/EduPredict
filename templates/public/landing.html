@@ -1,15 +1,15 @@
 {% extends 'public/_base.html' %}
 {% load static %}
-{% block title %}Academic Early Warning &amp; Analytics{% endblock %}
+{% block title %}Student Risk &amp; GPA Analytics{% endblock %}
 {% block extra_head %}
-  <link rel="stylesheet" href="{% static 'css/landing_provably.css' %}?v=18&r=95">
+  <link rel="stylesheet" href="{% static 'css/landing_provably.css' %}?v=18&r=97">
 {% endblock %}
-{% block public_header %}{% endblock %}
 {% block content %}
 <section class="targo-hero">
   <video
     data-targo-video="hero"
     class="targo-hero-video"
+    poster="{% static 'video/targo_hero.jpg' %}?v=18"
     autoplay
     muted
     loop
@@ -22,44 +22,13 @@
   </video>
   <div class="targo-scrim" aria-hidden="true"></div>
 
-  <nav class="targo-nav" aria-label="Primary navigation">
-    <a href="{% url 'root' %}" class="targo-logo">
-      <span class="targo-logo-mark" aria-hidden="true"><span></span></span>
-      <span class="targo-logo-text">{{ portal_institution_name|default:"edupredict"|lower }}</span>
-    </a>
-
-    <div class="targo-links">
-      <a href="{% url 'root' %}">HOME</a>
-      <a href="{% url 'accounts:about_view' %}">ABOUT</a>
-      <a href="{% url 'accounts:contact_view' %}">CONTACT US</a>
-    </div>
-
-    <a href="{% url 'accounts:contact_view' %}" class="targo-contact-btn">
-      <svg width="17" height="13" viewBox="0 0 17 13" fill="none" aria-hidden="true">
-        <rect x="0.7" y="0.7" width="15.6" height="11.6" stroke="currentColor" stroke-width="1.4"/>
-        <path d="M1 1.5L8.5 7.5L16 1.5" stroke="currentColor" stroke-width="1.4"/>
-      </svg>
-      <span>CONTACT US</span>
-    </a>
-
-    <button id="targo-menu-toggle" type="button" class="targo-hamburger" aria-expanded="false" aria-controls="targo-mobile-menu" aria-label="Toggle menu">
-      <span></span><span></span><span></span>
-    </button>
-
-    <div id="targo-mobile-menu" class="targo-mobile-menu">
-      <a href="{% url 'root' %}">HOME</a>
-      <a href="{% url 'accounts:about_view' %}">ABOUT</a>
-      <a href="{% url 'accounts:contact_view' %}">CONTACT US</a>
-    </div>
-  </nav>
-
   <h1 class="targo-h1">
-    <span>SCALING</span>
-    <span>THE</span>
-    <span>PLATFORM</span>
-    <span class="targo-indent">FOR</span>
-    <span class="targo-indent">YOUR</span>
-    <span class="targo-indent targo-accent">CAMPUS</span>
+    <span>PREDICT</span>
+    <span>STUDENT</span>
+    <span>SUCCESS</span>
+    <span class="targo-indent">WITH</span>
+    <span class="targo-indent">EDUPREDICT</span>
+    <span class="targo-indent targo-accent">AI</span>
   </h1>
 
   <div class="targo-cta-wrap">
@@ -67,6 +36,7 @@
       <span>GET STARTED</span>
       <span class="targo-cta-line" aria-hidden="true"></span>
     </a>
+    <a href="{% url 'accounts:auth_view' %}" class="targo-btn-outline">SIGN IN</a>
   </div>
 </section>
 
@@ -77,7 +47,7 @@
       <span class="targo-h2-indent">EDUPREDICT</span>
     </h2>
     <p class="targo-about-copy">
-      EduPredict builds the academic early-warning infrastructure modern campuses rely on. From multi-format marks pipelines to Scikit-Learn risk audits, we make sure your faculty acts early and no student slips through. Real-time forecasts, zero surprises.
+      EduPredict combines Python Django, MongoDB Atlas, and Scikit-Learn to forecast student GPA, detect attendance drops early, and print monochrome A4 transcripts for Admins, Teachers, Analysts, and Students.
     </p>
     <div class="targo-about-cta">
       <a href="{% url 'accounts:about_view' %}" class="targo-cta">
@@ -92,6 +62,7 @@
       <video
         data-targo-video="about"
         class="targo-about-video"
+        poster="{% static 'video/targo_about.jpg' %}?v=18"
         autoplay
         muted
         loop
@@ -108,5 +79,5 @@
 </section>
 {% endblock %}
 {% block extra_js %}
-  <script src="{% static 'js/landing_provably.js' %}?v=18&r=95"></script>
+  <script src="{% static 'js/landing_provably.js' %}?v=18&r=97"></script>
 {% endblock %}

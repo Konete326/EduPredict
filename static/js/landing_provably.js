@@ -47,7 +47,7 @@
     });
 
     window.addEventListener('resize', function () {
-      if (window.innerWidth > 700 && menu.classList.contains('is-open')) {
+      if (window.innerWidth > 768 && menu.classList.contains('is-open')) {
         menu.classList.remove('is-open');
         btn.setAttribute('aria-expanded', 'false');
       }

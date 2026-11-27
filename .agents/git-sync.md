@@ -61,26 +61,26 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 96 Targo Local Video Mirrors & Mobile Clamp"
-active_branch_merged_to_main: "feature/p96-targo-video-mobile -> main"
-project_phase: "Phase 96: Local Targo Video Mirrors (static/video/*.mp4) & Mobile <=700px Clamp Spacing"
+last_updated_by_agent: "Phase 97 Targo Sticky Navbar, Sign-In, EduPredict Copy, Posters & Full Responsiveness"
+active_branch_merged_to_main: "feature/p97-targo-responsive-signin -> main"
+project_phase: "Phase 97: Targo Visible Sticky Navbar, Sign-In Links, EduPredict Branding, Video Posters & Responsive Breakpoints"
 
 completed_modules:
-  - "Phase 1-95: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Emerald Green Default Theme, Multi-Format Training, Targo Public Pages (landing, about, contact), Vercel Auto-Deploy."
-  - "Phase 96 (Targo Video Mirrors & Mobile Clamp):"
-      - "static/video/{targo_hero,targo_about}.mp4: mirrored both CloudFront videos locally (3.19 MB & 1.88 MB) and wired local {% static %} <source> + CloudFront fallback in templates/public/{landing,about}.html."
-      - "static/css/landing_provably.css: updated @media (max-width:700px) .targo-h1 margin-top to clamp(240px,52vw,360px)."
+  - "Phase 1-96: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Emerald Green Default Theme, Multi-Format Training, Targo Public Pages + Local Videos, Vercel Auto-Deploy."
+  - "Phase 97 (Navbar Visibility, Sign-In, EduPredict Copy, Video Posters & Responsiveness):"
+      - "accounts/views.py, templates/public/{_base,landing,about,contact}.html: removed 'Academic Portal' phrasing, unified EduPredict branding, added SIGN IN & GET STARTED links in sticky translucent navbar, mobile menu, and hero CTAs."
+      - "static/css/landing_provably.css, static/js/landing_provably.js: made .targo-nav sticky high-contrast (always visible over hero video), added 1024px/768px/520px responsive rules (clean mobile video banner, zero-indent mobile stack, full-width <=520px CTAs)."
+      - "static/video/{targo_hero,targo_about}.jpg: added lightweight poster frames on landing.html and about.html."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check static/js/landing_provably.js: exited 0."
   - "Zero-comment & line-cap audit: CAPS: [] COMMENTS: []."
-  - "manage.py test: Ran 138 tests in 90.372s (138/138 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 9.60s - System 100% Operational."
+  - "manage.py test: Ran 138 tests (OK) & verify_uat: 7/7 passed."
   - "MongoDB Atlas cleaned back to 1 Admin user (admin@gmail.com) only."
 
 active_routes_and_files:
-  - "static/video/{targo_hero,targo_about}.mp4, static/css/landing_provably.css, templates/public/{landing,about}.html, .agents/git-sync.md"
+  - "accounts/views.py, templates/public/{_base,landing,about,contact}.html, static/css/landing_provably.css, static/js/landing_provably.js, static/video/*.jpg, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Quantico:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="{% static 'css/global.css' %}?v=18">
-  <link rel="stylesheet" href="{% static 'css/landing_provably.css' %}?v=18&r=95">
+  <link rel="stylesheet" href="{% static 'css/landing_provably.css' %}?v=18&r=97">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="targo-body">
@@ -22,31 +22,31 @@
   <nav class="targo-nav" aria-label="Primary navigation">
     <a href="{% url 'root' %}" class="targo-logo">
       <span class="targo-logo-mark" aria-hidden="true"><span></span></span>
-      <span class="targo-logo-text">{{ portal_institution_name|default:"edupredict"|lower }}</span>
+      <span class="targo-logo-text">EduPredict</span>
     </a>
 
     <div class="targo-links">
       <a href="{% url 'root' %}">HOME</a>
       <a href="{% url 'accounts:about_view' %}">ABOUT</a>
-      <a href="{% url 'accounts:contact_view' %}">CONTACT US</a>
+      <a href="{% url 'accounts:contact_view' %}">CONTACT</a>
+      <a href="{% url 'accounts:auth_view' %}">SIGN IN</a>
     </div>
 
-    <a href="{% url 'accounts:contact_view' %}" class="targo-contact-btn targo-contact-btn--dark">
-      <svg width="17" height="13" viewBox="0 0 17 13" fill="none" aria-hidden="true">
-        <rect x="0.7" y="0.7" width="15.6" height="11.6" stroke="currentColor" stroke-width="1.4"/>
-        <path d="M1 1.5L8.5 7.5L16 1.5" stroke="currentColor" stroke-width="1.4"/>
-      </svg>
-      <span>CONTACT US</span>
-    </a>
+    <div class="targo-nav-actions">
+      <a href="{% url 'accounts:auth_view' %}" class="targo-nav-signin">SIGN IN</a>
+      <a href="{% url 'accounts:auth_view' %}?tab=register" class="targo-nav-start">GET STARTED</a>
+    </div>
 
-    <button id="targo-menu-toggle" type="button" class="targo-hamburger targo-hamburger--dark" aria-expanded="false" aria-controls="targo-mobile-menu" aria-label="Toggle menu">
+    <button id="targo-menu-toggle" type="button" class="targo-hamburger" aria-expanded="false" aria-controls="targo-mobile-menu" aria-label="Toggle menu">
       <span></span><span></span><span></span>
     </button>
 
     <div id="targo-mobile-menu" class="targo-mobile-menu">
       <a href="{% url 'root' %}">HOME</a>
       <a href="{% url 'accounts:about_view' %}">ABOUT</a>
-      <a href="{% url 'accounts:contact_view' %}">CONTACT US</a>
+      <a href="{% url 'accounts:contact_view' %}">CONTACT</a>
+      <a href="{% url 'accounts:auth_view' %}">SIGN IN</a>
+      <a href="{% url 'accounts:auth_view' %}?tab=register" class="targo-mobile-cta">GET STARTED</a>
     </div>
   </nav>
   {% endblock %}
@@ -57,7 +57,7 @@
 
   {% include 'components/toast.html' %}
   <script src="{% static 'js/app.js' %}?v=18"></script>
-  <script src="{% static 'js/landing_provably.js' %}?v=18&r=95"></script>
+  <script src="{% static 'js/landing_provably.js' %}?v=18&r=97"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

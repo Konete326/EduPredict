@@ -23,7 +23,7 @@ def root_redirect(request):
         request,
         "public/landing.html",
         {
-            "page_title": "Academic Performance & Early-Alert Portal",
+            "page_title": "EduPredict — Student Risk & GPA Analytics",
             "metrics": get_public_portal_metrics(),
             "landing_showcase": get_public_landing_showcase(),
         },
