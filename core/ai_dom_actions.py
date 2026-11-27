@@ -8,6 +8,9 @@ ROLE_ROUTES = {
     ),
     "TEACHER": (
         ("/teacher-panel/", "Dashboard", ("dashboard", "home", "class home", "teacher panel", "overview")),
+        ("/teacher-panel/courses/", "My Courses", ("courses", "my courses", "assigned courses", "subjects", "teacher courses")),
+        ("/teacher-panel/students/", "My Students", ("students", "my students", "student list", "class list", "at risk", "at-risk")),
+        ("/teacher-panel/marks/", "Attendance & Marks", ("marks", "attendance", "enter marks", "upload marks", "save marks", "bulk marks", "grading")),
         ("/notifications/", "Notification", ("notifications", "alert history", "history", "alerts")),
         ("/profile/", "My Profile", ("profile", "my profile", "avatar", "bio", "account")),
     ),
@@ -35,7 +38,7 @@ ROLE_ROUTES = {
 
 ROLE_PRD_CAPS = {
     "STUDENT": "Student scope: personal attendance %, marks, predicted GPA, risk level, notifications, and own profile/password.",
-    "TEACHER": "Teacher scope: class dashboard overview, notifications, support tickets, and own profile/password.",
+    "TEACHER": "Teacher scope: class dashboard overview, assigned courses & semesters, student performance list & risk alerts, attendance & marks entry with live predictions, notifications, support tickets, and own profile/password.",
     "ANALYST": "Analyst scope: Data & ML Hub, dataset upload, RandomForest/Ridge/IsolationForest predictions, retrain & run ML, model evaluation metrics, live LMS stream simulation, model health & thresholds, and own profile/password.",
     "ADMIN": "Admin scope: portal overview, user CRUD & teacher approval/rejection, teachers, students, semesters, courses, training data upload, support ticket replies & lightbox review, MongoDB backups, portal settings, Theme Studio, and own profile/password.",
 }

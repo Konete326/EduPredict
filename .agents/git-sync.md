@@ -61,25 +61,26 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 103 Simple & Clean Theme Modal, Training Data & All-Panel Everyday English"
-active_branch_merged_to_main: "feature/p103-simple-clean-all-panels -> main"
-project_phase: "Phase 103: Simple Clean Theme Studio Modal, Training Data UI & All-Panel Everyday English"
+last_updated_by_agent: "Phase 104 Teacher Panel Connected University Flow"
+active_branch_merged_to_main: "feature/p104-teacher-university-panel -> main"
+project_phase: "Phase 104: Connected Teacher Courses, Semesters, Students, Marks/Attendance, Live ML Predictions & Alerts"
 
 completed_modules:
-  - "Phase 1-102: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Targo Public/Auth/404 Pages, University Semesters, Searchable Modals, 500-Row Dataset."
-  - "Phase 103 (Simple Clean Theme Studio & All-Panel Everyday English):"
-      - "templates/components/theme_studio_modal.html: simplified Theme & Colors modal across all panels to a compact Light/Dark, Sidebar & Header, Main Color, and Spacing selector (removed cluttered 21st.dev presets, contrast/hex debug box, and live preview cards)."
-      - "templates/panels/admin_training.html: simplified Training Data UI/UX with short KPI cards, clean upload/sample bar, and Delete confirmation modal."
-      - "templates/panels/{teacher_dashboard,student_dashboard,analyst_dashboard,analyst_accuracy,notifications_history}.html, panels/{test_admin_academic,tests}.py: converted KPI cards, tabs, buttons, and headings across all panels to simple everyday English and updated test assertions."
+  - "Phase 1-103: Core Shell, Auth/RBAC, Admin Academic CRUD, 500-Row Dataset, Simple Theme Studio & All-Panel Everyday English."
+  - "Phase 104 (Teacher Panel Connected University Flow):"
+      - "panels/teacher_services.py, panels/teacher_academic_services.py: synced Teacher Panel with Admin courses_col(), semesters_col(), and users_col(STUDENT) by semester_id; live ML prediction on single/bulk marks & attendance saves + invalidate_cache() real-time sync across panels."
+      - "panels/views_teacher.py, panels/urls.py, core/ai_dom_actions.py: added @role_required(['TEACHER', 'ADMIN']) routes /teacher-panel/courses/, /teacher-panel/students/, and /teacher-panel/marks/."
+      - "templates/components/sidebar.html, templates/panels/teacher_{dashboard,courses,students,marks}.html: added My Courses, My Students (View full dropout prediction + Update + Alert), and Attendance & Marks pages in simple everyday English."
+      - "panels/test_teacher_academic.py, panels/test_phase24.py, panels/test_teacher_student.py: added 3 end-to-end Admin->Teacher->Student real-time tests and updated /teacher-panel/students/ assertions to 200."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "node --check static/js/app.js: exited 0."
-  - "manage.py test: Ran 136 tests in 95.909s (136/136 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 9.38s - System 100% Operational."
+  - "Zero-comment & line-cap (<= 400) audit across 11 modified/new files: AUDIT_OK (0 comments, max 338 lines)."
+  - "manage.py test: Ran 139 tests in 142.797s (139/139 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 13.11s - System 100% Operational."
 
 active_routes_and_files:
-  - "templates/components/theme_studio_modal.html, templates/panels/{admin_training,teacher_dashboard,student_dashboard,analyst_dashboard,analyst_accuracy,notifications_history}.html, panels/{test_admin_academic,tests}.py, .agents/git-sync.md"
+  - "panels/{teacher_services,teacher_academic_services,views_teacher,urls,test_teacher_academic,test_phase24,test_teacher_student}.py, core/ai_dom_actions.py, templates/components/sidebar.html, templates/panels/teacher_{dashboard,courses,students,marks}.html, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

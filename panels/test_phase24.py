@@ -131,7 +131,7 @@ class Phase24IntegrationTests(TestCase):
         r_t_dash = teacher.get("/teacher-panel/")
         self.assertEqual(r_t_dash.status_code, 200)
         self.assertIn("data-dot-kpi", r_t_dash.content.decode("utf-8"))
-        self.assertEqual(teacher.get("/teacher-panel/students/").status_code, 404)
+        self.assertEqual(teacher.get("/teacher-panel/students/").status_code, 200)
         self.assertEqual(teacher.get("/teacher-panel/ingest/").status_code, 404)
 
         analyst = self._login("ANALYST", user_id="USR-AN1")

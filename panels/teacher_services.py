@@ -4,7 +4,7 @@ from django.contrib.auth.hashers import make_password
 from pymongo import DESCENDING
 from analytics.data_pipeline import REQUIRED_COLUMNS
 from analytics.ml_engine import _resolve_runtime_settings, run_prediction_pipeline
-from core.db import courses_col, datasets_log_col, get_cached, invalidate_cache, notifications_col, predictions_col, student_records_col, support_tickets_col, users_col
+from core.db import courses_col, datasets_log_col, get_cached, invalidate_cache, notifications_col, predictions_col, semesters_col, student_records_col, support_tickets_col, users_col
 
 
 def _safe_float(val, default=0.0):
@@ -80,23 +80,77 @@ def classify_performance_badge(att, marks, risk_level):
     return {"text": "Stable", "status": "info"}
 
 
+def _semester_label(s):
+    if not s:
+        return "-"
+    prog = str(s.get("program_name") or "BSCS").strip()
+    sname = str(s.get("semester_name") or f"Semester {s.get('semester_number') or 1}").strip()
+    return f"{prog} · {sname}"
+
+
 def _load_joined_students(teacher_user=None):
+    sem_map = {str(s.get("semester_id") or "").strip(): s for s in semesters_col().find({}, {"_id": 0}) if s.get("semester_id")}
+    is_adm = _is_admin(teacher_user)
+    uid = str((teacher_user or {}).get("user_id") or "").strip()
+    email = str((teacher_user or {}).get("email") or "").strip().lower()
+    tname = str((teacher_user or {}).get("full_name") or "").strip().lower()
+    assigned_codes, assigned_sem_ids, course_by_sem = set(), set(), {}
+    for c in courses_col().find({}, {"_id": 0}):
+        code = str(c.get("course_code") or "").strip().upper()
+        if not code or str(c.get("status") or "ACTIVE").strip().upper() == "INACTIVE":
+            continue
+        matched = is_adm or (
+            (uid and str(c.get("instructor_id") or "").strip() == uid)
+            or (email and str(c.get("instructor_email") or "").strip().lower() == email)
+            or (tname and str(c.get("instructor") or "").strip().lower() == tname)
+        )
+        if matched:
+            assigned_codes.add(code)
+            sem_id = str(c.get("semester_id") or "").strip()
+            if sem_id:
+                assigned_sem_ids.add(sem_id)
+                course_by_sem.setdefault(sem_id, code)
     pred_map = {str(p.get("student_id") or "").strip(): p for p in predictions_col().find({}, {"_id": 0}) if p.get("student_id")}
-    joined = []
+    rec_map = {}
     for rec in student_records_col().find(_teacher_student_query(teacher_user), {"_id": 0}).sort("student_id", 1):
         sid = str(rec.get("student_id") or "").strip()
+        if sid:
+            rec_map[sid] = rec
+    user_map = {}
+    for u in users_col().find({"role": "STUDENT"}, {"_id": 0, "password_hash": 0}):
+        sid = str(u.get("student_id") or u.get("user_id") or "").strip()
         if not sid:
             continue
+        sem_id = str(u.get("semester_id") or "").strip()
+        if is_adm or (sem_id and sem_id in assigned_sem_ids):
+            user_map[sid] = u
+    default_course = sorted(assigned_codes)[0] if assigned_codes else "CS-101"
+    joined = []
+    for sid in sorted(set(rec_map.keys()) | set(user_map.keys())):
+        rec = rec_map.get(sid) or {}
+        u = user_map.get(sid) or {}
         pred = pred_map.get(sid) or {}
-        att, marks = round(_safe_float(rec.get("attendance_pct")), 1), round(_safe_float(rec.get("internal_marks")), 1)
+        sem_id = str(rec.get("semester_id") or u.get("semester_id") or "").strip()
+        sem_label = _semester_label(sem_map.get(sem_id)) if sem_id in sem_map else str(rec.get("semester_label") or "-")
+        course_code = str(rec.get("course_code") or course_by_sem.get(sem_id) or default_course).strip().upper()
+        att = round(_safe_float(rec.get("attendance_pct"), 0.0), 1)
+        marks = round(_safe_float(rec.get("internal_marks"), 0.0), 1)
         raw_gpa = pred.get("predicted_gpa")
+        raw_prob = pred.get("risk_probability") if pred.get("risk_probability") is not None else pred.get("dropout_risk_score")
         risk = str(pred.get("risk_level") or "LOW").strip().upper()
         joined.append({
-            "student_id": sid, "full_name": str(rec.get("full_name") or sid), "birth_date": str(rec.get("birth_date") or "").strip(),
-            "batch": str(rec.get("batch") or "2026-A"), "course_code": str(rec.get("course_code") or "CS-101").upper(),
-            "attendance_pct": att, "internal_marks": marks, "assignment_score": round(_safe_float(rec.get("assignment_score")), 1),
-            "lms_hours_weekly": round(_safe_float(rec.get("lms_hours_weekly")), 1), "previous_gpa": round(_safe_float(rec.get("previous_gpa")), 2),
-            "predicted_gpa": round(_safe_float(raw_gpa), 2) if raw_gpa is not None else None, "risk_level": risk,
+            "student_id": sid, "full_name": str(rec.get("full_name") or u.get("full_name") or sid),
+            "birth_date": str(rec.get("birth_date") or u.get("birth_date") or "").strip(),
+            "batch": str(rec.get("batch") or u.get("batch") or "2026-A"), "course_code": course_code,
+            "semester_id": sem_id, "semester_label": sem_label,
+            "attendance_pct": att, "internal_marks": marks,
+            "assignment_score": round(_safe_float(rec.get("assignment_score"), 0.0), 1),
+            "lms_hours_weekly": round(_safe_float(rec.get("lms_hours_weekly"), 0.0), 1),
+            "previous_gpa": round(_safe_float(rec.get("previous_gpa"), 0.0), 2),
+            "predicted_gpa": round(_safe_float(raw_gpa), 2) if raw_gpa is not None else None,
+            "risk_level": risk,
+            "risk_probability": round(_safe_float(raw_prob, 0.0), 4),
+            "recommendation": str(pred.get("recommendation") or "").strip(),
             "badge": classify_performance_badge(att, marks, risk),
         })
     return joined
@@ -170,11 +224,16 @@ def update_student_record_inline(post_data, teacher_user=None):
     if len(raw_sid) < 2:
         return None, "Student ID is required."
     existing = student_records_col().find_one({"student_id": raw_sid}, {"_id": 0}) or student_records_col().find_one({"student_id": raw_sid.upper()}, {"_id": 0}) or {}
+    u_doc = users_col().find_one({"student_id": raw_sid}, {"_id": 0, "full_name": 1, "semester_id": 1, "batch": 1}) or {}
     sid = str(existing.get("student_id") or raw_sid).strip()
-    full_name = str(post_data.get("full_name") or post_data.get("name") or existing.get("full_name") or f"Student {sid}").strip()
+    full_name = str(post_data.get("full_name") or post_data.get("name") or existing.get("full_name") or u_doc.get("full_name") or f"Student {sid}").strip()
     bdate = str(post_data.get("birth_date") or existing.get("birth_date") or "").strip()
-    batch = str(post_data.get("batch") or existing.get("batch") or "2026-A").strip()
+    batch = str(post_data.get("batch") or existing.get("batch") or u_doc.get("batch") or "2026-A").strip()
     course_code = str(post_data.get("course_code") or existing.get("course_code") or "CS-101").strip().upper()
+    c_doc = courses_col().find_one({"course_code": course_code}, {"_id": 0, "semester_id": 1}) or {}
+    sem_id = str(post_data.get("semester_id") or existing.get("semester_id") or u_doc.get("semester_id") or c_doc.get("semester_id") or "").strip()
+    sem_doc = semesters_col().find_one({"semester_id": sem_id}, {"_id": 0}) if sem_id else None
+    sem_label = _semester_label(sem_doc) if sem_doc else str(post_data.get("semester_label") or existing.get("semester_label") or "-")
     try:
         raw_att = post_data.get("attendance_pct") if post_data.get("attendance_pct") not in (None, "") else (post_data.get("attendance") or post_data.get("att") or existing.get("attendance_pct") or 80.0)
         raw_marks = post_data.get("internal_marks") if post_data.get("internal_marks") not in (None, "") else (post_data.get("marks") or post_data.get("score") or existing.get("internal_marks") or 70.0)
@@ -184,7 +243,7 @@ def update_student_record_inline(post_data, teacher_user=None):
         gpa = max(0.0, min(4.0, float(post_data.get("previous_gpa") or post_data.get("gpa") or existing.get("previous_gpa") or 3.0)))
     except (TypeError, ValueError):
         return None, "Please enter valid numeric values for marks and attendance."
-    doc = {"student_id": sid, "full_name": full_name, "batch": batch, "course_code": course_code, "attendance_pct": round(att, 2), "attendance_rate": round(att, 2), "internal_marks": round(marks, 2), "marks": round(marks, 2), "final_score": round(marks, 2), "assignment_score": round(assign, 2), "lms_hours_weekly": round(lms, 2), "previous_gpa": round(gpa, 2), "gpa": round(gpa, 2), "updated_at": datetime.now(timezone.utc)}
+    doc = {"student_id": sid, "full_name": full_name, "batch": batch, "course_code": course_code, "semester_id": sem_id, "semester_label": sem_label, "attendance_pct": round(att, 2), "attendance_rate": round(att, 2), "internal_marks": round(marks, 2), "marks": round(marks, 2), "final_score": round(marks, 2), "assignment_score": round(assign, 2), "lms_hours_weekly": round(lms, 2), "previous_gpa": round(gpa, 2), "gpa": round(gpa, 2), "updated_at": datetime.now(timezone.utc)}
     if bdate:
         doc["birth_date"] = bdate
     if isinstance(teacher_user, dict) and str(teacher_user.get("role") or "").upper() != "ADMIN":
@@ -192,9 +251,9 @@ def update_student_record_inline(post_data, teacher_user=None):
         doc["teacher_name"] = str(teacher_user.get("full_name") or "Teacher").strip()
         doc["teacher_email"] = str(teacher_user.get("email") or "").strip().lower()
     student_records_col().update_one({"student_id": sid}, {"$set": doc}, upsert=True)
-    if full_name:
+    if not u_doc and full_name:
         provision_student_accounts([doc], teacher_user)
-    run_prediction_pipeline()
+    run_prediction_pipeline(persist=True)
     invalidate_cache()
     return doc, None
 

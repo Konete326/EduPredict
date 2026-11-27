@@ -121,7 +121,8 @@ class TeacherPanelTests(TestCase):
         self.assertIn('data-nav-group="teacher"', html)
         self.assertNotIn('data-nav-group="admin"', html)
         self.assertNotIn('data-nav-group="student"', html)
-        for removed in ("/teacher-panel/students/", "/teacher-panel/alerts/", "/teacher-panel/ingest/"):
+        self.assertEqual(client.get("/teacher-panel/students/").status_code, 200)
+        for removed in ("/teacher-panel/alerts/", "/teacher-panel/ingest/"):
             self.assertEqual(client.get(removed).status_code, 404)
 
     @patch("panels.views_teacher.send_student_alert", return_value=({"title": "Teacher Alert"}, None))

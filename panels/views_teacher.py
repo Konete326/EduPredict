@@ -1,7 +1,14 @@
 from django.contrib import messages
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from core.db import notifications_col
 from core.decorators import role_required
+from panels.teacher_academic_services import (
+    get_teacher_courses_context,
+    get_teacher_marks_context,
+    get_teacher_students_context,
+    save_student_marks_and_attendance,
+)
 from panels.teacher_alert_services import get_teacher_portal_meta, toggle_teacher_auto_alerts
 from panels.teacher_services import (
     delete_student_record,
@@ -94,3 +101,66 @@ def teacher_dashboard(request):
     except Exception as exc:
         context["db_error"] = str(exc)
     return render(request, "panels/teacher_dashboard.html", context)
+
+
+@role_required(["TEACHER", "ADMIN"])
+def teacher_courses(request):
+    user = request.session.get("user") or {}
+    context = {"page_title": "My Courses", "active_role": "TEACHER", "db_error": None}
+    try:
+        context.update(get_teacher_courses_context(user))
+    except Exception as exc:
+        context["db_error"] = str(exc)
+    return render(request, "panels/teacher_courses.html", context)
+
+
+@role_required(["TEACHER", "ADMIN"])
+def teacher_students(request):
+    if request.method == "POST":
+        try:
+            if not _handle_common_post(request):
+                messages.error(request, "Unknown action.")
+        except Exception as exc:
+            messages.error(request, f"Database error: {exc}")
+        return redirect("panels:teacher_students")
+
+    user = request.session.get("user") or {}
+    context = {"page_title": "My Students", "active_role": "TEACHER", "db_error": None}
+    try:
+        context.update(
+            get_teacher_students_context(
+                user,
+                course_filter=_param(request, "course", "ALL"),
+                semester_filter=_param(request, "semester", "ALL"),
+            )
+        )
+    except Exception as exc:
+        context["db_error"] = str(exc)
+    return render(request, "panels/teacher_students.html", context)
+
+
+@role_required(["TEACHER", "ADMIN"])
+def teacher_marks(request):
+    user = request.session.get("user") or {}
+    if request.method == "POST":
+        action = _param(request, "action").lower()
+        try:
+            if action == "save_bulk_marks":
+                saved, err = save_student_marks_and_attendance(request.POST, user)
+                msg = f"Saved marks & attendance for {saved} student(s) and updated predictions." if isinstance(saved, int) else "Saved marks & attendance and updated predictions."
+                _flash(request, bool(saved) and not err, err, msg)
+            elif not _handle_common_post(request):
+                messages.error(request, "Unknown action.")
+        except Exception as exc:
+            messages.error(request, f"Database error: {exc}")
+        course_q = _param(request, "course")
+        if course_q and course_q.upper() != "ALL":
+            return redirect(f"{reverse('panels:teacher_marks')}?course={course_q}")
+        return redirect("panels:teacher_marks")
+
+    context = {"page_title": "Attendance & Marks", "active_role": "TEACHER", "db_error": None}
+    try:
+        context.update(get_teacher_marks_context(user, course_filter=_param(request, "course", "ALL")))
+    except Exception as exc:
+        context["db_error"] = str(exc)
+    return render(request, "panels/teacher_marks.html", context)

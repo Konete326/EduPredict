@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
+  <div class="min-w-0 space-y-1">
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Attendance &amp; Marks</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Enter attendance and marks for your class to update student predictions right away.</p>
+  </div>
+</header>
+
+{% if db_error %}
+<div class="rounded-[12px] border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Notice: {{ db_error }}
+</div>
+{% endif %}
+
+<form method="get" action="{% url 'panels:teacher_marks' %}" class="flex flex-wrap items-end gap-3 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
+  <div class="min-w-[240px] flex-1">
+    <label for="marks-course-select" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Select Course</label>
+    <select id="marks-course-select" name="course" onchange="this.form.submit()" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+      <option value="ALL">All Assigned Courses</option>
+      {% for opt in course_options %}
+      <option value="{{ opt.value }}" {% if course_filter == opt.value %}selected{% endif %}>{{ opt.label }} ({{ opt.semester_label }})</option>
+      {% endfor %}
+    </select>
+  </div>
+  <a href="{% url 'panels:teacher_marks' %}" class="inline-flex h-9 items-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">Show All</a>
+</form>
+
+<form method="post" action="{% url 'panels:teacher_marks' %}" class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="save_bulk_marks">
+  <input type="hidden" name="course" value="{{ course_filter|default:'ALL' }}">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div>
+      <h3 class="text-sm font-semibold text-[var(--text-primary)]">Class Marks &amp; Attendance Entry</h3>
+      <p class="text-xs text-[var(--text-muted)]">Edit any row below and click Save &amp; Predict.</p>
+    </div>
+    {% if students %}
+    <button type="submit" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-4 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <i class="fa-solid fa-floppy-disk text-xs"></i>
+      <span>Save &amp; Predict</span>
+    </button>
+    {% endif %}
+  </div>
+
+  <div class="overflow-x-auto rounded-[14px] border border-[var(--border-subtle)]">
+    <table class="w-full border-collapse text-left text-sm">
+      <thead class="border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
+        <tr>
+          <th class="whitespace-nowrap px-3 py-2.5 text-xs font-medium text-[var(--text-secondary)]">Student</th>
+          <th class="whitespace-nowrap px-3 py-2.5 text-xs font-medium text-[var(--text-secondary)]">Course</th>
+          <th class="whitespace-nowrap px-3 py-2.5 text-xs font-medium text-[var(--text-secondary)]">Attendance (%)</th>
+          <th class="whitespace-nowrap px-3 py-2.5 text-xs font-medium text-[var(--text-secondary)]">Marks (0-100)</th>
+          <th class="whitespace-nowrap px-3 py-2.5 text-xs font-medium text-[var(--text-secondary)]">Pred GPA</th>
+          <th class="whitespace-nowrap px-3 py-2.5 text-xs font-medium text-[var(--text-secondary)] text-right">Details</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-[var(--border-subtle)] tabular-nums">
+        {% for s in students %}
+        <tr class="hover:bg-[var(--bg-elevated)]">
+          <td class="px-3 py-2.5">
+            <input type="hidden" name="student_id" value="{{ s.student_id }}">
+            <input type="hidden" name="course_code" value="{{ s.course_code }}">
+            <input type="hidden" name="semester_id" value="{{ s.semester_id }}">
+            <p class="font-medium text-[var(--text-primary)]">{{ s.full_name }}</p>
+            <p class="text-[11px] text-[var(--text-muted)]">{{ s.student_id }} · {{ s.semester_label|default:"-" }}</p>
+          </td>
+          <td class="whitespace-nowrap px-3 py-2.5 text-xs font-medium text-[var(--text-secondary)]">{{ s.course_code }}</td>
+          <td class="px-3 py-2.5">
+            <input type="number" name="attendance_pct" value="{{ s.attendance_pct|floatformat:1 }}" min="0" max="100" step="0.1" required class="h-8 w-24 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 text-sm text-[var(--text-primary)]">
+          </td>
+          <td class="px-3 py-2.5">
+            <input type="number" name="internal_marks" value="{{ s.internal_marks|floatformat:1 }}" min="0" max="100" step="0.1" required class="h-8 w-24 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 text-sm text-[var(--text-primary)]">
+          </td>
+          <td class="whitespace-nowrap px-3 py-2.5 text-xs text-[var(--text-primary)]">
+            <span class="font-semibold">{{ s.predicted_gpa|default:"-" }}</span>
+            <span class="ml-1.5 text-[11px] text-[var(--text-muted)]">({{ s.risk_level|default:"LOW" }})</span>
+          </td>
+          <td class="whitespace-nowrap px-3 py-2.5 text-right">
+            <button type="button" onclick="openUpdateMarksModal(this)" data-student-id="{{ s.student_id }}" data-full-name="{{ s.full_name }}" data-semester-id="{{ s.semester_id }}" data-semester-label="{{ s.semester_label }}" data-course-code="{{ s.course_code }}" data-attendance-pct="{{ s.attendance_pct|floatformat:1 }}" data-internal-marks="{{ s.internal_marks|floatformat:1 }}" data-assignment-score="{{ s.assignment_score|floatformat:1 }}" data-lms-hours-weekly="{{ s.lms_hours_weekly|floatformat:1 }}" data-previous-gpa="{{ s.previous_gpa|floatformat:2 }}" class="inline-flex items-center gap-1 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+              <i class="fa-solid fa-pen-to-square text-[11px]"></i>
+              <span>More</span>
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="px-4 py-8 text-center text-sm text-[var(--text-muted)]">No students found for this course yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const POST_URL = "{% url 'panels:teacher_marks' %}";
+
+    window.openUpdateMarksModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      window.openFormModal({
+        title: 'Update Marks & Attendance',
+        headerBadge: 'Student: ' + (d.studentId || ''),
+        actionUrl: POST_URL,
+        submitText: 'Save & Predict',
+        fields: [
+          { type: 'hidden', name: 'action', value: 'update_student' },
+          { type: 'hidden', name: 'student_id', value: d.studentId || '' },
+          { type: 'hidden', name: 'semester_id', value: d.semesterId || '' },
+          { name: 'full_name', label: 'Student Name', type: 'text', value: d.fullName || '', required: true },
+          { name: 'semester_label', label: 'Semester', type: 'text', value: d.semesterLabel || 'General', readonly: true },
+          { name: 'course_code', label: 'Course', type: 'text', value: d.courseCode || '', required: true },
+          { name: 'attendance_pct', label: 'Attendance (%)', type: 'number', value: d.attendancePct || '0', min: '0', max: '100', step: '0.1', required: true },
+          { name: 'internal_marks', label: 'Marks (0-100)', type: 'number', value: d.internalMarks || '0', min: '0', max: '100', step: '0.1', required: true },
+          { name: 'assignment_score', label: 'Assignment Score (0-100)', type: 'number', value: d.assignmentScore || '0', min: '0', max: '100', step: '0.1', required: true },
+          { name: 'lms_hours_weekly', label: 'Weekly Study Hours', type: 'number', value: d.lmsHoursWeekly || '0', min: '0', max: '168', step: '0.5', required: true },
+          { name: 'previous_gpa', label: 'Previous GPA (0-4.0)', type: 'number', value: d.previousGpa || '0', min: '0', max: '4', step: '0.01', required: true }
+        ]
+      });
+    };
+  })();
+</script>
+{% endblock %}

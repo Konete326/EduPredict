@@ -79,6 +79,18 @@
           <i class="fa-solid fa-gauge-high w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Dashboard</span>
         </a>
+        <a href="{% url 'panels:teacher_courses' %}"{% if request.resolver_match.view_name == 'panels:teacher_courses' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:teacher_courses' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-book-open w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">My Courses</span>
+        </a>
+        <a href="{% url 'panels:teacher_students' %}"{% if request.resolver_match.view_name == 'panels:teacher_students' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:teacher_students' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-user-graduate w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">My Students</span>
+        </a>
+        <a href="{% url 'panels:teacher_marks' %}"{% if request.resolver_match.view_name == 'panels:teacher_marks' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:teacher_marks' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-clipboard-check w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Attendance &amp; Marks</span>
+        </a>
       </div>
     </div>
     {% endif %}

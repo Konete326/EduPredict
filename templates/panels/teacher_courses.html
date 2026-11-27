@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
+  <div class="min-w-0 space-y-1">
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">My Courses</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">View your assigned courses, semesters, and class averages.</p>
+  </div>
+  <a href="{% url 'panels:teacher_marks' %}" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+    <i class="fa-solid fa-clipboard-check text-xs"></i>
+    <span>Enter Marks</span>
+  </a>
+</header>
+
+{% if db_error %}
+<div class="rounded-[12px] border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Notice: {{ db_error }}
+</div>
+{% endif %}
+
+<section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+  {% include 'components/metric_card.html' with title="Courses" value=total_courses|default:0 badge="Assigned" status="info" icon="fa-solid fa-book-open" %}
+  {% include 'components/metric_card.html' with title="Semesters" value=total_semesters|default:0 badge="Active" status="success" icon="fa-solid fa-calendar-days" %}
+  {% include 'components/metric_card.html' with title="Students" value=total_students|default:0 badge="Enrolled" status="info" icon="fa-solid fa-user-graduate" %}
+</section>
+
+<section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
+  {% include 'components/data_table.html' with table_id="teacher-courses-table" table_title="Assigned Courses" headers=course_headers rows=course_rows page_size=5 empty_message="No courses assigned to you yet." %}
+</section>
+{% endblock %}
