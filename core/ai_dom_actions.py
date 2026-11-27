@@ -23,7 +23,7 @@ ROLE_ROUTES = {
         ("/admin-panel/users/", "Users", ("users", "user management", "manage users", "accounts")),
         ("/admin-panel/teachers/", "Teachers", ("teachers", "faculty", "instructors", "manage teachers")),
         ("/admin-panel/students/", "Students", ("students", "student directory", "manage students", "enrollments")),
-        ("/admin-panel/classes/", "Classes & Semesters", ("classes", "semesters", "class", "semester", "manage classes")),
+        ("/admin-panel/semesters/", "Semesters", ("semesters", "semester", "manage semesters", "programs")),
         ("/admin-panel/courses/", "Courses", ("courses", "subjects", "course catalog", "manage courses")),
         ("/admin-panel/training/", "Training Data", ("training", "training data", "dataset")),
         ("/admin-panel/tickets/", "Help Tickets", ("tickets", "help tickets", "support tickets", "feedback")),
@@ -37,7 +37,7 @@ ROLE_PRD_CAPS = {
     "STUDENT": "Student scope: personal attendance %, marks, predicted GPA, risk level, notifications, and own profile/password.",
     "TEACHER": "Teacher scope: class dashboard overview, notifications, support tickets, and own profile/password.",
     "ANALYST": "Analyst scope: Data & ML Hub, dataset upload, RandomForest/Ridge/IsolationForest predictions, retrain & run ML, model evaluation metrics, live LMS stream simulation, model health & thresholds, and own profile/password.",
-    "ADMIN": "Admin scope: portal overview, user CRUD & teacher approval/rejection, teachers, students, classes & semesters, courses, training data upload, support ticket replies & lightbox review, MongoDB backups, portal settings, Theme Studio, and own profile/password.",
+    "ADMIN": "Admin scope: portal overview, user CRUD & teacher approval/rejection, teachers, students, semesters, courses, training data upload, support ticket replies & lightbox review, MongoDB backups, portal settings, Theme Studio, and own profile/password.",
 }
 
 ROLE_POLLS = {

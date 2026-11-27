@@ -4,7 +4,7 @@
 <header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
     <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Teachers</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Manage faculty accounts; teachers added in Users appear here automatically</p>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Manage teacher accounts. Teachers added in Users also show up here.</p>
   </div>
   <button type="button" onclick="openCreateTeacherModal()" title="Add a new teacher" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
     <i class="fa-solid fa-user-plus text-xs"></i>
@@ -14,18 +14,18 @@
 
 {% if db_error %}
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database message: {{ db_error }}
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Notice: {{ db_error }}
 </div>
 {% endif %}
 
 <section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-  {% include 'components/metric_card.html' with title="Total Teachers" value=total_teachers|default:0 badge="Faculty directory" status="info" icon="fa-solid fa-chalkboard-user" %}
-  {% include 'components/metric_card.html' with title="Active Teachers" value=active_teachers|default:0 badge="Approved & active" status="success" icon="fa-solid fa-user-check" %}
-  {% include 'components/metric_card.html' with title="Inactive Teachers" value=inactive_teachers|default:0 badge="Disabled or pending" status="warning" icon="fa-solid fa-user-slash" %}
+  {% include 'components/metric_card.html' with title="Total Teachers" value=total_teachers|default:0 badge="All teachers" status="info" icon="fa-solid fa-chalkboard-user" %}
+  {% include 'components/metric_card.html' with title="Active Teachers" value=active_teachers|default:0 badge="Active accounts" status="success" icon="fa-solid fa-user-check" %}
+  {% include 'components/metric_card.html' with title="Inactive Teachers" value=inactive_teachers|default:0 badge="Turned off or waiting" status="warning" icon="fa-solid fa-user-slash" %}
 </section>
 
 <section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
-  {% include 'components/data_table.html' with table_id="admin-teachers-table" table_title="Teacher Directory" headers=teacher_headers rows=teacher_rows page_size=5 empty_message="No teachers found yet. Add a teacher above or assign the Teacher role in Users." %}
+  {% include 'components/data_table.html' with table_id="admin-teachers-table" table_title="All Teachers" headers=teacher_headers rows=teacher_rows page_size=5 empty_message="No teachers found yet. Click Add Teacher above to add one." %}
 </section>
 {% endblock %}
 
@@ -47,7 +47,6 @@
           { name: 'full_name', label: 'Full Name', type: 'text', placeholder: 'Dr. Ayesha Khan', required: true },
           { name: 'email', label: 'Email', type: 'email', placeholder: 'ayesha.khan@edupredict.edu', required: true },
           { name: 'phone', label: 'Phone (Optional)', type: 'tel', placeholder: '+92 300 0000000' },
-          { name: 'department', label: 'Department', type: 'text', value: 'General', placeholder: 'Computer Science' },
           { name: 'is_active', label: 'Status', type: 'select', options: statusOptions, value: 'true', required: true },
           { name: 'password', label: 'Password', type: 'password', value: 'edupredict123', placeholder: 'At least 6 characters', required: true }
         ]
@@ -83,7 +82,6 @@
           { name: 'full_name', label: 'Full Name', type: 'text', value: d.fullName || '', required: true },
           { name: 'email', label: 'Email', type: 'email', value: d.email || '', required: true },
           { name: 'phone', label: 'Phone (Optional)', type: 'tel', value: d.phone || '' },
-          { name: 'department', label: 'Department', type: 'text', value: d.department || 'General' },
           { name: 'is_active', label: 'Status', type: 'select', options: statusOptions, value: d.isActive === 'false' ? 'false' : 'true', required: true },
           { name: 'password', label: 'New Password (Optional)', type: 'password', placeholder: 'Leave blank to keep current password' }
         ]

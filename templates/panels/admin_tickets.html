@@ -3,14 +3,14 @@
 {% block content %}
 <header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
-    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Help &amp; Support Tickets</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Review incoming questions from teachers, students, and analysts, and update statuses</p>
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Help Tickets</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Read questions from teachers, students, and analysts and send replies</p>
   </div>
 </header>
 
 {% if db_error %}
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database message: {{ db_error }}
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Notice: {{ db_error }}
 </div>
 {% endif %}
 
@@ -49,7 +49,7 @@
     <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
       <div class="grid grid-cols-2 gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3 text-xs">
         <div class="min-w-0">
-          <p class="text-[11px] font-medium text-[var(--text-muted)]">Submitted By</p>
+          <p class="text-[11px] font-medium text-[var(--text-muted)]">Sent By</p>
           <p id="drawer-ticket-user" class="truncate font-semibold text-[var(--text-primary)]">-</p>
         </div>
         <div class="min-w-0">
@@ -64,7 +64,7 @@
       </div>
 
       <div class="space-y-2">
-        <p class="text-xs font-semibold text-[var(--text-secondary)]">Attached Screenshots</p>
+        <p class="text-xs font-semibold text-[var(--text-secondary)]">Screenshots</p>
         <div id="drawer-ticket-attachments" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5"></div>
       </div>
 
@@ -82,13 +82,13 @@
         <input id="drawer-reply-ticket-id" type="hidden" name="ticket_id" value="">
         <input id="drawer-reply-filter-status" type="hidden" name="filter_status" value="{{ selected_status }}">
         <div class="space-y-1">
-          <label for="drawer-reply-text" class="block text-xs font-medium text-[var(--text-secondary)]">Quick Reply</label>
+          <label for="drawer-reply-text" class="block text-xs font-medium text-[var(--text-secondary)]">Your Reply</label>
           <textarea id="drawer-reply-text" name="reply_text" rows="3" required placeholder="Write a helpful reply for this user..." class="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none"></textarea>
         </div>
         <div class="flex flex-wrap items-center justify-between gap-2">
           <select id="drawer-resolve-ticket" name="resolve_ticket" aria-label="Ticket status after reply" class="h-9 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 text-xs font-medium text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
-            <option value="1" selected>Mark as Resolved</option>
-            <option value="0">Keep Current Status</option>
+            <option value="1" selected>Mark as Solved</option>
+            <option value="0">Keep Status as Is</option>
           </select>
           <button type="submit" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
             <i class="fa-solid fa-reply text-xs" aria-hidden="true"></i>
@@ -102,15 +102,15 @@
       <div class="flex flex-wrap items-center gap-1.5">
         <button id="drawer-edit-reply-btn" type="button" title="Open reply modal" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
           <i class="fa-solid fa-pen-to-square text-[11px] text-[var(--accent-primary)]" aria-hidden="true"></i>
-          <span>Edit Modal</span>
+          <span>Edit Reply</span>
         </button>
         <button id="drawer-delete-reply-btn" type="button" title="Remove admin reply" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--status-danger)] transition-colors hover:bg-[var(--bg-elevated)]">
           <i class="fa-solid fa-comment-slash text-[11px]" aria-hidden="true"></i>
-          <span>Clear Reply</span>
+          <span>Delete Reply</span>
         </button>
-        <button id="drawer-toggle-status-btn" type="button" title="Toggle ticket status" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+        <button id="drawer-toggle-status-btn" type="button" title="Change ticket status" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
           <i class="fa-solid fa-circle-check text-[11px] text-[var(--status-success)]" aria-hidden="true"></i>
-          <span>Toggle Resolve</span>
+          <span>Change Status</span>
         </button>
       </div>
       <button type="button" onclick="closeTicketDetailDrawer()" class="inline-flex items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">Close</button>
@@ -129,9 +129,9 @@
       const d = btn ? btn.dataset : {};
       const isOpen = String(d.status || 'OPEN').toUpperCase() === 'OPEN';
       window.openConfirmModal({
-        title: isOpen ? 'Mark Ticket Resolved' : 'Reopen Ticket',
+        title: isOpen ? 'Mark Ticket Solved' : 'Reopen Ticket',
         message: (isOpen ? 'Mark ticket ' : 'Reopen ticket ') + (d.ticketId || '') + (d.subject ? ' ("' + d.subject + '")' : '') + '?',
-        confirmText: isOpen ? 'Mark Resolved' : 'Reopen',
+        confirmText: isOpen ? 'Mark Solved' : 'Reopen',
         onConfirmUrl: adminTicketsUrl,
         fields: {
           action: 'toggle_status',
@@ -152,9 +152,9 @@
           { type: 'hidden', name: 'action', value: 'reply_ticket' },
           { type: 'hidden', name: 'ticket_id', value: d.ticketId || '' },
           { type: 'hidden', name: 'filter_status', value: d.filterStatus || selectedStatus },
-          { type: 'textarea', name: 'feedback_summary', label: 'User Feedback', value: feedbackSummary || 'No feedback text provided.', readonly: true, rows: 2 },
+          { type: 'textarea', name: 'feedback_summary', label: 'User Message', value: feedbackSummary || 'No message provided.', readonly: true, rows: 2 },
           { type: 'textarea', name: 'reply_text', label: 'Admin Reply', value: d.adminReply || '', placeholder: 'Write a clear, helpful reply for this user...', required: true, rows: 3 },
-          { type: 'select', name: 'resolve_ticket', label: 'Ticket Status After Reply', value: '1', options: [{ value: '1', label: 'Mark as Resolved' }, { value: '0', label: 'Keep Current Status' }] }
+          { type: 'select', name: 'resolve_ticket', label: 'Status After Reply', value: '1', options: [{ value: '1', label: 'Mark as Solved' }, { value: '0', label: 'Keep Status as Is' }] }
         ]
       });
     };
@@ -162,8 +162,8 @@
     window.openDeleteReplyModal = function (btn) {
       const d = btn ? btn.dataset : {};
       window.openConfirmModal({
-        title: 'Delete Admin Reply',
-        message: 'Remove your admin reply from ticket ' + (d.ticketId || '') + '?',
+        title: 'Delete Reply',
+        message: 'Remove your reply from ticket ' + (d.ticketId || '') + '?',
         confirmText: 'Delete Reply',
         onConfirmUrl: adminTicketsUrl,
         fields: {

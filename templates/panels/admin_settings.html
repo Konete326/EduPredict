@@ -4,11 +4,11 @@
 <header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
     <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Portal Settings</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Set active school terms, passing rules, dropout warning limits, alerts, and official portal theme</p>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Set active university terms, passing rules, risk warning limits, alerts, and portal theme</p>
   </div>
   <div class="flex flex-wrap items-center gap-2 shrink-0">
-    <button type="button" onclick="openThemeStudioModal()" title="Open Theme & Appearance Live Studio" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
-      <i class="fa-solid fa-palette text-xs" aria-hidden="true"></i><span>Open Live Studio</span>
+    <button type="button" onclick="openThemeStudioModal()" title="Customize portal colors and theme" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <i class="fa-solid fa-palette text-xs" aria-hidden="true"></i><span>Theme &amp; Colors</span>
     </button>
     <button type="button" onclick="openResetDefaultsModal()" title="Restore default portal settings" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
       <i class="fa-solid fa-rotate-left text-xs text-[var(--status-danger)]" aria-hidden="true"></i><span>Reset Defaults</span>
@@ -18,19 +18,19 @@
 
 {% if db_error %}
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-  <i class="fa-solid fa-circle-exclamation mr-2" aria-hidden="true"></i>Database message: {{ db_error }}
+  <i class="fa-solid fa-circle-exclamation mr-2" aria-hidden="true"></i>Notice: {{ db_error }}
 </div>
 {% endif %}
 
 <div role="tablist" aria-label="Portal settings tabs" class="flex flex-wrap items-center gap-2 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1.5">
   <button type="button" role="tab" aria-selected="true" data-settings-tab="general" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors">
-    <i class="fa-solid fa-graduation-cap text-xs" aria-hidden="true"></i><span>Academic &amp; Risk Thresholds</span>
+    <i class="fa-solid fa-graduation-cap text-xs" aria-hidden="true"></i><span>Term &amp; Risk Rules</span>
   </button>
   <button type="button" role="tab" aria-selected="false" data-settings-tab="alerts" class="inline-flex h-9 items-center gap-2 rounded-[12px] px-3.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-    <i class="fa-solid fa-bell text-xs" aria-hidden="true"></i><span>Auto-Alerts &amp; Permissions</span>
+    <i class="fa-solid fa-bell text-xs" aria-hidden="true"></i><span>Alerts &amp; Access Rules</span>
   </button>
   <button type="button" role="tab" aria-selected="false" data-settings-tab="summary" class="inline-flex h-9 items-center gap-2 rounded-[12px] px-3.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-    <i class="fa-solid fa-table-list text-xs" aria-hidden="true"></i><span>Active Summary &amp; Appearance</span>
+    <i class="fa-solid fa-table-list text-xs" aria-hidden="true"></i><span>Current Settings &amp; Theme</span>
   </button>
 </div>
 
@@ -53,8 +53,8 @@
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
       <div class="xl:col-span-6 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
         <div>
-          <h3 class="text-sm font-semibold text-[var(--text-primary)]">Academic &amp; General Rules</h3>
-          <p class="text-xs text-[var(--text-muted)]">Portal branding, active school term, and minimum attendance rule.</p>
+          <h3 class="text-sm font-semibold text-[var(--text-primary)]">University &amp; Term Rules</h3>
+          <p class="text-xs text-[var(--text-muted)]">Portal name, active university term, and minimum attendance rule.</p>
         </div>
         <div class="space-y-1">
           <label for="setting-institution-name" class="block text-xs font-medium text-[var(--text-secondary)]">Portal Name</label>
@@ -85,8 +85,8 @@
       <div class="xl:col-span-6 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 flex flex-col justify-between gap-3">
         <div class="space-y-3">
           <div>
-            <h3 class="text-sm font-semibold text-[var(--text-primary)]">ML Risk Thresholds</h3>
-            <p class="text-xs text-[var(--text-muted)]">Set warning cutoffs for dropout risk checks and sudden drop detection.</p>
+            <h3 class="text-sm font-semibold text-[var(--text-primary)]">Student Risk Limits</h3>
+            <p class="text-xs text-[var(--text-muted)]">Set warning limits for student risk checks and sudden grade drops.</p>
           </div>
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div class="space-y-1">
@@ -104,7 +104,7 @@
           </div>
           <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2.5 text-xs">
             <span class="text-[var(--text-secondary)]">Alerts: <strong class="text-[var(--text-primary)]">Student {% if settings_data.auto_student_alerts %}On{% else %}Off{% endif %}</strong> &middot; <strong class="text-[var(--text-primary)]">Teacher {% if settings_data.auto_teacher_alerts %}On{% else %}Off{% endif %}</strong></span>
-            <button type="button" onclick="switchSettingsTab('alerts')" class="font-semibold text-[var(--accent-primary)] hover:underline">Configure Alerts</button>
+            <button type="button" onclick="switchSettingsTab('alerts')" class="font-semibold text-[var(--accent-primary)] hover:underline">Change Alert Settings</button>
           </div>
         </div>
         <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-3">
@@ -120,8 +120,8 @@
   <div id="settings-panel-alerts" role="tabpanel" data-settings-panel="alerts" class="hidden space-y-4">
     <section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-4">
       <div>
-        <h3 class="text-sm sm:text-base font-semibold text-[var(--text-primary)]">Automated Alert Switches &amp; Role Guardrails</h3>
-        <p class="text-xs text-[var(--text-muted)]">Choose who receives automatic notifications when attendance or risk warnings trigger.</p>
+        <h3 class="text-sm sm:text-base font-semibold text-[var(--text-primary)]">Automatic Alerts &amp; Account Rules</h3>
+        <p class="text-xs text-[var(--text-muted)]">Choose who gets automatic alerts when attendance or risk warnings happen.</p>
       </div>
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label for="setting-student-alerts" class="flex items-start gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-4 cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors">
@@ -130,16 +130,16 @@
         </label>
         <label for="setting-teacher-alerts" class="flex items-start gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-4 cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors">
           <input id="setting-teacher-alerts" name="auto_teacher_alerts" type="checkbox" value="on" {% if settings_data.auto_teacher_alerts %}checked{% endif %} class="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--border-subtle)] accent-[var(--accent-primary)] cursor-pointer">
-          <span class="min-w-0"><span class="block text-sm font-semibold text-[var(--text-primary)]">Auto Teacher Alerts</span><span class="block mt-0.5 text-xs text-[var(--text-secondary)]">Notify instructors when sudden performance drops or anomalies are flagged.</span></span>
+          <span class="min-w-0"><span class="block text-sm font-semibold text-[var(--text-primary)]">Auto Teacher Alerts</span><span class="block mt-0.5 text-xs text-[var(--text-secondary)]">Notify teachers when a student has a sudden drop in marks or attendance.</span></span>
         </label>
       </div>
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 text-xs">
-        <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3"><p class="font-semibold text-[var(--text-primary)]">Teacher Approval Guard</p><p class="mt-1 text-[var(--text-muted)]">New teacher self-signups stay pending until approved by Admin.</p></div>
-        <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3"><p class="font-semibold text-[var(--text-primary)]">Self-Action Protection</p><p class="mt-1 text-[var(--text-muted)]">Admins cannot delete, deactivate, or downgrade their active account.</p></div>
-        <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3"><p class="font-semibold text-[var(--text-primary)]">Admin-Only Theme Studio</p><p class="mt-1 text-[var(--text-muted)]">Brand tokens are governed from Portal Settings for consistent UI.</p></div>
+        <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3"><p class="font-semibold text-[var(--text-primary)]">Teacher Sign-Up Approval</p><p class="mt-1 text-[var(--text-muted)]">New teacher sign-ups stay pending until approved by Admin.</p></div>
+        <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3"><p class="font-semibold text-[var(--text-primary)]">Own Account Protection</p><p class="mt-1 text-[var(--text-muted)]">Admins cannot delete, turn off, or change their own role.</p></div>
+        <div class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3"><p class="font-semibold text-[var(--text-primary)]">Admin Theme Control</p><p class="mt-1 text-[var(--text-muted)]">Portal colors and themes are managed here by the Admin.</p></div>
       </div>
       <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-3">
-        <p class="text-xs text-[var(--text-muted)]">Academic &amp; Risk values stay preserved when saving from this tab.</p>
+        <p class="text-xs text-[var(--text-muted)]">Your term and risk rules stay saved when you update this tab.</p>
         <button type="submit" title="Save portal settings" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
           <i class="fa-solid fa-floppy-disk text-xs" aria-hidden="true"></i><span>Save Settings</span>
         </button>
@@ -153,17 +153,17 @@
     <div class="min-w-0 space-y-0.5">
       <div class="flex flex-wrap items-center gap-2">
         <i class="fa-solid fa-palette text-sm text-[var(--accent-primary)]" aria-hidden="true"></i>
-        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Theme &amp; Appearance Live Studio</h3>
-        <span class="inline-flex items-center rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--accent-primary)]">Live Studio</span>
+        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Theme &amp; Colors</h3>
+        <span class="inline-flex items-center rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--accent-primary)]">Customize</span>
       </div>
-      <p class="text-xs text-[var(--text-muted)]">Customize Light or OLED Dark mode, sidebar shell colors, brand accent, and spacing for this panel.</p>
+      <p class="text-xs text-[var(--text-muted)]">Choose Light or Dark mode, sidebar colors, accent colors, and spacing.</p>
     </div>
-    <button type="button" onclick="openThemeStudioModal()" title="Open Theme & Appearance Live Studio" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
-      <i class="fa-solid fa-sliders text-xs" aria-hidden="true"></i><span>Open Live Studio</span>
+    <button type="button" onclick="openThemeStudioModal()" title="Customize portal colors and theme" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <i class="fa-solid fa-sliders text-xs" aria-hidden="true"></i><span>Open Theme Settings</span>
     </button>
   </section>
   <section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
-    {% include 'components/data_table.html' with table_id="admin-settings-table" table_title="Active Configuration Summary" headers=setting_headers rows=setting_rows page_size=5 empty_message="No settings configured." %}
+    {% include 'components/data_table.html' with table_id="admin-settings-table" table_title="Saved Settings" headers=setting_headers rows=setting_rows page_size=5 empty_message="No settings saved yet." %}
   </section>
 </div>
 {% endblock %}
@@ -191,7 +191,7 @@
     const form = document.getElementById('admin-settings-form');
     if (form) form.addEventListener('invalid', function () { window.switchSettingsTab('general'); }, true);
     window.openResetDefaultsModal = function () {
-      window.openConfirmModal({ title: 'Reset Portal Settings', message: 'Restore all academic rules, risk limits, and alert switches back to default values?', confirmText: 'Reset Defaults', onConfirmUrl: adminSettingsUrl, fields: { action: 'reset_defaults' } });
+      window.openConfirmModal({ title: 'Reset Portal Settings', message: 'Reset all term rules, risk limits, and alert switches back to their starting values?', confirmText: 'Reset Defaults', onConfirmUrl: adminSettingsUrl, fields: { action: 'reset_defaults' } });
     };
   })();
 </script>

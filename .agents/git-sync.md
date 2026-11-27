@@ -61,27 +61,30 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 100 Admin University Academic CRUD System"
-active_branch_merged_to_main: "feature/p100-admin-academic-crud -> main"
-project_phase: "Phase 100: Admin Teachers, Students, Classes & Semesters, and Courses CRUD + Batch/Class Removal"
+last_updated_by_agent: "Phase 101-102 University Semesters, Searchable Dropdowns, Auto-Codes, 500-Row Dataset & Plain English Admin UI"
+active_branch_merged_to_main: "feature/p101-university-semesters-searchable -> main"
+project_phase: "Phase 102: University Semesters, Searchable Modals, 500-Row Dataset, Delete Modal & Everyday English"
 
 completed_modules:
-  - "Phase 1-99: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Targo Public/Auth/404 Pages, Admin Dashboard Cleanup."
-  - "Phase 100 (Admin Academic CRUD & Batch/Class Removal):"
-      - "core/db.py, panels/admin_services.py, panels/admin_academic_services.py: added classes_col() & semesters_col(); made batch optional in user CRUD; implemented full CRUD + auto-sync of Users(TEACHER/STUDENT) into Teachers/Students, Class creation with auto-generated Semesters 1..N + Semester CRUD, and Course CRUD assigning Class, Semester & Teacher."
-      - "panels/views_admin_academic.py, panels/urls.py, core/ai_dom_actions.py: added @role_required(['ADMIN']) routes /admin-panel/{teachers,students,classes,courses}/."
-      - "templates/panels/admin_users.html, templates/accounts/auth.html, templates/components/sidebar.html, templates/panels/admin_{teachers,students,classes,courses}.html: removed Batch/Class from Users modal & Registration, added 4 Admin sidebar links & full CRUD templates."
-      - "panels/test_admin_academic.py, panels/test_admin.py: added 5 academic CRUD & role-sync tests and updated removed-routes test."
+  - "Phase 1-100: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Targo Public/Auth/404 Pages, Admin Academic CRUD."
+  - "Phase 101 (University Semesters, Searchable Dropdowns, Auto-Codes & No Credits):"
+      - "templates/components/form_modal.html, static/js/app.js: added searchable_select with live suggestions and headerBadge auto-code display at modal top."
+      - "panels/{admin_services,admin_academic_services,views_admin_academic,urls}.py, core/ai_dom_actions.py, templates/components/sidebar.html, templates/panels/admin_{semesters,courses,students}.html: replaced Classes with University Semesters (/admin-panel/semesters/), removed School/College levels and Course Credits, and auto-generated hidden Course/Semester codes."
+  - "Phase 102 (500-Row Training Dataset, Persistence, Delete Modal & Plain English):"
+      - "static/samples/university_training_dataset_500.csv: added 500-row detailed university dataset."
+      - "panels/{admin_services,admin_directory_services,views_admin}.py, templates/panels/admin_training.html: fixed dataset persistence across refresh with dataset_id, added 1-click 500-row training and Delete Dataset with openConfirmModal."
+      - "templates/components/{sidebar,topbar}.html, templates/panels/admin_*.html: cleaned Theme & Colors button and converted Admin Panel copy to simple everyday English."
+      - "panels/{test_admin_academic,test_admin}.py: added 8 academic/training tests and updated dashboard title check."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "manage.py test: Ran 133 tests in 77.746s (133/133 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 9.59s - System 100% Operational."
-  - "Zero-comment & line-cap (<= 400) audit: 0 comments across all 14 new/modified files, max 337 lines."
-  - "MongoDB Atlas cleaned back to 1 Admin user (admin@gmail.com) only."
+  - "node --check static/js/app.js: exited 0."
+  - "Zero-comment & line-cap (<= 400) audit on 23 modified/new files: 0 comments, max 373 lines."
+  - "manage.py test: Ran 136 tests (136/136 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 9.78s - System 100% Operational."
 
 active_routes_and_files:
-  - "core/{db,ai_dom_actions}.py, panels/{urls,admin_services,admin_academic_services,views_admin_academic,test_admin,test_admin_academic}.py, templates/{accounts/auth,components/sidebar,panels/admin_users,panels/admin_teachers,panels/admin_students,panels/admin_classes,panels/admin_courses}.html, .agents/git-sync.md"
+  - "static/samples/university_training_dataset_500.csv, static/js/app.js, core/ai_dom_actions.py, panels/{urls,admin_services,admin_directory_services,admin_academic_services,views_admin,views_admin_academic,test_admin,test_admin_academic}.py, templates/{components/form_modal,components/sidebar,components/topbar,panels/admin_*}.html, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

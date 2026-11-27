@@ -42,10 +42,35 @@
     setModalOpen(modal, true);
   }
   const closeComingSoonModal = () => setModalOpen(byId('coming-soon-modal'), false);
+  function createSearchableSelect(field, fieldId) {
+    const box = mk('div', 'relative', undefined, { 'data-searchable-select': 'true' }), opts = (field.options || []).map((o) => (typeof o === 'object' && o !== null ? { value: String(o.value ?? ''), label: String(o.label ?? o.value ?? '') } : { value: String(o), label: String(o) }));
+    const curVal = field.value !== undefined && field.value !== null ? String(field.value) : '', matched = opts.find((o) => o.value === curVal);
+    const hidden = mk('input', '', undefined, { type: 'hidden', name: field.name || '', value: curVal, 'data-ss-value': 'true' });
+    const input = mk('input', FIELD_CLS + ' pr-8', undefined, { id: fieldId, type: 'text', autocomplete: 'off', placeholder: field.placeholder || 'Search or select...', value: matched ? matched.label : (field.allowCustom ? curVal : '') });
+    if (field.required) input.required = true;
+    const chev = mk('i', 'fa-solid fa-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[var(--text-muted)]');
+    const list = mk('div', 'hidden absolute left-0 right-0 top-full z-50 mt-1 max-h-44 overflow-y-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1 shadow-xl');
+    const render = (q) => {
+      const term = String(q || '').trim().toLowerCase(), hits = term ? opts.filter((o) => o.label.toLowerCase().includes(term) || o.value.toLowerCase().includes(term)) : opts;
+      list.innerHTML = '';
+      if (!hits.length) { list.appendChild(mk('div', 'px-2.5 py-2 text-xs text-[var(--text-muted)]', field.allowCustom ? 'Press Enter or keep typed value' : 'No matching suggestions')); return; }
+      hits.slice(0, 20).forEach((o) => {
+        const btn = mk('button', 'flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]' + (o.value === hidden.value ? ' bg-[var(--accent-soft)] font-semibold text-[var(--accent-primary)]' : ''), o.label, { type: 'button' });
+        btn.addEventListener('mousedown', (ev) => { ev.preventDefault(); hidden.value = o.value; input.value = o.label; list.classList.add('hidden'); hidden.dispatchEvent(new Event('change', { bubbles: true })); });
+        list.appendChild(btn);
+      });
+    };
+    input.addEventListener('focus', () => { render(input.value === (opts.find((o) => o.value === hidden.value)?.label || '') ? '' : input.value); list.classList.remove('hidden'); });
+    input.addEventListener('input', () => { if (field.allowCustom) hidden.value = input.value.trim(); else { const exact = opts.find((o) => o.label.toLowerCase() === input.value.trim().toLowerCase()); hidden.value = exact ? exact.value : ''; } render(input.value); list.classList.remove('hidden'); });
+    input.addEventListener('blur', () => setTimeout(() => list.classList.add('hidden'), 140));
+    box.append(hidden, input, chev, list);
+    return box;
+  }
   function createFieldNode(field) {
     if (field.type === 'hidden') return mk('input', '', undefined, { type: 'hidden', name: field.name || '', value: field.value !== undefined ? field.value : '', hidden: 'true' });
     const wrapper = mk('div', 'space-y-1.5'), fieldId = 'modal-field-' + (field.name || Math.random().toString(36).slice(2, 8));
     const label = mk('label', 'block text-sm font-medium text-[var(--text-secondary)]', field.label || field.name || 'Field', { for: fieldId });
+    if (field.type === 'searchable_select') { wrapper.append(label, createSearchableSelect(field, fieldId)); return wrapper; }
     const tag = field.type === 'textarea' ? 'textarea' : (field.type === 'select' ? 'select' : 'input'), el = mk(tag, FIELD_CLS, undefined, { id: fieldId });
     if (tag === 'input') el.type = field.type || 'text';
     if (tag === 'textarea') el.rows = field.rows || 3;
@@ -69,10 +94,11 @@
     } else wrapper.append(label, el);
     return wrapper;
   }
-  function setupModalShell(title, isBento) {
-    const modal = byId('form-modal'), dialogEl = byId('form-modal-dialog'), titleEl = byId('form-modal-title'), formEl = byId('form-modal-element'), fieldsEl = byId('form-modal-fields'), submitBtn = byId('form-modal-submit-btn'), cancelBtn = byId('form-modal-cancel-btn');
+  function setupModalShell(title, isBento, headerBadge) {
+    const modal = byId('form-modal'), dialogEl = byId('form-modal-dialog'), titleEl = byId('form-modal-title'), badgeEl = byId('form-modal-badge'), formEl = byId('form-modal-element'), fieldsEl = byId('form-modal-fields'), submitBtn = byId('form-modal-submit-btn'), cancelBtn = byId('form-modal-cancel-btn');
     if (!modal || !titleEl || !formEl || !fieldsEl) return null;
     titleEl.textContent = title;
+    if (badgeEl) { badgeEl.textContent = headerBadge || ''; badgeEl.classList.toggle('hidden', !headerBadge); }
     if (dialogEl) { dialogEl.classList.toggle('max-w-2xl', isBento); dialogEl.classList.toggle('max-w-lg', !isBento); }
     fieldsEl.className = isBento ? 'flex-1 overflow-y-auto px-5 pt-4 pb-6 grid grid-cols-1 md:grid-cols-2 gap-3.5 items-start' : 'flex-1 overflow-y-auto px-5 pt-4 pb-6 space-y-3.5';
     fieldsEl.innerHTML = '';
@@ -81,7 +107,7 @@
   }
   function openFormModal(options) {
     const opts = options || {}, visibleFields = Array.isArray(opts.fields) ? opts.fields.filter((f) => f && f.type !== 'hidden') : [], isBento = visibleFields.length >= 5;
-    const ctx = setupModalShell(opts.title || 'Form', isBento); if (!ctx) return;
+    const ctx = setupModalShell(opts.title || 'Form', isBento, opts.headerBadge || ''); if (!ctx) return;
     const actionUrl = opts.actionUrl || '';
     ctx.formEl.setAttribute('action', actionUrl); ctx.formEl.setAttribute('method', opts.method || 'post');
     if (ctx.submitBtn) { ctx.submitBtn.classList.remove('hidden'); ctx.submitBtn.textContent = opts.submitText || 'Save'; }

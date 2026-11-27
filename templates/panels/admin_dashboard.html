@@ -3,40 +3,40 @@
 {% block content %}
 <header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
-    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">System Overview</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Live MongoDB Atlas metrics, user accounts, and student risk breakdown</p>
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">University Overview</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Live university overview, user accounts, and student risk summary</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
-    <a href="{% url 'panels:admin_backup_export' %}?format=json" title="Save full database backup as JSON" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
+    <a href="{% url 'panels:admin_backup_export' %}?format=json" title="Download a full backup file" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
       <i class="fa-solid fa-file-code"></i>
-      <span>Backup JSON</span>
+      <span>Download Backup</span>
     </a>
-    <a href="{% url 'panels:admin_backup_export' %}?format=csv" title="Save summary report as CSV" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+    <a href="{% url 'panels:admin_backup_export' %}?format=csv" title="Download a summary spreadsheet" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
       <i class="fa-solid fa-file-csv text-[var(--status-success)]"></i>
-      <span>Export CSV</span>
+      <span>Download Report</span>
     </a>
   </div>
 </header>
 
 {% if db_error %}
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database message: {{ db_error }}
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Notice: {{ db_error }}
 </div>
 {% endif %}
 
 <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
   {% include 'components/metric_card.html' with title="Total Students" value=kpis.total_students badge=kpis.student_accounts|stringformat:"s"|add:" accounts" status="info" icon="fa-solid fa-user-graduate" %}
-  {% include 'components/metric_card.html' with title="Active Teachers" value=kpis.active_teachers badge="Faculty accounts" status="success" icon="fa-solid fa-chalkboard-user" %}
+  {% include 'components/metric_card.html' with title="Active Teachers" value=kpis.active_teachers badge="Teaching staff" status="success" icon="fa-solid fa-chalkboard-user" %}
   {% include 'components/metric_card.html' with title="High Risk Students" value=kpis.high_risk_count badge=kpis.total_predictions|stringformat:"s"|add:" checked" status="danger" icon="fa-solid fa-triangle-exclamation" %}
-  {% include 'components/metric_card.html' with title="System Health" value=kpis.system_status badge=kpis.open_tickets|stringformat:"s"|add:" open tickets" status="success" icon="fa-solid fa-heart-pulse" %}
+  {% include 'components/metric_card.html' with title="Portal Status" value=kpis.system_status badge=kpis.open_tickets|stringformat:"s"|add:" open tickets" status="success" icon="fa-solid fa-heart-pulse" %}
 </section>
 
 <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
   <div class="xl:col-span-7 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
     <div class="mb-2.5 flex items-center justify-between gap-2">
       <div>
-        <h3 class="text-sm font-semibold text-[var(--text-primary)]">User Accounts Breakdown</h3>
-        <p class="text-xs text-[var(--text-muted)]">Active accounts across university roles</p>
+        <h3 class="text-sm font-semibold text-[var(--text-primary)]">User Accounts</h3>
+        <p class="text-xs text-[var(--text-muted)]">Active accounts by university role</p>
       </div>
       <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Users</span>
     </div>
@@ -46,10 +46,10 @@
   <div class="xl:col-span-5 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
     <div class="mb-2.5 flex items-center justify-between gap-2">
       <div>
-        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Dropout Risk</h3>
-        <p class="text-xs text-[var(--text-muted)]">Students in Low, Medium, and High risk groups</p>
+        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Student Risk Levels</h3>
+        <p class="text-xs text-[var(--text-muted)]">Students grouped by low, medium, and high risk</p>
       </div>
-      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">{{ kpis.avg_attendance }}% Att</span>
+      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">{{ kpis.avg_attendance }}% Attendance</span>
     </div>
     <div class="relative h-48 w-full"><canvas id="chart-admin-risk"></canvas></div>
   </div>

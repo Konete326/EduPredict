@@ -6,7 +6,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from core.decorators import get_dashboard_route, login_required_custom, role_required
 from panels.admin_audit_services import get_default_portal_settings_context, get_portal_settings, reset_portal_settings, update_portal_settings
 from panels.admin_seed import get_default_admin_overview_context
-from panels.admin_services import build_backup_payload, build_ticket_table_data, build_user_table_data, create_ticket_record, create_user_record, delete_ticket_record, delete_user_record, get_admin_overview_context, get_admin_training_context, get_master_training_status, ingest_master_training_dataset, list_tickets, list_users, mark_notifications_read, reject_teacher_account, toggle_ticket_status, toggle_user_status, update_user_record
+from panels.admin_services import build_backup_payload, build_ticket_table_data, build_user_table_data, create_ticket_record, create_user_record, delete_ticket_record, delete_training_dataset, delete_user_record, get_admin_overview_context, get_admin_training_context, get_master_training_status, ingest_master_training_dataset, list_tickets, list_users, mark_notifications_read, reject_teacher_account, toggle_ticket_status, toggle_user_status, train_builtin_university_dataset, update_user_record
 from panels.directory_card_services import build_admin_user_cards
 from panels.notification_services import delete_ticket_reply, reply_to_ticket
 def _param(request, key, default=""):
@@ -43,8 +43,24 @@ def admin_dashboard(request):
     return render(request, "panels/admin_dashboard.html", context)
 @role_required(["ADMIN"])
 def admin_training(request):
-    if request.method == "POST" and _param(request, "action").lower() == "upload_master_csv":
-        return _handle_master_csv_upload(request)
+    if request.method == "POST":
+        action = _param(request, "action").lower()
+        if action == "upload_master_csv":
+            return _handle_master_csv_upload(request)
+        if action == "train_builtin_dataset":
+            try:
+                res, err = train_builtin_university_dataset(actor_name=_actor_name(request))
+                _flash_result(request, res is not None, err, f"Built-in university dataset trained ({res['rows_processed']} records, {res['predictions_generated']} live predictions)." if res else "")
+            except Exception as exc:
+                messages.error(request, f"Built-in training error: {exc}")
+            return redirect("panels:admin_training")
+        if action == "delete_training_dataset":
+            try:
+                ok, err = delete_training_dataset(dataset_id=_param(request, "dataset_id"), filename=_param(request, "filename"), actor_name=_actor_name(request))
+                _flash_result(request, ok, err, "Training dataset deleted successfully.")
+            except Exception as exc:
+                messages.error(request, f"Delete dataset error: {exc}")
+            return redirect("panels:admin_training")
     context = {"page_title": "Training Data", "active_role": "ADMIN", "db_error": None, "ml_status": {"trained": False, "records_count": 0, "filename": "", "uploaded_at": ""}, "training_uploads": [], "training_headers": [], "training_rows": []}
     try:
         context.update(get_admin_training_context())

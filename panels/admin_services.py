@@ -1,5 +1,7 @@
+import io
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -15,7 +17,7 @@ from panels.admin_seed import _format_dt, _safe_int, build_backup_payload, ensur
 from panels.notification_services import create_notification
 from panels.phase62_services import reject_teacher_account
 VALID_TICKET_STATUSES = ("OPEN", "RESOLVED")
-VALID_PROGRAM_LEVELS = ("School / Junior", "College / Intermediate", "BS / Undergraduate", "MS / Graduate")
+VALID_PROGRAM_LEVELS = ("BS / Undergraduate", "MS / Graduate", "PhD / Doctorate")
 LIVE_RECORD_QUERY = {"is_training_dataset": {"$ne": True}}
 def _load_live_admin_overview():
     base = _base_admin_overview()
@@ -121,23 +123,59 @@ def toggle_user_status(user_id, actor_user_id=None, actor_email="", actor_name="
         _audit("USERS", "TOGGLE_USER", f"{'Activated' if new_state else 'Deactivated'} user {clean_uid}.", "SUCCESS" if new_state else "WARNING", actor=actor_name)
     invalidate_cache()
     return new_state, None
+def _generate_unique_dataset_id(col):
+    base = 1001 + col.count_documents({})
+    for offset in range(30):
+        candidate = f"DS-{base + offset}"
+        if col.find_one({"dataset_id": candidate}, {"_id": 1}) is None:
+            return candidate
+    return f"DS-{uuid.uuid4().hex[:6].upper()}"
 def ingest_master_training_dataset(file_obj, actor_name="System Admin", is_training_dataset=True):
     if file_obj is None: return None, "Please select a master training CSV or Excel file."
-    ingest_res = ingest_dataset(file_obj=file_obj, uploaded_by=actor_name, mode="upload", is_training_dataset=bool(is_training_dataset))
+    ingest_res = ingest_dataset(file_obj=file_obj, uploaded_by=actor_name, mode="upload", is_training_dataset=True)
     if ingest_res.get("status") != "COMPLETED": return None, ingest_res.get("error") or "Master training dataset upload failed."
     pred_res, now = run_prediction_pipeline(persist=True), datetime.now(timezone.utc)
     rows_count, filename = int(ingest_res.get("rows_processed") or 0), str(ingest_res.get("filename") or "master_training.csv")
+    dataset_id = f"DS-{uuid.uuid4().hex[:6].upper()}"
     try:
         log_col = datasets_log_col()
         latest = next(iter(log_col.find({"filename": filename, "status": "COMPLETED"}).sort("uploaded_at", DESCENDING).limit(1)), None)
-        marker = {"is_training_dataset": True, "model_trained": True, "model_version": str(pred_res.get("model_version") or ""), "predictions_generated": int(pred_res.get("predictions_generated") or 0), "columns": list((ingest_res.get("column_mappings") or {}).values())[:12], "preview_rows": (ingest_res.get("preview_rows") or [])[:5], "trained_at": now}
+        dataset_id = str((latest or {}).get("dataset_id") or "").strip() or _generate_unique_dataset_id(log_col)
+        marker = {"dataset_id": dataset_id, "is_training_dataset": True, "model_trained": True, "model_version": str(pred_res.get("model_version") or ""), "predictions_generated": int(pred_res.get("predictions_generated") or 0), "columns": list((ingest_res.get("column_mappings") or {}).values())[:12], "preview_rows": (ingest_res.get("preview_rows") or [])[:5], "trained_at": now}
         if latest and latest.get("_id") is not None: log_col.update_one({"_id": latest["_id"]}, {"$set": marker})
         else: log_col.insert_one({"filename": filename, "uploaded_by": actor_name or "System Admin", "rows_processed": rows_count, "missing_values_fixed": int(ingest_res.get("missing_values_fixed") or 0), "status": "COMPLETED", "uploaded_at": now, **marker})
+        ingested_sids = [str(r.get("student_id") or "").strip() for r in (ingest_res.get("ingested_rows") or []) if r.get("student_id")]
+        if ingested_sids:
+            student_records_col().update_many({"student_id": {"$in": ingested_sids}, "is_training_dataset": True}, {"$set": {"dataset_id": dataset_id}})
     except Exception:
         pass
     _audit("DATA", "UPLOAD_MASTER_CSV", f"Uploaded master training CSV {filename} ({rows_count} records) and trained ML models.", "SUCCESS", actor=actor_name)
     invalidate_cache()
-    return {"filename": filename, "rows_processed": rows_count, "missing_values_fixed": int(ingest_res.get("missing_values_fixed") or 0), "predictions_generated": int(pred_res.get("predictions_generated") or 0), "high_risk_count": int(pred_res.get("high_risk_count") or 0)}, None
+    return {"dataset_id": dataset_id, "filename": filename, "rows_processed": rows_count, "missing_values_fixed": int(ingest_res.get("missing_values_fixed") or 0), "predictions_generated": int(pred_res.get("predictions_generated") or 0), "high_risk_count": int(pred_res.get("high_risk_count") or 0)}, None
+def delete_training_dataset(dataset_id="", filename="", actor_name="System Admin"):
+    clean_did, clean_fn = str(dataset_id or "").strip(), str(filename or "").strip()
+    if not clean_did and not clean_fn:
+        return False, "Dataset identifier is required."
+    log_col = datasets_log_col()
+    query = {"dataset_id": clean_did} if clean_did else {"filename": clean_fn}
+    existing = log_col.find_one(query, {"_id": 0, "dataset_id": 1, "filename": 1})
+    deleted_count = log_col.delete_many(query).deleted_count
+    if not deleted_count:
+        return False, "Training dataset record not found."
+    target_did = clean_did or str((existing or {}).get("dataset_id") or "").strip()
+    target_fn = clean_fn or str((existing or {}).get("filename") or "").strip()
+    if target_did:
+        student_records_col().delete_many({"dataset_id": target_did})
+    _audit("DATA", "DELETE_TRAINING_DATASET", f"Deleted training dataset {target_fn or target_did}.", "DANGER", actor=actor_name)
+    invalidate_cache()
+    return True, None
+def train_builtin_university_dataset(actor_name="System Admin"):
+    csv_path = Path(__file__).resolve().parent.parent / "static" / "samples" / "university_training_dataset_500.csv"
+    if not csv_path.exists():
+        return None, "Built-in university training dataset file was not found."
+    buf = io.BytesIO(csv_path.read_bytes())
+    buf.name = csv_path.name
+    return ingest_master_training_dataset(buf, actor_name=actor_name, is_training_dataset=True)
 def get_master_training_status():
     def _fetch():
         try:
@@ -151,10 +189,10 @@ def get_master_training_status():
 def _load_training_uploads():
     uploads = []
     try:
-        query = {"$or": [{"is_training_dataset": True}, {"uploaded_by": {"$regex": "admin", "$options": "i"}}]}
+        query = {"$or": [{"is_training_dataset": True}, {"dataset_id": {"$exists": True}}, {"status": "COMPLETED"}]}
         for d in datasets_log_col().find(query, {"_id": 0}).sort("uploaded_at", DESCENDING).limit(20):
             fn, by, rc, preds, st, dt = str(d.get("filename") or "master.csv"), str(d.get("uploaded_by") or "System Admin"), int(d.get("rows_processed") or 0), int(d.get("predictions_generated") or 0), str(d.get("status") or "COMPLETED").upper(), _format_dt(d.get("uploaded_at"))
-            uploads.append({"filename": fn, "uploaded_by": by, "rows_processed": rc, "predictions_generated": preds, "missing_values_fixed": int(d.get("missing_values_fixed") or 0), "model_version": str(d.get("model_version") or ""), "columns": list(d.get("columns") or []), "preview_rows": list(d.get("preview_rows") or []), "status": st, "uploaded_at_str": dt})
+            uploads.append({"dataset_id": str(d.get("dataset_id") or ""), "filename": fn, "uploaded_by": by, "rows_processed": rc, "predictions_generated": preds, "missing_values_fixed": int(d.get("missing_values_fixed") or 0), "model_version": str(d.get("model_version") or ""), "columns": list(d.get("columns") or []), "preview_rows": list(d.get("preview_rows") or []), "status": st, "uploaded_at_str": dt})
     except Exception:
         pass
     return uploads, build_training_upload_rows(uploads)

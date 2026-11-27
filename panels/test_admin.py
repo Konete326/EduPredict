@@ -204,7 +204,7 @@ class AdminCrudAndGuardsTests(_AdminTestBase):
     def test_admin_dashboard_and_crud_views_against_memcol(self):
         admin_client = self._login_as("ADMIN")
         for route_name, marker in (
-            ("panels:admin_dashboard", "System Overview"),
+            ("panels:admin_dashboard", "University Overview"),
             ("panels:admin_users", "admin-users-table"),
             ("panels:admin_training", "Training Data"),
             ("panels:admin_tickets", "admin-tickets-table"),

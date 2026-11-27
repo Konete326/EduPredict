@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="space-y-4">
+  <section class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Semesters</h2>
+      <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Set up university degree programs and semesters before adding courses and students.</p>
+    </div>
+    <button type="button" onclick="openAddSemesterModal()" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <i class="fa-solid fa-plus text-xs"></i>
+      <span>Add Semester</span>
+    </button>
+  </section>
+
+  <section class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    {% include 'components/metric_card.html' with title="Total Semesters" value=total_semesters_count badge="All semesters" status="info" icon="fa-solid fa-calendar-days" %}
+    {% include 'components/metric_card.html' with title="Programs" value=total_programs_count badge="Degree programs" status="success" icon="fa-solid fa-graduation-cap" %}
+  </section>
+
+  {% include 'components/data_table.html' with table_id="admin-semesters-table" title="All Semesters" subtitle="University degree programs and semesters" headers=semester_headers rows=semester_rows cards=semester_cards empty_message="No semesters yet. Click Add Semester above to create one." %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const postUrl = '{% url "panels:admin_semesters" %}';
+    const nextCode = '{{ next_semester_code|escapejs }}';
+    const programOptions = JSON.parse('{{ program_options_json|escapejs }}' || '[]');
+
+    window.openAddSemesterModal = function () {
+      openFormModal({
+        title: 'Add Semester',
+        headerBadge: 'Auto Code: ' + nextCode,
+        actionUrl: postUrl,
+        submitText: 'Save Semester',
+        fields: [
+          { name: 'action', type: 'hidden', value: 'create_semester' },
+          { name: 'program_name', label: 'Program / Degree', type: 'searchable_select', allowCustom: true, required: true, options: programOptions, placeholder: 'Search or type program (e.g. BSCS)...' },
+          { name: 'semester_number', label: 'Semester Number', type: 'number', value: '1', min: '1', max: '12', required: true },
+          { name: 'total_semesters', label: 'How Many Semesters to Create (1 = One)', type: 'number', value: '1', min: '1', max: '12', required: true },
+          { name: 'semester_name', label: 'Semester Name (Optional)', type: 'text', placeholder: 'Leave blank for Semester 1' },
+          { name: 'status', label: 'Status', type: 'select', value: 'ACTIVE', options: [{ value: 'ACTIVE', label: 'ACTIVE' }, { value: 'INACTIVE', label: 'INACTIVE' }] }
+        ]
+      });
+    };
+
+    window.openEditSemesterModal = function (btn) {
+      const d = btn.dataset;
+      openFormModal({
+        title: 'Edit Semester',
+        headerBadge: 'Code: ' + (d.semesterId || ''),
+        actionUrl: postUrl,
+        submitText: 'Save Changes',
+        fields: [
+          { name: 'action', type: 'hidden', value: 'edit_semester' },
+          { name: 'semester_id', type: 'hidden', value: d.semesterId || '' },
+          { name: 'program_name', label: 'Program / Degree', type: 'searchable_select', allowCustom: true, required: true, value: d.programName || '', options: programOptions, placeholder: 'Search or type program...' },
+          { name: 'semester_number', label: 'Semester Number', type: 'number', value: d.semesterNumber || '1', min: '1', max: '12', required: true },
+          { name: 'semester_name', label: 'Semester Name', type: 'text', value: d.semesterName || '', required: true },
+          { name: 'status', label: 'Status', type: 'select', value: d.status || 'ACTIVE', options: [{ value: 'ACTIVE', label: 'ACTIVE' }, { value: 'INACTIVE', label: 'INACTIVE' }] }
+        ]
+      });
+    };
+
+    window.openDeleteSemesterModal = function (btn) {
+      const d = btn.dataset;
+      openConfirmModal({
+        title: 'Delete Semester',
+        message: 'Delete "' + (d.semesterName || 'this semester') + '"? Courses and students linked to it will become unassigned.',
+        confirmText: 'Delete',
+        onConfirmUrl: postUrl,
+        fields: { action: 'delete_semester', semester_id: d.semesterId || '' }
+      });
+    };
+  })();
+</script>
+{% endblock %}

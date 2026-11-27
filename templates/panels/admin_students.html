@@ -1,151 +1,77 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
-  <div class="min-w-0 space-y-1">
-    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Students</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Enroll students and assign each student to a Class and Semester</p>
-  </div>
-  <button type="button" onclick="openCreateStudentModal()" title="Add a new student" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
-    <i class="fa-solid fa-user-plus text-xs"></i>
-    <span>Add Student</span>
-  </button>
-</header>
+<div class="space-y-4">
+  <section class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Students</h2>
+      <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Manage university student accounts and their semester.</p>
+    </div>
+    <button type="button" onclick="openAddStudentModal()" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <i class="fa-solid fa-plus text-xs"></i>
+      <span>Add Student</span>
+    </button>
+  </section>
 
-{% if db_error %}
-<div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database message: {{ db_error }}
+  <section class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    {% include 'components/metric_card.html' with title="Total Students" value=total_students badge="All student accounts" status="info" icon="fa-solid fa-user-graduate" %}
+    {% include 'components/metric_card.html' with title="Assigned to Semester" value=assigned_students badge="In a semester" status="success" icon="fa-solid fa-calendar-check" %}
+  </section>
+
+  {% include 'components/data_table.html' with table_id="admin-students-table" title="All Students" subtitle="Student accounts and their assigned university semester" headers=student_headers rows=student_rows cards=student_cards empty_message="No students yet. Click Add Student above to add one." %}
 </div>
-{% endif %}
-
-<section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-  {% include 'components/metric_card.html' with title="Total Students" value=total_students|default:0 badge="Student accounts" status="info" icon="fa-solid fa-user-graduate" %}
-  {% include 'components/metric_card.html' with title="Assigned to Class" value=assigned_students|default:0 badge="Enrolled in class" status="success" icon="fa-solid fa-layer-group" %}
-  {% include 'components/metric_card.html' with title="Available Classes" value=class_options|length|default:0 badge="Active programs" status="info" icon="fa-solid fa-school" %}
-</section>
-
-<section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
-  {% include 'components/data_table.html' with table_id="admin-students-table" table_title="Student Directory" headers=student_headers rows=student_rows page_size=5 empty_message="No students found yet. Add a student above or assign the Student role in Users." %}
-</section>
 {% endblock %}
 
 {% block extra_js %}
-{{ class_options|json_script:"student-class-options-data" }}
-{{ semester_options|json_script:"student-semester-options-data" }}
 <script>
   (function () {
-    const studentsUrl = "{% url 'panels:admin_students' %}";
-    const rawClasses = JSON.parse((document.getElementById('student-class-options-data') || {}).textContent || '[]');
-    const rawSemesters = JSON.parse((document.getElementById('student-semester-options-data') || {}).textContent || '[]');
+    const postUrl = '{% url "panels:admin_students" %}';
+    const semesterOptions = JSON.parse('{{ semester_options_json|escapejs }}' || '[]');
 
-    function buildClassOptions() {
-      const opts = [{ value: '', label: 'Unassigned (Select Class)' }];
-      rawClasses.forEach(function (c) { opts.push({ value: c.id, label: c.label || c.name || c.id }); });
-      return opts;
-    }
-
-    function buildSemesterOptions(classId) {
-      const cid = String(classId || '');
-      const filtered = cid ? rawSemesters.filter(function (s) { return String(s.class_id || '') === cid; }) : rawSemesters;
-      const opts = [{ value: '', label: cid ? 'Select Semester' : 'Select Class First' }];
-      filtered.forEach(function (s) { opts.push({ value: s.id, label: s.name || s.label || s.id }); });
-      return opts;
-    }
-
-    function bindClassSemesterFilter(initialSemId) {
-      const form = document.getElementById('form-modal-element');
-      if (!form) return;
-      const classSelect = form.querySelector('[name="class_id"]');
-      const semSelect = form.querySelector('[name="semester_id"]');
-      if (!classSelect || !semSelect) return;
-
-      function refreshSemesters(preferredVal) {
-        const opts = buildSemesterOptions(classSelect.value);
-        semSelect.innerHTML = '';
-        opts.forEach(function (o) {
-          const optEl = document.createElement('option');
-          optEl.value = o.value;
-          optEl.textContent = o.label;
-          if (preferredVal && String(o.value) === String(preferredVal)) optEl.selected = true;
-          semSelect.appendChild(optEl);
-        });
-        if (!preferredVal && opts.length === 2) {
-          semSelect.value = opts[1].value;
-        }
-      }
-
-      refreshSemesters(initialSemId || '');
-      classSelect.addEventListener('change', function () {
-        refreshSemesters('');
-      });
-    }
-
-    window.openCreateStudentModal = function () {
-      const defaultClassId = rawClasses.length === 1 ? rawClasses[0].id : '';
-      window.openFormModal({
+    window.openAddStudentModal = function () {
+      openFormModal({
         title: 'Add Student',
-        actionUrl: studentsUrl,
+        headerBadge: 'Auto Student ID',
+        actionUrl: postUrl,
+        submitText: 'Create Student',
         fields: [
-          { type: 'hidden', name: 'action', value: 'create_student' },
-          { name: 'full_name', label: 'Full Name', type: 'text', placeholder: 'Ali Raza', required: true },
-          { name: 'email', label: 'Email', type: 'email', placeholder: 'ali.raza@edupredict.edu', required: true },
-          { name: 'class_id', label: 'Class', type: 'select', options: buildClassOptions(), value: defaultClassId },
-          { name: 'semester_id', label: 'Semester', type: 'select', options: buildSemesterOptions(defaultClassId), value: '' },
-          { name: 'phone', label: 'Phone (Optional)', type: 'tel', placeholder: '+92 300 0000000' },
-          { name: 'password', label: 'Password', type: 'password', value: 'edupredict123', placeholder: 'At least 6 characters', required: true }
+          { name: 'action', type: 'hidden', value: 'create_student' },
+          { name: 'full_name', label: 'Full Name', type: 'text', required: true, placeholder: 'Ayesha Khan' },
+          { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'ayesha@university.edu' },
+          { name: 'password', label: 'Password', type: 'password', required: true, placeholder: 'Min 6 characters' },
+          { name: 'semester_id', label: 'Semester', type: 'searchable_select', options: semesterOptions, placeholder: 'Search program or semester...' },
+          { name: 'phone', label: 'Phone', type: 'text', placeholder: 'Optional phone' }
         ]
       });
-      bindClassSemesterFilter('');
-      const form = document.getElementById('form-modal-element');
-      if (!form) return;
-      const nameInput = form.querySelector('[name="full_name"]');
-      const emailInput = form.querySelector('[name="email"]');
-      let emailEdited = false;
-      if (emailInput) {
-        emailInput.addEventListener('input', function (e) {
-          if (e.isComposing || e.keyCode === 229) return;
-          emailEdited = Boolean(emailInput.value.trim());
-        });
-      }
-      if (nameInput && emailInput) {
-        nameInput.addEventListener('input', function (e) {
-          if (e.isComposing || e.keyCode === 229 || emailEdited) return;
-          const slug = nameInput.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '');
-          emailInput.value = slug ? slug + '@edupredict.edu' : '';
-        });
-      }
     };
 
     window.openEditStudentModal = function (btn) {
-      const d = btn ? btn.dataset : {};
-      window.openFormModal({
-        title: 'Edit Student (' + (d.userId || '') + ')',
-        actionUrl: studentsUrl,
+      const d = btn.dataset;
+      openFormModal({
+        title: 'Edit Student',
+        headerBadge: 'ID: ' + (d.studentId || d.userId || ''),
+        actionUrl: postUrl,
+        submitText: 'Save Changes',
         fields: [
-          { type: 'hidden', name: 'action', value: 'edit_student' },
-          { type: 'hidden', name: 'user_id', value: d.userId || '' },
+          { name: 'action', type: 'hidden', value: 'edit_student' },
+          { name: 'user_id', type: 'hidden', value: d.userId || '' },
           { name: 'full_name', label: 'Full Name', type: 'text', value: d.fullName || '', required: true },
           { name: 'email', label: 'Email', type: 'email', value: d.email || '', required: true },
-          { name: 'class_id', label: 'Class', type: 'select', options: buildClassOptions(), value: d.classId || '' },
-          { name: 'semester_id', label: 'Semester', type: 'select', options: buildSemesterOptions(d.classId || ''), value: d.semesterId || '' },
-          { name: 'phone', label: 'Phone (Optional)', type: 'tel', value: d.phone || '' },
-          { name: 'password', label: 'New Password (Optional)', type: 'password', placeholder: 'Leave blank to keep current password' }
+          { name: 'semester_id', label: 'Semester', type: 'searchable_select', value: d.semesterId || '', options: semesterOptions, placeholder: 'Search program or semester...' },
+          { name: 'phone', label: 'Phone', type: 'text', value: d.phone || '' },
+          { name: 'password', label: 'New Password (Optional)', type: 'password', placeholder: 'Leave blank to keep current' }
         ]
       });
-      bindClassSemesterFilter(d.semesterId || '');
     };
 
     window.openDeleteStudentModal = function (btn) {
-      const d = btn ? btn.dataset : {};
-      window.openConfirmModal({
+      const d = btn.dataset;
+      openConfirmModal({
         title: 'Delete Student',
-        message: 'Delete ' + (d.fullName || d.userId || 'this student') + ' forever? This cannot be undone.',
+        message: 'Delete student "' + (d.fullName || 'this student') + '"? This removes their account.',
         confirmText: 'Delete',
-        onConfirmUrl: studentsUrl,
-        fields: {
-          action: 'delete_student',
-          user_id: d.userId || ''
-        }
+        onConfirmUrl: postUrl,
+        fields: { action: 'delete_student', user_id: d.userId || '' }
       });
     };
   })();

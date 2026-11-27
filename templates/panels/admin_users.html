@@ -3,8 +3,8 @@
 {% block content %}
 <header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
-    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">User Management</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Create, modify, toggle active status, or remove users across all roles</p>
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Users</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Add, edit, turn on or off, or remove user accounts across all roles</p>
   </div>
   <button type="button" onclick="openCreateUserModal()" title="Add a new user account" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
     <i class="fa-solid fa-user-plus text-xs"></i>
@@ -14,7 +14,7 @@
 
 {% if db_error %}
 <div class="rounded-xl border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database message: {{ db_error }}
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Notice: {{ db_error }}
 </div>
 {% endif %}
 
@@ -40,7 +40,7 @@
       <span>Analysts</span>
       <span class="tabular-nums opacity-80">({{ role_counts.ANALYST|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_users' %}?role=PENDING" title="Show teachers and analysts awaiting approval" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'PENDING' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_users' %}?role=PENDING" title="Show teachers and analysts waiting for approval" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'PENDING' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       {% if role_counts.PENDING %}<span class="h-2 w-2 rounded-full bg-[var(--status-warning)]"></span>{% endif %}
       <span>Pending Approval</span>
       <span class="tabular-nums opacity-80">({{ role_counts.PENDING|default:0 }})</span>
@@ -56,7 +56,7 @@
   <div class="rounded-xl border border-[var(--status-warning)]/40 bg-[var(--bg-canvas)] p-3 space-y-2">
     <div class="flex items-center justify-between gap-2">
       <p class="text-xs font-semibold text-[var(--text-primary)]">
-        <i class="fa-solid fa-user-clock mr-1.5 text-[var(--status-warning)]"></i>Pending Approvals (Teachers &amp; Analysts)
+        <i class="fa-solid fa-user-clock mr-1.5 text-[var(--status-warning)]"></i>Waiting for Approval (Teachers &amp; Analysts)
       </p>
       <span class="text-[11px] font-medium text-[var(--text-muted)]">{{ pending_users|length }} waiting</span>
     </div>
@@ -96,7 +96,7 @@
   </div>
   {% endif %}
 
-  {% include 'components/data_table.html' with table_id="admin-users-table" table_title="User Directory" headers=user_headers rows=user_rows page_size=5 empty_message="No users found for this role." %}
+  {% include 'components/data_table.html' with table_id="admin-users-table" table_title="All Users" headers=user_headers rows=user_rows page_size=5 empty_message="No users found for this role." %}
 </section>
 {% endblock %}
 
@@ -108,12 +108,10 @@
     const roleOptions = [
       { value: 'STUDENT', label: 'Student' },
       { value: 'TEACHER', label: 'Teacher' },
-      { value: 'ANALYST', label: 'Data Analyst' },
+      { value: 'ANALYST', label: 'Analyst' },
       { value: 'ADMIN', label: 'Admin' }
     ];
     const programLevelOptions = [
-      { value: 'School / Junior', label: 'School / Junior' },
-      { value: 'College / Intermediate', label: 'College / Intermediate' },
       { value: 'BS / Undergraduate', label: 'BS / Undergraduate' },
       { value: 'MS / Graduate', label: 'MS / Graduate' },
       { value: '', label: 'Not Applicable (Staff)' }
@@ -159,7 +157,7 @@
       const roleFields = isSelf
         ? [
             { type: 'hidden', name: 'role', value: 'ADMIN' },
-            { name: 'role_display', label: 'Role (Protected)', type: 'text', value: 'ADMIN (Active Self Account — Protected)', readonly: true }
+            { name: 'role_display', label: 'Role (Protected)', type: 'text', value: 'ADMIN (Your Own Account — Protected)', readonly: true }
           ]
         : [{ name: 'role', label: 'Role', type: 'select', options: roleOptions, value: d.role || 'STUDENT', required: true }];
       window.openFormModal({

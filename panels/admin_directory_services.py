@@ -112,6 +112,7 @@ def build_ticket_table_data(tickets, filter_status):
 def build_training_upload_rows(uploads):
     rows = []
     for u in uploads or []:
+        did = str(u.get("dataset_id") or "").strip()
         fn = str(u.get("filename") or "master.csv")
         by = str(u.get("uploaded_by") or "System Admin")
         rc = int(u.get("rows_processed") or 0)
@@ -135,12 +136,13 @@ def build_training_upload_rows(uploads):
             preview_lines.append(" · ".join(parts))
         view_payload = {
             "title": fn,
-            "subtitle": f"{by} · {dt}",
+            "subtitle": f"{did + ' · ' if did else ''}{by} · {dt}",
             "badge": st,
             "items": [
+                {"label": "Dataset ID", "value": did or "-"},
                 {"label": "Filename", "value": fn},
                 {"label": "Uploaded By", "value": by},
-                {"label": "Rows Processed", "value": str(rc)},
+                {"label": "Rows", "value": str(rc)},
                 {"label": "Predictions", "value": str(preds)},
                 {"label": "Missing Fixed", "value": str(int(u.get("missing_values_fixed") or 0))},
                 {"label": "Model Version", "value": str(u.get("model_version") or "-")},
@@ -149,5 +151,9 @@ def build_training_upload_rows(uploads):
                 {"label": "Sample Preview", "value": "\n".join(preview_lines) if preview_lines else "No preview rows available.", "fullWidth": True},
             ],
         }
-        rows.append([fn, by, rc, preds, {"text": st, "status": "success" if st == "COMPLETED" else "warning"}, dt, {"actions": [_view_action(f"View {fn}", view_payload)]}])
+        actions = [
+            _view_action(f"View {fn}", view_payload),
+            _action("Delete", "fa-solid fa-trash", "openDeleteDatasetModal(this)", f"Delete {fn}", {"data-dataset-id": did, "data-filename": fn}, variant="danger"),
+        ]
+        rows.append([fn, by, rc, preds, {"text": st, "status": "success" if st == "COMPLETED" else "warning"}, dt, {"actions": actions}])
     return rows
