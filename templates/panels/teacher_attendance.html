@@ -4,7 +4,7 @@
 <header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
     <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Attendance</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Mark daily Present, Absent, or Leave status for your students.</p>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Search a course and mark daily Present, Absent, or Leave status.</p>
   </div>
 </header>
 
@@ -15,44 +15,49 @@
 {% endif %}
 
 <section class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-  {% include 'components/metric_card.html' with title="Students" value=kpis.total_students|default:0 badge="Class" status="info" icon="fa-solid fa-users" %}
+  {% include 'components/metric_card.html' with title="Students" value=kpis.total_students|default:0 badge="Course" status="info" icon="fa-solid fa-users" %}
   {% include 'components/metric_card.html' with title="Present" value=kpis.present_count|default:0 badge="Today" status="success" icon="fa-solid fa-circle-check" %}
   {% include 'components/metric_card.html' with title="Absent" value=kpis.absent_count|default:0 badge="Today" status="danger" icon="fa-solid fa-circle-xmark" %}
   {% include 'components/metric_card.html' with title="Leave" value=kpis.leave_count|default:0 badge="Today" status="warning" icon="fa-solid fa-clock" %}
 </section>
 
-<form method="get" action="{% url 'panels:teacher_attendance' %}" class="flex flex-wrap items-end gap-3 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
-  <div class="min-w-[200px] flex-1">
-    <label for="att-course-select" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Course</label>
-    <select id="att-course-select" name="course" onchange="this.form.submit()" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
-      <option value="ALL">All Assigned Courses</option>
+<form id="att-filter-form" method="get" action="{% url 'panels:teacher_attendance' %}" class="flex flex-wrap items-end gap-3 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
+  <input type="hidden" id="att-course-value" name="course" value="{{ course_filter }}">
+  <div class="relative min-w-[220px] flex-1" id="att-course-picker">
+    <label for="att-course-search" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Course</label>
+    <div class="relative">
+      <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]"></i>
+      <input id="att-course-search" type="text" autocomplete="off" value="{% for opt in course_options %}{% if course_filter == opt.value %}{{ opt.label }} ({{ opt.semester_label }}){% endif %}{% endfor %}" placeholder="Search course code or name..." class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] pl-8 pr-8 text-sm text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
+      <button type="button" id="att-course-toggle" aria-label="Show courses" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-chevron-down"></i></button>
+    </div>
+    <div id="att-course-dropdown" class="absolute left-0 right-0 z-30 mt-1 hidden max-h-56 overflow-y-auto rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1 shadow-lg">
       {% for opt in course_options %}
-      <option value="{{ opt.value }}" {% if course_filter == opt.value %}selected{% endif %}>{{ opt.label }} ({{ opt.semester_label }})</option>
+      <button type="button" data-course-opt data-value="{{ opt.value }}" data-label="{{ opt.label }} ({{ opt.semester_label }})" class="flex w-full items-center justify-between rounded-[8px] px-3 py-2 text-left text-xs transition-colors hover:bg-[var(--bg-elevated)] {% if course_filter == opt.value %}bg-[var(--accent-soft)] font-semibold text-[var(--accent-primary)]{% else %}text-[var(--text-primary)]{% endif %}">
+        <span class="truncate">{{ opt.label }}</span>
+        <span class="ml-2 shrink-0 text-[11px] text-[var(--text-muted)]">{{ opt.semester_label }}</span>
+      </button>
+      {% empty %}
+      <p class="px-3 py-2 text-xs text-[var(--text-muted)]">No assigned courses found.</p>
       {% endfor %}
-    </select>
+      <p id="att-course-empty" class="hidden px-3 py-2 text-xs text-[var(--text-muted)]">No matching courses.</p>
+    </div>
   </div>
   <div class="w-full sm:w-44">
     <label for="att-date-input" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Date</label>
     <input id="att-date-input" type="date" name="date" value="{{ selected_date }}" onchange="this.form.submit()" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
   </div>
-  <div class="flex items-center gap-2">
-    <button type="submit" class="inline-flex h-9 items-center gap-1.5 rounded-[10px] bg-[var(--accent-primary)] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-      <i class="fa-solid fa-filter text-xs"></i>
-      <span>Load</span>
-    </button>
-    <a href="{% url 'panels:teacher_attendance' %}" class="inline-flex h-9 items-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">Reset</a>
-  </div>
+  <a href="{% url 'panels:teacher_attendance' %}" class="inline-flex h-9 items-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">Reset</a>
 </form>
 
 <form method="post" action="{% url 'panels:teacher_attendance' %}" class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
   {% csrf_token %}
   <input type="hidden" name="action" value="save_attendance">
   <input type="hidden" name="date" value="{{ selected_date }}">
-  <input type="hidden" name="course_code" value="{% if course_filter != 'ALL' %}{{ course_filter }}{% elif selected_course %}{{ selected_course.course_code }}{% endif %}">
-  <input type="hidden" name="course" value="{{ course_filter|default:'ALL' }}">
+  <input type="hidden" name="course_code" value="{{ course_filter }}">
+  <input type="hidden" name="course" value="{{ course_filter }}">
   <div class="flex flex-wrap items-center justify-between gap-2">
     <div>
-      <h3 class="text-sm font-semibold text-[var(--text-primary)]">Student Roll Call · {{ selected_date }}</h3>
+      <h3 class="text-sm font-semibold text-[var(--text-primary)]">{{ course_filter|default:"Course" }} Roll Call · {{ selected_date }}</h3>
       <p class="text-xs text-[var(--text-muted)]">{{ kpis.marked_count|default:0 }} of {{ kpis.total_students|default:0 }} marked for this date.</p>
     </div>
     {% if students %}
@@ -75,21 +80,15 @@
       <div class="flex shrink-0 flex-wrap items-center gap-1.5">
         <label class="cursor-pointer">
           <input type="radio" name="status_{{ s.student_id }}" value="PRESENT" class="peer sr-only" {% if s.today_status == 'PRESENT' %}checked{% endif %}>
-          <span class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors peer-checked:border-[var(--status-success)] peer-checked:bg-[var(--status-success)] peer-checked:text-white">
-            <i class="fa-solid fa-check text-[11px]"></i>Present
-          </span>
+          <span class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors peer-checked:border-[var(--status-success)] peer-checked:bg-[var(--status-success)] peer-checked:text-white"><i class="fa-solid fa-check text-[11px]"></i>Present</span>
         </label>
         <label class="cursor-pointer">
           <input type="radio" name="status_{{ s.student_id }}" value="ABSENT" class="peer sr-only" {% if s.today_status == 'ABSENT' %}checked{% endif %}>
-          <span class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors peer-checked:border-[var(--status-danger)] peer-checked:bg-[var(--status-danger)] peer-checked:text-white">
-            <i class="fa-solid fa-xmark text-[11px]"></i>Absent
-          </span>
+          <span class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors peer-checked:border-[var(--status-danger)] peer-checked:bg-[var(--status-danger)] peer-checked:text-white"><i class="fa-solid fa-xmark text-[11px]"></i>Absent</span>
         </label>
         <label class="cursor-pointer">
           <input type="radio" name="status_{{ s.student_id }}" value="LEAVE" class="peer sr-only" {% if s.today_status == 'LEAVE' %}checked{% endif %}>
-          <span class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors peer-checked:border-[var(--status-warning)] peer-checked:bg-[var(--status-warning)] peer-checked:text-white">
-            <i class="fa-solid fa-clock text-[11px]"></i>Leave
-          </span>
+          <span class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors peer-checked:border-[var(--status-warning)] peer-checked:bg-[var(--status-warning)] peer-checked:text-white"><i class="fa-solid fa-clock text-[11px]"></i>Leave</span>
         </label>
       </div>
     </div>
@@ -98,4 +97,39 @@
     {% endfor %}
   </div>
 </form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const form = document.getElementById('att-filter-form');
+    const picker = document.getElementById('att-course-picker');
+    const input = document.getElementById('att-course-search');
+    const hidden = document.getElementById('att-course-value');
+    const dropdown = document.getElementById('att-course-dropdown');
+    const toggle = document.getElementById('att-course-toggle');
+    const emptyMsg = document.getElementById('att-course-empty');
+    if (!form || !input || !hidden || !dropdown) return;
+    const opts = Array.from(dropdown.querySelectorAll('[data-course-opt]'));
+
+    function filterOpts(term) {
+      const q = (term || '').trim().toLowerCase();
+      let visible = 0;
+      opts.forEach(function (btn) {
+        const hay = ((btn.dataset.value || '') + ' ' + (btn.dataset.label || '')).toLowerCase();
+        const show = !q || hay.includes(q);
+        btn.classList.toggle('hidden', !show);
+        if (show) visible += 1;
+      });
+      if (emptyMsg) emptyMsg.classList.toggle('hidden', visible > 0 || !opts.length);
+    }
+    input.addEventListener('focus', function () { dropdown.classList.remove('hidden'); filterOpts(''); });
+    input.addEventListener('input', function () { dropdown.classList.remove('hidden'); filterOpts(input.value); });
+    if (toggle) toggle.addEventListener('click', function () { dropdown.classList.toggle('hidden'); filterOpts(''); input.focus(); });
+    opts.forEach(function (btn) {
+      btn.addEventListener('click', function () { hidden.value = btn.dataset.value || ''; input.value = btn.dataset.label || btn.dataset.value || ''; dropdown.classList.add('hidden'); form.submit(); });
+    });
+    document.addEventListener('click', function (e) { if (picker && !picker.contains(e.target)) dropdown.classList.add('hidden'); });
+  })();
+</script>
 {% endblock %}

@@ -4,7 +4,7 @@
 <header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
     <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Tests</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Create quizzes or exams, grade student marks, and refresh predictions.</p>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Create quizzes or exams, attach files, and grade student marks.</p>
   </div>
   <button type="button" onclick="openCreateTestModal()" class="inline-flex h-9 shrink-0 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
     <i class="fa-solid fa-plus text-xs"></i>
@@ -46,9 +46,13 @@
         <span class="text-xs font-mono text-[var(--text-muted)]">{{ t.course_code }} · {{ t.test_date|default:"-" }}</span>
       </div>
       <h3 class="text-base font-semibold text-[var(--text-primary)] truncate">{{ t.title }}</h3>
-      {% if t.description %}
-      <p class="text-xs text-[var(--text-secondary)] line-clamp-2">{{ t.description }}</p>
+      {% if t.notes or t.description %}
+      <p class="text-xs text-[var(--text-secondary)] line-clamp-2">{{ t.notes|default:t.description }}</p>
       {% endif %}
+      <div class="flex flex-wrap items-center gap-2 text-[11px] text-[var(--text-muted)]">
+        {% if t.due_date %}<span><i class="fa-regular fa-calendar mr-1"></i>Due: {{ t.due_date }}</span>{% endif %}
+        {% if t.attachment_url %}<a href="{{ t.attachment_url }}" target="_blank" rel="noopener" class="text-[var(--accent-primary)] hover:underline truncate max-w-[160px]"><i class="fa-solid fa-paperclip mr-1"></i>{{ t.attachment_name|default:"Attachment" }}</a>{% endif %}
+      </div>
     </div>
     <div class="grid grid-cols-3 gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5 text-center tabular-nums">
       <div><p class="text-[11px] text-[var(--text-muted)]">Max</p><p class="text-sm font-semibold text-[var(--text-primary)]">{{ t.max_marks|floatformat:0 }}</p></div>
@@ -56,11 +60,14 @@
       <div><p class="text-[11px] text-[var(--text-muted)]">Avg</p><p class="text-sm font-semibold text-[var(--accent-primary)]">{{ t.avg_score }}%</p></div>
     </div>
     <div class="flex flex-nowrap items-center justify-between gap-2 pt-1">
-      <button type="button" onclick="openGradeTestModal(this)" data-test-id="{{ t.test_id }}" data-title="{{ t.title }}" data-course-code="{{ t.course_code }}" data-max-marks="{{ t.max_marks|floatformat:0 }}" data-roster="{{ t.roster_json|escape }}" class="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[var(--accent-primary)] px-3 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <a href="{% url 'panels:teacher_test_grade' test_id=t.test_id %}" class="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[var(--accent-primary)] px-3 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
         <i class="fa-solid fa-pen-ruler text-[11px]"></i>
         <span>Grade Marks</span>
+      </a>
+      <button type="button" onclick="window.openViewDetailsModal(JSON.parse(this.getAttribute('data-view-payload') || '{}'))" data-view-payload="{{ t.view_payload_json|escape }}" title="View Details" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <i class="fa-solid fa-eye"></i>
       </button>
-      <button type="button" onclick="openEditTestModal(this)" data-test-id="{{ t.test_id }}" data-title="{{ t.title }}" data-course-code="{{ t.course_code }}" data-test-type="{{ t.test_type }}" data-max-marks="{{ t.max_marks|floatformat:0 }}" data-test-date="{{ t.test_date }}" data-description="{{ t.description }}" title="Edit Test" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+      <button type="button" onclick="openEditTestModal(this)" data-test-id="{{ t.test_id }}" data-title="{{ t.title }}" data-course-code="{{ t.course_code }}" data-test-type="{{ t.test_type }}" data-max-marks="{{ t.max_marks|floatformat:0 }}" data-test-date="{{ t.test_date }}" data-due-date="{{ t.due_date }}" data-notes="{{ t.notes|default:t.description }}" data-attachment-name="{{ t.attachment_name }}" title="Edit Test" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <i class="fa-solid fa-pen"></i>
       </button>
       <button type="button" onclick="openDeleteTestModal(this)" data-test-id="{{ t.test_id }}" data-title="{{ t.title }}" title="Delete Test" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]">
@@ -74,90 +81,122 @@
   </div>
   {% endfor %}
 </section>
+
+<div id="test-form-modal" class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="tm-title">
+  <div id="tm-backdrop" class="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"></div>
+  <div class="relative z-10 w-full max-w-xl rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-3.5">
+      <div class="flex items-center gap-2 min-w-0">
+        <h3 id="tm-title" class="text-base font-semibold text-[var(--text-primary)] truncate">Create New Test</h3>
+        <span id="tm-badge" class="hidden rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-0.5 text-[11px] font-mono font-semibold text-[var(--accent-primary)]"></span>
+      </div>
+      <button type="button" onclick="closeTestModal()" aria-label="Close modal" class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+    <form method="post" action="{% url 'panels:teacher_tests' %}" enctype="multipart/form-data" class="flex flex-col max-h-[85vh]">
+      {% csrf_token %}
+      <input type="hidden" id="tm-action" name="action" value="create_test">
+      <input type="hidden" id="tm-test-id" name="test_id" value="">
+      <div class="grid grid-cols-1 gap-3.5 overflow-y-auto px-5 py-4 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          <label for="tm-field-title" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Test Title</label>
+          <input id="tm-field-title" name="title" type="text" required placeholder="e.g. Quiz 1 - Loops & Functions" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+        </div>
+        <div>
+          <label for="tm-field-course" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Course</label>
+          <select id="tm-field-course" name="course_code" required class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+            {% for opt in course_options %}<option value="{{ opt.value }}">{{ opt.label }}</option>{% empty %}<option value="CS-101">CS-101</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="tm-field-type" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Test Type</label>
+          <select id="tm-field-type" name="test_type" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+            <option value="Quiz">Quiz</option><option value="Assignment">Assignment</option><option value="Midterm">Midterm</option><option value="Final">Final Exam</option>
+          </select>
+        </div>
+        <div>
+          <label for="tm-field-max" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Max Marks</label>
+          <input id="tm-field-max" name="max_marks" type="number" min="1" max="1000" step="1" value="20" required class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+        </div>
+        <div>
+          <label for="tm-field-date" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Test Date</label>
+          <input id="tm-field-date" name="test_date" type="date" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+        </div>
+        <div>
+          <label for="tm-field-due" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Due / Last Date (Optional)</label>
+          <input id="tm-field-due" name="due_date" type="date" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+        </div>
+        <div>
+          <label for="tm-field-file" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Attachment (Optional)</label>
+          <input id="tm-field-file" name="attachment" type="file" class="block w-full text-xs text-[var(--text-secondary)] file:mr-2.5 file:rounded-[8px] file:border file:border-[var(--border-subtle)] file:bg-[var(--bg-elevated)] file:px-2.5 file:py-1.5 file:text-xs file:font-medium file:text-[var(--text-primary)]">
+          <p id="tm-file-current" class="mt-1 hidden truncate text-[11px] text-[var(--text-muted)]"></p>
+        </div>
+        <div class="sm:col-span-2">
+          <label for="tm-field-notes" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Notes / Instructions</label>
+          <textarea id="tm-field-notes" name="notes" rows="2" placeholder="Topics covered, rules, or submission instructions..." class="w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)]" style="field-sizing: content;"></textarea>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2.5 border-t border-[var(--border-subtle)] px-5 py-3.5">
+        <button type="button" onclick="closeTestModal()" class="inline-flex h-9 items-center rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">Cancel</button>
+        <button id="tm-submit" type="submit" class="inline-flex h-9 items-center rounded-[12px] bg-[var(--accent-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--accent-hover)]">Create Test</button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
   (function () {
     const POST_URL = "{% url 'panels:teacher_tests' %}";
-    const COURSE_OPTS = [{% for opt in course_options %}{ value: "{{ opt.value|escapejs }}", label: "{{ opt.label|escapejs }}" }{% if not forloop.last %},{% endif %}{% endfor %}];
-    const TYPE_OPTS = [{ value: 'Quiz', label: 'Quiz' }, { value: 'Assignment', label: 'Assignment' }, { value: 'Midterm', label: 'Midterm' }, { value: 'Final', label: 'Final Exam' }];
+    const modal = document.getElementById('test-form-modal');
+    const backdrop = document.getElementById('tm-backdrop');
+    let pointerDownOnBackdrop = false;
 
-    window.openCreateTestModal = function () {
-      window.openFormModal({
-        title: 'Create New Test',
-        actionUrl: POST_URL,
-        submitText: 'Create Test',
-        fields: [
-          { type: 'hidden', name: 'action', value: 'create_test' },
-          { name: 'title', label: 'Test Title', type: 'text', placeholder: 'e.g. Quiz 1 - Loops & Functions', required: true },
-          { name: 'course_code', label: 'Course', type: 'select', options: COURSE_OPTS.length ? COURSE_OPTS : [{ value: 'CS-101', label: 'CS-101' }], required: true },
-          { name: 'test_type', label: 'Test Type', type: 'select', options: TYPE_OPTS, value: 'Quiz' },
-          { name: 'max_marks', label: 'Max Marks', type: 'number', value: '20', min: '1', max: '1000', step: '1', required: true },
-          { name: 'test_date', label: 'Test Date', type: 'date', value: new Date().toISOString().slice(0, 10) },
-          { name: 'description', label: 'Notes (Optional)', type: 'textarea', placeholder: 'Topics covered in this test...' }
-        ]
-      });
-    };
+    function openTestModal(cfg) {
+      if (!modal) return;
+      document.getElementById('tm-title').textContent = cfg.heading;
+      document.getElementById('tm-submit').textContent = cfg.submitText;
+      document.getElementById('tm-action').value = cfg.action;
+      document.getElementById('tm-test-id').value = cfg.testId || '';
+      const badge = document.getElementById('tm-badge');
+      badge.textContent = cfg.testId || '';
+      badge.classList.toggle('hidden', !cfg.testId);
+      document.getElementById('tm-field-title').value = cfg.title || '';
+      document.getElementById('tm-field-course').value = cfg.courseCode || (document.getElementById('tm-field-course').options[0] ? document.getElementById('tm-field-course').options[0].value : '');
+      document.getElementById('tm-field-type').value = cfg.testType || 'Quiz';
+      document.getElementById('tm-field-max').value = cfg.maxMarks || '20';
+      document.getElementById('tm-field-date').value = cfg.testDate || new Date().toISOString().slice(0, 10);
+      document.getElementById('tm-field-due').value = cfg.dueDate || '';
+      document.getElementById('tm-field-notes').value = cfg.notes || '';
+      document.getElementById('tm-field-file').value = '';
+      const curFile = document.getElementById('tm-file-current');
+      curFile.textContent = cfg.attachmentName ? 'Current: ' + cfg.attachmentName : '';
+      curFile.classList.toggle('hidden', !cfg.attachmentName);
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
 
+    window.closeTestModal = function () { if (!modal) return; modal.classList.add('hidden'); modal.classList.remove('flex'); };
+    if (backdrop) {
+      backdrop.addEventListener('pointerdown', function (e) { pointerDownOnBackdrop = e.target === backdrop; });
+      backdrop.addEventListener('click', function (e) { if (pointerDownOnBackdrop && e.target === backdrop) window.closeTestModal(); pointerDownOnBackdrop = false; });
+    }
+    window.openCreateTestModal = function () { openTestModal({ heading: 'Create New Test', submitText: 'Create Test', action: 'create_test' }); };
     window.openEditTestModal = function (btn) {
       const d = btn ? btn.dataset : {};
-      window.openFormModal({
-        title: 'Edit Test',
-        headerBadge: d.testId || '',
-        actionUrl: POST_URL,
-        submitText: 'Save Changes',
-        fields: [
-          { type: 'hidden', name: 'action', value: 'update_test' },
-          { type: 'hidden', name: 'test_id', value: d.testId || '' },
-          { name: 'title', label: 'Test Title', type: 'text', value: d.title || '', required: true },
-          { name: 'course_code', label: 'Course', type: 'select', options: COURSE_OPTS.length ? COURSE_OPTS : [{ value: d.courseCode || 'CS-101', label: d.courseCode || 'CS-101' }], value: d.courseCode || '', required: true },
-          { name: 'test_type', label: 'Test Type', type: 'select', options: TYPE_OPTS, value: d.testType || 'Quiz' },
-          { name: 'max_marks', label: 'Max Marks', type: 'number', value: d.maxMarks || '20', min: '1', max: '1000', step: '1', required: true },
-          { name: 'test_date', label: 'Test Date', type: 'date', value: d.testDate || '' },
-          { name: 'description', label: 'Notes (Optional)', type: 'textarea', value: d.description || '' }
-        ]
-      });
+      openTestModal({ heading: 'Edit Test', submitText: 'Save Changes', action: 'update_test', testId: d.testId, title: d.title, courseCode: d.courseCode, testType: d.testType, maxMarks: d.maxMarks, testDate: d.testDate, dueDate: d.dueDate, notes: d.notes, attachmentName: d.attachmentName });
     };
-
     window.openDeleteTestModal = function (btn) {
       const d = btn ? btn.dataset : {};
       window.openFormModal({
-        title: 'Delete Test',
-        headerBadge: d.testId || '',
-        actionUrl: POST_URL,
-        submitText: 'Delete Test',
+        title: 'Delete Test', headerBadge: d.testId || '', actionUrl: POST_URL, submitText: 'Delete Test',
         fields: [
           { type: 'hidden', name: 'action', value: 'delete_test' },
           { type: 'hidden', name: 'test_id', value: d.testId || '' },
           { name: 'confirm_title', label: 'Confirm Deleting Test', type: 'text', value: d.title || 'Selected Test', readonly: true }
         ]
-      });
-    };
-
-    window.openGradeTestModal = function (btn) {
-      const d = btn ? btn.dataset : {};
-      let roster = [];
-      try { roster = JSON.parse(d.roster || '[]'); } catch (e) { roster = []; }
-      const maxMarks = d.maxMarks || '100';
-      const fields = [
-        { type: 'hidden', name: 'action', value: 'grade_test' },
-        { type: 'hidden', name: 'test_id', value: d.testId || '' }
-      ];
-      if (!roster.length) {
-        fields.push({ name: 'empty_notice', label: 'Students', type: 'text', value: 'No students enrolled in ' + (d.courseCode || 'this course') + ' yet.', readonly: true });
-      } else {
-        roster.forEach(function (st) {
-          fields.push({ type: 'hidden', name: 'student_id', value: st.student_id || '' });
-          fields.push({ name: 'marks_' + st.student_id, label: (st.full_name || st.student_id) + ' (' + st.student_id + ') · Out of ' + maxMarks, type: 'number', value: st.obtained_marks !== '' && st.obtained_marks !== undefined ? String(st.obtained_marks) : '', min: '0', max: String(maxMarks), step: '0.5', placeholder: 'Enter marks (0 - ' + maxMarks + ')' });
-        });
-      }
-      window.openFormModal({
-        title: 'Grade: ' + (d.title || 'Test'),
-        headerBadge: (d.courseCode || '') + ' · Max ' + maxMarks,
-        actionUrl: POST_URL,
-        submitText: 'Save Grades & Predict',
-        fields: fields
       });
     };
   })();

@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
+  <div class="min-w-0 space-y-1">
+    <div class="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+      <a href="{% url 'panels:teacher_tests' %}" class="inline-flex items-center gap-1 hover:text-[var(--accent-primary)]">
+        <i class="fa-solid fa-arrow-left text-[11px]"></i>
+        <span>Back to Tests</span>
+      </a>
+      {% if test %}<span>·</span><span class="font-mono">{{ test.course_code }} · {{ test.test_type }}</span>{% endif %}
+    </div>
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)] truncate">{% if test %}Grade: {{ test.title }}{% else %}Grade Test{% endif %}</h2>
+    {% if test %}
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Max Marks: {{ test.max_marks|floatformat:0 }} · Test Date: {{ test.test_date|default:"-" }}{% if test.due_date %} · Due: {{ test.due_date }}{% endif %}</p>
+    {% endif %}
+  </div>
+  {% if test and test.attachment_url %}
+  <a href="{{ test.attachment_url }}" target="_blank" rel="noopener" class="inline-flex h-9 shrink-0 items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">
+    <i class="fa-solid fa-paperclip text-[var(--accent-primary)]"></i>
+    <span>{{ test.attachment_name|default:"View Attachment" }}</span>
+  </a>
+  {% endif %}
+</header>
+
+{% if db_error or error %}
+<div class="rounded-[12px] border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Notice: {{ error|default:db_error }}
+</div>
+{% endif %}
+
+{% if test %}
+<section class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+  {% include 'components/metric_card.html' with title="Students" value=kpis.total_students|default:0 badge=test.course_code status="info" icon="fa-solid fa-users" %}
+  {% include 'components/metric_card.html' with title="Graded" value=kpis.graded_count|default:0 badge="Done" status="success" icon="fa-solid fa-check-double" %}
+  {% include 'components/metric_card.html' with title="Pending" value=kpis.pending_count|default:0 badge="Remaining" status="warning" icon="fa-solid fa-hourglass-half" %}
+  {% include 'components/metric_card.html' with title="Average" value=kpis.avg_score|default:0|stringformat:"s"|add:"%" badge="Class" status="info" icon="fa-solid fa-chart-simple" %}
+</section>
+
+<form id="grade-test-form" method="post" action="{% url 'panels:teacher_test_grade' test_id=test.test_id %}" class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-4">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="grade_test">
+  <input type="hidden" name="test_id" value="{{ test.test_id }}">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div>
+      <h3 class="text-sm font-semibold text-[var(--text-primary)]">{{ test.course_code }} Student Roster</h3>
+      <p class="text-xs text-[var(--text-muted)]">Enter marks out of {{ test.max_marks|floatformat:0 }} and optional remarks for each student.</p>
+    </div>
+    {% if students %}
+    <button type="submit" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-4 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <i class="fa-solid fa-floppy-disk text-xs"></i>
+      <span>Save Grades</span>
+    </button>
+    {% endif %}
+  </div>
+
+  {% if students %}
+  <div id="grade-desktop-wrap" class="hidden md:block overflow-x-auto rounded-[12px] border border-[var(--border-subtle)]">
+    <table class="w-full text-left text-sm">
+      <thead class="border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+        <tr>
+          <th class="px-4 py-2.5">Student</th>
+          <th class="px-4 py-2.5">Status</th>
+          <th class="px-4 py-2.5">Marks (/ {{ test.max_marks|floatformat:0 }})</th>
+          <th class="px-4 py-2.5">Remarks</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-[var(--border-subtle)]">
+        {% for s in students %}
+        <tr class="hover:bg-[var(--bg-elevated)]">
+          <td class="px-4 py-2.5">
+            <input type="hidden" name="student_id" value="{{ s.student_id }}">
+            <p class="font-medium text-[var(--text-primary)]">{{ s.full_name }}</p>
+            <p class="text-xs font-mono text-[var(--text-muted)]">{{ s.student_id }} · {{ s.semester_label }}</p>
+          </td>
+          <td class="px-4 py-2.5">
+            <span class="rounded-full border border-[var(--border-subtle)] px-2.5 py-0.5 text-[11px] font-semibold {% if s.submission_status == 'GRADED' %}bg-[var(--accent-soft)] text-[var(--accent-primary)]{% else %}bg-[var(--bg-canvas)] text-[var(--text-muted)]{% endif %}">{{ s.submission_status }}</span>
+          </td>
+          <td class="px-4 py-2.5 w-40">
+            <input type="number" name="marks_{{ s.student_id }}" value="{{ s.obtained_marks }}" min="0" max="{{ test.max_marks|floatformat:0 }}" step="0.5" placeholder="0 - {{ test.max_marks|floatformat:0 }}" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm tabular-nums text-[var(--text-primary)]">
+          </td>
+          <td class="px-4 py-2.5">
+            <input type="text" name="remarks_{{ s.student_id }}" value="{{ s.remarks }}" placeholder="Optional feedback..." class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div id="grade-mobile-wrap" class="md:hidden space-y-3">
+    {% for s in students %}
+    <div class="rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 space-y-2.5">
+      <input type="hidden" name="student_id" value="{{ s.student_id }}">
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <p class="truncate text-sm font-semibold text-[var(--text-primary)]">{{ s.full_name }}</p>
+          <p class="text-xs font-mono text-[var(--text-muted)]">{{ s.student_id }} · {{ s.semester_label }}</p>
+        </div>
+        <span class="shrink-0 rounded-full border border-[var(--border-subtle)] px-2 py-0.5 text-[10px] font-semibold {% if s.submission_status == 'GRADED' %}bg-[var(--accent-soft)] text-[var(--accent-primary)]{% else %}bg-[var(--bg-surface)] text-[var(--text-muted)]{% endif %}">{{ s.submission_status }}</span>
+      </div>
+      <div class="grid grid-cols-1 gap-2">
+        <div>
+          <label class="mb-1 block text-[11px] font-medium text-[var(--text-secondary)]">Marks (/ {{ test.max_marks|floatformat:0 }})</label>
+          <input type="number" name="marks_{{ s.student_id }}" value="{{ s.obtained_marks }}" min="0" max="{{ test.max_marks|floatformat:0 }}" step="0.5" placeholder="0 - {{ test.max_marks|floatformat:0 }}" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-sm tabular-nums text-[var(--text-primary)]">
+        </div>
+        <div>
+          <label class="mb-1 block text-[11px] font-medium text-[var(--text-secondary)]">Remarks</label>
+          <input type="text" name="remarks_{{ s.student_id }}" value="{{ s.remarks }}" placeholder="Optional feedback..." class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-sm text-[var(--text-primary)]">
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="rounded-[12px] border border-[var(--border-subtle)] px-4 py-8 text-center text-sm text-[var(--text-muted)]">
+    No students are enrolled in {{ test.course_code }} yet.
+  </div>
+  {% endif %}
+</form>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const desktopWrap = document.getElementById('grade-desktop-wrap');
+    const mobileWrap = document.getElementById('grade-mobile-wrap');
+    const form = document.getElementById('grade-test-form');
+    if (!desktopWrap || !mobileWrap) return;
+
+    function syncGradeInputs() {
+      const isDesktop = window.innerWidth >= 768;
+      desktopWrap.querySelectorAll('input').forEach(function (el) { el.disabled = !isDesktop; });
+      mobileWrap.querySelectorAll('input').forEach(function (el) { el.disabled = isDesktop; });
+    }
+
+    syncGradeInputs();
+    window.addEventListener('resize', syncGradeInputs);
+    if (form) form.addEventListener('submit', syncGradeInputs);
+  })();
+</script>
+{% endblock %}

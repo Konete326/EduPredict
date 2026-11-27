@@ -1,10 +1,15 @@
 import json
+import re
+from pathlib import Path
 from unittest.mock import MagicMock, patch
+from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
 from accounts.services import authenticate_user
 from core.db import invalidate_cache
+from core.theme_services import get_theme_studio_catalog, normalize_theme_prefs
 
 
 class _FakeCursor(list):
@@ -22,10 +27,20 @@ class _FakeCol:
 
     def _match(self, doc, query):
         for k, v in (query or {}).items():
-            val = doc.get(k)
-            if isinstance(v, dict) and "$in" in v:
-                if val not in v["$in"]:
+            if k == "$or":
+                if not any(self._match(doc, sub) for sub in v):
                     return False
+                continue
+            val = doc.get(k)
+            if isinstance(v, dict):
+                if "$in" in v and val not in v["$in"]:
+                    return False
+                if "$ne" in v and val == v["$ne"]:
+                    return False
+                if "$regex" in v:
+                    flags = re.IGNORECASE if "i" in str(v.get("$options") or "") else 0
+                    if not re.search(v["$regex"], str(val or ""), flags):
+                        return False
             elif val != v:
                 return False
         return True
@@ -171,7 +186,8 @@ class TeacherAttendanceAndTestsWorkflowTests(TestCase):
     def setUp(self):
         invalidate_cache()
         self.courses = _FakeCol([
-            {"course_code": "CS-101", "title": "Intro to AI", "semester_id": "SEM-1", "instructor_id": "USR-TCH-1", "status": "ACTIVE"}
+            {"course_code": "CS-101", "title": "Intro to AI", "semester_id": "SEM-1", "instructor_id": "USR-TCH-1", "status": "ACTIVE"},
+            {"course_code": "CS-102", "title": "Data Mining", "semester_id": "SEM-1", "instructor_id": "USR-TCH-1", "status": "ACTIVE"},
         ])
         self.semesters = _FakeCol([{"semester_id": "SEM-1", "name": "Fall 2026"}])
         self.students = _FakeCol([
@@ -184,7 +200,17 @@ class TeacherAttendanceAndTestsWorkflowTests(TestCase):
                 "attendance_pct": 100.0,
                 "internal_marks": 60.0,
                 "teacher_user_id": "USR-TCH-1",
-            }
+            },
+            {
+                "student_id": "STD-102",
+                "full_name": "Zara Tariq",
+                "course_code": "CS-102",
+                "semester_id": "SEM-1",
+                "semester_label": "Fall 2026",
+                "attendance_pct": 95.0,
+                "internal_marks": 75.0,
+                "teacher_user_id": "USR-TCH-1",
+            },
         ])
         self.attendance = _FakeCol()
         self.tests = _FakeCol()
@@ -199,7 +225,15 @@ class TeacherAttendanceAndTestsWorkflowTests(TestCase):
         session.save()
         return client
 
-    def test_teacher_attendance_and_tests_crud_update_records_and_ml(self):
+    def test_nine_shell_themes_catalog_and_legacy_fallback(self):
+        catalog = get_theme_studio_catalog()
+        slugs = [item["slug"] for item in catalog["shell_themes"]]
+        self.assertEqual(len(slugs), 9)
+        self.assertNotIn("dark-red", slugs)
+        self.assertEqual(set(slugs), {"dark", "dark-green", "blue", "green", "red", "teal", "purple", "amber", "white"})
+        self.assertEqual(normalize_theme_prefs({"shell_theme": "dark-red"})["shell_theme"], "red")
+
+    def test_teacher_students_no_update_and_attendance_single_course_default(self):
         with (
             patch("panels.teacher_services.courses_col", return_value=self.courses),
             patch("panels.teacher_services.semesters_col", return_value=self.semesters),
@@ -210,79 +244,100 @@ class TeacherAttendanceAndTestsWorkflowTests(TestCase):
             patch("panels.teacher_academic_services.semesters_col", return_value=self.semesters),
             patch("panels.teacher_academic_services.student_records_col", return_value=self.students),
             patch("panels.teacher_academic_services.attendance_records_col", return_value=self.attendance),
-            patch("panels.teacher_academic_services.course_tests_col", return_value=self.tests),
-            patch("panels.teacher_academic_services.users_col", return_value=self.users),
-            patch("panels.teacher_academic_services.run_prediction_pipeline") as mock_ml,
             patch("core.context_processors.notifications_col", return_value=self.notifs),
             patch("core.db.MongoDBClient.check_health", return_value=True),
         ):
             client = self._teacher_client()
-            att1 = client.post(
-                reverse("panels:teacher_attendance"),
-                {
-                    "action": "save_attendance",
-                    "course": "CS-101",
-                    "course_code": "CS-101",
-                    "date": "2026-11-26",
-                    "attendance_json": json.dumps([{"student_id": "STD-101", "status": "PRESENT"}]),
-                },
-            )
-            self.assertRedirects(att1, f"{reverse('panels:teacher_attendance')}?course=CS-101&date=2026-11-26", fetch_redirect_response=False)
-            att2 = client.post(
-                reverse("panels:teacher_attendance"),
-                {
-                    "action": "save_attendance",
-                    "course": "CS-101",
-                    "course_code": "CS-101",
-                    "date": "2026-11-27",
-                    "attendance_json": json.dumps([{"student_id": "STD-101", "status": "ABSENT"}]),
-                },
-            )
-            self.assertRedirects(att2, f"{reverse('panels:teacher_attendance')}?course=CS-101&date=2026-11-27", fetch_redirect_response=False)
-            att3 = client.post(
-                reverse("panels:teacher_attendance"),
-                {
-                    "action": "save_attendance",
-                    "course": "CS-101",
-                    "course_code": "CS-101",
-                    "date": "2026-11-28",
-                    "attendance_json": json.dumps([{"student_id": "STD-101", "status": "LEAVE"}]),
-                },
-            )
-            self.assertRedirects(att3, f"{reverse('panels:teacher_attendance')}?course=CS-101&date=2026-11-28", fetch_redirect_response=False)
-            self.assertEqual(len(self.attendance.docs), 3)
-            stu_after_att = self.students.find_one({"student_id": "STD-101"})
-            self.assertAlmostEqual(stu_after_att["attendance_pct"], 33.33, places=2)
-            self.assertEqual(mock_ml.call_count, 3)
+            stu_page = client.get(reverse("panels:teacher_students"))
+            self.assertEqual(stu_page.status_code, 200)
+            self.assertContains(stu_page, "Ali Raza")
+            self.assertNotContains(stu_page, "openUpdateMarksModal")
 
-            c_resp = client.post(
-                reverse("panels:teacher_tests"),
-                {"action": "create_test", "title": "Quiz 1", "course_code": "CS-101", "test_type": "Quiz", "max_marks": "50"},
-            )
-            self.assertRedirects(c_resp, reverse("panels:teacher_tests"), fetch_redirect_response=False)
-            self.assertEqual(len(self.tests.docs), 1)
-            tid = self.tests.docs[0]["test_id"]
+            att_page = client.get(reverse("panels:teacher_attendance"))
+            self.assertEqual(att_page.status_code, 200)
+            self.assertEqual(att_page.context["course_filter"], "CS-101")
+            self.assertContains(att_page, "Ali Raza")
+            self.assertNotContains(att_page, "Zara Tariq")
 
-            u_resp = client.post(
-                reverse("panels:teacher_tests"),
-                {"action": "update_test", "test_id": tid, "title": "Quiz 1 Updated", "course_code": "CS-101", "test_type": "Midterm", "max_marks": "50"},
-            )
-            self.assertRedirects(u_resp, reverse("panels:teacher_tests"), fetch_redirect_response=False)
-            self.assertEqual(self.tests.docs[0]["title"], "Quiz 1 Updated")
+    def test_teacher_attendance_and_tests_crud_update_records_and_ml(self):
+        uploaded_file = None
+        try:
+            with (
+                patch("panels.teacher_services.courses_col", return_value=self.courses),
+                patch("panels.teacher_services.semesters_col", return_value=self.semesters),
+                patch("panels.teacher_services.student_records_col", return_value=self.students),
+                patch("panels.teacher_services.users_col", return_value=self.users),
+                patch("panels.teacher_services.predictions_col", return_value=self.preds),
+                patch("panels.teacher_academic_services.courses_col", return_value=self.courses),
+                patch("panels.teacher_academic_services.semesters_col", return_value=self.semesters),
+                patch("panels.teacher_academic_services.student_records_col", return_value=self.students),
+                patch("panels.teacher_academic_services.attendance_records_col", return_value=self.attendance),
+                patch("panels.teacher_academic_services.course_tests_col", return_value=self.tests),
+                patch("panels.teacher_academic_services.users_col", return_value=self.users),
+                patch("panels.teacher_academic_services.run_prediction_pipeline") as mock_ml,
+                patch("core.context_processors.notifications_col", return_value=self.notifs),
+                patch("core.db.MongoDBClient.check_health", return_value=True),
+            ):
+                client = self._teacher_client()
+                att1 = client.post(
+                    reverse("panels:teacher_attendance"),
+                    {"action": "save_attendance", "course": "CS-101", "course_code": "CS-101", "date": "2026-11-26", "attendance_json": json.dumps([{"student_id": "STD-101", "status": "PRESENT"}])},
+                )
+                self.assertRedirects(att1, f"{reverse('panels:teacher_attendance')}?course=CS-101&date=2026-11-26", fetch_redirect_response=False)
+                att2 = client.post(
+                    reverse("panels:teacher_attendance"),
+                    {"action": "save_attendance", "course": "CS-101", "course_code": "CS-101", "date": "2026-11-27", "attendance_json": json.dumps([{"student_id": "STD-101", "status": "ABSENT"}])},
+                )
+                self.assertRedirects(att2, f"{reverse('panels:teacher_attendance')}?course=CS-101&date=2026-11-27", fetch_redirect_response=False)
+                att3 = client.post(
+                    reverse("panels:teacher_attendance"),
+                    {"action": "save_attendance", "course": "CS-101", "course_code": "CS-101", "date": "2026-11-28", "attendance_json": json.dumps([{"student_id": "STD-101", "status": "LEAVE"}])},
+                )
+                self.assertRedirects(att3, f"{reverse('panels:teacher_attendance')}?course=CS-101&date=2026-11-28", fetch_redirect_response=False)
+                self.assertEqual(len(self.attendance.docs), 3)
+                self.assertAlmostEqual(self.students.find_one({"student_id": "STD-101"})["attendance_pct"], 33.33, places=2)
+                self.assertEqual(mock_ml.call_count, 3)
 
-            g_resp = client.post(
-                reverse("panels:teacher_tests"),
-                {
-                    "action": "grade_test",
-                    "test_id": tid,
-                    "scores_json": json.dumps([{"student_id": "STD-101", "obtained_marks": 42}]),
-                },
-            )
-            self.assertRedirects(g_resp, reverse("panels:teacher_tests"), fetch_redirect_response=False)
-            stu_after_grade = self.students.find_one({"student_id": "STD-101"})
-            self.assertEqual(stu_after_grade["internal_marks"], 84.0)
-            self.assertEqual(mock_ml.call_count, 4)
+                att_upload = SimpleUploadedFile("quiz_guide.txt", b"Quiz instructions", content_type="text/plain")
+                c_resp = client.post(
+                    reverse("panels:teacher_tests"),
+                    {"action": "create_test", "title": "Quiz 1", "course_code": "CS-101", "test_type": "Quiz", "max_marks": "50", "due_date": "2026-12-05", "notes": "Bring calculator", "attachment": att_upload},
+                )
+                self.assertRedirects(c_resp, reverse("panels:teacher_tests"), fetch_redirect_response=False)
+                self.assertEqual(len(self.tests.docs), 1)
+                created = self.tests.docs[0]
+                tid = created["test_id"]
+                self.assertEqual(created["due_date"], "2026-12-05")
+                self.assertEqual(created["attachment_name"], "quiz_guide.txt")
+                self.assertTrue(created["attachment_url"].startswith("/static/uploads/tests/"))
+                uploaded_file = Path(settings.BASE_DIR) / created["attachment_url"].lstrip("/")
+                self.assertTrue(uploaded_file.exists())
 
-            d_resp = client.post(reverse("panels:teacher_tests"), {"action": "delete_test", "test_id": tid})
-            self.assertRedirects(d_resp, reverse("panels:teacher_tests"), fetch_redirect_response=False)
-            self.assertEqual(len(self.tests.docs), 0)
+                u_resp = client.post(
+                    reverse("panels:teacher_tests"),
+                    {"action": "update_test", "test_id": tid, "title": "Quiz 1 Updated", "course_code": "CS-101", "test_type": "Midterm", "max_marks": "50", "due_date": "2026-12-06"},
+                )
+                self.assertRedirects(u_resp, reverse("panels:teacher_tests"), fetch_redirect_response=False)
+                self.assertEqual(self.tests.docs[0]["title"], "Quiz 1 Updated")
+
+                grade_url = reverse("panels:teacher_test_grade", kwargs={"test_id": tid})
+                grade_page = client.get(grade_url)
+                self.assertEqual(grade_page.status_code, 200)
+                self.assertContains(grade_page, "Ali Raza")
+                self.assertNotContains(grade_page, "Zara Tariq")
+
+                g_resp = client.post(grade_url, {"student_id": "STD-101", "marks_STD-101": "42", "remarks_STD-101": "Good work"})
+                self.assertRedirects(g_resp, grade_url, fetch_redirect_response=False)
+                sub = self.tests.docs[0]["submissions"]["STD-101"]
+                self.assertEqual(sub["obtained_marks"], 42.0)
+                self.assertEqual(sub["percentage"], 84.0)
+                self.assertEqual(sub["remarks"], "Good work")
+                self.assertEqual(self.students.find_one({"student_id": "STD-101"})["internal_marks"], 84.0)
+                self.assertEqual(mock_ml.call_count, 4)
+
+                d_resp = client.post(reverse("panels:teacher_tests"), {"action": "delete_test", "test_id": tid})
+                self.assertRedirects(d_resp, reverse("panels:teacher_tests"), fetch_redirect_response=False)
+                self.assertEqual(len(self.tests.docs), 0)
+        finally:
+            if uploaded_file and uploaded_file.exists():
+                uploaded_file.unlink()

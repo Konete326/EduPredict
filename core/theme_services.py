@@ -24,12 +24,14 @@ def _shell(slug, label, dot_color, p_side, p_top, accent_sync, s_light, t_light,
 
 SHELL_THEMES = (
     _shell("dark", "Dark", "#1e293b", "#0f172a", "#1e293b", "indigo", "#0f172a", "#1e293b", "#0d0e12", "#111217", True),
-    _shell("red", "Red", "#dc2626", "#991b1b", "#dc2626", "crimson", "#fee2e2", "#fef0f0", "#1b0e12", "#221116"),
-    _shell("dark-red", "Dark Red", "#991b1b", "#7f1d1d", "#991b1b", "crimson", "#7f1d1d", "#991b1b", "#1b0e12", "#221116", True),
     _shell("dark-green", "Dark Green", "#15803d", "#064e3b", "#065f46", "forest", "#064e3b", "#065f46", "#0b1a12", "#0f2218", True),
-    _shell("green", "Green", "#10b981", "#047857", "#10b981", "emerald", "#d1fae5", "#e2f8ee", "#0b1d18", "#102620"),
-    _shell("blue", "Blue", "#2563eb", "#1d4ed8", "#2563eb", "ocean", "#dbeafe", "#e8f0fe", "#0d0e12", "#111217"),
-    _shell("white", "White", "#ffffff", "#f1f5f9", "#f8fafc", None, "#f1f5f9", "#f8fafc", "#111114", "#111217"),
+    _shell("blue", "Blue", "#2563eb", "#1d4ed8", "#2563eb", "ocean", "#bfdbfe", "#dbeafe", "#0d0e12", "#111217"),
+    _shell("green", "Green", "#10b981", "#047857", "#10b981", "emerald", "#a7f3d0", "#d1fae5", "#0b1d18", "#102620"),
+    _shell("red", "Red", "#dc2626", "#991b1b", "#dc2626", "crimson", "#fecaca", "#fee2e2", "#1b0e12", "#221116"),
+    _shell("teal", "Teal", "#0d9488", "#0f766e", "#0d9488", "teal", "#99f6e4", "#ccfbf1", "#081c1a", "#0d2523"),
+    _shell("purple", "Purple", "#7e22ce", "#6b21a8", "#7e22ce", "violet", "#ddd6fe", "#ede9fe", "#140f1f", "#1b1429"),
+    _shell("amber", "Amber", "#d97706", "#b45309", "#d97706", "amber", "#fde68a", "#fef3c7", "#1a1409", "#241b0c"),
+    _shell("white", "White", "#ffffff", "#e2e8f0", "#f1f5f9", None, "#e2e8f0", "#f1f5f9", "#111114", "#111217"),
 )
 
 BRAND_SWATCHES = (
@@ -73,6 +75,7 @@ SURFACE_PRESETS = (
 
 _MODE_SLUGS = {item["slug"] for item in APPEARANCE_MODES}
 _SHELL_MAP = {item["slug"]: item for item in SHELL_THEMES}
+_SHELL_MAP["dark-red"] = _SHELL_MAP["red"]
 _SWATCH_MAP = {item["slug"]: item for item in BRAND_SWATCHES}
 _PRESET_MAP = {item["slug"]: item for item in SURFACE_PRESETS}
 _DENSITY_VALUES = {"comfortable", "compact"}
@@ -118,6 +121,8 @@ def normalize_theme_prefs(raw, role="PORTAL", user_id="guest"):
     clean_uid = str(user_id or "guest").strip() or "guest"
     mode = _pick(source, "mode", _MODE_SLUGS, "light")
     shell_theme = _pick(source, "shell_theme", _SHELL_MAP, "green")
+    if shell_theme == "dark-red":
+        shell_theme = "red"
     accent = _pick(source, "accent", _SWATCH_MAP, "emerald")
     preset = _pick(source, "preset", _PRESET_MAP, "neutral")
     density = _pick(source, "density", _DENSITY_VALUES, "comfortable")

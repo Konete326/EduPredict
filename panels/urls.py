@@ -28,6 +28,7 @@ urlpatterns = [
     path('teacher-panel/students/', views_teacher.teacher_students, name='teacher_students'),
     path('teacher-panel/attendance/', views_teacher.teacher_attendance, name='teacher_attendance'),
     path('teacher-panel/tests/', views_teacher.teacher_tests, name='teacher_tests'),
+    path('teacher-panel/tests/<str:test_id>/grade/', views_teacher.teacher_test_grade, name='teacher_test_grade'),
     path('teacher-panel/marks/', views_teacher.teacher_marks, name='teacher_marks'),
     path('student-panel/', views_student.student_dashboard, name='student_dashboard'),
     path('analyst-panel/', views_analyst.analyst_dashboard, name='analyst_dashboard'),

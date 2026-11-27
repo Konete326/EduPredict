@@ -3,7 +3,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from core.db import notifications_col
 from core.decorators import role_required
-from panels.teacher_academic_services import create_course_test, delete_course_test, get_teacher_attendance_context, get_teacher_courses_context, get_teacher_marks_context, get_teacher_students_context, get_teacher_tests_context, grade_test_submissions, save_course_attendance, save_student_marks_and_attendance, update_course_test
+from panels.teacher_academic_services import create_course_test, delete_course_test, get_teacher_attendance_context, get_teacher_courses_context, get_teacher_marks_context, get_teacher_students_context, get_teacher_test_grade_context, get_teacher_tests_context, grade_test_submissions, save_course_attendance, save_student_marks_and_attendance, update_course_test
 from panels.teacher_alert_services import get_teacher_portal_meta, toggle_teacher_auto_alerts
 from panels.teacher_services import delete_student_record, get_teacher_dashboard_context, notify_all_high_risk_students, reply_teacher_feedback, send_student_alert, update_student_record_inline
 
@@ -186,10 +186,10 @@ def teacher_tests(request):
         action = _param(request, "action").lower()
         try:
             if action == "create_test":
-                doc, err = create_course_test(request.POST, user)
+                doc, err = create_course_test(request.POST, user, attachment=request.FILES.get("attachment"))
                 _flash(request, doc is not None, err, f"Created test '{doc['title']}'." if doc else "")
             elif action == "update_test":
-                doc, err = update_course_test(request.POST, user)
+                doc, err = update_course_test(request.POST, user, attachment=request.FILES.get("attachment"))
                 _flash(request, doc is not None, err, f"Updated test '{doc['title']}'." if doc else "")
             elif action == "delete_test":
                 ok, err = delete_course_test(_param(request, "test_id"))
@@ -212,3 +212,28 @@ def teacher_tests(request):
     except Exception as exc:
         context["db_error"] = str(exc)
     return render(request, "panels/teacher_tests.html", context)
+
+
+@role_required(["TEACHER", "ADMIN"])
+def teacher_test_grade(request, test_id):
+    user = request.session.get("user") or {}
+    if request.method == "POST":
+        action = _param(request, "action").lower()
+        try:
+            if action in ("", "grade_test"):
+                post_data = request.POST.copy()
+                post_data["test_id"] = test_id
+                graded, err = grade_test_submissions(post_data, user)
+                _flash(request, bool(graded) and not err, err, f"Graded {graded} student(s) and updated internal marks.")
+            elif not _handle_common_post(request):
+                messages.error(request, "Unknown action.")
+        except Exception as exc:
+            messages.error(request, f"Database error: {exc}")
+        return redirect("panels:teacher_test_grade", test_id=test_id)
+
+    context = {"page_title": "Grade Test", "active_role": "TEACHER", "db_error": None}
+    try:
+        context.update(get_teacher_test_grade_context(user, test_id))
+    except Exception as exc:
+        context["db_error"] = str(exc)
+    return render(request, "panels/teacher_test_grade.html", context)

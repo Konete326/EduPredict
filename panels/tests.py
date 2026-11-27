@@ -211,7 +211,7 @@ class ThemePreferencesTests(TestCase):
     @patch("core.theme_services.users_col")
     def test_get_theme_preferences_defaults_and_path_fallback(self, mock_users_col):
         catalog = get_theme_studio_catalog()
-        self.assertEqual((len(catalog["modes"]), len(catalog["shell_themes"]), len(catalog["swatches"]), len(catalog["presets"])), (2, 7, 13, 12))
+        self.assertEqual((len(catalog["modes"]), len(catalog["shell_themes"]), len(catalog["swatches"]), len(catalog["presets"])), (2, 9, 13, 12))
         self.assertEqual(catalog["save_url"], "/theme/preferences/")
 
         resp = Client().get(reverse("panels:theme_preferences"))

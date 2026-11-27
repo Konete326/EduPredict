@@ -99,6 +99,14 @@ header.ep-topbar.is-scrolled {
   position: relative;
   transition: background-color 175ms cubic-bezier(0.24, 1, 0.4, 1), color 175ms cubic-bezier(0.24, 1, 0.4, 1);
 }
+#mobile-sidebar-drawer .ep-nav-link:hover,
+#mobile-sidebar-drawer button:hover {
+  background-color: color-mix(in srgb, var(--shell-sidebar-bg) 84%, var(--text-primary) 16%);
+}
+header.ep-topbar a:hover,
+header.ep-topbar button:hover {
+  background-color: color-mix(in srgb, var(--shell-topbar-bg) 84%, var(--text-primary) 16%);
+}
 .ep-nav-link.is-active {
   background-color: var(--accent-soft);
   color: var(--accent-primary);

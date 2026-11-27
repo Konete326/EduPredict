@@ -1,5 +1,7 @@
-import json, uuid
+import json, re, uuid
 from datetime import datetime, timezone
+from pathlib import Path
+from django.conf import settings
 from analytics.ml_engine import run_prediction_pipeline
 from core.db import attendance_records_col, course_tests_col, courses_col, get_cached, invalidate_cache, semesters_col, student_records_col, users_col
 from panels.teacher_services import _action, _alert_attrs, _is_admin, _load_joined_students, _safe_float, _scope_key, _semester_label, _student_attrs, _view_action, provision_student_accounts
@@ -76,14 +78,13 @@ def get_teacher_students_context(teacher_user=None, course_filter="ALL", semeste
         prob_pct = round(_safe_float(s.get("risk_probability")) * (100.0 if _safe_float(s.get("risk_probability")) <= 1.0 else 1.0), 1)
         gpa_str, r_badge = f"{s['predicted_gpa']:.2f}" if s.get("predicted_gpa") is not None else "-", _risk_badge(risk)
         actions = [
-            _view_action(f"Prediction: {s['full_name']}", {"title": s["full_name"], "subtitle": f"{s['student_id']} · {s['course_code']}", "badge": f"{risk} RISK", "items": [{"label": "Semester", "value": s.get("semester_label") or "-"}, {"label": "Dropout Risk", "value": f"{risk} ({prob_pct:.1f}%)"}, {"label": "Expected GPA", "value": gpa_str}, {"label": "Attendance", "value": f"{s['attendance_pct']:.1f}%"}, {"label": "Internal Marks", "value": f"{s['internal_marks']:.1f}"}, {"label": "Assignment Score", "value": f"{s['assignment_score']:.1f}"}, {"label": "LMS Hours / Wk", "value": f"{s['lms_hours_weekly']:.1f}"}, {"label": "Previous GPA", "value": f"{s['previous_gpa']:.2f}"}, {"label": "Recommendation", "value": s.get("recommendation") or "Update marks and attendance to generate tailored ML advice."}]}),
-            _action("Update", "fa-solid fa-pen-to-square", "openUpdateMarksModal(this)", f"Update marks for {s['full_name']}", _student_attrs(s)),
+            _view_action(f"Prediction: {s['full_name']}", {"title": s["full_name"], "subtitle": f"{s['student_id']} · {s['course_code']}", "badge": f"{risk} RISK", "items": [{"label": "Semester", "value": s.get("semester_label") or "-"}, {"label": "Attendance", "value": f"{s['attendance_pct']:.1f}%"}, {"label": "Marks", "value": f"{s['internal_marks']:.1f}"}, {"label": "Assignment Score", "value": f"{s['assignment_score']:.1f}"}, {"label": "Study Hours / Wk", "value": f"{s['lms_hours_weekly']:.1f}"}, {"label": "Prev GPA", "value": f"{s['previous_gpa']:.2f}"}, {"label": "Expected GPA", "value": gpa_str}, {"label": "Risk %", "value": f"{risk} ({prob_pct:.1f}%)"}, {"label": "Advice", "value": s.get("recommendation") or "Update marks and attendance to generate tailored ML advice."}]}),
             _action("Message", "fa-solid fa-envelope", "openSendMessageModal(this)", f"Message {s['full_name']}", _alert_attrs(s), variant="primary"),
         ]
-        rows.append([s["student_id"], s["full_name"], s.get("semester_label") or "-", s["course_code"], f"{s['attendance_pct']:.1f}%", f"{s['internal_marks']:.1f}", gpa_str, r_badge, {"actions": actions}])
+        rows.append([f"{s['full_name']} ({s['student_id']})", s["course_code"], r_badge, {"actions": actions}])
         cards.append({"id": s["student_id"], "title": s["full_name"], "subtitle": f"{s['student_id']} · {s.get('semester_label') or '-'}", "badge": r_badge, "meta": [{"label": "Course", "value": s["course_code"]}, {"label": "Attendance", "value": f"{s['attendance_pct']:.1f}%"}, {"label": "Marks", "value": f"{s['internal_marks']:.1f}"}, {"label": "Pred GPA", "value": gpa_str}], "actions": actions})
     total, gpa_vals = len(filtered), [s["predicted_gpa"] for s in filtered if s.get("predicted_gpa") is not None]
-    return {"students": filtered, "student_headers": ["Student ID", "Name", "Semester", "Course", "Attendance", "Marks", "Pred GPA", "Risk", "Actions"], "student_rows": rows, "student_cards": cards, "filter_options": {"courses": course_opts, "semesters": [{"value": k, "label": v} for k, v in sorted(sem_opts_map.items(), key=lambda x: x[1])], "course_filter": cf, "semester_filter": sf}, "kpis": {"total_students": total, "high_risk_count": high_cnt, "medium_risk_count": med_cnt, "avg_attendance": round(sum(s["attendance_pct"] for s in filtered) / total, 1) if total else 0.0, "avg_marks": round(sum(s["internal_marks"] for s in filtered) / total, 1) if total else 0.0, "avg_pred_gpa": round(sum(gpa_vals) / len(gpa_vals), 2) if gpa_vals else 0.0}}
+    return {"students": filtered, "student_headers": ["Student", "Course", "Risk", "Actions"], "student_rows": rows, "student_cards": cards, "filter_options": {"courses": course_opts, "semesters": [{"value": k, "label": v} for k, v in sorted(sem_opts_map.items(), key=lambda x: x[1])], "course_filter": cf, "semester_filter": sf}, "kpis": {"total_students": total, "high_risk_count": high_cnt, "medium_risk_count": med_cnt, "avg_attendance": round(sum(s["attendance_pct"] for s in filtered) / total, 1) if total else 0.0, "avg_marks": round(sum(s["internal_marks"] for s in filtered) / total, 1) if total else 0.0, "avg_pred_gpa": round(sum(gpa_vals) / len(gpa_vals), 2) if gpa_vals else 0.0}}
 
 
 def get_teacher_marks_context(teacher_user=None, course_filter="ALL"):
@@ -177,23 +178,22 @@ def _norm_att_status(val):
     return "PRESENT"
 
 
-def get_teacher_attendance_context(teacher_user=None, course_filter="ALL", date_str=""):
+def get_teacher_attendance_context(teacher_user=None, course_filter="", date_str=""):
     courses, students = _teacher_courses_list(teacher_user), _load_joined_students(teacher_user)
-    cf = str(course_filter or "ALL").strip().upper() or "ALL"
-    selected_date = str(date_str or "").strip() or datetime.now(timezone.utc).strftime("%Y-%m-%d")
     course_options = [{"value": c["course_code"], "label": f"{c['course_code']} · {c['title']}", "semester_id": c["semester_id"], "semester_label": c["semester_label"]} for c in courses]
-    selected_course = next((c for c in courses if c["course_code"] == cf), None) if cf != "ALL" else (courses[0] if courses else None)
-    filtered = [s for s in students if cf == "ALL" or s["course_code"] == cf]
-    att_query = {"date": selected_date, **({"course_code": cf} if cf != "ALL" else {})}
+    raw_cf = str(course_filter or "").strip().upper()
+    cf = raw_cf if (raw_cf and raw_cf != "ALL") else (course_options[0]["value"] if course_options else "")
+    selected_date = str(date_str or "").strip() or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    selected_course = next((c for c in courses if c["course_code"] == cf), None) if cf else None
+    filtered = [s for s in students if s["course_code"] == cf] if cf else []
+    att_query = {"date": selected_date, "course_code": cf} if cf else {"date": selected_date, "course_code": "__NONE__"}
     existing_map = {str(r.get("student_id") or "").strip(): str(r.get("status") or "PRESENT").strip().upper() for r in attendance_records_col().find(att_query, {"_id": 0, "student_id": 1, "status": 1})}
     att_students, present_cnt, absent_cnt, leave_cnt, marked_cnt = [], 0, 0, 0, 0
     for s in filtered:
         st = existing_map.get(s["student_id"], "")
         marked_cnt += int(bool(st))
         eff = st or "PRESENT"
-        present_cnt += int(eff == "PRESENT")
-        absent_cnt += int(eff == "ABSENT")
-        leave_cnt += int(eff == "LEAVE")
+        present_cnt, absent_cnt, leave_cnt = present_cnt + int(eff == "PRESENT"), absent_cnt + int(eff == "ABSENT"), leave_cnt + int(eff == "LEAVE")
         att_students.append({**s, "today_status": eff, "has_marked": bool(st)})
     return {"course_options": course_options, "selected_course": selected_course, "course_filter": cf, "selected_date": selected_date, "students": att_students, "kpis": {"total_students": len(att_students), "present_count": present_cnt, "absent_count": absent_cnt, "leave_count": leave_cnt, "marked_count": marked_cnt}}
 
@@ -232,6 +232,17 @@ def save_course_attendance(post_data, teacher_user=None):
     return saved, None
 
 
+def _save_test_attachment(attachment):
+    if not attachment or not getattr(attachment, "name", ""): return "", ""
+    upload_dir = Path(settings.BASE_DIR) / "static" / "uploads" / "tests"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(attachment.name).name).strip("_") or "attachment"
+    stored_name = f"{uuid.uuid4().hex[:8]}_{safe_name}"
+    with (upload_dir / stored_name).open("wb") as fh:
+        for chunk in attachment.chunks(): fh.write(chunk)
+    return f"/static/uploads/tests/{stored_name}", safe_name
+
+
 def get_teacher_tests_context(teacher_user=None, course_filter="ALL"):
     courses, students = _teacher_courses_list(teacher_user), _load_joined_students(teacher_user)
     cf = str(course_filter or "ALL").strip().upper() or "ALL"
@@ -240,45 +251,53 @@ def get_teacher_tests_context(teacher_user=None, course_filter="ALL"):
     query = {"course_code": cf} if cf != "ALL" else ({"course_code": {"$in": sorted(allowed_codes)}} if not _is_admin(teacher_user) and allowed_codes else {})
     tests = []
     for t in course_tests_col().find(query, {"_id": 0}).sort("created_at", -1):
-        c_code, subs = str(t.get("course_code") or "").strip().upper(), t.get("submissions") or {}
+        tid, title = str(t.get("test_id") or "").strip(), str(t.get("title") or "Untitled Test").strip()
+        c_code, test_type = str(t.get("course_code") or "").strip().upper(), str(t.get("test_type") or "Quiz").strip()
+        max_marks, test_date = _safe_float(t.get("max_marks"), 100.0), str(t.get("test_date") or "").strip()
+        due_date, description, notes = str(t.get("due_date") or test_date).strip(), str(t.get("description") or "").strip(), str(t.get("notes") or "").strip()
+        att_url, att_name, subs = str(t.get("attachment_url") or "").strip(), str(t.get("attachment_name") or "").strip(), t.get("submissions") or {}
         c_students = [s for s in students if s["course_code"] == c_code]
         graded_vals = [_safe_float(v.get("percentage")) for v in subs.values() if isinstance(v, dict)]
+        avg_score = round(sum(graded_vals) / len(graded_vals), 1) if graded_vals else 0.0
         roster = [{"student_id": s["student_id"], "full_name": s["full_name"], "obtained_marks": subs.get(s["student_id"], {}).get("obtained_marks", ""), "percentage": subs.get(s["student_id"], {}).get("percentage", "")} for s in c_students]
-        tests.append({"test_id": str(t.get("test_id") or "").strip(), "title": str(t.get("title") or "Untitled Test").strip(), "course_code": c_code, "test_type": str(t.get("test_type") or "Quiz").strip(), "max_marks": _safe_float(t.get("max_marks"), 100.0), "test_date": str(t.get("test_date") or "").strip(), "description": str(t.get("description") or "").strip(), "graded_count": len(subs), "total_students": len(c_students), "avg_score": round(sum(graded_vals) / len(graded_vals), 1) if graded_vals else 0.0, "roster_json": json.dumps(roster)})
+        view_payload = {"title": title, "subtitle": f"{c_code} · {test_type}", "badge": f"{len(subs)}/{len(c_students)} Graded", "items": [{"label": "Test ID", "value": tid}, {"label": "Course", "value": c_code}, {"label": "Type", "value": test_type}, {"label": "Max Marks", "value": f"{max_marks:g}"}, {"label": "Test Date", "value": test_date or "-"}, {"label": "Due Date", "value": due_date or "-"}, {"label": "Graded", "value": f"{len(subs)} / {len(c_students)}"}, {"label": "Avg Score", "value": f"{avg_score:.1f}%"}, {"label": "Notes", "value": notes or description or "-"}, {"label": "Attachment", "value": att_name or "None"}]}
+        tests.append({"test_id": tid, "title": title, "course_code": c_code, "test_type": test_type, "max_marks": max_marks, "test_date": test_date, "due_date": due_date, "description": description, "notes": notes, "attachment_url": att_url, "attachment_name": att_name, "graded_count": len(subs), "total_students": len(c_students), "avg_score": avg_score, "roster_json": json.dumps(roster), "view_payload_json": json.dumps(view_payload), "view_action": _view_action(f"Test: {title}", view_payload)})
     return {"course_options": course_options, "course_filter": cf, "tests": tests, "students": [s for s in students if cf == "ALL" or s["course_code"] == cf], "kpis": {"total_tests": len(tests), "graded_tests": sum(1 for t in tests if t["graded_count"] > 0), "total_students": len(students)}}
 
 
 def _validate_test_payload(post_data, require_id=False):
-    tid = str(post_data.get("test_id") or "").strip()
-    title, course_code = str(post_data.get("title") or "").strip(), str(post_data.get("course_code") or "").strip().upper()
-    if (require_id and not tid) or not title or not course_code:
-        return None, "Test ID, title, and course are required." if require_id else "Test title and course are required."
+    tid, title, course_code = str(post_data.get("test_id") or "").strip(), str(post_data.get("title") or "").strip(), str(post_data.get("course_code") or "").strip().upper()
+    if (require_id and not tid) or not title or not course_code: return None, "Test ID, title, and course are required." if require_id else "Test title and course are required."
     try:
         max_marks = float(post_data.get("max_marks") or 100.0)
         if max_marks <= 0: raise ValueError()
-    except (TypeError, ValueError):
-        return None, "Max marks must be greater than 0."
-    return {"test_id": tid, "title": title, "course_code": course_code, "test_type": str(post_data.get("test_type") or "Quiz").strip() or "Quiz", "max_marks": round(max_marks, 2), "test_date": str(post_data.get("test_date") or "").strip(), "description": str(post_data.get("description") or "").strip()}, None
+    except (TypeError, ValueError): return None, "Max marks must be greater than 0."
+    return {"test_id": tid, "title": title, "course_code": course_code, "test_type": str(post_data.get("test_type") or "Quiz").strip() or "Quiz", "max_marks": round(max_marks, 2), "test_date": str(post_data.get("test_date") or "").strip(), "due_date": str(post_data.get("due_date") or "").strip(), "description": str(post_data.get("description") or "").strip(), "notes": str(post_data.get("notes") or "").strip()}, None
 
 
-def create_course_test(post_data, teacher_user=None):
+def create_course_test(post_data, teacher_user=None, attachment=None):
     data, err = _validate_test_payload(post_data, require_id=False)
     if err: return None, err
     now = datetime.now(timezone.utc)
     c_doc = courses_col().find_one({"course_code": data["course_code"]}, {"_id": 0, "semester_id": 1}) or {}
-    doc = {**data, "test_id": f"TST-{uuid.uuid4().hex[:6].upper()}", "semester_id": str(c_doc.get("semester_id") or "").strip(), "test_date": data["test_date"] or now.strftime("%Y-%m-%d"), "submissions": {}, "teacher_user_id": str((teacher_user or {}).get("user_id") or "").strip(), "teacher_name": str((teacher_user or {}).get("full_name") or "Teacher").strip(), "created_at": now, "updated_at": now}
+    t_date = data["test_date"] or now.strftime("%Y-%m-%d")
+    att_url, att_name = _save_test_attachment(attachment)
+    doc = {**data, "test_id": f"TST-{uuid.uuid4().hex[:6].upper()}", "semester_id": str(c_doc.get("semester_id") or "").strip(), "test_date": t_date, "due_date": data["due_date"] or t_date, "attachment_url": att_url, "attachment_name": att_name, "submissions": {}, "teacher_user_id": str((teacher_user or {}).get("user_id") or "").strip(), "teacher_name": str((teacher_user or {}).get("full_name") or "Teacher").strip(), "created_at": now, "updated_at": now}
     course_tests_col().insert_one(doc)
     invalidate_cache()
     return doc, None
 
 
-def update_course_test(post_data, teacher_user=None):
+def update_course_test(post_data, teacher_user=None, attachment=None):
     data, err = _validate_test_payload(post_data, require_id=True)
     if err: return None, err
     tid = data.pop("test_id")
-    updates = {**data, "updated_at": datetime.now(timezone.utc)}
-    res = course_tests_col().update_one({"test_id": tid}, {"$set": updates})
-    if not res.matched_count: return None, "Test not found."
+    existing = course_tests_col().find_one({"test_id": tid}, {"_id": 0})
+    if not existing: return None, "Test not found."
+    t_date = data["test_date"] or str(existing.get("test_date") or "").strip()
+    att_url, att_name = _save_test_attachment(attachment)
+    updates = {**data, "test_date": t_date, "due_date": data["due_date"] or t_date, "attachment_url": att_url or str(existing.get("attachment_url") or ""), "attachment_name": att_name or str(existing.get("attachment_name") or ""), "updated_at": datetime.now(timezone.utc)}
+    course_tests_col().update_one({"test_id": tid}, {"$set": updates})
     invalidate_cache()
     return {"test_id": tid, **updates}, None
 
@@ -291,6 +310,24 @@ def delete_course_test(test_id):
     return (True, None) if res.deleted_count else (False, "Test not found.")
 
 
+def get_teacher_test_grade_context(teacher_user, test_id):
+    tid = str(test_id or "").strip()
+    test_doc = course_tests_col().find_one({"test_id": tid}, {"_id": 0})
+    if not test_doc: return {"test": None, "students": [], "kpis": {"total_students": 0, "graded_count": 0, "pending_count": 0, "avg_score": 0.0}, "error": "Test not found."}
+    c_code, sem_id, subs = str(test_doc.get("course_code") or "").strip().upper(), str(test_doc.get("semester_id") or "").strip(), test_doc.get("submissions") or {}
+    c_students = [s for s in _load_joined_students(teacher_user) if s["course_code"] == c_code and (not sem_id or not s.get("semester_id") or s.get("semester_id") == sem_id)]
+    grade_students, graded_cnt, pct_vals = [], 0, []
+    for s in c_students:
+        sub = subs.get(s["student_id"]) if isinstance(subs.get(s["student_id"]), dict) else {}
+        has_marks = sub.get("obtained_marks") not in (None, "")
+        graded_cnt += int(has_marks)
+        if has_marks: pct_vals.append(_safe_float(sub.get("percentage")))
+        grade_students.append({"student_id": s["student_id"], "full_name": s["full_name"], "course_code": s["course_code"], "semester_label": s.get("semester_label") or "-", "attendance_pct": s["attendance_pct"], "internal_marks": s["internal_marks"], "submission_status": str(sub.get("submission_status") or ("GRADED" if has_marks else "PENDING")).strip().upper(), "obtained_marks": sub.get("obtained_marks", ""), "percentage": sub.get("percentage", ""), "remarks": str(sub.get("remarks") or "").strip()})
+    avg_score, t_date = round(sum(pct_vals) / len(pct_vals), 1) if pct_vals else 0.0, str(test_doc.get("test_date") or "").strip()
+    test_info = {"test_id": tid, "title": str(test_doc.get("title") or "Untitled Test").strip(), "course_code": c_code, "semester_id": sem_id, "test_type": str(test_doc.get("test_type") or "Quiz").strip(), "max_marks": _safe_float(test_doc.get("max_marks"), 100.0), "test_date": t_date, "due_date": str(test_doc.get("due_date") or t_date).strip(), "description": str(test_doc.get("description") or "").strip(), "notes": str(test_doc.get("notes") or "").strip(), "attachment_url": str(test_doc.get("attachment_url") or "").strip(), "attachment_name": str(test_doc.get("attachment_name") or "").strip(), "graded_count": graded_cnt, "total_students": len(grade_students), "avg_score": avg_score}
+    return {"test": test_info, "students": grade_students, "kpis": {"total_students": len(grade_students), "graded_count": graded_cnt, "pending_count": len(grade_students) - graded_cnt, "avg_score": avg_score}, "error": None}
+
+
 def grade_test_submissions(post_data, teacher_user=None):
     tid, t_col = str(post_data.get("test_id") or "").strip(), course_tests_col()
     test_doc = t_col.find_one({"test_id": tid})
@@ -299,7 +336,7 @@ def grade_test_submissions(post_data, teacher_user=None):
     scores = _parse_json_list(post_data.get("scores_json"))
     if not scores and hasattr(post_data, "getlist"):
         sids, marks_l = [str(x).strip() for x in post_data.getlist("student_id") if str(x).strip()], post_data.getlist("obtained_marks")
-        scores = [{"student_id": sid, "obtained_marks": post_data.get(f"marks_{sid}") if post_data.get(f"marks_{sid}") not in (None, "") else (marks_l[i] if i < len(marks_l) else "")} for i, sid in enumerate(sids)]
+        scores = [{"student_id": sid, "obtained_marks": post_data.get(f"marks_{sid}") if post_data.get(f"marks_{sid}") not in (None, "") else (marks_l[i] if i < len(marks_l) else ""), "remarks": post_data.get(f"remarks_{sid}") or "", "submission_status": post_data.get(f"status_{sid}") or ""} for i, sid in enumerate(sids)]
     subs, now, graded_sids, rec_col = dict(test_doc.get("submissions") or {}), datetime.now(timezone.utc), set(), student_records_col()
     for item in scores:
         sid, raw_m = str(item.get("student_id") or "").strip(), item.get("obtained_marks")
@@ -307,9 +344,8 @@ def grade_test_submissions(post_data, teacher_user=None):
         try: val = float(raw_m)
         except (TypeError, ValueError): return 0, f"Invalid marks for student {sid}."
         if val < 0 or val > max_marks: return 0, f"Marks for {sid} must be between 0 and {max_marks:g}."
-        pct = round((val / max_marks) * 100.0, 2)
-        rec = rec_col.find_one({"student_id": sid}, {"_id": 0, "full_name": 1}) or {}
-        subs[sid] = {"student_id": sid, "full_name": str(rec.get("full_name") or sid), "obtained_marks": round(val, 2), "percentage": pct, "graded_at": now.isoformat()}
+        pct, rec = round((val / max_marks) * 100.0, 2), rec_col.find_one({"student_id": sid}, {"_id": 0, "full_name": 1}) or {}
+        subs[sid] = {"student_id": sid, "full_name": str(rec.get("full_name") or sid), "obtained_marks": round(val, 2), "percentage": pct, "remarks": str(item.get("remarks") or "").strip(), "submission_status": str(item.get("submission_status") or "GRADED").strip().upper(), "graded_at": now.isoformat()}
         graded_sids.add(sid)
     if not graded_sids: return 0, "Please enter marks for at least one student."
     t_col.update_one({"test_id": tid}, {"$set": {"submissions": subs, "updated_at": now}})
