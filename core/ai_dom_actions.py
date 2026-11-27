@@ -10,7 +10,9 @@ ROLE_ROUTES = {
         ("/teacher-panel/", "Dashboard", ("dashboard", "home", "class home", "teacher panel", "overview")),
         ("/teacher-panel/courses/", "My Courses", ("courses", "my courses", "assigned courses", "subjects", "teacher courses")),
         ("/teacher-panel/students/", "My Students", ("students", "my students", "student list", "class list", "at risk", "at-risk")),
-        ("/teacher-panel/marks/", "Attendance & Marks", ("marks", "attendance", "enter marks", "upload marks", "save marks", "bulk marks", "grading")),
+        ("/teacher-panel/attendance/", "Attendance", ("attendance", "mark attendance", "daily attendance", "present", "absent", "leave")),
+        ("/teacher-panel/tests/", "Tests", ("tests", "quizzes", "exams", "create test", "grade test", "test marks")),
+        ("/teacher-panel/marks/", "Marks", ("marks", "enter marks", "upload marks", "save marks", "bulk marks", "grading")),
         ("/notifications/", "Notification", ("notifications", "alert history", "history", "alerts")),
         ("/profile/", "My Profile", ("profile", "my profile", "avatar", "bio", "account")),
     ),
@@ -28,6 +30,7 @@ ROLE_ROUTES = {
         ("/admin-panel/students/", "Students", ("students", "student directory", "manage students", "enrollments")),
         ("/admin-panel/semesters/", "Semesters", ("semesters", "semester", "manage semesters", "programs")),
         ("/admin-panel/courses/", "Courses", ("courses", "subjects", "course catalog", "manage courses")),
+        ("/admin-panel/password-requests/", "Password Requests", ("password requests", "password approvals", "reset requests", "approve password")),
         ("/admin-panel/training/", "Training Data", ("training", "training data", "dataset")),
         ("/admin-panel/tickets/", "Help Tickets", ("tickets", "help tickets", "support tickets", "feedback")),
         ("/admin-panel/settings/", "Portal Settings", ("settings", "portal settings", "thresholds", "backup")),
@@ -38,9 +41,9 @@ ROLE_ROUTES = {
 
 ROLE_PRD_CAPS = {
     "STUDENT": "Student scope: personal attendance %, marks, predicted GPA, risk level, notifications, and own profile/password.",
-    "TEACHER": "Teacher scope: class dashboard overview, assigned courses & semesters, student performance list & risk alerts, attendance & marks entry with live predictions, notifications, support tickets, and own profile/password.",
+    "TEACHER": "Teacher scope: class dashboard overview, assigned courses & semesters, student performance list & custom messages, daily attendance, card-based tests & grading with live predictions, notifications, support tickets, and own profile/password.",
     "ANALYST": "Analyst scope: Data & ML Hub, dataset upload, RandomForest/Ridge/IsolationForest predictions, retrain & run ML, model evaluation metrics, live LMS stream simulation, model health & thresholds, and own profile/password.",
-    "ADMIN": "Admin scope: portal overview, user CRUD & teacher approval/rejection, teachers, students, semesters, courses, training data upload, support ticket replies & lightbox review, MongoDB backups, portal settings, Theme Studio, and own profile/password.",
+    "ADMIN": "Admin scope: portal overview, user CRUD & teacher approval/rejection, password change request approvals, teachers, students, semesters, courses, training data upload, support ticket replies & lightbox review, MongoDB backups, portal settings, Theme Studio, and own profile/password.",
 }
 
 ROLE_POLLS = {

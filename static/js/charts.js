@@ -3,8 +3,7 @@
   let pluginRegistered = false;
 
   function readCssVar(name, fallback) {
-    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    return value || fallback;
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
   }
 
   function getThemeTokens() {
@@ -38,9 +37,7 @@
         if (!meta || !meta.data || !meta.data.length) return;
         const values = (chart.data.datasets[0] && chart.data.datasets[0].data) || [];
         const total = values.reduce((acc, v) => acc + (Number(v) || 0), 0);
-        const arc = meta.data[0];
-        const ctx = chart.ctx;
-        const tokens = getThemeTokens();
+        const arc = meta.data[0], ctx = chart.ctx, tokens = getThemeTokens();
         ctx.save();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -60,13 +57,15 @@
     ensureDoughnutCenterPlugin();
     const tokens = getThemeTokens();
     Chart.defaults.color = tokens.textSecondary;
-    Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.15)';
+    Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.12)';
     Chart.defaults.font.family = "'Inter', ui-sans-serif, system-ui, sans-serif";
     if (Chart.defaults.datasets) {
       Chart.defaults.datasets.bar = Object.assign(Chart.defaults.datasets.bar || {}, {
-        borderRadius: 6,
+        borderRadius: 8,
         borderSkipped: false,
-        maxBarThickness: 36
+        maxBarThickness: 40,
+        categoryPercentage: 0.65,
+        barPercentage: 0.78
       });
       Chart.defaults.datasets.doughnut = Object.assign(Chart.defaults.datasets.doughnut || {}, {
         cutout: '72%',
@@ -77,24 +76,15 @@
       Chart.defaults.plugins.legend.position = 'top';
       Chart.defaults.plugins.legend.align = 'end';
       if (Chart.defaults.plugins.legend.labels) {
-        Chart.defaults.plugins.legend.labels.color = tokens.textSecondary;
-        Chart.defaults.plugins.legend.labels.usePointStyle = true;
-        Chart.defaults.plugins.legend.labels.pointStyle = 'circle';
-        Chart.defaults.plugins.legend.labels.boxWidth = 8;
-        Chart.defaults.plugins.legend.labels.boxHeight = 8;
+        Object.assign(Chart.defaults.plugins.legend.labels, {
+          color: tokens.textSecondary, usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8
+        });
       }
     }
     if (Chart.defaults.plugins && Chart.defaults.plugins.tooltip) {
       Object.assign(Chart.defaults.plugins.tooltip, {
-        backgroundColor: '#0f172a',
-        titleColor: '#f8fafc',
-        bodyColor: '#e2e8f0',
-        borderColor: 'rgba(255, 255, 255, 0.12)',
-        borderWidth: 1,
-        padding: 10,
-        cornerRadius: 8,
-        displayColors: true,
-        boxPadding: 4
+        backgroundColor: '#0f172a', titleColor: '#f8fafc', bodyColor: '#e2e8f0',
+        borderColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1, padding: 10, cornerRadius: 8, displayColors: true, boxPadding: 4
       });
     }
   }
@@ -106,15 +96,15 @@
       config.options = config.options || {};
       if (!config.options.cutout) config.options.cutout = '72%';
       if (config.data && Array.isArray(config.data.datasets)) {
-        config.data.datasets.forEach((ds) => {
-          ds.borderWidth = 0;
-        });
+        config.data.datasets.forEach((ds) => { ds.borderWidth = 0; });
       }
     } else if (chartType === 'bar' && config.data && Array.isArray(config.data.datasets)) {
       config.data.datasets.forEach((ds) => {
-        if (ds.borderRadius === undefined) ds.borderRadius = 6;
+        ds.borderRadius = ds.borderRadius === undefined ? 8 : Math.max(Number(ds.borderRadius) || 0, 8);
         if (ds.borderSkipped === undefined) ds.borderSkipped = false;
-        if (ds.maxBarThickness === undefined) ds.maxBarThickness = 36;
+        ds.maxBarThickness = ds.maxBarThickness === undefined ? 40 : Math.min(Number(ds.maxBarThickness) || 40, 40);
+        if (ds.categoryPercentage === undefined) ds.categoryPercentage = 0.65;
+        if (ds.barPercentage === undefined) ds.barPercentage = 0.78;
       });
     }
     if (config.options) applyTokensToOptions(config.options, tokens);
@@ -126,26 +116,13 @@
     options.plugins.legend = options.plugins.legend || {};
     if (!options.plugins.legend.position) options.plugins.legend.position = 'top';
     if (!options.plugins.legend.align) options.plugins.legend.align = 'end';
-    options.plugins.legend.labels = options.plugins.legend.labels || {};
-    options.plugins.legend.labels.color = tokens.textSecondary;
-    options.plugins.legend.labels.usePointStyle = true;
-    options.plugins.legend.labels.pointStyle = 'circle';
-    options.plugins.legend.labels.boxWidth = 8;
-    options.plugins.legend.labels.boxHeight = 8;
-
-    options.plugins.tooltip = options.plugins.tooltip || {};
-    Object.assign(options.plugins.tooltip, {
-      backgroundColor: '#0f172a',
-      titleColor: '#f8fafc',
-      bodyColor: '#e2e8f0',
-      borderColor: 'rgba(255, 255, 255, 0.12)',
-      borderWidth: 1,
-      padding: 10,
-      cornerRadius: 8,
-      displayColors: true,
-      boxPadding: 4
+    options.plugins.legend.labels = Object.assign(options.plugins.legend.labels || {}, {
+      color: tokens.textSecondary, usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8
     });
-
+    options.plugins.tooltip = Object.assign(options.plugins.tooltip || {}, {
+      backgroundColor: '#0f172a', titleColor: '#f8fafc', bodyColor: '#e2e8f0',
+      borderColor: 'rgba(255, 255, 255, 0.12)', borderWidth: 1, padding: 10, cornerRadius: 8, displayColors: true, boxPadding: 4
+    });
     if (options.scales) {
       Object.keys(options.scales).forEach(function (axisKey) {
         const axis = options.scales[axisKey];
@@ -154,43 +131,36 @@
           axis.grid = Object.assign(axis.grid || {}, { display: false });
           axis.border = Object.assign(axis.border || {}, { display: false });
         } else {
-          axis.grid = Object.assign(axis.grid || {}, {
-            color: 'rgba(148, 163, 184, 0.15)',
-            tickBorderDash: [4, 4]
-          });
+          axis.grid = Object.assign(axis.grid || {}, { color: 'rgba(148, 163, 184, 0.12)', tickBorderDash: [4, 4] });
           axis.border = Object.assign(axis.border || {}, { display: false, dash: [4, 4] });
         }
         if (axis.ticks) axis.ticks.color = tokens.textMuted;
         if (axis.pointLabels) axis.pointLabels.color = tokens.textSecondary;
-        if (axis.angleLines) axis.angleLines.color = 'rgba(148, 163, 184, 0.15)';
+        if (axis.angleLines) axis.angleLines.color = 'rgba(148, 163, 184, 0.12)';
       });
     }
   }
 
   function resolveCanvas(target) {
     if (!target) return null;
-    if (typeof target === 'string') return document.getElementById(target);
-    return target;
+    return typeof target === 'string' ? document.getElementById(target) : target;
   }
 
   function createThemedChart(target, configOrFactory) {
     if (typeof Chart === 'undefined') return null;
     const canvas = resolveCanvas(target);
     if (!canvas) return null;
-
     const existing = managedCharts.get(canvas);
     if (existing && existing.chart) {
       existing.chart.destroy();
       managedCharts.delete(canvas);
     }
-
     applyGlobalChartDefaults();
     const tokens = getThemeTokens();
     const isFactory = typeof configOrFactory === 'function';
     const config = isFactory ? configOrFactory(tokens) : configOrFactory;
     config.options = config.options || {};
     applyTokensToConfig(config, tokens);
-
     const chart = new Chart(canvas.getContext('2d'), config);
     managedCharts.set(canvas, { chart: chart, factory: isFactory ? configOrFactory : null });
     return chart;
@@ -200,7 +170,6 @@
     if (typeof Chart === 'undefined') return;
     applyGlobalChartDefaults();
     const tokens = getThemeTokens();
-
     managedCharts.forEach(function (entry, canvas) {
       if (!document.body.contains(canvas)) {
         entry.chart.destroy();
@@ -208,22 +177,21 @@
         return;
       }
       if (entry.factory) {
-        const updatedConfig = entry.factory(tokens);
-        if (updatedConfig.data && updatedConfig.data.datasets) {
-          updatedConfig.data.datasets.forEach(function (ds, idx) {
+        const updated = entry.factory(tokens);
+        if (updated.data && updated.data.datasets) {
+          updated.data.datasets.forEach(function (ds, idx) {
             if (entry.chart.data.datasets[idx]) Object.assign(entry.chart.data.datasets[idx], ds);
           });
         }
-        if (updatedConfig.options) {
-          applyTokensToConfig(updatedConfig, tokens);
-          entry.chart.options = updatedConfig.options;
+        if (updated.options) {
+          applyTokensToConfig(updated, tokens);
+          entry.chart.options = updated.options;
         }
       } else {
         applyTokensToOptions(entry.chart.options, tokens);
       }
       entry.chart.update('none');
     });
-
     if (Chart.instances) {
       Object.values(Chart.instances).forEach(function (inst) {
         if (inst && inst.canvas && !managedCharts.has(inst.canvas) && document.body.contains(inst.canvas)) {
@@ -243,38 +211,15 @@
         data: {
           labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
           datasets: [
-            {
-              label: 'Avg Attendance %',
-              data: [88, 90, 87, 91, 93, 92],
-              borderColor: tokens.accentPrimary,
-              backgroundColor: tokens.accentSoft,
-              borderWidth: 2,
-              tension: 0.35,
-              fill: true,
-              pointRadius: 3,
-              pointBackgroundColor: tokens.accentPrimary
-            },
-            {
-              label: 'Predicted Readiness %',
-              data: [82, 84, 85, 88, 90, 91],
-              borderColor: tokens.statusSuccess,
-              backgroundColor: 'transparent',
-              borderWidth: 2,
-              borderDash: [5, 4],
-              tension: 0.35,
-              pointRadius: 3,
-              pointBackgroundColor: tokens.statusSuccess
-            }
+            { label: 'Avg Attendance %', data: [88, 90, 87, 91, 93, 92], borderColor: tokens.accentPrimary, backgroundColor: tokens.accentSoft, borderWidth: 2, tension: 0.35, fill: true, pointRadius: 3, pointBackgroundColor: tokens.accentPrimary },
+            { label: 'Predicted Readiness %', data: [82, 84, 85, 88, 90, 91], borderColor: tokens.statusSuccess, backgroundColor: 'transparent', borderWidth: 2, borderDash: [5, 4], tension: 0.35, pointRadius: 3, pointBackgroundColor: tokens.statusSuccess }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
-          scales: {
-            x: { ticks: { color: tokens.textMuted } },
-            y: { min: 70, max: 100, ticks: { color: tokens.textMuted } }
-          }
+          scales: { x: { ticks: { color: tokens.textMuted } }, y: { min: 70, max: 100, ticks: { color: tokens.textMuted } } }
         }
       };
     });
@@ -282,12 +227,7 @@
 
   window.getChartThemeTokens = getThemeTokens;
   window.createThemedChart = createThemedChart;
-  window.EduPredictCharts = {
-    getThemeTokens: getThemeTokens,
-    applyGlobalChartDefaults: applyGlobalChartDefaults,
-    createChart: createThemedChart,
-    refreshAllCharts: refreshAllCharts
-  };
+  window.EduPredictCharts = { getThemeTokens: getThemeTokens, applyGlobalChartDefaults: applyGlobalChartDefaults, createChart: createThemedChart, refreshAllCharts: refreshAllCharts };
 
   window.addEventListener('themeChanged', refreshAllCharts);
   document.addEventListener('DOMContentLoaded', function () {

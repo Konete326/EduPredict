@@ -61,26 +61,27 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 104 Teacher Panel Connected University Flow"
-active_branch_merged_to_main: "feature/p104-teacher-university-panel -> main"
-project_phase: "Phase 104: Connected Teacher Courses, Semesters, Students, Marks/Attendance, Live ML Predictions & Alerts"
+last_updated_by_agent: "Phase 105 Password Approval, Richer Theme Tints, Crisp Charts & Teacher Attendance/Tests"
+active_branch_merged_to_main: "feature/p105-password-approval-teacher-attendance-tests -> main"
+project_phase: "Phase 105: Admin Password Approval, Richer Theme Tints, Crisp Charts, Teacher Attendance & Card Tests"
 
 completed_modules:
-  - "Phase 1-103: Core Shell, Auth/RBAC, Admin Academic CRUD, 500-Row Dataset, Simple Theme Studio & All-Panel Everyday English."
-  - "Phase 104 (Teacher Panel Connected University Flow):"
-      - "panels/teacher_services.py, panels/teacher_academic_services.py: synced Teacher Panel with Admin courses_col(), semesters_col(), and users_col(STUDENT) by semester_id; live ML prediction on single/bulk marks & attendance saves + invalidate_cache() real-time sync across panels."
-      - "panels/views_teacher.py, panels/urls.py, core/ai_dom_actions.py: added @role_required(['TEACHER', 'ADMIN']) routes /teacher-panel/courses/, /teacher-panel/students/, and /teacher-panel/marks/."
-      - "templates/components/sidebar.html, templates/panels/teacher_{dashboard,courses,students,marks}.html: added My Courses, My Students (View full dropout prediction + Update + Alert), and Attendance & Marks pages in simple everyday English."
-      - "panels/test_teacher_academic.py, panels/test_phase24.py, panels/test_teacher_student.py: added 3 end-to-end Admin->Teacher->Student real-time tests and updated /teacher-panel/students/ assertions to 200."
+  - "Phase 1-104: Core Shell, Auth/RBAC, Admin Academic CRUD, 500-Row Dataset, Simple Theme Studio & Connected Teacher Panel."
+  - "Phase 105 (Password Approval, Theme Contrast, Charts & Separate Attendance/Tests):"
+      - "core/db.py, core/theme_services.py, accounts/services.py, panels/admin_password_services.py, panels/views_admin_academic.py, templates/panels/admin_password_requests.html: TEACHER/STUDENT password change requests go to Admin (/admin-panel/password-requests/) where requested password is visible; approving updates password, notifies user with new password, and old-password login shows a clear alert."
+      - "core/theme_services.py: enriched light-mode SHELL_THEMES sidebar/topbar tints so theme changes stand out clearly."
+      - "static/js/charts.js: enhanced Chart.js bar/doughnut defaults (maxBarThickness: 40, borderRadius: 8) for crisp rendering even with 1-2 items."
+      - "panels/{teacher_services,teacher_academic_services,views_teacher,urls}.py, core/ai_dom_actions.py, templates/components/sidebar.html, templates/panels/teacher_{dashboard,students,attendance,tests}.html: separated Attendance (Present/Absent/Leave) and Card-based Tests CRUD + Grading; made Student Name/Semester/Course read-only for teachers; replaced Alert with custom Message."
+      - "panels/test_p105_workflow.py: added end-to-end tests for password approval, old-password login alert, attendance, and card-based tests."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "Zero-comment & line-cap (<= 400) audit across 11 modified/new files: AUDIT_OK (0 comments, max 338 lines)."
-  - "manage.py test: Ran 139 tests in 142.797s (139/139 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 13.11s - System 100% Operational."
+  - "node --check static/js/charts.js: exited 0."
+  - "manage.py test: Ran 141 tests in 135.994s (141/141 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 12.39s - System 100% Operational."
 
 active_routes_and_files:
-  - "panels/{teacher_services,teacher_academic_services,views_teacher,urls,test_teacher_academic,test_phase24,test_teacher_student}.py, core/ai_dom_actions.py, templates/components/sidebar.html, templates/panels/teacher_{dashboard,courses,students,marks}.html, .agents/git-sync.md"
+  - "core/{db,theme_services,ai_dom_actions}.py, accounts/services.py, static/js/charts.js, panels/{admin_password_services,views_admin_academic,teacher_services,teacher_academic_services,views_teacher,urls,test_p105_workflow}.py, templates/components/sidebar.html, templates/panels/{admin_password_requests,teacher_dashboard,teacher_students,teacher_attendance,teacher_tests}.html, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

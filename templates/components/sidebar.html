@@ -48,6 +48,10 @@
           <i class="fa-solid fa-book-open w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Courses</span>
         </a>
+        <a href="{% url 'panels:admin_password_requests' %}"{% if request.resolver_match.view_name == 'panels:admin_password_requests' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:admin_password_requests' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-key w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Password Requests</span>
+        </a>
         <a href="{% url 'panels:admin_training' %}"{% if request.resolver_match.view_name == 'panels:admin_training' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:admin_training' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-brain w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Training Data</span>
@@ -87,9 +91,13 @@
           <i class="fa-solid fa-user-graduate w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">My Students</span>
         </a>
-        <a href="{% url 'panels:teacher_marks' %}"{% if request.resolver_match.view_name == 'panels:teacher_marks' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:teacher_marks' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-          <i class="fa-solid fa-clipboard-check w-5 text-center shrink-0 text-sm"></i>
-          <span class="truncate">Attendance &amp; Marks</span>
+        <a href="{% url 'panels:teacher_attendance' %}"{% if request.resolver_match.view_name == 'panels:teacher_attendance' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:teacher_attendance' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-calendar-check w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Attendance</span>
+        </a>
+        <a href="{% url 'panels:teacher_tests' %}"{% if request.resolver_match.view_name == 'panels:teacher_tests' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:teacher_tests' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-file-pen w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Tests</span>
         </a>
       </div>
     </div>

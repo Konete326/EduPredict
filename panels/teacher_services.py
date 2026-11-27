@@ -31,21 +31,24 @@ def _teacher_student_query(teacher_user=None):
     uid = str(teacher_user.get("user_id") or "").strip()
     email = str(teacher_user.get("email") or "").strip().lower()
     tname = str(teacher_user.get("full_name") or "").strip().lower()
-    assigned_codes = []
+    assigned_codes, assigned_sem_ids = [], []
     try:
-        for c in courses_col().find({}, {"_id": 0, "course_code": 1, "instructor": 1, "instructor_id": 1, "instructor_email": 1}):
+        for c in courses_col().find({}, {"_id": 0, "course_code": 1, "semester_id": 1, "instructor": 1, "instructor_id": 1, "instructor_email": 1, "status": 1}):
+            if str(c.get("status") or "ACTIVE").strip().upper() == "INACTIVE":
+                continue
             code = str(c.get("course_code") or "").strip().upper()
             if code and ((uid and str(c.get("instructor_id") or "").strip() == uid) or (email and str(c.get("instructor_email") or "").strip().lower() == email) or (tname and str(c.get("instructor") or "").strip().lower() == tname)):
                 assigned_codes.append(code)
+                sid = str(c.get("semester_id") or "").strip()
+                if sid:
+                    assigned_sem_ids.append(sid)
     except Exception:
         pass
     clauses = []
-    if uid:
-        clauses.append({"teacher_user_id": uid})
-    if email:
-        clauses.append({"teacher_email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}})
-    if assigned_codes:
-        clauses.append({"course_code": {"$in": assigned_codes}})
+    if uid: clauses.append({"teacher_user_id": uid})
+    if email: clauses.append({"teacher_email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}})
+    if assigned_codes: clauses.append({"course_code": {"$in": assigned_codes}})
+    if assigned_sem_ids: clauses.append({"semester_id": {"$in": assigned_sem_ids}})
     return {"is_training_dataset": {"$ne": True}, "$or": clauses} if clauses else {"student_id": "__NO_TEACHER_MATCH__"}
 
 
@@ -91,68 +94,34 @@ def _semester_label(s):
 def _load_joined_students(teacher_user=None):
     sem_map = {str(s.get("semester_id") or "").strip(): s for s in semesters_col().find({}, {"_id": 0}) if s.get("semester_id")}
     is_adm = _is_admin(teacher_user)
-    uid = str((teacher_user or {}).get("user_id") or "").strip()
-    email = str((teacher_user or {}).get("email") or "").strip().lower()
-    tname = str((teacher_user or {}).get("full_name") or "").strip().lower()
+    uid, email, tname = str((teacher_user or {}).get("user_id") or "").strip(), str((teacher_user or {}).get("email") or "").strip().lower(), str((teacher_user or {}).get("full_name") or "").strip().lower()
     assigned_codes, assigned_sem_ids, course_by_sem = set(), set(), {}
     for c in courses_col().find({}, {"_id": 0}):
         code = str(c.get("course_code") or "").strip().upper()
-        if not code or str(c.get("status") or "ACTIVE").strip().upper() == "INACTIVE":
-            continue
-        matched = is_adm or (
-            (uid and str(c.get("instructor_id") or "").strip() == uid)
-            or (email and str(c.get("instructor_email") or "").strip().lower() == email)
-            or (tname and str(c.get("instructor") or "").strip().lower() == tname)
-        )
-        if matched:
+        if not code or str(c.get("status") or "ACTIVE").strip().upper() == "INACTIVE": continue
+        if is_adm or (uid and str(c.get("instructor_id") or "").strip() == uid) or (email and str(c.get("instructor_email") or "").strip().lower() == email) or (tname and str(c.get("instructor") or "").strip().lower() == tname):
             assigned_codes.add(code)
             sem_id = str(c.get("semester_id") or "").strip()
             if sem_id:
                 assigned_sem_ids.add(sem_id)
                 course_by_sem.setdefault(sem_id, code)
     pred_map = {str(p.get("student_id") or "").strip(): p for p in predictions_col().find({}, {"_id": 0}) if p.get("student_id")}
-    rec_map = {}
-    for rec in student_records_col().find(_teacher_student_query(teacher_user), {"_id": 0}).sort("student_id", 1):
-        sid = str(rec.get("student_id") or "").strip()
-        if sid:
-            rec_map[sid] = rec
+    rec_map = {str(r.get("student_id") or "").strip(): r for r in student_records_col().find(_teacher_student_query(teacher_user), {"_id": 0}).sort("student_id", 1) if r.get("student_id")}
     user_map = {}
     for u in users_col().find({"role": "STUDENT"}, {"_id": 0, "password_hash": 0}):
-        sid = str(u.get("student_id") or u.get("user_id") or "").strip()
-        if not sid:
-            continue
-        sem_id = str(u.get("semester_id") or "").strip()
-        if is_adm or (sem_id and sem_id in assigned_sem_ids):
-            user_map[sid] = u
+        sid, sem_id = str(u.get("student_id") or u.get("user_id") or "").strip(), str(u.get("semester_id") or "").strip()
+        if sid and (is_adm or (sem_id and sem_id in assigned_sem_ids)): user_map[sid] = u
     default_course = sorted(assigned_codes)[0] if assigned_codes else "CS-101"
     joined = []
     for sid in sorted(set(rec_map.keys()) | set(user_map.keys())):
-        rec = rec_map.get(sid) or {}
-        u = user_map.get(sid) or {}
-        pred = pred_map.get(sid) or {}
+        rec, u, pred = rec_map.get(sid) or {}, user_map.get(sid) or {}, pred_map.get(sid) or {}
         sem_id = str(rec.get("semester_id") or u.get("semester_id") or "").strip()
         sem_label = _semester_label(sem_map.get(sem_id)) if sem_id in sem_map else str(rec.get("semester_label") or "-")
         course_code = str(rec.get("course_code") or course_by_sem.get(sem_id) or default_course).strip().upper()
-        att = round(_safe_float(rec.get("attendance_pct"), 0.0), 1)
-        marks = round(_safe_float(rec.get("internal_marks"), 0.0), 1)
-        raw_gpa = pred.get("predicted_gpa")
-        raw_prob = pred.get("risk_probability") if pred.get("risk_probability") is not None else pred.get("dropout_risk_score")
+        att, marks = round(_safe_float(rec.get("attendance_pct"), 0.0), 1), round(_safe_float(rec.get("internal_marks"), 0.0), 1)
+        raw_gpa, raw_prob = pred.get("predicted_gpa"), pred.get("risk_probability") if pred.get("risk_probability") is not None else pred.get("dropout_risk_score")
         risk = str(pred.get("risk_level") or "LOW").strip().upper()
-        joined.append({
-            "student_id": sid, "full_name": str(rec.get("full_name") or u.get("full_name") or sid),
-            "birth_date": str(rec.get("birth_date") or u.get("birth_date") or "").strip(),
-            "batch": str(rec.get("batch") or u.get("batch") or "2026-A"), "course_code": course_code,
-            "semester_id": sem_id, "semester_label": sem_label,
-            "attendance_pct": att, "internal_marks": marks,
-            "assignment_score": round(_safe_float(rec.get("assignment_score"), 0.0), 1),
-            "lms_hours_weekly": round(_safe_float(rec.get("lms_hours_weekly"), 0.0), 1),
-            "previous_gpa": round(_safe_float(rec.get("previous_gpa"), 0.0), 2),
-            "predicted_gpa": round(_safe_float(raw_gpa), 2) if raw_gpa is not None else None,
-            "risk_level": risk,
-            "risk_probability": round(_safe_float(raw_prob, 0.0), 4),
-            "recommendation": str(pred.get("recommendation") or "").strip(),
-            "badge": classify_performance_badge(att, marks, risk),
-        })
+        joined.append({"student_id": sid, "full_name": str(rec.get("full_name") or u.get("full_name") or sid), "birth_date": str(rec.get("birth_date") or u.get("birth_date") or "").strip(), "batch": str(rec.get("batch") or u.get("batch") or "2026-A"), "course_code": course_code, "semester_id": sem_id, "semester_label": sem_label, "attendance_pct": att, "internal_marks": marks, "assignment_score": round(_safe_float(rec.get("assignment_score"), 0.0), 1), "lms_hours_weekly": round(_safe_float(rec.get("lms_hours_weekly"), 0.0), 1), "previous_gpa": round(_safe_float(rec.get("previous_gpa"), 0.0), 2), "predicted_gpa": round(_safe_float(raw_gpa), 2) if raw_gpa is not None else None, "risk_level": risk, "risk_probability": round(_safe_float(raw_prob, 0.0), 4), "recommendation": str(pred.get("recommendation") or "").strip(), "badge": classify_performance_badge(att, marks, risk)})
     return joined
 
 
@@ -195,6 +164,18 @@ def _load_teacher_dashboard_context(teacher_user=None):
     total = len(students)
     badge_counts = {"Excellent": 0, "Stable": 0, "Needs Help": 0, "High Risk": 0}
     course_stats, at_risk_list = {}, []
+    is_adm = _is_admin(teacher_user)
+    uid = str((teacher_user or {}).get("user_id") or "").strip()
+    email = str((teacher_user or {}).get("email") or "").strip().lower()
+    tname = str((teacher_user or {}).get("full_name") or "").strip().lower()
+    assigned_codes = set()
+    for c in courses_col().find({}, {"_id": 0, "course_code": 1, "status": 1, "instructor": 1, "instructor_id": 1, "instructor_email": 1}):
+        code = str(c.get("course_code") or "").strip().upper()
+        if not code or str(c.get("status") or "ACTIVE").strip().upper() == "INACTIVE":
+            continue
+        if is_adm or (uid and str(c.get("instructor_id") or "").strip() == uid) or (email and str(c.get("instructor_email") or "").strip().lower() == email) or (tname and str(c.get("instructor") or "").strip().lower() == tname):
+            assigned_codes.add(code)
+            course_stats.setdefault(code, {"att": 0.0, "marks": 0.0, "count": 0})
     for s in students:
         label = s["badge"]["text"]
         badge_counts[label] = badge_counts.get(label, 0) + 1
@@ -206,11 +187,11 @@ def _load_teacher_dashboard_context(teacher_user=None):
             at_risk_list.append(s)
     course_labels = sorted(course_stats.keys())
     at_risk_list.sort(key=lambda x: (0 if x["badge"]["text"] == "High Risk" else 1, x["attendance_pct"]))
-    at_risk_rows = [[s["student_id"], s["full_name"], s["course_code"], f"{s['attendance_pct']:.1f}%", f"{s['internal_marks']:.1f}", s["badge"], {"actions": [_action("Update Marks", "fa-solid fa-pen-to-square", "openUpdateMarksModal(this)", f"Edit marks for {s['full_name']}", _student_attrs(s)), _action("Send Alert", "fa-solid fa-bell", "openSendAlertModal(this)", f"Send alert to {s['full_name']}", _alert_attrs(s), variant="primary")]}] for s in at_risk_list]
-    courses_count = len(course_labels) if not _is_admin(teacher_user) else (courses_col().count_documents({"status": "ACTIVE"}) or len(course_labels))
+    at_risk_rows = [[s["student_id"], s["full_name"], s["course_code"], f"{s['attendance_pct']:.1f}%", f"{s['internal_marks']:.1f}", s["badge"], {"actions": [_action("Update Marks", "fa-solid fa-pen-to-square", "openUpdateMarksModal(this)", f"Edit marks for {s['full_name']}", _student_attrs(s)), _action("Message", "fa-solid fa-envelope", "openSendAlertModal(this)", f"Message {s['full_name']}", _alert_attrs(s), variant="primary")]}] for s in at_risk_list]
+    courses_count = len(assigned_codes) if assigned_codes else len(course_labels)
     return {
         "kpis": {"total_students": total, "avg_attendance": round(sum(s["attendance_pct"] for s in students) / total, 1) if total else 0.0, "avg_marks": round(sum(s["internal_marks"] for s in students) / total, 1) if total else 0.0, "at_risk_count": len(at_risk_list), "courses_count": courses_count},
-        "chart_data": {"course_summary": {"labels": course_labels, "attendance": [round(course_stats[c]["att"] / course_stats[c]["count"], 1) for c in course_labels], "marks": [round(course_stats[c]["marks"] / course_stats[c]["count"], 1) for c in course_labels]}, "badge_breakdown": {"labels": ["Excellent", "Stable", "Needs Help", "High Risk"], "counts": [badge_counts[k] for k in ("Excellent", "Stable", "Needs Help", "High Risk")]}},
+        "chart_data": {"course_summary": {"labels": course_labels, "attendance": [round(course_stats[c]["att"] / course_stats[c]["count"], 1) if course_stats[c]["count"] else 0.0 for c in course_labels], "marks": [round(course_stats[c]["marks"] / course_stats[c]["count"], 1) if course_stats[c]["count"] else 0.0 for c in course_labels]}, "badge_breakdown": {"labels": ["Excellent", "Stable", "Needs Help", "High Risk"], "counts": [badge_counts[k] for k in ("Excellent", "Stable", "Needs Help", "High Risk")]}},
         "at_risk_headers": ["Student ID", "Name", "Course", "Attendance", "Marks", "Status", "Actions"], "at_risk_rows": at_risk_rows,
     }
 
@@ -226,14 +207,14 @@ def update_student_record_inline(post_data, teacher_user=None):
     existing = student_records_col().find_one({"student_id": raw_sid}, {"_id": 0}) or student_records_col().find_one({"student_id": raw_sid.upper()}, {"_id": 0}) or {}
     u_doc = users_col().find_one({"student_id": raw_sid}, {"_id": 0, "full_name": 1, "semester_id": 1, "batch": 1}) or {}
     sid = str(existing.get("student_id") or raw_sid).strip()
-    full_name = str(post_data.get("full_name") or post_data.get("name") or existing.get("full_name") or u_doc.get("full_name") or f"Student {sid}").strip()
-    bdate = str(post_data.get("birth_date") or existing.get("birth_date") or "").strip()
-    batch = str(post_data.get("batch") or existing.get("batch") or u_doc.get("batch") or "2026-A").strip()
-    course_code = str(post_data.get("course_code") or existing.get("course_code") or "CS-101").strip().upper()
+    full_name = str(existing.get("full_name") or u_doc.get("full_name") or post_data.get("full_name") or post_data.get("name") or f"Student {sid}").strip()
+    bdate = str(existing.get("birth_date") or post_data.get("birth_date") or "").strip()
+    batch = str(existing.get("batch") or u_doc.get("batch") or post_data.get("batch") or "2026-A").strip()
+    course_code = str(existing.get("course_code") or post_data.get("course_code") or "CS-101").strip().upper()
     c_doc = courses_col().find_one({"course_code": course_code}, {"_id": 0, "semester_id": 1}) or {}
-    sem_id = str(post_data.get("semester_id") or existing.get("semester_id") or u_doc.get("semester_id") or c_doc.get("semester_id") or "").strip()
+    sem_id = str(existing.get("semester_id") or u_doc.get("semester_id") or post_data.get("semester_id") or c_doc.get("semester_id") or "").strip()
     sem_doc = semesters_col().find_one({"semester_id": sem_id}, {"_id": 0}) if sem_id else None
-    sem_label = _semester_label(sem_doc) if sem_doc else str(post_data.get("semester_label") or existing.get("semester_label") or "-")
+    sem_label = _semester_label(sem_doc) if sem_doc else str(existing.get("semester_label") or post_data.get("semester_label") or "-")
     try:
         raw_att = post_data.get("attendance_pct") if post_data.get("attendance_pct") not in (None, "") else (post_data.get("attendance") or post_data.get("att") or existing.get("attendance_pct") or 80.0)
         raw_marks = post_data.get("internal_marks") if post_data.get("internal_marks") not in (None, "") else (post_data.get("marks") or post_data.get("score") or existing.get("internal_marks") or 70.0)

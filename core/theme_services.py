@@ -1,9 +1,11 @@
+import uuid
+from datetime import datetime, timezone
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from pymongo.errors import DuplicateKeyError
 from core.cloudinary_services import destroy_cloudinary_asset, upload_user_avatar
-from core.db import invalidate_cache, student_records_col, users_col
+from core.db import invalidate_cache, notifications_col, password_requests_col, student_records_col, users_col
 from panels.admin_audit_services import record_audit_log
 
 APPEARANCE_MODES = (
@@ -21,12 +23,13 @@ def _shell(slug, label, dot_color, p_side, p_top, accent_sync, s_light, t_light,
 
 
 SHELL_THEMES = (
-    _shell("dark", "Dark", "#1e293b", "#0f172a", "#1e293b", "indigo", "#0f172a", "#111827", "#0d0e12", "#111217", True),
-    _shell("red", "Red", "#dc2626", "#991b1b", "#dc2626", "crimson", "#fef2f2", "#fff5f5", "#1b0e12", "#221116"),
-    _shell("dark-green", "Dark Green", "#15803d", "#14532d", "#166534", "forest", "#f0fdf4", "#f4fbf6", "#0b1a12", "#0f2218"),
-    _shell("green", "Green", "#10b981", "#047857", "#10b981", "emerald", "#ecfdf5", "#f2fbf7", "#0b1d18", "#102620"),
-    _shell("blue", "Blue", "#2563eb", "#1d4ed8", "#2563eb", "ocean", "#eff6ff", "#f5f9ff", "#0d0e12", "#111217"),
-    _shell("white", "White", "#ffffff", "#f8fafc", "#ffffff", None, "#ffffff", "#ffffff", "#111114", "#111217"),
+    _shell("dark", "Dark", "#1e293b", "#0f172a", "#1e293b", "indigo", "#0f172a", "#1e293b", "#0d0e12", "#111217", True),
+    _shell("red", "Red", "#dc2626", "#991b1b", "#dc2626", "crimson", "#fee2e2", "#fef0f0", "#1b0e12", "#221116"),
+    _shell("dark-red", "Dark Red", "#991b1b", "#7f1d1d", "#991b1b", "crimson", "#7f1d1d", "#991b1b", "#1b0e12", "#221116", True),
+    _shell("dark-green", "Dark Green", "#15803d", "#064e3b", "#065f46", "forest", "#064e3b", "#065f46", "#0b1a12", "#0f2218", True),
+    _shell("green", "Green", "#10b981", "#047857", "#10b981", "emerald", "#d1fae5", "#e2f8ee", "#0b1d18", "#102620"),
+    _shell("blue", "Blue", "#2563eb", "#1d4ed8", "#2563eb", "ocean", "#dbeafe", "#e8f0fe", "#0d0e12", "#111217"),
+    _shell("white", "White", "#ffffff", "#f1f5f9", "#f8fafc", None, "#f1f5f9", "#f8fafc", "#111114", "#111217"),
 )
 
 BRAND_SWATCHES = (
@@ -316,6 +319,38 @@ def change_user_password(request, post_data):
         return False, "Account record not found."
     if not check_password(current_pwd, str(user_doc.get("password_hash") or "")):
         return False, "Current password is incorrect."
+    role = str(user_doc.get("role") or session_user.get("role") or "").strip().upper()
+    if role in ("TEACHER", "STUDENT"):
+        now = datetime.now(timezone.utc)
+        full_name = str(user_doc.get("full_name") or session_user.get("full_name") or "").strip()
+        email = str(user_doc.get("email") or session_user.get("email") or "").strip().lower()
+        request_id = f"PWD-{uuid.uuid4().hex[:6].upper()}"
+        password_requests_col().insert_one({
+            "request_id": request_id,
+            "user_id": uid,
+            "full_name": full_name,
+            "email": email,
+            "role": role,
+            "requested_password_plain": new_pwd,
+            "requested_password_hash": make_password(new_pwd),
+            "previous_password_hash": str(user_doc.get("password_hash") or ""),
+            "status": "PENDING",
+            "created_at": now,
+        })
+        try:
+            notifications_col().insert_one({
+                "title": "Password Change Request",
+                "message": f"{full_name or uid} ({email}, {role}) requested a password change ({request_id}) and is waiting for Admin approval.",
+                "severity": "WARNING",
+                "category": "APPROVAL",
+                "target_role": "ADMIN",
+                "is_read": False,
+                "created_at": now,
+            })
+        except Exception:
+            pass
+        invalidate_cache()
+        return True, "Password change request sent to Admin for approval. Your current password still works until approved."
     col.update_one({"user_id": uid}, {"$set": {"password_hash": make_password(new_pwd)}})
     _safe_user_audit(session_user, uid, "CHANGE_PASSWORD", f"Changed password for {session_user.get('full_name') or uid} ({uid}).")
     invalidate_cache()

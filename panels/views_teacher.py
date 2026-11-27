@@ -3,21 +3,9 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from core.db import notifications_col
 from core.decorators import role_required
-from panels.teacher_academic_services import (
-    get_teacher_courses_context,
-    get_teacher_marks_context,
-    get_teacher_students_context,
-    save_student_marks_and_attendance,
-)
+from panels.teacher_academic_services import create_course_test, delete_course_test, get_teacher_attendance_context, get_teacher_courses_context, get_teacher_marks_context, get_teacher_students_context, get_teacher_tests_context, grade_test_submissions, save_course_attendance, save_student_marks_and_attendance, update_course_test
 from panels.teacher_alert_services import get_teacher_portal_meta, toggle_teacher_auto_alerts
-from panels.teacher_services import (
-    delete_student_record,
-    get_teacher_dashboard_context,
-    notify_all_high_risk_students,
-    reply_teacher_feedback,
-    send_student_alert,
-    update_student_record_inline,
-)
+from panels.teacher_services import delete_student_record, get_teacher_dashboard_context, notify_all_high_risk_students, reply_teacher_feedback, send_student_alert, update_student_record_inline
 
 
 def _param(request, key, default=""):
@@ -164,3 +152,63 @@ def teacher_marks(request):
     except Exception as exc:
         context["db_error"] = str(exc)
     return render(request, "panels/teacher_marks.html", context)
+
+
+@role_required(["TEACHER", "ADMIN"])
+def teacher_attendance(request):
+    user = request.session.get("user") or {}
+    if request.method == "POST":
+        action = _param(request, "action").lower()
+        try:
+            if action in ("", "save_attendance"):
+                saved, err = save_course_attendance(request.POST, user)
+                _flash(request, bool(saved) and not err, err, f"Saved attendance for {saved} student(s) and updated predictions.")
+            elif not _handle_common_post(request):
+                messages.error(request, "Unknown action.")
+        except Exception as exc:
+            messages.error(request, f"Database error: {exc}")
+        course_q, date_q = _param(request, "course"), _param(request, "date")
+        qs = "&".join([p for p in (f"course={course_q}" if course_q and course_q.upper() != "ALL" else "", f"date={date_q}" if date_q else "") if p])
+        return redirect(f"{reverse('panels:teacher_attendance')}?{qs}" if qs else "panels:teacher_attendance")
+
+    context = {"page_title": "Attendance", "active_role": "TEACHER", "db_error": None}
+    try:
+        context.update(get_teacher_attendance_context(user, course_filter=_param(request, "course", "ALL"), date_str=_param(request, "date", "")))
+    except Exception as exc:
+        context["db_error"] = str(exc)
+    return render(request, "panels/teacher_attendance.html", context)
+
+
+@role_required(["TEACHER", "ADMIN"])
+def teacher_tests(request):
+    user = request.session.get("user") or {}
+    if request.method == "POST":
+        action = _param(request, "action").lower()
+        try:
+            if action == "create_test":
+                doc, err = create_course_test(request.POST, user)
+                _flash(request, doc is not None, err, f"Created test '{doc['title']}'." if doc else "")
+            elif action == "update_test":
+                doc, err = update_course_test(request.POST, user)
+                _flash(request, doc is not None, err, f"Updated test '{doc['title']}'." if doc else "")
+            elif action == "delete_test":
+                ok, err = delete_course_test(_param(request, "test_id"))
+                _flash(request, ok, err, "Test deleted.")
+            elif action == "grade_test":
+                graded, err = grade_test_submissions(request.POST, user)
+                _flash(request, bool(graded) and not err, err, f"Graded {graded} student(s) and updated internal marks.")
+            elif not _handle_common_post(request):
+                messages.error(request, "Unknown action.")
+        except Exception as exc:
+            messages.error(request, f"Database error: {exc}")
+        course_q = _param(request, "course")
+        if course_q and course_q.upper() != "ALL":
+            return redirect(f"{reverse('panels:teacher_tests')}?course={course_q}")
+        return redirect("panels:teacher_tests")
+
+    context = {"page_title": "Tests & Grading", "active_role": "TEACHER", "db_error": None}
+    try:
+        context.update(get_teacher_tests_context(user, course_filter=_param(request, "course", "ALL")))
+    except Exception as exc:
+        context["db_error"] = str(exc)
+    return render(request, "panels/teacher_tests.html", context)

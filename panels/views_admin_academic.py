@@ -19,6 +19,11 @@ from panels.admin_academic_services import (
     update_student_record,
     update_teacher_record,
 )
+from panels.admin_password_services import (
+    approve_password_request,
+    get_password_requests_context,
+    reject_password_request,
+)
 
 
 def _param(request, key, default=""):
@@ -134,3 +139,22 @@ def admin_courses(request):
             messages.error(request, f"Course error: {exc}")
         return redirect("panels:admin_courses")
     return _render_academic(request, "panels/admin_courses.html", "Courses", get_admin_courses_context, {"courses": [], "course_headers": [], "course_rows": [], "course_cards": [], "semester_options_json": "[]", "teacher_options_json": "[]", "next_course_code": "CRS-1001", "total_courses": 0, "active_courses": 0})
+
+
+@role_required(["ADMIN"])
+def admin_password_requests(request):
+    if request.method == "POST":
+        action, request_id, actor = _param(request, "action").lower(), _param(request, "request_id"), _actor_name(request)
+        try:
+            if action == "approve_password":
+                ok, err = approve_password_request(request_id, actor_name=actor)
+                _flash_result(request, ok, err, f"Password request {request_id} approved.")
+            elif action == "reject_password":
+                ok, err = reject_password_request(request_id, actor_name=actor)
+                _flash_result(request, ok, err, f"Password request {request_id} rejected.")
+            else:
+                messages.error(request, "Unknown password request action.")
+        except Exception as exc:
+            messages.error(request, f"Password request error: {exc}")
+        return redirect("panels:admin_password_requests")
+    return _render_academic(request, "panels/admin_password_requests.html", "Password Requests", get_password_requests_context, {"requests": [], "headers": [], "rows": [], "cards": [], "pending_count": 0, "total_count": 0})

@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
+  <div class="min-w-0 space-y-1">
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Attendance</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Mark daily Present, Absent, or Leave status for your students.</p>
+  </div>
+</header>
+
+{% if db_error %}
+<div class="rounded-[12px] border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Notice: {{ db_error }}
+</div>
+{% endif %}
+
+<section class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+  {% include 'components/metric_card.html' with title="Students" value=kpis.total_students|default:0 badge="Class" status="info" icon="fa-solid fa-users" %}
+  {% include 'components/metric_card.html' with title="Present" value=kpis.present_count|default:0 badge="Today" status="success" icon="fa-solid fa-circle-check" %}
+  {% include 'components/metric_card.html' with title="Absent" value=kpis.absent_count|default:0 badge="Today" status="danger" icon="fa-solid fa-circle-xmark" %}
+  {% include 'components/metric_card.html' with title="Leave" value=kpis.leave_count|default:0 badge="Today" status="warning" icon="fa-solid fa-clock" %}
+</section>
+
+<form method="get" action="{% url 'panels:teacher_attendance' %}" class="flex flex-wrap items-end gap-3 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
+  <div class="min-w-[200px] flex-1">
+    <label for="att-course-select" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Course</label>
+    <select id="att-course-select" name="course" onchange="this.form.submit()" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+      <option value="ALL">All Assigned Courses</option>
+      {% for opt in course_options %}
+      <option value="{{ opt.value }}" {% if course_filter == opt.value %}selected{% endif %}>{{ opt.label }} ({{ opt.semester_label }})</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="w-full sm:w-44">
+    <label for="att-date-input" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Date</label>
+    <input id="att-date-input" type="date" name="date" value="{{ selected_date }}" onchange="this.form.submit()" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+  </div>
+  <div class="flex items-center gap-2">
+    <button type="submit" class="inline-flex h-9 items-center gap-1.5 rounded-[10px] bg-[var(--accent-primary)] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <i class="fa-solid fa-filter text-xs"></i>
+      <span>Load</span>
+    </button>
+    <a href="{% url 'panels:teacher_attendance' %}" class="inline-flex h-9 items-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">Reset</a>
+  </div>
+</form>
+
+<form method="post" action="{% url 'panels:teacher_attendance' %}" class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="save_attendance">
+  <input type="hidden" name="date" value="{{ selected_date }}">
+  <input type="hidden" name="course_code" value="{% if course_filter != 'ALL' %}{{ course_filter }}{% elif selected_course %}{{ selected_course.course_code }}{% endif %}">
+  <input type="hidden" name="course" value="{{ course_filter|default:'ALL' }}">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div>
+      <h3 class="text-sm font-semibold text-[var(--text-primary)]">Student Roll Call · {{ selected_date }}</h3>
+      <p class="text-xs text-[var(--text-muted)]">{{ kpis.marked_count|default:0 }} of {{ kpis.total_students|default:0 }} marked for this date.</p>
+    </div>
+    {% if students %}
+    <button type="submit" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-4 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <i class="fa-solid fa-floppy-disk text-xs"></i>
+      <span>Save Attendance</span>
+    </button>
+    {% endif %}
+  </div>
+
+  <div class="divide-y divide-[var(--border-subtle)] rounded-[14px] border border-[var(--border-subtle)]">
+    {% for s in students %}
+    <div class="flex flex-col gap-2.5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between hover:bg-[var(--bg-elevated)]">
+      <div class="min-w-0">
+        <input type="hidden" name="student_id" value="{{ s.student_id }}">
+        <input type="hidden" name="course_code_{{ s.student_id }}" value="{{ s.course_code }}">
+        <p class="truncate text-sm font-semibold text-[var(--text-primary)]">{{ s.full_name }}</p>
+        <p class="text-xs text-[var(--text-muted)]">{{ s.student_id }} · {{ s.course_code }} · Overall: {{ s.attendance_pct|floatformat:1 }}%</p>
+      </div>
+      <div class="flex shrink-0 flex-wrap items-center gap-1.5">
+        <label class="cursor-pointer">
+          <input type="radio" name="status_{{ s.student_id }}" value="PRESENT" class="peer sr-only" {% if s.today_status == 'PRESENT' %}checked{% endif %}>
+          <span class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors peer-checked:border-[var(--status-success)] peer-checked:bg-[var(--status-success)] peer-checked:text-white">
+            <i class="fa-solid fa-check text-[11px]"></i>Present
+          </span>
+        </label>
+        <label class="cursor-pointer">
+          <input type="radio" name="status_{{ s.student_id }}" value="ABSENT" class="peer sr-only" {% if s.today_status == 'ABSENT' %}checked{% endif %}>
+          <span class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors peer-checked:border-[var(--status-danger)] peer-checked:bg-[var(--status-danger)] peer-checked:text-white">
+            <i class="fa-solid fa-xmark text-[11px]"></i>Absent
+          </span>
+        </label>
+        <label class="cursor-pointer">
+          <input type="radio" name="status_{{ s.student_id }}" value="LEAVE" class="peer sr-only" {% if s.today_status == 'LEAVE' %}checked{% endif %}>
+          <span class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors peer-checked:border-[var(--status-warning)] peer-checked:bg-[var(--status-warning)] peer-checked:text-white">
+            <i class="fa-solid fa-clock text-[11px]"></i>Leave
+          </span>
+        </label>
+      </div>
+    </div>
+    {% empty %}
+    <div class="px-4 py-8 text-center text-sm text-[var(--text-muted)]">No students found for this course yet.</div>
+    {% endfor %}
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
+  <div class="min-w-0 space-y-1">
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Tests</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Create quizzes or exams, grade student marks, and refresh predictions.</p>
+  </div>
+  <button type="button" onclick="openCreateTestModal()" class="inline-flex h-9 shrink-0 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+    <i class="fa-solid fa-plus text-xs"></i>
+    <span>Create Test</span>
+  </button>
+</header>
+
+{% if db_error %}
+<div class="rounded-[12px] border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Notice: {{ db_error }}
+</div>
+{% endif %}
+
+<section class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+  {% include 'components/metric_card.html' with title="Total Tests" value=kpis.total_tests|default:0 badge="Created" status="info" icon="fa-solid fa-file-pen" %}
+  {% include 'components/metric_card.html' with title="Graded Tests" value=kpis.graded_tests|default:0 badge="Completed" status="success" icon="fa-solid fa-check-double" %}
+  {% include 'components/metric_card.html' with title="Students" value=kpis.total_students|default:0 badge="Enrolled" status="info" icon="fa-solid fa-user-graduate" %}
+</section>
+
+<form method="get" action="{% url 'panels:teacher_tests' %}" class="flex flex-wrap items-end gap-3 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
+  <div class="min-w-[220px] flex-1">
+    <label for="tests-course-select" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Filter by Course</label>
+    <select id="tests-course-select" name="course" onchange="this.form.submit()" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+      <option value="ALL">All Assigned Courses</option>
+      {% for opt in course_options %}
+      <option value="{{ opt.value }}" {% if course_filter == opt.value %}selected{% endif %}>{{ opt.label }} ({{ opt.semester_label }})</option>
+      {% endfor %}
+    </select>
+  </div>
+  <a href="{% url 'panels:teacher_tests' %}" class="inline-flex h-9 items-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">Show All</a>
+</form>
+
+<section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+  {% for t in tests %}
+  <article class="flex flex-col justify-between rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
+    <div class="space-y-2">
+      <div class="flex items-center justify-between gap-2">
+        <span class="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]">{{ t.test_type }}</span>
+        <span class="text-xs font-mono text-[var(--text-muted)]">{{ t.course_code }} · {{ t.test_date|default:"-" }}</span>
+      </div>
+      <h3 class="text-base font-semibold text-[var(--text-primary)] truncate">{{ t.title }}</h3>
+      {% if t.description %}
+      <p class="text-xs text-[var(--text-secondary)] line-clamp-2">{{ t.description }}</p>
+      {% endif %}
+    </div>
+    <div class="grid grid-cols-3 gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5 text-center tabular-nums">
+      <div><p class="text-[11px] text-[var(--text-muted)]">Max</p><p class="text-sm font-semibold text-[var(--text-primary)]">{{ t.max_marks|floatformat:0 }}</p></div>
+      <div><p class="text-[11px] text-[var(--text-muted)]">Graded</p><p class="text-sm font-semibold text-[var(--text-primary)]">{{ t.graded_count }}/{{ t.total_students }}</p></div>
+      <div><p class="text-[11px] text-[var(--text-muted)]">Avg</p><p class="text-sm font-semibold text-[var(--accent-primary)]">{{ t.avg_score }}%</p></div>
+    </div>
+    <div class="flex flex-nowrap items-center justify-between gap-2 pt-1">
+      <button type="button" onclick="openGradeTestModal(this)" data-test-id="{{ t.test_id }}" data-title="{{ t.title }}" data-course-code="{{ t.course_code }}" data-max-marks="{{ t.max_marks|floatformat:0 }}" data-roster="{{ t.roster_json|escape }}" class="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[var(--accent-primary)] px-3 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+        <i class="fa-solid fa-pen-ruler text-[11px]"></i>
+        <span>Grade Marks</span>
+      </button>
+      <button type="button" onclick="openEditTestModal(this)" data-test-id="{{ t.test_id }}" data-title="{{ t.title }}" data-course-code="{{ t.course_code }}" data-test-type="{{ t.test_type }}" data-max-marks="{{ t.max_marks|floatformat:0 }}" data-test-date="{{ t.test_date }}" data-description="{{ t.description }}" title="Edit Test" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+        <i class="fa-solid fa-pen"></i>
+      </button>
+      <button type="button" onclick="openDeleteTestModal(this)" data-test-id="{{ t.test_id }}" data-title="{{ t.title }}" title="Delete Test" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </div>
+  </article>
+  {% empty %}
+  <div class="col-span-full rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-10 text-center text-sm text-[var(--text-muted)]">
+    No tests created yet. Click <strong>Create Test</strong> to add your first quiz or exam.
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const POST_URL = "{% url 'panels:teacher_tests' %}";
+    const COURSE_OPTS = [{% for opt in course_options %}{ value: "{{ opt.value|escapejs }}", label: "{{ opt.label|escapejs }}" }{% if not forloop.last %},{% endif %}{% endfor %}];
+    const TYPE_OPTS = [{ value: 'Quiz', label: 'Quiz' }, { value: 'Assignment', label: 'Assignment' }, { value: 'Midterm', label: 'Midterm' }, { value: 'Final', label: 'Final Exam' }];
+
+    window.openCreateTestModal = function () {
+      window.openFormModal({
+        title: 'Create New Test',
+        actionUrl: POST_URL,
+        submitText: 'Create Test',
+        fields: [
+          { type: 'hidden', name: 'action', value: 'create_test' },
+          { name: 'title', label: 'Test Title', type: 'text', placeholder: 'e.g. Quiz 1 - Loops & Functions', required: true },
+          { name: 'course_code', label: 'Course', type: 'select', options: COURSE_OPTS.length ? COURSE_OPTS : [{ value: 'CS-101', label: 'CS-101' }], required: true },
+          { name: 'test_type', label: 'Test Type', type: 'select', options: TYPE_OPTS, value: 'Quiz' },
+          { name: 'max_marks', label: 'Max Marks', type: 'number', value: '20', min: '1', max: '1000', step: '1', required: true },
+          { name: 'test_date', label: 'Test Date', type: 'date', value: new Date().toISOString().slice(0, 10) },
+          { name: 'description', label: 'Notes (Optional)', type: 'textarea', placeholder: 'Topics covered in this test...' }
+        ]
+      });
+    };
+
+    window.openEditTestModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      window.openFormModal({
+        title: 'Edit Test',
+        headerBadge: d.testId || '',
+        actionUrl: POST_URL,
+        submitText: 'Save Changes',
+        fields: [
+          { type: 'hidden', name: 'action', value: 'update_test' },
+          { type: 'hidden', name: 'test_id', value: d.testId || '' },
+          { name: 'title', label: 'Test Title', type: 'text', value: d.title || '', required: true },
+          { name: 'course_code', label: 'Course', type: 'select', options: COURSE_OPTS.length ? COURSE_OPTS : [{ value: d.courseCode || 'CS-101', label: d.courseCode || 'CS-101' }], value: d.courseCode || '', required: true },
+          { name: 'test_type', label: 'Test Type', type: 'select', options: TYPE_OPTS, value: d.testType || 'Quiz' },
+          { name: 'max_marks', label: 'Max Marks', type: 'number', value: d.maxMarks || '20', min: '1', max: '1000', step: '1', required: true },
+          { name: 'test_date', label: 'Test Date', type: 'date', value: d.testDate || '' },
+          { name: 'description', label: 'Notes (Optional)', type: 'textarea', value: d.description || '' }
+        ]
+      });
+    };
+
+    window.openDeleteTestModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      window.openFormModal({
+        title: 'Delete Test',
+        headerBadge: d.testId || '',
+        actionUrl: POST_URL,
+        submitText: 'Delete Test',
+        fields: [
+          { type: 'hidden', name: 'action', value: 'delete_test' },
+          { type: 'hidden', name: 'test_id', value: d.testId || '' },
+          { name: 'confirm_title', label: 'Confirm Deleting Test', type: 'text', value: d.title || 'Selected Test', readonly: true }
+        ]
+      });
+    };
+
+    window.openGradeTestModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      let roster = [];
+      try { roster = JSON.parse(d.roster || '[]'); } catch (e) { roster = []; }
+      const maxMarks = d.maxMarks || '100';
+      const fields = [
+        { type: 'hidden', name: 'action', value: 'grade_test' },
+        { type: 'hidden', name: 'test_id', value: d.testId || '' }
+      ];
+      if (!roster.length) {
+        fields.push({ name: 'empty_notice', label: 'Students', type: 'text', value: 'No students enrolled in ' + (d.courseCode || 'this course') + ' yet.', readonly: true });
+      } else {
+        roster.forEach(function (st) {
+          fields.push({ type: 'hidden', name: 'student_id', value: st.student_id || '' });
+          fields.push({ name: 'marks_' + st.student_id, label: (st.full_name || st.student_id) + ' (' + st.student_id + ') · Out of ' + maxMarks, type: 'number', value: st.obtained_marks !== '' && st.obtained_marks !== undefined ? String(st.obtained_marks) : '', min: '0', max: String(maxMarks), step: '0.5', placeholder: 'Enter marks (0 - ' + maxMarks + ')' });
+        });
+      }
+      window.openFormModal({
+        title: 'Grade: ' + (d.title || 'Test'),
+        headerBadge: (d.courseCode || '') + ' · Max ' + maxMarks,
+        actionUrl: POST_URL,
+        submitText: 'Save Grades & Predict',
+        fields: fields
+      });
+    };
+  })();
+</script>
+{% endblock %}

@@ -211,7 +211,7 @@ class ThemePreferencesTests(TestCase):
     @patch("core.theme_services.users_col")
     def test_get_theme_preferences_defaults_and_path_fallback(self, mock_users_col):
         catalog = get_theme_studio_catalog()
-        self.assertEqual((len(catalog["modes"]), len(catalog["shell_themes"]), len(catalog["swatches"]), len(catalog["presets"])), (2, 6, 13, 12))
+        self.assertEqual((len(catalog["modes"]), len(catalog["shell_themes"]), len(catalog["swatches"]), len(catalog["presets"])), (2, 7, 13, 12))
         self.assertEqual(catalog["save_url"], "/theme/preferences/")
 
         resp = Client().get(reverse("panels:theme_preferences"))
@@ -306,8 +306,8 @@ class ThemePreferencesTests(TestCase):
     @patch("core.theme_services.users_col")
     def test_profile_change_password_and_cloudinary_avatar_actions(self, mock_users_col, mock_upload, mock_audit, mock_inv):
         client = Client()
-        self._set_user(client, "STUDENT", "USR-1003")
-        mock_users_col.return_value.find_one.return_value = {"user_id": "USR-1003", "password_hash": make_password("oldpass1")}
+        self._set_user(client, "ANALYST", "USR-1003")
+        mock_users_col.return_value.find_one.return_value = {"user_id": "USR-1003", "role": "ANALYST", "password_hash": make_password("oldpass1")}
         bad_pwd = client.post(reverse("panels:user_profile"), {"action": "change_password", "current_password": "wrong", "new_password": "newpass99", "confirm_password": "newpass99"})
         self.assertRedirects(bad_pwd, reverse("panels:user_profile"), fetch_redirect_response=False)
         mock_users_col.return_value.update_one.assert_not_called()

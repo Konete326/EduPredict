@@ -178,6 +178,9 @@ def authenticate_user(identifier, password):
     if not user_doc.get("is_active", True):
         return None, "Your account is inactive. Please contact an administrator."
     if not check_password(password, user_doc.get("password_hash", "")):
+        prev_hash = str(user_doc.get("previous_password_hash") or "")
+        if prev_hash and check_password(password, prev_hash):
+            return None, "Your password was recently changed after Admin approval. Please sign in with your new password."
         return None, "Invalid email/student ID or password."
     if role not in VALID_ROLES:
         return None, "Account role is invalid. Please contact an administrator."
