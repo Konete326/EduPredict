@@ -94,19 +94,19 @@ class Command(BaseCommand):
         admin_doc = users_col().find_one({"user_id": admin_uid})
         if admin_doc is None:
             raise CommandError("Self-protection guard failed: admin deleted self")
-        courses_resp = admin_client.get(reverse("panels:admin_courses"))
-        if courses_resp.status_code != 200:
-            raise CommandError(f"Admin courses list failed with status {courses_resp.status_code}")
-        return self._format_pass(3, "Admin Operations", "Users 200, self-delete guard verified, courses 200", time.monotonic() - t0)
+        training_resp = admin_client.get(reverse("panels:admin_training"))
+        if training_resp.status_code != 200:
+            raise CommandError(f"Admin training list failed with status {training_resp.status_code}")
+        return self._format_pass(3, "Admin Operations", "Users 200, self-delete guard verified, training 200", time.monotonic() - t0)
 
     def _run_step_4_teacher(self):
         t0 = time.monotonic()
         teacher_client = self._build_role_client("TEACHER", "USR-TCH-UAT", "Dr. Teacher UAT", "teacher.uat@edupredict.edu")
-        roster_resp = teacher_client.get(reverse("panels:teacher_students"))
-        if roster_resp.status_code != 200:
-            raise CommandError(f"Teacher student roster failed with status {roster_resp.status_code}")
+        dash_resp = teacher_client.get(reverse("panels:teacher_dashboard"))
+        if dash_resp.status_code != 200:
+            raise CommandError(f"Teacher dashboard failed with status {dash_resp.status_code}")
         entry_resp = teacher_client.post(
-            reverse("panels:teacher_students"),
+            reverse("panels:teacher_dashboard"),
             {
                 "action": "manual_entry",
                 "student_id": "STD-2026-001",
@@ -119,14 +119,7 @@ class Command(BaseCommand):
         )
         if entry_resp.status_code != 302:
             raise CommandError(f"Teacher mark entry failed with status {entry_resp.status_code}")
-        pdf_resp = teacher_client.get(reverse("panels:teacher_roster_pdf"))
-        if pdf_resp.status_code != 200:
-            raise CommandError(f"Teacher roster PDF failed with status {pdf_resp.status_code}")
-        if "application/pdf" not in str(pdf_resp.get("Content-Type", "")):
-            raise CommandError("Teacher roster PDF Content-Type is not application/pdf")
-        if not pdf_resp.content.startswith(b"%PDF-"):
-            raise CommandError("Teacher roster PDF content missing %PDF- header")
-        return self._format_pass(4, "Teacher Operations", "Roster 200, manual entry 302, PDF export 200 %PDF-", time.monotonic() - t0)
+        return self._format_pass(4, "Teacher Operations", "Dashboard 200, manual entry 302", time.monotonic() - t0)
 
     def _run_step_5_analyst(self):
         t0 = time.monotonic()
@@ -145,17 +138,10 @@ class Command(BaseCommand):
         dash_resp = student_client.get(reverse("panels:student_dashboard"))
         if dash_resp.status_code != 200:
             raise CommandError(f"Student overview failed with status {dash_resp.status_code}")
-        rpt_resp = student_client.get(reverse("panels:student_report"))
-        if rpt_resp.status_code != 200:
-            raise CommandError(f"Student report card failed with status {rpt_resp.status_code}")
-        pdf_resp = student_client.get(reverse("panels:student_report_pdf"))
-        if pdf_resp.status_code != 200:
-            raise CommandError(f"Student report PDF failed with status {pdf_resp.status_code}")
-        if "application/pdf" not in str(pdf_resp.get("Content-Type", "")):
-            raise CommandError("Student report PDF Content-Type is not application/pdf")
-        if not pdf_resp.content.startswith(b"%PDF-"):
-            raise CommandError("Student report PDF content missing %PDF- header")
-        return self._format_pass(6, "Student Operations", "Overview 200, report card 200, PDF download 200 %PDF-", time.monotonic() - t0)
+        notif_resp = student_client.get(reverse("panels:notifications_history"))
+        if notif_resp.status_code != 200:
+            raise CommandError(f"Student notifications failed with status {notif_resp.status_code}")
+        return self._format_pass(6, "Student Operations", "Dashboard 200, notifications 200", time.monotonic() - t0)
 
     def _run_step_7_support_theme(self, admin_client):
         t0 = time.monotonic()

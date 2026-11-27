@@ -1,308 +1,244 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en" data-user-id="{{ current_user.user_id|default:'guest' }}" data-active-role="{{ active_role|default:'PORTAL' }}" data-shell-theme="{{ theme_prefs.shell_theme|default:'green' }}" class="{% if theme_prefs.mode == 'dark' %}dark{% endif %}{% if theme_prefs.density == 'compact' %} density-compact{% endif %}"{% if theme_prefs.tokens %} style="--bg-canvas:{{ theme_prefs.tokens.bg_canvas }};--bg-surface:{{ theme_prefs.tokens.bg_surface }};--bg-elevated:{{ theme_prefs.tokens.bg_elevated }};--bg-overlay:{{ theme_prefs.tokens.bg_overlay }};--text-primary:{{ theme_prefs.tokens.text_primary }};--text-secondary:{{ theme_prefs.tokens.text_secondary }};--text-muted:{{ theme_prefs.tokens.text_muted }};--border-subtle:{{ theme_prefs.tokens.border_subtle }};--accent-primary:{{ theme_prefs.tokens.accent_primary }};--accent-hover:{{ theme_prefs.tokens.accent_hover }};--accent-soft:{{ theme_prefs.tokens.accent_soft }};--shell-sidebar-bg:{{ theme_prefs.tokens.shell_sidebar_bg }};--shell-topbar-bg:{{ theme_prefs.tokens.shell_topbar_bg }};"{% endif %}>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="light dark">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2310b981'/%3E%3Cpath d='M16 7L3 13l13 6 13-6-13-6z' fill='%23ffffff'/%3E%3Cpath d='M9 16.8v4.2c0 2 3.1 3.5 7 3.5s7-1.5 7-3.5v-4.2l-7 3.2-7-3.2z' fill='%23ffffff'/%3E%3Crect x='25.5' y='13.5' width='2' height='7' rx='1' fill='%23ffffff'/%3E%3C/svg%3E">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23111111'/%3E%3Cellipse cx='16' cy='16' rx='9' ry='3.6' transform='rotate(-25 16 16)' fill='%2315BCDF'/%3E%3C/svg%3E">
   <title>Sign In | EduPredict</title>
-  <script>
-    (function () {
-      try {
-        const doc = document.documentElement;
-        const raw = localStorage.getItem('ep_theme_prefs:guest:PORTAL');
-        if (raw) {
-          const p = JSON.parse(raw);
-          if (p && typeof p === 'object') {
-            doc.classList.toggle('dark', p.mode === 'dark');
-            doc.classList.toggle('density-compact', p.density === 'compact');
-            if (p.shell_theme) doc.setAttribute('data-shell-theme', p.shell_theme);
-            if (p.tokens && typeof p.tokens === 'object') {
-              const m = { bg_canvas: '--bg-canvas', bg_surface: '--bg-surface', bg_elevated: '--bg-elevated', bg_overlay: '--bg-overlay', text_primary: '--text-primary', text_secondary: '--text-secondary', text_muted: '--text-muted', border_subtle: '--border-subtle', accent_primary: '--accent-primary', accent_hover: '--accent-hover', accent_soft: '--accent-soft', shell_sidebar_bg: '--shell-sidebar-bg', shell_topbar_bg: '--shell-topbar-bg' };
-              Object.keys(m).forEach(function (k) { if (p.tokens[k]) doc.style.setProperty(m[k], p.tokens[k]); });
-            }
-          }
-        } else if (!doc.classList.contains('dark') && localStorage.getItem('edupredict_theme') === 'dark') {
-          doc.classList.add('dark');
-        }
-      } catch (e) {}
-    })();
-  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Quantico:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace']
-          },
-          zIndex: { 60: '60' }
-        }
-      }
-    };
-  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="{% static 'css/global.css' %}?v=17">
+  <link rel="stylesheet" href="{% static 'css/landing_provably.css' %}?v=17&r=98">
+  <style>
+    .targo-auth-shell { --bg-canvas: #F7F6F8; --bg-surface: #ffffff; --bg-elevated: #F2F1F0; --text-primary: #2b3033; --text-secondary: #53585c; --text-muted: #6b6f72; --border-subtle: #d8dadd; --accent-primary: #15BCDF; --accent-hover: #0fa3c2; --accent-soft: rgba(21,188,223,0.14); --status-warning: #d97706; --status-success: #0fa3c2; }
+    .targo-auth-tab[aria-selected="true"] { background: #15BCDF; color: #1a1c1e; border-color: #0fa3c2; }
+    .targo-auth-tab[aria-selected="false"] { background: transparent; color: #53585c; border-color: transparent; }
+    .targo-auth-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; background: #15BCDF; border: 1px solid #0fa3c2; color: #1a1c1e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px)); transition: background 0.2s ease; cursor: pointer; }
+    .targo-auth-btn:hover { background: #3fd0ef; }
+    .targo-auth-input { width: 100%; border: 1px solid #d5d7d9; background: #F7F6F8; color: #2b3033; font-family: inherit; font-size: 13px; padding: 10px 12px; outline: none; transition: border-color 0.2s ease, background 0.2s ease; }
+    .targo-auth-input:focus { border-color: #15BCDF; background: #ffffff; }
+  </style>
 </head>
-<body class="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased">
-  <div id="ep-top-progress" class="fixed top-0 left-0 z-60 h-[3px] w-0 opacity-0 bg-[var(--accent-primary)] transition-[width,opacity] duration-200 pointer-events-none" aria-hidden="true"></div>
-  <div data-slot="login" class="relative min-h-screen overflow-hidden bg-[var(--bg-canvas)] lg:grid lg:grid-cols-12">
-    <aside data-slot="login-aside" class="relative hidden lg:flex lg:col-span-5 xl:col-span-5 flex-col justify-between overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] p-8 xl:p-12">
-      <div id="ep-floating-paths" data-floating-paths class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true"></div>
-      <div class="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-36 bg-gradient-to-t from-[var(--bg-surface)] to-transparent" aria-hidden="true"></div>
-    </aside>
+<body class="targo-body targo-auth-shell">
+  <div id="ep-top-progress" class="fixed top-0 left-0 z-60 h-[3px] w-0 opacity-0 pointer-events-none" style="background:#15BCDF" aria-hidden="true"></div>
 
-    <main data-slot="login-main" class="relative col-span-12 lg:col-span-7 xl:col-span-7 flex min-h-screen flex-col justify-between p-4 sm:p-8 xl:p-12 overflow-hidden">
-      <div class="pointer-events-none absolute inset-0 z-0 opacity-60" style="background: radial-gradient(circle at 50% 0%, var(--accent-soft), transparent 60%);" aria-hidden="true"></div>
+  <nav class="targo-nav" aria-label="Primary navigation">
+    <a href="{% url 'root' %}" class="targo-logo">
+      <span class="targo-logo-mark" aria-hidden="true"><span></span></span>
+      <span class="targo-logo-text">EduPredict</span>
+    </a>
+    <div class="targo-links">
+      <a href="{% url 'root' %}">HOME</a>
+      <a href="{% url 'accounts:about_view' %}">ABOUT</a>
+      <a href="{% url 'accounts:contact_view' %}">CONTACT</a>
+    </div>
+    <div class="targo-nav-actions">
+      <a href="{% url 'accounts:auth_view' %}" class="targo-nav-signin">SIGN IN</a>
+      <a href="{% url 'accounts:auth_view' %}?tab=register" class="targo-nav-start">GET STARTED</a>
+    </div>
+    <button id="targo-menu-toggle" type="button" class="targo-hamburger" aria-expanded="false" aria-controls="targo-mobile-menu" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div id="targo-mobile-menu" class="targo-mobile-menu">
+      <a href="{% url 'root' %}">HOME</a>
+      <a href="{% url 'accounts:about_view' %}">ABOUT</a>
+      <a href="{% url 'accounts:contact_view' %}">CONTACT</a>
+      <a href="{% url 'accounts:auth_view' %}">SIGN IN</a>
+      <a href="{% url 'accounts:auth_view' %}?tab=register" class="targo-mobile-cta">GET STARTED</a>
+    </div>
+  </nav>
 
-      <div class="relative z-10 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <a data-slot="login-home" href="{% url 'root' %}" class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] transition-colors">
-            <i class="fa-solid fa-chevron-left text-[10px]" aria-hidden="true"></i>
-            <span>Home</span>
-          </a>
-          <div class="flex lg:hidden items-center gap-2">
-            <i class="fa-solid fa-graduation-cap text-lg text-[var(--accent-primary)]" aria-hidden="true"></i>
-            <span class="text-sm font-semibold text-[var(--text-primary)]">EduPredict</span>
-          </div>
+  <section data-slot="login" class="targo-contact-section" style="align-items:center;position:relative;overflow:hidden;">
+    <div data-slot="login-aside" class="targo-contact-info" style="position:relative;">
+      <div id="ep-floating-paths" data-floating-paths class="pointer-events-none absolute inset-0 overflow-hidden opacity-25" aria-hidden="true"></div>
+      <h1 class="targo-h2" style="position:relative;z-index:2;">
+        <span>ACCESS</span>
+        <span class="targo-h2-indent">EDUPREDICT</span>
+      </h1>
+      <p class="targo-about-copy" style="position:relative;z-index:2;">
+        Sign in with your Email, Student ID, or Name to open your Admin, Teacher, Analyst, or Student workspace. Teachers and Analysts can register for Admin approval.
+      </p>
+      <div class="targo-contact-meta" style="position:relative;z-index:2;">
+        <div class="targo-metric">
+          <span class="targo-metric-label">LIVE PREDICTIONS</span>
+          <strong class="targo-metric-value targo-accent">{{ live_predictions_count|default:0 }}</strong>
         </div>
-        <div class="flex items-center gap-2">
-          <div class="inline-flex lg:hidden items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs text-[var(--text-secondary)]">
-            <span class="h-2 w-2 rounded-full {% if db_connected %}bg-[var(--status-success)]{% else %}bg-[var(--status-warning)]{% endif %}"></span>
-            <span>{% if db_connected %}Connected{% else %}Offline{% endif %}</span>
+        <div class="targo-metric">
+          <span class="targo-metric-label">DATABASE</span>
+          <strong class="targo-metric-text">{% if db_connected %}ONLINE{% else %}OFFLINE{% endif %}</strong>
+          <span class="targo-metric-sub">{{ portal_current_term|default:"Fall 2026" }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div data-slot="login-main" class="targo-contact-form-wrap" style="position:relative;z-index:2;">
+      <div data-slot="login-panel" class="space-y-4">
+      {% with current_tab=active_tab|default:"login" %}
+      <div id="teacher-pending-status-card" data-pending-approval-card data-approval-status-url="{% url 'accounts:approval_status' %}" class="{% if not pending_teacher_approval %}hidden {% endif %}targo-card space-y-4">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 text-sm font-bold text-[#2b3033]">
+            <i class="fa-solid fa-spinner fa-spin text-[#d97706]" aria-hidden="true"></i>
+            <span>Account Created — Awaiting Admin Approval</span>
           </div>
-          <button id="theme-toggle-btn" type="button" aria-pressed="false" aria-label="Toggle Light and Dark Theme" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
-            <i id="theme-icon-moon" class="fa-solid fa-moon text-sm"></i>
-            <i id="theme-icon-sun" class="fa-solid fa-sun hidden text-sm text-[var(--status-warning)]"></i>
-            <span id="theme-toggle-label" class="hidden sm:inline">Dark</span>
+          <span class="px-2 py-0.5 text-[11px] font-bold uppercase bg-[#fef3c7] text-[#b45309]">PENDING</span>
+        </div>
+        <p class="text-xs text-[#6b6f72] leading-relaxed">
+          Your account{% if login_email %} (<span class="font-bold text-[#2b3033]">{{ login_email }}</span>){% endif %} is queued for Admin approval. Auto-checking every 5s.
+        </p>
+        <div class="flex items-center justify-between border-t border-[#e1e2e4] pt-3">
+          <span class="text-[11px] text-[#6b6f72]">Live Status Poll</span>
+          <a href="{% url 'accounts:auth_view' %}?reset_pending=1" class="text-xs font-bold uppercase text-[#0fa3c2] hover:underline">Use another account</a>
+        </div>
+      </div>
+
+      <div class="{% if pending_teacher_approval %}hidden {% endif %}targo-card space-y-5">
+        <div data-slot="login-header" class="space-y-1">
+          <h2 class="text-xl font-bold uppercase text-[#2b3033]">Sign in or join.</h2>
+        </div>
+        <div role="tablist" class="grid grid-cols-2 gap-1.5 border border-[#d5d7d9] bg-[#F2F1F0] p-1">
+          <button id="tab-login-btn" type="button" role="tab" aria-selected="{% if current_tab != 'register' %}true{% else %}false{% endif %}" onclick="switchAuthTab('login')" class="targo-auth-tab border px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">Sign In</button>
+          <button id="tab-register-btn" type="button" role="tab" aria-selected="{% if current_tab == 'register' %}true{% else %}false{% endif %}" onclick="switchAuthTab('register')" class="targo-auth-tab border px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">Create Account</button>
+        </div>
+
+        <form id="panel-login" method="post" action="{% url 'accounts:auth_view' %}" class="space-y-4 {% if current_tab == 'register' %}hidden{% endif %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="login">
+          <div class="targo-field">
+            <label for="login-email">EMAIL, STUDENT ID, OR NAME</label>
+            <input id="login-email" name="email" type="text" autocomplete="username" required value="{{ login_email|default:'' }}" placeholder="you@edupredict.edu, STD-2026-001, or name" class="targo-auth-input">
+          </div>
+          <div class="targo-field">
+            <label for="login-password">PASSWORD</label>
+            <div class="relative">
+              <input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="Enter password" class="targo-auth-input pr-20">
+              <div class="absolute inset-y-0 right-0 flex items-center pr-3 gap-2">
+                <span id="login-caps-warn" title="Caps Lock is ON" class="hidden inline-flex items-center gap-0.5 bg-[#fef3c7] px-1.5 py-0.5 text-[10px] font-bold uppercase text-[#b45309]">Caps</span>
+                <button type="button" onclick="togglePasswordVisibility('login-password', this)" aria-label="Toggle password visibility" class="text-[#6b6f72] hover:text-[#2b3033] cursor-pointer">
+                  <i class="fa-regular fa-eye text-xs"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="targo-auth-btn w-full py-3 text-xs">
+            <i class="fa-solid fa-right-to-bracket text-xs"></i>
+            <span>SIGN IN</span>
           </button>
-        </div>
-      </div>
-
-      <div data-slot="login-panel" class="relative z-10 w-full max-w-md mx-auto py-6 sm:py-8 space-y-5">
-        {% with current_tab=active_tab|default:"login" %}
-        <div data-slot="login-header" class="ep-auth-enter space-y-1.5">
-          <h1 class="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-[var(--text-primary)]">Sign in or join.</h1>
-          <p class="text-xs text-[var(--text-secondary)]">Access your campus analytics workspace or register a new profile.</p>
-        </div>
-
-        <div id="teacher-pending-status-card" data-pending-approval-card data-approval-status-url="{% url 'accounts:approval_status' %}" class="{% if not pending_teacher_approval %}hidden {% endif %}rounded-2xl border border-[var(--status-warning)]/40 bg-[var(--bg-surface)] p-6 space-y-4 shadow-sm">
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5 text-sm font-semibold text-[var(--text-primary)]">
-              <i class="fa-solid fa-spinner fa-spin text-[var(--status-warning)]" aria-hidden="true"></i>
-              <span>Account Created — Awaiting Admin Approval</span>
-            </div>
-            <span class="rounded-full bg-[var(--status-warning)]/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--status-warning)]">Pending</span>
-          </div>
-          <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
-            Your account profile{% if login_email %} (<span class="font-semibold text-[var(--text-primary)]">{{ login_email }}</span>){% endif %} is queued for Admin verification. This page checks status automatically and will sign you in as soon as an administrator approves your request.
-          </p>
-          <div class="flex items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-3">
-            <span class="inline-flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
-              <span class="h-2 w-2 rounded-full bg-[var(--status-warning)] animate-pulse"></span>
-              <span>Auto-checking every 5s</span>
-            </span>
-            <a href="{% url 'accounts:auth_view' %}?reset_pending=1" class="text-xs font-semibold text-[var(--accent-primary)] hover:underline">
-              Use another account
-            </a>
-          </div>
-        </div>
-
-        <div class="{% if pending_teacher_approval %}hidden {% endif %}rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 shadow-sm space-y-5">
-          <div role="tablist" class="grid grid-cols-2 gap-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-1">
-            <button id="tab-login-btn" type="button" role="tab" aria-selected="{% if current_tab != 'register' %}true{% else %}false{% endif %}" onclick="switchAuthTab('login')" class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors {% if current_tab != 'register' %}bg-[var(--bg-surface)] text-[var(--accent-primary)] shadow-sm border border-[var(--border-subtle)]{% else %}text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent{% endif %}">
-              Sign In
-            </button>
-            <button id="tab-register-btn" type="button" role="tab" aria-selected="{% if current_tab == 'register' %}true{% else %}false{% endif %}" onclick="switchAuthTab('register')" class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors {% if current_tab == 'register' %}bg-[var(--bg-surface)] text-[var(--accent-primary)] shadow-sm border border-[var(--border-subtle)]{% else %}text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent{% endif %}">
-              Create Account
+          <div class="border-t border-[#e1e2e4] pt-3">
+            <button type="button" onclick="fillDefaultAdmin()" class="w-full border border-[#d5d7d9] bg-[#F2F1F0] px-3 py-2 text-xs font-bold uppercase tracking-wider text-[#2b3033] hover:border-[#15BCDF] transition-colors cursor-pointer">
+              <i class="fa-solid fa-user-shield text-[#0fa3c2] mr-1"></i>
+              <span>Use Default Admin (admin@gmail.com)</span>
             </button>
           </div>
+        </form>
 
-          <form id="panel-login" method="post" action="{% url 'accounts:auth_view' %}" class="space-y-4 {% if current_tab == 'register' %}hidden{% endif %}">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="login">
-            <div class="space-y-1">
-              <label for="login-email" class="block text-xs font-medium text-[var(--text-secondary)]">Email, Student ID, or Name</label>
-              <input id="login-email" name="email" type="text" autocomplete="username" required value="{{ login_email|default:'' }}" placeholder="you@edupredict.edu, STD-2026-001, or sameer" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-            </div>
-            <div class="space-y-1">
-              <label for="login-password" class="block text-xs font-medium text-[var(--text-secondary)]">Password</label>
-              <div class="relative">
-                <input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="Enter password" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] py-2 pl-3 pr-20 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-                <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 gap-2">
-                  <span id="login-caps-warn" title="Caps Lock is ON" class="hidden inline-flex items-center gap-0.5 rounded bg-[var(--status-warning)]/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[var(--status-warning)]">
-                    <i class="fa-solid fa-arrow-up text-[9px]"></i>
-                    <span>Caps</span>
-                  </span>
-                  <button type="button" onclick="togglePasswordVisibility('login-password', this)" aria-label="Toggle password visibility" class="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-                    <i class="fa-regular fa-eye text-xs"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
-              <i class="fa-solid fa-right-to-bracket text-xs"></i>
-              <span>Sign In</span>
+        <form id="panel-register" method="post" action="{% url 'accounts:auth_view' %}" data-auth-stepper class="space-y-4 {% if current_tab != 'register' %}hidden{% endif %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="register">
+          <nav aria-label="Registration steps" class="flex items-center gap-2 pb-1">
+            <button type="button" data-step-trigger="0" aria-current="step" class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#2b3033] shrink-0">
+              <span class="ep-step-indicator" data-state="current">1</span>
+              <span>1. Account</span>
             </button>
-            <div class="border-t border-[var(--border-subtle)] pt-3">
-              <button type="button" onclick="fillDefaultAdmin()" class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]">
-                <i class="fa-solid fa-user-shield text-[var(--accent-primary)]"></i>
-                <span>Use Default Admin (admin@gmail.com)</span>
-              </button>
+            <div class="ep-step-line" data-complete="false"></div>
+            <button type="button" data-step-trigger="1" class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#6b6f72] shrink-0">
+              <span class="ep-step-indicator" data-state="upcoming">2</span>
+              <span>2. Profile</span>
+            </button>
+            <div class="ep-step-line" data-complete="false"></div>
+            <button type="button" data-step-trigger="2" class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#6b6f72] shrink-0">
+              <span class="ep-step-indicator" data-state="upcoming">3</span>
+              <span>3. Security</span>
+            </button>
+          </nav>
+
+          <div data-wizard-step="0" class="space-y-3">
+            <div class="targo-field">
+              <label for="reg-full-name">FULL NAME</label>
+              <input id="reg-full-name" name="full_name" type="text" required value="{{ register_data.full_name|default:'' }}" placeholder="Ayesha Khan" class="targo-auth-input">
             </div>
-          </form>
+            <div class="targo-field">
+              <label for="reg-email">EMAIL ADDRESS</label>
+              <input id="reg-email" name="email" type="email" required value="{{ register_data.email|default:'' }}" placeholder="ayesha@edupredict.edu" class="targo-auth-input">
+            </div>
+            <div class="targo-field">
+              <label for="reg-role">ROLE</label>
+              {% with selected_role=register_data.role|default:"TEACHER"|upper %}
+              <select id="reg-role" name="role" required class="targo-auth-input">
+                <option value="TEACHER" {% if selected_role != 'ANALYST' %}selected{% endif %}>Teacher</option>
+                <option value="ANALYST" {% if selected_role == 'ANALYST' %}selected{% endif %}>Data Analyst</option>
+              </select>
+              {% endwith %}
+            </div>
+            <div id="teacher-approval-notice" class="border border-[#d5d7d9] bg-[#F2F1F0] px-3 py-2 text-[11px] text-[#53585c]">
+              Teacher and Data Analyst accounts require Admin approval before first sign-in.
+            </div>
+          </div>
 
-          <form id="panel-register" method="post" action="{% url 'accounts:auth_view' %}" data-auth-stepper class="space-y-4 {% if current_tab != 'register' %}hidden{% endif %}">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="register">
-            <nav aria-label="Registration steps" class="flex items-center gap-2 pb-1">
-              <button type="button" data-step-trigger="0" aria-current="step" class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-primary)] shrink-0">
-                <span class="ep-step-indicator" data-state="current">1</span>
-                <span>1. Account</span>
-              </button>
-              <div class="ep-step-line" data-complete="false"></div>
-              <button type="button" data-step-trigger="1" class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-secondary)] shrink-0">
-                <span class="ep-step-indicator" data-state="upcoming">2</span>
-                <span>2. Profile</span>
-              </button>
-              <div class="ep-step-line" data-complete="false"></div>
-              <button type="button" data-step-trigger="2" class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-secondary)] shrink-0">
-                <span class="ep-step-indicator" data-state="upcoming">3</span>
-                <span>3. Security</span>
-              </button>
-            </nav>
-
-            <div data-wizard-step="0" class="space-y-3">
-              <div class="space-y-1">
-                <label for="reg-full-name" class="block text-xs font-medium text-[var(--text-secondary)]">Full Name</label>
-                <input id="reg-full-name" name="full_name" type="text" required value="{{ register_data.full_name|default:'' }}" placeholder="Ayesha Khan" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+          <div data-wizard-step="1" class="hidden space-y-3">
+            <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <div class="targo-field">
+                <label for="reg-batch">BATCH / TERM</label>
+                <input id="reg-batch" name="batch" type="text" required value="{{ register_data.batch|default:'' }}" placeholder="2026-A" class="targo-auth-input">
               </div>
-              <div class="space-y-1">
-                <label for="reg-email" class="block text-xs font-medium text-[var(--text-secondary)]">Email Address</label>
-                <input id="reg-email" name="email" type="email" required value="{{ register_data.email|default:'' }}" placeholder="ayesha@edupredict.edu" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-              </div>
-              <div class="space-y-1">
-                <label for="reg-role" class="block text-xs font-medium text-[var(--text-secondary)]">Role</label>
-                {% with selected_role=register_data.role|default:"TEACHER"|upper %}
-                <select id="reg-role" name="role" required class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
-                  <option value="TEACHER" {% if selected_role != 'ANALYST' %}selected{% endif %}>Teacher</option>
-                  <option value="ANALYST" {% if selected_role == 'ANALYST' %}selected{% endif %}>Data Analyst</option>
-                </select>
-                {% endwith %}
-              </div>
-              <div id="teacher-approval-notice" class="rounded-lg border border-[var(--status-warning)] bg-[var(--bg-elevated)] px-3 py-2 text-[11px] text-[var(--text-secondary)]">
-                <i class="fa-solid fa-circle-info mr-1 text-[var(--status-warning)]"></i>
-                <span>Teacher and Data Analyst accounts require Admin approval before first sign-in. Students sign in directly using their Student ID or name and generated password.</span>
+              <div class="targo-field">
+                <label for="reg-phone">PHONE (OPTIONAL)</label>
+                <input id="reg-phone" name="phone" type="tel" value="{{ register_data.phone|default:'' }}" placeholder="+92 300 0000000" class="targo-auth-input">
               </div>
             </div>
-
-            <div data-wizard-step="1" class="hidden space-y-3">
-              <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                <div class="space-y-1">
-                  <label for="reg-department" class="block text-xs font-medium text-[var(--text-secondary)]">Department</label>
-                  <input id="reg-department" name="department" type="text" list="reg-department-options" autocomplete="off" required value="{{ register_data.department|default:'' }}" placeholder="Type or select department" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-                  <datalist id="reg-department-options">
-                    <option value="Computer Science"></option><option value="Software Engineering"></option><option value="Data Science"></option><option value="Artificial Intelligence"></option><option value="Cyber Security"></option><option value="Information Technology"></option><option value="Electrical Engineering"></option><option value="Mechanical Engineering"></option><option value="Civil Engineering"></option><option value="Business Administration"></option><option value="Accounting & Finance"></option><option value="Mathematics"></option><option value="Physics"></option><option value="Economics"></option><option value="Biotechnology"></option>
-                  </datalist>
-                </div>
-                <div class="space-y-1">
-                  <label for="reg-batch" class="block text-xs font-medium text-[var(--text-secondary)]">Batch / Term</label>
-                  <input id="reg-batch" name="batch" type="text" required value="{{ register_data.batch|default:'' }}" placeholder="2026-A" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-                </div>
-              </div>
-              <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                <div class="space-y-1">
-                  <label for="reg-program-level" class="block text-xs font-medium text-[var(--text-secondary)]">Program Level</label>
-                  {% with selected_level=register_data.program_level|default:"" %}
-                  <select id="reg-program-level" name="program_level" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:outline-none">
-                    <option value="">Select level (optional)</option>
-                    <option value="School / Junior" {% if selected_level == 'School / Junior' %}selected{% endif %}>School / Junior</option>
-                    <option value="College / Intermediate" {% if selected_level == 'College / Intermediate' %}selected{% endif %}>College / Intermediate</option>
-                    <option value="BS / Undergraduate" {% if selected_level == 'BS / Undergraduate' %}selected{% endif %}>BS / Undergraduate</option>
-                    <option value="MS / Graduate" {% if selected_level == 'MS / Graduate' %}selected{% endif %}>MS / Graduate</option>
-                  </select>
-                  {% endwith %}
-                </div>
-                <div class="space-y-1">
-                  <label for="reg-phone" class="block text-xs font-medium text-[var(--text-secondary)]">Phone (Optional)</label>
-                  <input id="reg-phone" name="phone" type="tel" value="{{ register_data.phone|default:'' }}" placeholder="+92 300 0000000" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-                </div>
-              </div>
-              <div class="space-y-1">
-                <label for="reg-bio" class="block text-xs font-medium text-[var(--text-secondary)]">Bio (Optional)</label>
-                <textarea id="reg-bio" name="bio" rows="2" placeholder="Short academic note or focus area" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">{{ register_data.bio|default:'' }}</textarea>
-              </div>
+            <div class="targo-field">
+              <label for="reg-bio">BIO (OPTIONAL)</label>
+              <textarea id="reg-bio" name="bio" rows="2" placeholder="Short academic note" class="targo-auth-input">{{ register_data.bio|default:'' }}</textarea>
             </div>
+          </div>
 
-            <div data-wizard-step="2" class="hidden space-y-3">
-              <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                <div class="space-y-1">
-                  <label for="reg-password" class="block text-xs font-medium text-[var(--text-secondary)]">Password</label>
-                  <div class="relative">
-                    <input id="reg-password" name="password" type="password" minlength="6" required placeholder="Min 6 chars" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] py-1.5 pl-3 pr-20 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 gap-2">
-                      <span id="reg-caps-warn" title="Caps Lock is ON" class="hidden inline-flex items-center gap-0.5 rounded bg-[var(--status-warning)]/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[var(--status-warning)]">
-                        <i class="fa-solid fa-arrow-up text-[9px]"></i>
-                        <span>Caps</span>
-                      </span>
-                      <button type="button" onclick="togglePasswordVisibility('reg-password', this)" aria-label="Toggle password visibility" class="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-                        <i class="fa-regular fa-eye text-xs"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div class="space-y-1">
-                  <label for="reg-confirm-password" class="block text-xs font-medium text-[var(--text-secondary)]">Confirm</label>
-                  <div class="relative">
-                    <input id="reg-confirm-password" name="confirm_password" type="password" minlength="6" required placeholder="Repeat password" class="w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] py-1.5 pl-3 pr-9 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
-                    <button type="button" onclick="togglePasswordVisibility('reg-confirm-password', this)" aria-label="Toggle password visibility" class="absolute inset-y-0 right-0 flex items-center px-3 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-                      <i class="fa-regular fa-eye text-xs" aria-hidden="true"></i>
-                    </button>
+          <div data-wizard-step="2" class="hidden space-y-3">
+            <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <div class="targo-field">
+                <label for="reg-password">PASSWORD</label>
+                <div class="relative">
+                  <input id="reg-password" name="password" type="password" minlength="6" required placeholder="Min 6 chars" class="targo-auth-input pr-16">
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 gap-2">
+                    <span id="reg-caps-warn" class="hidden bg-[#fef3c7] px-1 text-[10px] font-bold uppercase text-[#b45309]">Caps</span>
+                    <button type="button" onclick="togglePasswordVisibility('reg-password', this)" aria-label="Toggle password visibility" class="text-[#6b6f72] hover:text-[#2b3033] cursor-pointer"><i class="fa-regular fa-eye text-xs"></i></button>
                   </div>
                 </div>
               </div>
-              <div id="reg-password-strength" data-password-strength class="space-y-1">
-                <div class="grid grid-cols-4 gap-1.5">
-                  <div data-strength-bar="1" class="h-1.5 rounded-full bg-[var(--border-subtle)] transition-colors"></div>
-                  <div data-strength-bar="2" class="h-1.5 rounded-full bg-[var(--border-subtle)] transition-colors"></div>
-                  <div data-strength-bar="3" class="h-1.5 rounded-full bg-[var(--border-subtle)] transition-colors"></div>
-                  <div data-strength-bar="4" class="h-1.5 rounded-full bg-[var(--border-subtle)] transition-colors"></div>
+              <div class="targo-field">
+                <label for="reg-confirm-password">CONFIRM</label>
+                <div class="relative">
+                  <input id="reg-confirm-password" name="confirm_password" type="password" minlength="6" required placeholder="Repeat password" class="targo-auth-input pr-9">
+                  <button type="button" onclick="togglePasswordVisibility('reg-confirm-password', this)" aria-label="Toggle password visibility" class="absolute inset-y-0 right-0 flex items-center px-3 text-[#6b6f72] hover:text-[#2b3033] cursor-pointer"><i class="fa-regular fa-eye text-xs" aria-hidden="true"></i></button>
                 </div>
-                <p id="reg-password-strength-label" class="text-[11px] font-medium text-[var(--text-muted)]">Enter at least 6 characters</p>
               </div>
-              <div id="wizard-review-summary" class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3"></div>
             </div>
-
-            <div class="flex items-center justify-between gap-2 pt-1">
-              <button type="button" data-wizard-prev class="hidden inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-                <i class="fa-solid fa-arrow-left text-[10px]"></i>
-                <span>Back</span>
-              </button>
-              <button type="button" data-wizard-next class="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
-                <span>Continue</span>
-                <i class="fa-solid fa-arrow-right text-[10px]"></i>
-              </button>
-              <button type="submit" data-wizard-submit class="hidden ml-auto inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
-                <i class="fa-solid fa-user-plus text-xs"></i>
-                <span>Create Account</span>
-              </button>
+            <div id="reg-password-strength" data-password-strength class="space-y-1">
+              <div class="grid grid-cols-4 gap-1.5">
+                <div data-strength-bar="1" class="h-1.5 bg-[#d5d7d9]"></div>
+                <div data-strength-bar="2" class="h-1.5 bg-[#d5d7d9]"></div>
+                <div data-strength-bar="3" class="h-1.5 bg-[#d5d7d9]"></div>
+                <div data-strength-bar="4" class="h-1.5 bg-[#d5d7d9]"></div>
+              </div>
+              <p id="reg-password-strength-label" class="text-[11px] font-bold text-[#6b6f72]">Enter at least 6 characters</p>
             </div>
-          </form>
-        </div>
-        {% endwith %}
-      </div>
+            <div id="wizard-review-summary" class="border border-[#d5d7d9] bg-[#F2F1F0] p-3"></div>
+          </div>
 
-      <div class="relative z-10 text-center text-xs text-[var(--text-muted)]">
-        <span>EduPredict Portal &copy; 2026. All rights reserved.</span>
+          <div class="flex items-center justify-between gap-2 pt-1">
+            <button type="button" data-wizard-prev class="hidden border border-[#2b3033] px-3 py-2 text-xs font-bold uppercase text-[#2b3033] cursor-pointer">Back</button>
+            <button type="button" data-wizard-next class="targo-auth-btn ml-auto px-5 py-2.5 text-xs">Continue</button>
+            <button type="submit" data-wizard-submit class="hidden targo-auth-btn ml-auto px-5 py-2.5 text-xs">Create Account</button>
+          </div>
+        </form>
       </div>
-    </main>
-  </div>
+      {% endwith %}
+      </div>
+    </div>
+  </section>
 
   {% include 'components/toast.html' %}
   {{ theme_prefs|json_script:"ep-theme-prefs-data" }}
@@ -311,5 +247,6 @@
   <script src="{% static 'js/ui_widgets.js' %}?v=17"></script>
   <script src="{% static 'js/theme_studio.js' %}?v=17"></script>
   <script src="{% static 'js/auth_wizard.js' %}?v=17"></script>
+  <script src="{% static 'js/landing_provably.js' %}?v=17&r=98"></script>
 </body>
 </html>

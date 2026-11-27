@@ -32,10 +32,6 @@
           <i class="fa-solid fa-users w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Users</span>
         </a>
-        <a href="{% url 'panels:admin_courses' %}"{% if request.resolver_match.view_name == 'panels:admin_courses' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:admin_courses' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-          <i class="fa-solid fa-book-open w-5 text-center shrink-0 text-sm"></i>
-          <span class="truncate">Courses</span>
-        </a>
         <a href="{% url 'panels:admin_training' %}"{% if request.resolver_match.view_name == 'panels:admin_training' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:admin_training' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-brain w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Training Data</span>
@@ -43,18 +39,14 @@
       </div>
     </div>
     <div class="space-y-1" data-nav-group="admin_ops">
-      <button type="button" data-nav-group-toggle="admin_ops" aria-expanded="true" title="Show or hide Support and Logs links" class="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
-        <span>Support &amp; Logs</span>
+      <button type="button" data-nav-group-toggle="admin_ops" aria-expanded="true" title="Show or hide Support links" class="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+        <span>Support</span>
         <i data-nav-chevron class="nav-group-chevron fa-solid fa-chevron-down text-xs transition-transform duration-150"></i>
       </button>
       <div data-nav-group-body="admin_ops" class="space-y-1">
         <a href="{% url 'panels:admin_tickets' %}"{% if request.resolver_match.view_name == 'panels:admin_tickets' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:admin_tickets' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-life-ring w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Help Tickets</span>
-        </a>
-        <a href="{% url 'panels:admin_logs' %}"{% if request.resolver_match.view_name == 'panels:admin_logs' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:admin_logs' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-          <i class="fa-solid fa-clock-rotate-left w-5 text-center shrink-0 text-sm"></i>
-          <span class="truncate">Activity Logs</span>
         </a>
       </div>
     </div>
@@ -68,20 +60,8 @@
       </button>
       <div data-nav-group-body="teacher" class="space-y-1">
         <a href="{% url 'panels:teacher_dashboard' %}"{% if request.resolver_match.view_name == 'panels:teacher_dashboard' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:teacher_dashboard' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-          <i class="fa-solid fa-chalkboard-user w-5 text-center shrink-0 text-sm"></i>
-          <span class="truncate">Class Home</span>
-        </a>
-        <a href="{% url 'panels:teacher_students' %}"{% if request.resolver_match.view_name == 'panels:teacher_students' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:teacher_students' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-          <i class="fa-solid fa-user-graduate w-5 text-center shrink-0 text-sm"></i>
-          <span class="truncate">Student List</span>
-        </a>
-        <a href="{% url 'panels:teacher_ingest' %}"{% if request.resolver_match.view_name == 'panels:teacher_ingest' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:teacher_ingest' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-          <i class="fa-solid fa-file-arrow-up w-5 text-center shrink-0 text-sm"></i>
-          <span class="truncate">Upload Marks</span>
-        </a>
-        <a href="{% url 'panels:teacher_alerts' %}"{% if request.resolver_match.view_name == 'panels:teacher_alerts' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:teacher_alerts' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-          <i class="fa-solid fa-bell w-5 text-center shrink-0 text-sm"></i>
-          <span class="truncate">Risk Alerts</span>
+          <i class="fa-solid fa-gauge-high w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Dashboard</span>
         </a>
       </div>
     </div>
@@ -96,19 +76,7 @@
       <div data-nav-group-body="student" class="space-y-1">
         <a href="{% url 'panels:student_dashboard' %}"{% if request.resolver_match.view_name == 'panels:student_dashboard' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:student_dashboard' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-graduation-cap w-5 text-center shrink-0 text-sm"></i>
-          <span class="truncate">My Dashboard</span>
-        </a>
-        <a href="{% url 'panels:student_report' %}"{% if request.resolver_match.view_name == 'panels:student_report' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:student_report' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-          <i class="fa-solid fa-file-lines w-5 text-center shrink-0 text-sm"></i>
-          <span class="truncate">My Report Card</span>
-        </a>
-        <a href="{% url 'panels:student_tips' %}"{% if request.resolver_match.view_name == 'panels:student_tips' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:student_tips' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-          <i class="fa-solid fa-lightbulb w-5 text-center shrink-0 text-sm"></i>
-          <span class="truncate">Study Tips</span>
-        </a>
-        <a href="{% url 'panels:student_notifications' %}"{% if request.resolver_match.view_name == 'panels:student_notifications' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:student_notifications' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
-          <i class="fa-solid fa-bell w-5 text-center shrink-0 text-sm"></i>
-          <span class="truncate">Alerts &amp; Support</span>
+          <span class="truncate">Dashboard</span>
         </a>
       </div>
     </div>
@@ -150,7 +118,7 @@
         </a>
         <a href="{% url 'panels:notifications_history' %}"{% if request.resolver_match.view_name == 'panels:notifications_history' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:notifications_history' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-bell w-5 text-center shrink-0 text-sm"></i>
-          <span class="truncate">Alerts History</span>
+          <span class="truncate">Notification</span>
         </a>
         <button type="button" onclick="openThemeStudioModal()" title="Customize theme colors" class="flex w-full items-center justify-between gap-2 rounded-[12px] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
           <span class="flex items-center gap-2.5 min-w-0">

@@ -138,7 +138,7 @@
     else if (cmd === 'download_pdf') { const link = document.querySelector('a[href*="-pdf"], a[href*="download-pdf"], a[href*="export-pdf"], a[href*="report/pdf"], a[href*="roster/pdf"]'); if (link && typeof link.click === 'function') link.click(); else if (act.url) navigateToUrl(act.url, true); else goRoute(''); }
     else if (cmd === 'open_change_password') { if (typeof window.openChangePasswordModal === 'function') window.openChangePasswordModal(); else goRoute('/profile/'); }
     else if (cmd === 'open_theme_studio') { if (typeof window.openThemeStudioModal === 'function') window.openThemeStudioModal(); else goRoute('/admin-panel/settings/'); }
-    else if (cmd === 'notify_high_risk') { if (!clickSafeSelector(act.selector || '#notify-all-high-risk-btn')) goRoute('/teacher-panel/alerts/'); }
+    else if (cmd === 'notify_high_risk') { if (!clickSafeSelector(act.selector || '#notify-all-high-risk-btn')) goRoute('/teacher-panel/'); }
     else if (cmd === 'run_ml') { if (!clickSafeSelector('form[action*="run-ml"] button[type="submit"], form[action*="run-predictions"] button[type="submit"], form[action*="run_predictions"] button[type="submit"]') && !clickSafeSelector(act.selector || '')) goRoute('/analyst-panel/'); }
     else if (cmd === 'simulate_stream') { if (!clickSafeSelector(act.selector || '#live-stream-toggle-btn')) goRoute('/analyst-panel/'); }
     else if (cmd === 'export_backup') { const link = document.querySelector('a[href*="/admin-panel/backup"]'); if (link && typeof link.click === 'function') link.click(); else navigateToUrl(act.url || '/admin-panel/backup/?format=json', true); }

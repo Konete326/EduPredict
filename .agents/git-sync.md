@@ -61,26 +61,26 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 97 Targo Sticky Navbar, Sign-In, EduPredict Copy, Posters & Full Responsiveness"
-active_branch_merged_to_main: "feature/p97-targo-responsive-signin -> main"
-project_phase: "Phase 97: Targo Visible Sticky Navbar, Sign-In Links, EduPredict Branding, Video Posters & Responsive Breakpoints"
+last_updated_by_agent: "Phase 98 Targo Auth/404, University-Only Fields & Panel Scope Cleanup"
+active_branch_merged_to_main: "feature/p98-targo-auth-404 -> main"
+project_phase: "Phase 98: Targo /auth/ & Standalone /404/ Auto-Redirect + Admin/Teacher/Student Scope Cleanup"
 
 completed_modules:
-  - "Phase 1-96: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Emerald Green Default Theme, Multi-Format Training, Targo Public Pages + Local Videos, Vercel Auto-Deploy."
-  - "Phase 97 (Navbar Visibility, Sign-In, EduPredict Copy, Video Posters & Responsiveness):"
-      - "accounts/views.py, templates/public/{_base,landing,about,contact}.html: removed 'Academic Portal' phrasing, unified EduPredict branding, added SIGN IN & GET STARTED links in sticky translucent navbar, mobile menu, and hero CTAs."
-      - "static/css/landing_provably.css, static/js/landing_provably.js: made .targo-nav sticky high-contrast (always visible over hero video), added 1024px/768px/520px responsive rules (clean mobile video banner, zero-indent mobile stack, full-width <=520px CTAs)."
-      - "static/video/{targo_hero,targo_about}.jpg: added lightweight poster frames on landing.html and about.html."
+  - "Phase 1-97: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Targo Public Pages + Local Videos/Posters, Vercel Auto-Deploy."
+  - "Phase 98 (Targo Auth/404 & Panel Cleanup):"
+      - "templates/accounts/auth.html, templates/404.html, accounts/views.py: styled /auth/ with Targo Quantico + #15BCDF theme; converted 404.html to standalone Targo page extending public/_base.html with 4s auto-redirect to user's panel (if signed in) or / (if guest)."
+      - "templates/public/_base.html, templates/components/topbar.html, templates/components/sidebar.html: kept HOME/ABOUT/CONTACT in .targo-links, icon-only #theme-toggle-btn, renamed Class Home -> Dashboard & Alerts History -> Notification."
+      - "panels/urls.py, panels/views_{admin,teacher,student}.py, templates/panels/{admin_users,teacher_dashboard,student_dashboard}.html, core/ai_dom_actions.py: removed Activity Logs, Courses, Student List, Upload Marks, Risk Alerts, Student Report/Tips/Notifications routes/views/templates, and removed Program/Level + Department from User Create/Edit & Registration."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "node --check static/js/landing_provably.js: exited 0."
-  - "Zero-comment & line-cap audit: CAPS: [] COMMENTS: []."
-  - "manage.py test: Ran 138 tests (OK) & verify_uat: 7/7 passed."
+  - "node --check static/js/{landing_provably,ai_agent_dock}.js: exited 0."
+  - "manage.py test: Ran 128 tests in 70.720s (128/128 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 9.03s - System 100% Operational."
   - "MongoDB Atlas cleaned back to 1 Admin user (admin@gmail.com) only."
 
 active_routes_and_files:
-  - "accounts/views.py, templates/public/{_base,landing,about,contact}.html, static/css/landing_provably.css, static/js/landing_provably.js, static/video/*.jpg, .agents/git-sync.md"
+  - "accounts/views.py, panels/{urls,views_admin,views_teacher,views_student}.py, core/ai_dom_actions.py, templates/{404,accounts/auth,public/_base,components/sidebar,components/topbar}.html, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

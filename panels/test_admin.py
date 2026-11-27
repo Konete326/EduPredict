@@ -125,46 +125,10 @@ class _AdminTestBase(TestCase):
 
 
 class AdminLogsAndSettingsTests(_AdminTestBase):
-    def test_admin_logs_get_filters_csv_and_sidebar_links(self):
+    def test_removed_admin_logs_and_courses_return_404(self):
         client = self._login_as("ADMIN")
-        resp = client.get(reverse("panels:admin_logs"))
-        self.assertEqual(resp.status_code, 200)
-        html = resp.content.decode("utf-8")
-        self.assertIn('id="admin-logs-table"', html)
-        for text in ("Total Events", "Admin Actions", "Data & ML Events", "Security Events", "?category=USERS", "?category=COURSES", "?category=TICKETS", "?category=DATA", "?category=SYSTEM", reverse("panels:admin_logs")):
-            self.assertIn(text, html)
-        self.assertNotIn('data-coming-title="Activity Logs"', html)
-        self.assertNotIn('data-coming-title="Settings"', html)
-        self.assertIn('id="mobile-sidebar-close"', html)
-        self.assertIn('id="mobile-sidebar-close" type="button" title="Hide menu" class="lg:hidden', html)
-        data_resp = client.get(reverse("panels:admin_logs"), {"category": "DATA"})
-        self.assertEqual(data_resp.status_code, 200)
-        self.assertIn("fall_2026.csv", data_resp.content.decode("utf-8"))
-        csv_resp = client.get(reverse("panels:admin_logs"), {"export": "csv"})
-        self.assertEqual(csv_resp.status_code, 200)
-        self.assertTrue(csv_resp["Content-Type"].startswith("text/csv"))
-        self.assertIn("Log ID,Actor,Role,Category,Action,Activity Summary", csv_resp.content.decode("utf-8"))
-
-    def test_admin_logs_post_note_records_and_invalidates_cache(self):
-        client = self._login_as("ADMIN")
-        client.get(reverse("panels:admin_logs"))
-        self.assertIn("admin:logs:ALL", _MEMORY_CACHE)
-        post_resp = client.post(reverse("panels:admin_logs"), {"action": "log_note", "filter_category": "ALL", "category": "SYSTEM", "severity": "WARNING", "summary": "Nightly audit note recorded"})
-        self.assertRedirects(post_resp, reverse("panels:admin_logs"), fetch_redirect_response=False)
-        self.assertNotIn("admin:logs:ALL", _MEMORY_CACHE)
-        self.assertTrue(any(d.get("summary") == "Nightly audit note recorded" and d.get("source") == "MANUAL" for d in self.cols["activity_logs"].docs))
-        self.assertIn("Nightly audit note recorded", client.get(reverse("panels:admin_logs")).content.decode("utf-8"))
-        clear_resp = client.post(reverse("panels:admin_logs"), {"action": "clear_custom"})
-        self.assertRedirects(clear_resp, reverse("panels:admin_logs"), fetch_redirect_response=False)
-        self.assertNotIn("Nightly audit note recorded", client.get(reverse("panels:admin_logs")).content.decode("utf-8"))
-        created_course, err = create_course_record("AI-900", "Deep Learning", "AI", "2026-A", "Dr. Bilal", 3, 50, actor_name="Dr. Admin Lead")
-        self.assertIsNone(err)
-        self.assertIsNotNone(created_course)
-        self.assertTrue(any(d.get("action") == "CREATE_COURSE" and d.get("actor") == "Dr. Admin Lead" and "AI-900" in d.get("summary", "") for d in self.cols["activity_logs"].docs))
-        created_ticket, t_err = create_ticket_record("USR-1003", "Zainab Raza", "STUDENT", "Lab issue", "Cannot open lab")
-        self.assertIsNone(t_err)
-        self.assertIsNotNone(created_ticket)
-        self.assertTrue(any(d.get("action") == "CREATE_TICKET" and d.get("actor") == "Zainab Raza" for d in self.cols["activity_logs"].docs))
+        self.assertEqual(client.get("/admin-panel/logs/").status_code, 404)
+        self.assertEqual(client.get("/admin-panel/courses/").status_code, 404)
 
     def test_admin_settings_get_update_and_reset_defaults(self):
         client = self._login_as("ADMIN")
@@ -186,12 +150,10 @@ class AdminLogsAndSettingsTests(_AdminTestBase):
 
     def test_non_admin_roles_redirected_from_logs_and_settings(self):
         anon = Client()
-        for route_name in ("panels:admin_logs", "panels:admin_settings"):
-            self.assertEqual(anon.get(reverse(route_name)).status_code, 302)
+        self.assertEqual(anon.get(reverse("panels:admin_settings")).status_code, 302)
         for role, expected_dash in (("STUDENT", "panels:student_dashboard"), ("TEACHER", "panels:teacher_dashboard"), ("ANALYST", "panels:analyst_dashboard")):
             client = self._login_as(role)
-            for route_name in ("panels:admin_logs", "panels:admin_settings"):
-                self.assertRedirects(client.get(reverse(route_name)), reverse(expected_dash), fetch_redirect_response=False)
+            self.assertRedirects(client.get(reverse("panels:admin_settings")), reverse(expected_dash), fetch_redirect_response=False)
 
 
 class AdminCrudAndGuardsTests(_AdminTestBase):
@@ -244,16 +206,12 @@ class AdminCrudAndGuardsTests(_AdminTestBase):
         for route_name, marker in (
             ("panels:admin_dashboard", "System Overview"),
             ("panels:admin_users", "admin-users-table"),
-            ("panels:admin_courses", "admin-courses-table"),
+            ("panels:admin_training", "Training Data"),
             ("panels:admin_tickets", "admin-tickets-table"),
         ):
             resp = admin_client.get(reverse(route_name))
             self.assertEqual(resp.status_code, 200)
             self.assertIn(marker, resp.content.decode("utf-8"))
-        self.assertRedirects(admin_client.post(reverse("panels:admin_courses"), {"action": "create", "filter_dept": "ALL", "course_code": "CS-305", "title": "Cloud Systems", "department": "Computer Science", "batch": "2026-A", "instructor": "Dr. Ayesha Khan", "credits": "3", "capacity": "50"}), reverse("panels:admin_courses"), fetch_redirect_response=False)
-        self.assertIsNotNone(self.cols["courses"].find_one({"course_code": "CS-305"}))
-        self.assertRedirects(admin_client.post(reverse("panels:admin_courses"), {"action": "delete", "course_code": "CS-305"}), reverse("panels:admin_courses"), fetch_redirect_response=False)
-        self.assertIsNone(self.cols["courses"].find_one({"course_code": "CS-305"}))
         self.assertRedirects(admin_client.post(reverse("panels:admin_tickets"), {"action": "toggle_status", "ticket_id": "TKT-1001"}), reverse("panels:admin_tickets"), fetch_redirect_response=False)
         self.assertEqual(self.cols["support_tickets"].find_one({"ticket_id": "TKT-1001"})["status"], "RESOLVED")
         self.assertRedirects(admin_client.post(reverse("panels:admin_tickets"), {"action": "delete", "ticket_id": "TKT-1001"}), reverse("panels:admin_tickets"), fetch_redirect_response=False)

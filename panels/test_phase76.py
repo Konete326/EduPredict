@@ -163,15 +163,13 @@ class Phase76VerificationTests(TestCase):
         s_doc = {"role": "STUDENT", "student_id": "STD-2026-2001"}
         t_doc, a_doc, ad_doc = {"role": "TEACHER"}, {"role": "ANALYST"}, {"role": "ADMIN"}
 
-        acts_redir, _ = build_dom_actions_and_poll(s_doc, "Go to my report card page")
-        self.assertTrue(any(a["type"] == "redirect" and a["url"] == "/student-panel/report/" and a["auto"] for a in acts_redir))
+        acts_redir, _ = build_dom_actions_and_poll(s_doc, "Go to my dashboard")
+        self.assertTrue(any(a["type"] == "redirect" and a["url"] == "/student-panel/" and a["auto"] for a in acts_redir))
 
         acts_flt, _ = build_dom_actions_and_poll(t_doc, "Filter high risk students")
         self.assertTrue(any(a["type"] == "filter_table" and a["query"] == "High" for a in acts_flt))
 
         for udoc, msg, exp_act in (
-            (s_doc, "Print A4 report", "print_a4_report"),
-            (s_doc, "Download PDF transcript", "download_pdf"),
             (s_doc, "Open change password", "open_change_password"),
             (ad_doc, "Open theme studio", "open_theme_studio"),
         ):
@@ -305,24 +303,6 @@ class Phase76VerificationTests(TestCase):
         ])
         self.assertIn("NOTIF_MODAL_OK", self._run_node(notif_node))
 
-        tips_html = student.get(reverse("panels:student_tips")).content.decode("utf-8")
-        self.assertIn('id="orbit-goals-card"', tips_html)
-        self.assertIn('id="orbit-center-pct"', tips_html)
-        orbit_svg = re.search(r"<svg[^>]*aria-label=\"Academic orbit goals\"[^>]*>.*?</svg>", tips_html, re.S)
-        self.assertIsNotNone(orbit_svg)
-        self.assertNotIn("Goal Score", orbit_svg.group(0))
-
-        inline_pdf = student.get(reverse("panels:student_report_pdf") + "?inline=1")
-        self.assertEqual(inline_pdf.status_code, 200)
-        self.assertEqual(inline_pdf["Content-Type"], "application/pdf")
-        self.assertEqual(inline_pdf["Content-Disposition"], 'inline; filename="edupredict_report_card.pdf"')
-        self.assertTrue(inline_pdf.content.startswith(b"%PDF-"))
-        attach_pdf = student.get(reverse("panels:student_report_pdf"))
-        self.assertEqual(attach_pdf["Content-Disposition"], 'attachment; filename="edupredict_report_card.pdf"')
-
-        report_html = student.get(reverse("panels:student_report")).content.decode("utf-8")
-        for marker in ('id="ep-a4-print-sheet"', "hidden print:block", "print:hidden", 'id="ep-a4-print-frame"', "printOfficialA4Report()"):
-            self.assertIn(marker, report_html)
         css_src = (base_dir / "static" / "css" / "global.css").read_text(encoding="utf-8")
         self.assertIn("@page { size: A4 portrait; margin: 0; }", css_src)
         for hidden_sel in ("#ep-top-progress", "#toast-container", "button", "[data-no-loading]"):

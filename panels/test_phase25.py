@@ -156,10 +156,7 @@ class Phase25IntegrationTests(TestCase):
         client = self._login_role("STUDENT", user_id="USR-1003", student_id="STD-2026-001")
         dash_resp = client.get(reverse("panels:student_dashboard"))
         self.assertEqual(dash_resp.status_code, 200)
-        self.assertIn("My Report Card", dash_resp.content.decode("utf-8"))
-        rep_resp = client.get(reverse("panels:student_report"))
-        self.assertEqual(rep_resp.status_code, 200)
-        self.assertIn("Download PDF Transcript", rep_resp.content.decode("utf-8"))
+        self.assertIn("Academic Summary", dash_resp.content.decode("utf-8"))
         pdf_bytes = generate_student_report_card_pdf(overview)
         self.assertIsInstance(pdf_bytes, bytes)
         self.assertTrue(pdf_bytes.startswith(b"%PDF-"))
@@ -239,14 +236,11 @@ class Phase25IntegrationTests(TestCase):
         student = self._login_role("STUDENT", user_id="USR-1003", student_id="STD-2026-001")
 
         markers = ("data-paginated-container", "data-view-payload", "window.openViewDetailsModal(", 'id="student-360-drawer"')
-        for client, path in ((admin, reverse("panels:admin_users")), (teacher, reverse("panels:teacher_students"))):
-            resp = client.get(path)
-            self.assertEqual(resp.status_code, 200)
-            html = resp.content.decode("utf-8")
-            for marker in markers:
-                self.assertIn(marker, html)
-            if path.endswith("/students/"):
-                self.assertIn("STD-2026-001", html)
+        resp = admin.get(reverse("panels:admin_users"))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+        for marker in markers:
+            self.assertIn(marker, html)
 
         summary_url = reverse("panels:student_360_summary", args=["STD-2026-001"])
         for client in (teacher, analyst, admin):
@@ -311,17 +305,12 @@ class Phase25IntegrationTests(TestCase):
             "is_read": True, "created_at": datetime(2026, 11, 21, 11, 0, tzinfo=timezone.utc),
         })
         teacher = self._login_role("TEACHER", user_id="USR-T1")
-        alerts_html = teacher.get(reverse("panels:teacher_alerts")).content.decode("utf-8")
-        self.assertIn("Previous read alert", alerts_html)
-        self.assertIn("Read", alerts_html)
-        self.assertIn("Notify All High-Risk Students", alerts_html)
-        self.assertIn("Auto-Alert &lt; 75%: On", alerts_html)
-
-        self.assertEqual(teacher.post(reverse("panels:teacher_alerts"), {"action": "notify_all_high_risk"}).status_code, 302)
+        dash_t_html = teacher.get(reverse("panels:teacher_dashboard")).content.decode("utf-8")
+        self.assertIn("Dashboard", dash_t_html)
+        self.assertEqual(teacher.post(reverse("panels:teacher_dashboard"), {"action": "notify_all_high_risk"}).status_code, 302)
         self.assertGreaterEqual(len([d for d in self.cols["notifications"].docs if str(d.get("title", "")).startswith("Teacher Alert (") and not d.get("is_read")]), 1)
-        self.assertEqual(teacher.post(reverse("panels:teacher_alerts"), {"action": "toggle_auto_alerts", "enabled": "0"}).status_code, 302)
+        self.assertEqual(teacher.post(reverse("panels:teacher_dashboard"), {"action": "toggle_auto_alerts", "enabled": "0"}).status_code, 302)
         self.assertFalse(self.cols["system_settings"].find_one({"setting_key": "portal_config"})["auto_student_alerts"])
-        self.assertIn("Auto-Alert &lt; 75%: Off", teacher.get(reverse("panels:teacher_alerts")).content.decode("utf-8"))
 
         analyst = self._login_role("ANALYST", user_id="USR-AN1")
         dash_html = analyst.get(reverse("panels:analyst_dashboard")).content.decode("utf-8")
@@ -357,17 +346,12 @@ class Phase25IntegrationTests(TestCase):
             "setting_key": "portal_config", "institution_name": "Apex Tech Institute", "current_term": "Spring 2027",
         })
         invalidate_cache()
-        student = self._login_role("STUDENT", user_id="USR-1003", student_id="STD-2026-001")
-        resp = student.get(reverse("panels:student_report"))
+        admin_b = self._login_admin_client()
+        resp = admin_b.get(reverse("panels:admin_settings"))
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
-        for expected in ("Portal / Term", "Apex Tech Institute", "Spring 2027"):
+        for expected in ("Apex Tech Institute", "Spring 2027"):
             self.assertIn(expected, html)
-        pdf_resp = student.get(reverse("panels:student_report_pdf"))
-        self.assertEqual(pdf_resp.status_code, 200)
-        self.assertTrue(pdf_resp.content.startswith(b"%PDF-"))
-        for expected_b in (b"Apex Tech Institute", b"Spring 2027"):
-            self.assertIn(expected_b, pdf_resp.content)
 
         pdf_src = (Path(settings.BASE_DIR) / "panels" / "pdf_services.py").read_text(encoding="utf-8")
         tree = ast.parse(pdf_src)

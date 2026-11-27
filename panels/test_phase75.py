@@ -284,13 +284,6 @@ class Phase75VerificationTests(TestCase):
         self.assertIn("No course marks or attendance records have been uploaded for your Student ID yet.", dash_resp.context["insight"]["summary"])
         self.assertIn('id="accuracy-contour-data"', dash_html)
 
-        tips_resp = client.get(reverse("panels:student_tips"))
-        self.assertEqual(tips_resp.status_code, 200)
-        tips_html = tips_resp.content.decode("utf-8")
-        self.assertEqual(tips_resp.context["tips"], [])
-        self.assertIn('data-att="0" data-hours="0" data-marks="0"', tips_html)
-        self.assertIn("Tips will appear once your marks are uploaded.", tips_html)
-
         self.assertEqual(_load_model_health()["contour_series"], {"labels": [], "values": []})
         now = datetime(2026, 11, 22, 12, 0, tzinfo=timezone.utc)
         self.cols["student_records"].insert_one({"student_id": "STD-1", "course_code": "CS-101", "attendance_pct": 80.0, "internal_marks": 70.0, "previous_gpa": 3.2, "updated_at": now})
@@ -389,9 +382,6 @@ class Phase75VerificationTests(TestCase):
         st_dash = student.get(reverse("panels:student_dashboard")).content.decode("utf-8")
         for marker in ('data-student-tab="overview"', 'data-student-tab="courses"', 'data-chart-subtab="bars"', 'data-chart-subtab="contour"', 'id="student-subject-table"', 'id="ep-agent-dock-root"'):
             self.assertIn(marker, st_dash)
-        st_tips = student.get(reverse("panels:student_tips")).content.decode("utf-8")
-        for marker in ('id="orbit-goals-card"', 'data-ep-marquee'):
-            self.assertIn(marker, st_tips)
 
         analyst = self._login("ANALYST", "USR-1004", "analyst@edupredict.edu", "Data Analyst")
         acc_html = analyst.get(reverse("panels:analyst_accuracy")).content.decode("utf-8")

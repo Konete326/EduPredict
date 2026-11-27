@@ -103,109 +103,71 @@ class TeacherPanelTests(TestCase):
     def setUp(self):
         invalidate_cache()
 
-    @patch("panels.views_teacher.get_teacher_ingest_context")
-    @patch("panels.views_teacher.get_teacher_alerts_context")
-    @patch("panels.views_teacher.get_teacher_students_context")
     @patch("panels.views_teacher.get_teacher_dashboard_context")
     @patch("core.db.MongoDBClient.check_health")
     @patch("core.context_processors.notifications_col")
     def test_teacher_pages_csv_exports_and_sidebar_isolation(
-        self, mock_notifs, mock_health, mock_dash, mock_students, mock_alerts, mock_ingest
+        self, mock_notifs, mock_health, mock_dash
     ):
         mock_notifs.return_value = _mock_notifs_col()
         mock_health.return_value = {"connected": True, "error": None}
-        mock_dash.return_value, mock_students.return_value, mock_alerts.return_value, mock_ingest.return_value = _teacher_payloads()
+        mock_dash.return_value, _, _, _ = _teacher_payloads()
 
         client = _login_client({"user_id": "USR-T1", "role": "TEACHER", "email": "t@edupredict.edu", "full_name": "Dr. Ayesha Khan"})
-        for path, marker in (
-            ("/teacher-panel/", "teacher-at-risk-table"),
-            ("/teacher-panel/students/", "teacher-students-table"),
-            ("/teacher-panel/alerts/", "teacher-alert-roster-table"),
-            ("/teacher-panel/ingest/", "teacher-roster-table"),
-        ):
-            resp = client.get(path)
-            self.assertEqual(resp.status_code, 200)
-            html = resp.content.decode("utf-8")
-            self.assertIn(marker, html)
-            self.assertIn('data-nav-group="teacher"', html)
-            self.assertNotIn('data-nav-group="admin"', html)
-            self.assertNotIn('data-nav-group="student"', html)
-
-        students_csv = client.get("/teacher-panel/students/?export=csv")
-        self.assertEqual(students_csv.status_code, 200)
-        self.assertTrue(students_csv["Content-Type"].startswith("text/csv"))
-        self.assertIn("student_id,full_name,batch,course_code", students_csv.content.decode("utf-8"))
-        self.assertIn("STD-2026-001", students_csv.content.decode("utf-8"))
-
-        template_csv = client.get("/teacher-panel/ingest/?template=csv")
-        self.assertEqual(template_csv.status_code, 200)
-        self.assertTrue(template_csv["Content-Type"].startswith("text/csv"))
-        self.assertIn("student_id,full_name,course_code,marks,attendance", template_csv.content.decode("utf-8"))
+        resp = client.get("/teacher-panel/")
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+        self.assertIn("teacher-at-risk-table", html)
+        self.assertIn('data-nav-group="teacher"', html)
+        self.assertNotIn('data-nav-group="admin"', html)
+        self.assertNotIn('data-nav-group="student"', html)
+        for removed in ("/teacher-panel/students/", "/teacher-panel/alerts/", "/teacher-panel/ingest/"):
+            self.assertEqual(client.get(removed).status_code, 404)
 
     @patch("panels.views_teacher.send_student_alert", return_value=({"title": "Teacher Alert"}, None))
     def test_teacher_post_send_alert_and_rbac_redirects(self, mock_send):
         teacher = _login_client({"user_id": "USR-T1", "role": "TEACHER", "email": "t@edupredict.edu", "full_name": "Dr. Ayesha Khan"})
         resp = teacher.post(
-            reverse("panels:teacher_alerts"),
+            reverse("panels:teacher_dashboard"),
             {"action": "send_alert", "student_id": "STD-2026-001", "full_name": "Zainab", "course_code": "CS-101", "severity": "WARNING", "message": "Attend class"},
         )
-        self.assertRedirects(resp, reverse("panels:teacher_alerts"), fetch_redirect_response=False)
+        self.assertRedirects(resp, reverse("panels:teacher_dashboard"), fetch_redirect_response=False)
         mock_send.assert_called_once_with("STD-2026-001", "Zainab", "CS-101", "WARNING", "Attend class", "Dr. Ayesha Khan")
 
         for role, expected_dash in (("STUDENT", "panels:student_dashboard"), ("ANALYST", "panels:analyst_dashboard")):
             client = _login_client({"user_id": f"USR-{role}", "role": role, "email": f"{role.lower()}@edupredict.edu", "full_name": f"Test {role.title()}"})
-            for route_name in ("panels:teacher_dashboard", "panels:teacher_alerts"):
-                self.assertRedirects(client.get(reverse(route_name)), reverse(expected_dash), fetch_redirect_response=False)
+            self.assertRedirects(client.get(reverse("panels:teacher_dashboard")), reverse(expected_dash), fetch_redirect_response=False)
 
 
 class StudentPanelTests(TestCase):
     def setUp(self):
         invalidate_cache()
 
-    @patch("panels.views_student.get_student_alerts_context")
     @patch("panels.views_student.get_student_overview_context")
     @patch("core.db.MongoDBClient.check_health")
     @patch("core.context_processors.notifications_col")
     def test_student_pages_csv_download_and_sidebar_isolation(
-        self, mock_notifs, mock_health, mock_overview, mock_alerts
+        self, mock_notifs, mock_health, mock_overview
     ):
         mock_notifs.return_value = _mock_notifs_col()
         mock_health.return_value = {"connected": True, "error": None}
-        mock_overview.return_value, mock_alerts.return_value = _student_payloads()
+        mock_overview.return_value, _ = _student_payloads()
 
         client = _login_client({"user_id": "USR-1003", "student_id": "STD-2026-001", "role": "STUDENT", "email": "s@edupredict.edu", "full_name": "Zainab Raza"})
-        for path, marker in (
-            ("/student-panel/", "student-subject-table"),
-            ("/student-panel/report/", "student-report-table"),
-            ("/student-panel/tips/", "My Study Tips"),
-            ("/student-panel/notifications/", "My Sent Feedback &amp; Replies"),
-        ):
-            resp = client.get(path)
-            self.assertEqual(resp.status_code, 200)
-            html = resp.content.decode("utf-8")
-            self.assertIn(marker, html)
-            self.assertIn('data-nav-group="student"', html)
-            self.assertNotIn('data-nav-group="admin"', html)
-            self.assertNotIn('data-nav-group="teacher"', html)
+        resp = client.get("/student-panel/")
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode("utf-8")
+        self.assertIn("student-subject-table", html)
+        self.assertIn('data-nav-group="student"', html)
+        self.assertNotIn('data-nav-group="admin"', html)
+        self.assertNotIn('data-nav-group="teacher"', html)
+        for removed in ("/student-panel/report/", "/student-panel/tips/", "/student-panel/notifications/", "/student-panel/report/download/"):
+            self.assertEqual(client.get(removed).status_code, 404)
 
-        report_csv = client.get("/student-panel/report/download/")
-        self.assertEqual(report_csv.status_code, 200)
-        self.assertTrue(report_csv["Content-Type"].startswith("text/csv"))
-        csv_text = report_csv.content.decode("utf-8")
-        self.assertIn("full_name,student_id,batch,course_code", csv_text)
-        self.assertIn("STD-2026-001", csv_text)
-
-    @patch("panels.views_student.mark_notifications_read", return_value=2)
-    def test_student_mark_notifications_and_rbac_redirects(self, mock_mark):
-        student = _login_client({"user_id": "USR-1003", "student_id": "STD-2026-001", "role": "STUDENT", "email": "s@edupredict.edu", "full_name": "Zainab Raza"})
-        resp = student.post(reverse("panels:student_notifications"), {"action": "mark_all"})
-        self.assertRedirects(resp, reverse("panels:student_notifications"), fetch_redirect_response=False)
-        mock_mark.assert_called_once_with({"user_id": "USR-1003", "student_id": "STD-2026-001", "role": "STUDENT"})
-
+    def test_student_mark_notifications_and_rbac_redirects(self):
         for role, expected_dash in (("TEACHER", "panels:teacher_dashboard"), ("ANALYST", "panels:analyst_dashboard")):
             client = _login_client({"user_id": f"USR-{role}", "role": role, "email": f"{role.lower()}@edupredict.edu", "full_name": f"Test {role.title()}"})
-            for route_name in ("panels:student_dashboard", "panels:student_report"):
-                self.assertRedirects(client.get(reverse(route_name)), reverse(expected_dash), fetch_redirect_response=False)
+            self.assertRedirects(client.get(reverse("panels:student_dashboard")), reverse(expected_dash), fetch_redirect_response=False)
 
     @patch("panels.student_services.student_records_col")
     def test_batch_rank_aggregates_distinct_students_on_marks_scale(self, mock_records_col):

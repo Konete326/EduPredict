@@ -128,17 +128,11 @@ class Phase24IntegrationTests(TestCase):
             self.assertIn(m, h_au)
 
         teacher = self._login("TEACHER", user_id="USR-T1")
-        r_t_students = teacher.get("/teacher-panel/students/")
-        self.assertEqual(r_t_students.status_code, 200)
-        h_ts = r_t_students.content.decode("utf-8")
-        for m in ('id="teacher-students-table"', "data-paginated-container", "openQuickEntryModal()"):
-            self.assertIn(m, h_ts)
-
-        r_t_ingest = teacher.get("/teacher-panel/ingest/")
-        self.assertEqual(r_t_ingest.status_code, 200)
-        h_ti = r_t_ingest.content.decode("utf-8")
-        for m in ('id="teacher-roster-table"', 'id="teacher-upload-modal"', "openUploadSheetModal()", "openQuickEntryModal()"):
-            self.assertIn(m, h_ti)
+        r_t_dash = teacher.get("/teacher-panel/")
+        self.assertEqual(r_t_dash.status_code, 200)
+        self.assertIn("data-dot-kpi", r_t_dash.content.decode("utf-8"))
+        self.assertEqual(teacher.get("/teacher-panel/students/").status_code, 404)
+        self.assertEqual(teacher.get("/teacher-panel/ingest/").status_code, 404)
 
         analyst = self._login("ANALYST", user_id="USR-AN1")
         r_an = analyst.get("/analyst-panel/")

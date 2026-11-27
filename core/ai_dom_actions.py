@@ -2,52 +2,45 @@ import re
 
 ROLE_ROUTES = {
     "STUDENT": (
-        ("/student-panel/", "My Dashboard", ("dashboard", "home", "student panel", "overview", "my dashboard")),
-        ("/student-panel/report/", "My Report Card", ("report card", "report", "transcript", "grade sheet", "result")),
-        ("/student-panel/tips/", "Study Tips", ("study tips", "tips", "study plan", "advice", "goals", "orbit")),
-        ("/student-panel/notifications/", "Alerts & Support", ("student alerts", "support", "help ticket", "alerts")),
-        ("/notifications/", "Alerts History", ("notifications", "alert history", "history")),
+        ("/student-panel/", "Dashboard", ("dashboard", "home", "student panel", "overview", "my dashboard")),
+        ("/notifications/", "Notification", ("notifications", "alert history", "history", "alerts", "support")),
         ("/profile/", "My Profile", ("profile", "my profile", "avatar", "bio", "account")),
     ),
     "TEACHER": (
-        ("/teacher-panel/", "Class Home", ("dashboard", "home", "class home", "teacher panel", "overview")),
-        ("/teacher-panel/students/", "Student List", ("students", "student list", "roster", "class list", "performance")),
-        ("/teacher-panel/ingest/", "Upload Marks", ("upload marks", "ingest", "marks upload", "upload", "csv", "excel", "quick entry")),
-        ("/teacher-panel/alerts/", "Risk Alerts", ("risk alerts", "alerts", "at risk")),
-        ("/notifications/", "Alerts History", ("notifications", "alert history", "history")),
+        ("/teacher-panel/", "Dashboard", ("dashboard", "home", "class home", "teacher panel", "overview")),
+        ("/notifications/", "Notification", ("notifications", "alert history", "history", "alerts")),
         ("/profile/", "My Profile", ("profile", "my profile", "avatar", "bio", "account")),
     ),
     "ANALYST": (
         ("/analyst-panel/", "Data & ML Hub", ("dashboard", "home", "data hub", "ml hub", "analyst", "predictions", "evaluation")),
         ("/analyst-panel/#ml-evaluation-section", "AI Accuracy", ("accuracy", "ai accuracy", "confusion matrix", "mae", "rmse")),
         ("/analyst-panel/accuracy/", "Model Health", ("model health", "health", "thresholds", "drift", "contour")),
-        ("/notifications/", "Alerts History", ("notifications", "alert history", "history")),
+        ("/notifications/", "Notification", ("notifications", "alert history", "history")),
         ("/profile/", "My Profile", ("profile", "my profile", "avatar", "bio", "account")),
     ),
     "ADMIN": (
         ("/admin-panel/", "Admin Dashboard", ("dashboard", "home", "admin panel", "overview")),
         ("/admin-panel/users/", "Users", ("users", "user management", "manage users", "accounts")),
-        ("/admin-panel/courses/", "Courses", ("courses", "course management", "batches", "subjects")),
+        ("/admin-panel/training/", "Training Data", ("training", "training data", "dataset")),
         ("/admin-panel/tickets/", "Help Tickets", ("tickets", "help tickets", "support tickets", "feedback")),
-        ("/admin-panel/logs/", "Activity Logs", ("logs", "activity logs", "audit logs", "audit")),
         ("/admin-panel/settings/", "Portal Settings", ("settings", "portal settings", "thresholds", "backup")),
-        ("/notifications/", "Alerts History", ("notifications", "alert history", "history", "alerts")),
+        ("/notifications/", "Notification", ("notifications", "alert history", "history", "alerts")),
         ("/profile/", "My Profile", ("profile", "my profile", "avatar", "bio", "account")),
     ),
 }
 
 ROLE_PRD_CAPS = {
-    "STUDENT": "Student scope: personal attendance %, marks, predicted GPA, risk level, AI study tips, A4 printable PDF/CSV report card, alerts & support tickets, and own profile/password.",
-    "TEACHER": "Teacher scope: class overview, student performance list, CSV/Excel or quick student marks entry, high-risk alerts, notify high-risk students, A4 class roster PDF, support tickets, and own profile/password.",
+    "STUDENT": "Student scope: personal attendance %, marks, predicted GPA, risk level, notifications, and own profile/password.",
+    "TEACHER": "Teacher scope: class dashboard overview, notifications, support tickets, and own profile/password.",
     "ANALYST": "Analyst scope: Data & ML Hub, dataset upload, RandomForest/Ridge/IsolationForest predictions, retrain & run ML, model evaluation metrics, live LMS stream simulation, model health & thresholds, and own profile/password.",
-    "ADMIN": "Admin scope: portal overview, user CRUD & teacher approval/rejection, course/batch CRUD, support ticket replies & lightbox review, activity logs, MongoDB backups, portal settings, Theme Studio, and own profile/password.",
+    "ADMIN": "Admin scope: portal overview, user CRUD & teacher approval/rejection, training data upload, support ticket replies & lightbox review, MongoDB backups, portal settings, Theme Studio, and own profile/password.",
 }
 
 ROLE_POLLS = {
-    "STUDENT": {"question": "Aap kis Student feature mein madad chahte hain?", "options": [{"label": "My Report Card", "prompt": "Open my report card page"}, {"label": "Study Tips & GPA", "prompt": "Give me study tips based on my attendance and GPA"}, {"label": "Submit Help Ticket", "prompt": "Open support ticket form"}, {"label": "Print A4 Report", "prompt": "Print A4 report"}]},
-    "TEACHER": {"question": "Teacher Portal mein aap kya karna chahte hain?", "options": [{"label": "Quick Marks Entry", "prompt": "Open quick marks entry form"}, {"label": "Filter High Risk", "prompt": "Filter high risk students"}, {"label": "Open Student List", "prompt": "Go to student list page"}, {"label": "Print Class Roster", "prompt": "Print A4 report"}]},
+    "STUDENT": {"question": "Aap kis Student feature mein madad chahte hain?", "options": [{"label": "My Dashboard", "prompt": "Open my dashboard"}, {"label": "Notification", "prompt": "Open notifications"}, {"label": "Submit Help Ticket", "prompt": "Open support ticket form"}, {"label": "My Profile", "prompt": "Open my profile"}]},
+    "TEACHER": {"question": "Teacher Panel mein aap kya karna chahte hain?", "options": [{"label": "Open Dashboard", "prompt": "Open teacher dashboard"}, {"label": "Notification", "prompt": "Open notifications"}, {"label": "My Profile", "prompt": "Open my profile"}]},
     "ANALYST": {"question": "Data & ML Hub mein kaunsa action chalayein?", "options": [{"label": "Model Accuracy", "prompt": "Check ML model accuracy and risk distribution"}, {"label": "Open Model Health", "prompt": "Go to model health page"}, {"label": "Filter High Risk", "prompt": "Filter high risk predictions"}, {"label": "Open Data Hub", "prompt": "Go to data hub"}]},
-    "ADMIN": {"question": "Admin Portal mein kaunsa task start karein?", "options": [{"label": "Add New Course", "prompt": "Open create course form"}, {"label": "Add New User", "prompt": "Open create user form"}, {"label": "Review Open Tickets", "prompt": "Go to help tickets and filter open"}, {"label": "Open Portal Settings", "prompt": "Go to portal settings"}]},
+    "ADMIN": {"question": "Admin Panel mein kaunsa task start karein?", "options": [{"label": "Add New User", "prompt": "Open create user form"}, {"label": "Review Open Tickets", "prompt": "Go to help tickets and filter open"}, {"label": "Training Data", "prompt": "Open training data"}, {"label": "Open Portal Settings", "prompt": "Go to portal settings"}]},
 }
 
 _FORM_POLLS = {
@@ -59,11 +52,8 @@ _FORM_POLLS = {
 }
 
 CLICK_ACTION_SPECS = {
-    "print_a4_report": {"roles": ("STUDENT", "TEACHER"), "label": "Print A4 Report", "route_by_role": {"STUDENT": "/student-panel/report/", "TEACHER": "/teacher-panel/students/"}},
-    "download_pdf": {"roles": ("STUDENT", "TEACHER"), "label": "Download A4 PDF", "url_by_role": {"STUDENT": "/student-panel/report/download-pdf/", "TEACHER": "/teacher-panel/students/export-pdf/"}},
     "open_change_password": {"roles": ("STUDENT", "TEACHER", "ANALYST", "ADMIN"), "label": "Open Change Password", "route": "/profile/"},
     "open_theme_studio": {"roles": ("ADMIN",), "label": "Open Theme Studio", "route": "/admin-panel/settings/"},
-    "notify_high_risk": {"roles": ("TEACHER",), "label": "Notify High-Risk Students", "route": "/teacher-panel/alerts/", "selector": "#notify-all-high-risk-btn"},
     "run_ml": {"roles": ("ANALYST",), "label": "Retrain & Run ML", "route": "/analyst-panel/", "selector": 'form[action*="run-predictions"] button[type="submit"]'},
     "simulate_stream": {"roles": ("ANALYST",), "label": "Simulate Live LMS Stream", "route": "/analyst-panel/", "selector": "#live-stream-toggle-btn"},
     "export_backup": {"roles": ("ADMIN",), "label": "Export MongoDB Backup", "route": "/admin-panel/settings/", "url": "/admin-panel/backup/"},
@@ -85,7 +75,7 @@ _FORM_SPEC_MAP = {spec[0]: spec for spec in _FORM_SPECS}
 
 
 def _form_route(role, kind):
-    return {"support_ticket": "/student-panel/notifications/" if role == "STUDENT" else "/notifications/", "profile_update": "/profile/", "quick_marks": "/teacher-panel/ingest/", "create_course": "/admin-panel/courses/", "create_user": "/admin-panel/users/"}.get(kind, "/profile/")
+    return {"support_ticket": "/notifications/", "profile_update": "/profile/", "create_user": "/admin-panel/users/"}.get(kind, "/profile/")
 
 
 def _build_click_action(role, action_name, auto=True, label_override=None):

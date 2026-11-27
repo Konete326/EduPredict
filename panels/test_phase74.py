@@ -173,7 +173,7 @@ class Phase74VerificationTests(TestCase):
         self.assertEqual(res_all.context["tab_counts"], {"ALL": 4, "UNREAD": 2, "READ": 2, "REPLIES": 2})
         self.assertEqual([it["ticket_id"] for it in res_all.context["notifications_items"]].count("TKT-7402"), 1)
         self.assertIn("Lab marks updated to 88.", html_all)
-        for marker in ("Alerts History", 'href="/notifications/"', 'id="view-all-notifications-link"', "data-notif-item", '<a href="/notifications/" data-notif-item'):
+        for marker in ("Notification", 'href="/notifications/"', 'id="view-all-notifications-link"', "data-notif-item", '<a href="/notifications/" data-notif-item'):
             self.assertIn(marker, html_all)
 
         for tab, exp_len in (("UNREAD", 2), ("READ", 2), ("REPLIES", 2)):
@@ -292,9 +292,8 @@ class Phase74VerificationTests(TestCase):
             self.assertIn(marker, acc_html)
 
         student = self._login("STUDENT", "USR-1003", "zainab@edupredict.edu", "Zainab Raza", student_id="STD-2026-01")
-        tips_html = student.get(reverse("panels:student_tips")).content.decode("utf-8")
-        for marker in ('id="orbit-goals-card"', 'data-orbit-goal="attendance"', 'data-orbit-step="1"', 'data-orbit-step="-1"', "data-ep-marquee"):
-            self.assertIn(marker, tips_html)
+        st_dash = student.get(reverse("panels:student_dashboard")).content.decode("utf-8")
+        self.assertIn('id="student-subject-table"', st_dash)
 
         base_dir = Path(settings.BASE_DIR)
         self.assertIn("inline-flex items-center justify-center gap-2", (base_dir / "static" / "js" / "ui_widgets.js").read_text(encoding="utf-8"))
