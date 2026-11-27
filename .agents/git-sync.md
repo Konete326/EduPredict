@@ -61,25 +61,27 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 93 Exact FlooLandingScroll Port (EduPredict Content + Emerald Green)"
-active_branch_merged_to_main: "feature/p93-exact-floo-landing -> main"
-project_phase: "Phase 93: Exact 1440x1036 FlooLandingScroll Architecture with EduPredict Content"
+last_updated_by_agent: "Phase 95 Targo Public Pages (Landing, About, Contact)"
+active_branch_merged_to_main: "feature/p95-targo-public-pages -> main"
+project_phase: "Phase 95: Targo Design System Conversion on Public Landing, About & Contact Pages"
 
 completed_modules:
-  - "Phase 1-92: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Emerald Green Default Theme, Multi-Format Training (.csv/.xlsx/.json/.jsonl/.ndjson/.tsv/.txt), Astryx UI, Vercel Auto-Deploy."
-  - "Phase 93 (Exact FlooLandingScroll Port):"
-      - "templates/public/_base.html: wrapped header and footer in {% block public_header %} and {% block public_footer %} so landing.html renders the full-bleed 100vh Floo stage without a duplicate top navbar."
-      - "templates/public/landing.html, static/css/landing_provably.css, static/js/landing_provably.js: ported exact 1440x1036 ResizeObserver-zoomed FlooLandingScroll (.fld / .fld-body 3636px / .stage / .hero collapsing into 364px header / .sky + .grass + .crm rising card + .cur EduCoach AI cursor + .panel 4 tabs with .bar i progress + .pic rock/rockfg + .glass + #intg 6-card grid + .wire + .ai) with EduPredict content, live metrics, Emerald Green (#10b981) tokens, and prefers-reduced-motion static fallback."
+  - "Phase 1-94: Core Shell, Auth/RBAC, 4 Role Panels, ML Pipeline, Emerald Green Default Theme, Multi-Format Training (.csv/.xlsx/.json/.jsonl/.ndjson/.tsv/.txt), Astryx UI, Vercel Auto-Deploy."
+  - "Phase 95 (Targo Public Pages Conversion):"
+      - "templates/public/_base.html: switched public layout to Quantico font (400;700), #F2F1F0 canvas, #15BCDF cyan accent, shared Targo navbar (overrideable via {% block public_header %}), and zero footer; kept ?v=18 asset tags."
+      - "templates/public/landing.html, static/{css,js}/landing_provably.{css,js}: exact 2-section Targo landing page (Hero with CloudFront looping video, left desktop scrim, chamfered CONTACT US + GET STARTED buttons, 6-line staircase H1 ending in #15BCDF CAMPUS; About section with right-flush cyan-tinted looping video, zero footer) with EduPredict copy and autoplay-retry + <=700px mobile menu JS."
+      - "templates/public/about.html, templates/public/contact.html: aligned both public pages with the Targo Quantico + #15BCDF + #F2F1F0/#F7F6F8 chamfered aesthetic (live MongoDB metrics, 4-role architecture cards, and wired contact inquiry form)."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
   - "node --check static/js/landing_provably.js: exited 0."
-  - "manage.py test: Ran 138 tests in 113.099s (138/138 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 10.50s - System 100% Operational."
+  - "Zero-comment & line-cap audit: CAPS: [] COMMENTS: []."
+  - "manage.py test: Ran 138 tests in 88.086s (138/138 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 10.37s - System 100% Operational."
   - "MongoDB Atlas cleaned back to 1 Admin user (admin@gmail.com) only."
 
 active_routes_and_files:
-  - "templates/public/{_base,landing}.html, static/{css,js}/landing_provably.{css,js}, .agents/git-sync.md"
+  - "templates/public/{_base,landing,about,contact}.html, static/{css,js}/landing_provably.{css,js}, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."
