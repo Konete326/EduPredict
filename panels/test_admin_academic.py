@@ -168,7 +168,7 @@ class AdminAcademicCrudTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "Training Data")
         self.assertContains(res, "Theme &amp; Colors")
-        self.assertContains(res, "Load &amp; Train 500-Row Sample")
+        self.assertContains(res, "Train 500-Row Sample")
         html = res.content.decode("utf-8")
         sidebar_html = html.split("</aside>")[0]
         self.assertIn("openThemeStudioModal()", sidebar_html)

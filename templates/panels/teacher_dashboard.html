@@ -4,29 +4,29 @@
 <header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
     <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Dashboard</h2>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Monitor your class attendance averages, test marks, and students needing extra attention</p>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Check student attendance, marks, and who needs help.</p>
   </div>
 </header>
 
 {% if db_error %}
 <div class="rounded-[12px] border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-  <i class="fa-solid fa-circle-exclamation mr-2"></i>Database notice: {{ db_error }}
+  <i class="fa-solid fa-circle-exclamation mr-2"></i>Notice: {{ db_error }}
 </div>
 {% endif %}
 
 <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-  {% include 'components/metric_card.html' with title="Total Students" value=kpis.total_students badge=kpis.courses_count|stringformat:"s"|add:" courses" status="info" icon="fa-solid fa-user-graduate" %}
-  {% include 'components/metric_card.html' with title="Avg Attendance" value=kpis.avg_attendance|stringformat:"s"|add:"%" badge="Class average" status="success" icon="fa-solid fa-calendar-check" %}
-  {% include 'components/metric_card.html' with title="Avg Class Marks" value=kpis.avg_marks|stringformat:"s"|add:"%" badge="Internal score" status="info" icon="fa-solid fa-award" %}
-  {% include 'components/metric_card.html' with title="Need Help" value=kpis.at_risk_count badge="Low marks or attendance" status="danger" icon="fa-solid fa-triangle-exclamation" %}
+  {% include 'components/metric_card.html' with title="Students" value=kpis.total_students badge="Total" status="info" icon="fa-solid fa-user-graduate" %}
+  {% include 'components/metric_card.html' with title="Attendance" value=kpis.avg_attendance|stringformat:"s"|add:"%" badge="Average" status="success" icon="fa-solid fa-calendar-check" %}
+  {% include 'components/metric_card.html' with title="Marks" value=kpis.avg_marks|stringformat:"s"|add:"%" badge="Average" status="info" icon="fa-solid fa-award" %}
+  {% include 'components/metric_card.html' with title="Need Help" value=kpis.at_risk_count badge="Low score" status="danger" icon="fa-solid fa-triangle-exclamation" %}
 </section>
 
 <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
   <div class="xl:col-span-7 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
     <div class="mb-2.5 flex items-center justify-between gap-2">
       <div>
-        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Course Attendance &amp; Marks</h3>
-        <p class="text-xs text-[var(--text-muted)]">Average attendance and internal marks across your courses</p>
+        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Course Marks &amp; Attendance</h3>
+        <p class="text-xs text-[var(--text-muted)]">Average marks and attendance by course</p>
       </div>
       <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">{{ kpis.courses_count }} Courses</span>
     </div>
@@ -36,10 +36,10 @@
   <div class="xl:col-span-5 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
     <div class="mb-2.5 flex items-center justify-between gap-2">
       <div>
-        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Student Status Groups</h3>
-        <p class="text-xs text-[var(--text-muted)]">Count of students in each performance group</p>
+        <h3 class="text-sm font-semibold text-[var(--text-primary)]">Student Groups</h3>
+        <p class="text-xs text-[var(--text-muted)]">Students by status</p>
       </div>
-      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Live Status</span>
+      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Live</span>
     </div>
     <div class="relative h-48 w-full"><canvas id="chart-teacher-badges"></canvas></div>
   </div>

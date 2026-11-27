@@ -98,11 +98,11 @@ class AnalystDashboardEvaluationTests(TestCase):
         self.assertIn("R&sup2; Score", html)
         self.assertIn("32", html)
         self.assertIn("8", html)
-        self.assertIn("Data &amp; Predictions Hub", html)
+        self.assertIn("Analytics", html)
         self.assertIn("Student Predictions", html)
         self.assertIn('href="/analyst-panel/#ml-evaluation-section"', html)
         self.assertNotIn('data-coming-title="AI Accuracy"', html)
-        self.assertIn('High &ge;70% &middot; Med &ge;35% &middot; Drop &gt;25%', html)
+        self.assertIn('High &ge;70% &middot; Med &ge;35%', html)
 
         with patch("analytics.ml_engine.student_records_col") as mock_ml_records:
             eval_resp = client.get(reverse("analytics:model_evaluation"))
@@ -185,7 +185,7 @@ class AnalystDashboardEvaluationTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
         self.assertIn("Could not evaluate models: Eval engine test failure", html)
-        self.assertIn("Data &amp; Predictions Hub", html)
+        self.assertIn("Analytics", html)
 
     def test_unauthorized_users_cannot_access_analyst_evaluation(self):
         anon = Client()

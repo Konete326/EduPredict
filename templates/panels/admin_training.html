@@ -9,7 +9,7 @@
       {% if ml_status.trained %}
       <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--status-success)]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--status-success)]">
         <i class="fa-solid fa-circle-check text-[10px]"></i>
-        <span>Model Ready</span>
+        <span>Ready</span>
       </span>
       {% else %}
       <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--status-warning)]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--status-warning)]">
@@ -18,11 +18,11 @@
       </span>
       {% endif %}
     </div>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Upload a CSV or Excel file to train the prediction model.</p>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Upload a student file or load the sample data to train the prediction model.</p>
   </div>
   <a href="{% url 'panels:admin_dashboard' %}" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
     <i class="fa-solid fa-arrow-left text-xs"></i>
-    <span>Back to Dashboard</span>
+    <span>Back</span>
   </a>
 </header>
 
@@ -34,32 +34,32 @@
 
 <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
   {% if ml_status.trained %}
-    {% include 'components/metric_card.html' with title="Model Status" value="Model Ready" badge="Ready for predictions" status="success" icon="fa-solid fa-circle-check" %}
+    {% include 'components/metric_card.html' with title="Model" value="Ready" badge="Active" status="success" icon="fa-solid fa-circle-check" %}
   {% else %}
-    {% include 'components/metric_card.html' with title="Model Status" value="Needs Data" badge="Upload a training file" status="warning" icon="fa-solid fa-clock" %}
+    {% include 'components/metric_card.html' with title="Model" value="Pending" badge="Upload data" status="warning" icon="fa-solid fa-clock" %}
   {% endif %}
-  {% include 'components/metric_card.html' with title="Training Records" value=ml_status.records_count|default:0 badge="Rows used" status="info" icon="fa-solid fa-database" %}
-  {% include 'components/metric_card.html' with title="Latest File" value=ml_status.filename|default:"None" badge="Current file" status="info" icon="fa-solid fa-file-csv" %}
-  {% include 'components/metric_card.html' with title="Last Trained" value=ml_status.uploaded_at|default:"Not yet" badge="Latest update" status="success" icon="fa-solid fa-calendar-check" %}
+  {% include 'components/metric_card.html' with title="Total Rows" value=ml_status.records_count|default:0 badge="Saved rows" status="info" icon="fa-solid fa-database" %}
+  {% include 'components/metric_card.html' with title="Latest File" value=ml_status.filename|default:"None" badge="Current" status="info" icon="fa-solid fa-file-csv" %}
+  {% include 'components/metric_card.html' with title="Last Run" value=ml_status.uploaded_at|default:"Not yet" badge="Updated" status="success" icon="fa-solid fa-calendar-check" %}
 </section>
 
 <section id="master-training-upload" class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
   <div class="flex flex-wrap items-center justify-between gap-2">
     <div>
       <h3 class="text-sm font-semibold text-[var(--text-primary)]">Upload Training File</h3>
-      <p class="text-xs text-[var(--text-secondary)]">Upload a CSV or Excel file to train the prediction model. Supported formats: .csv, .xlsx, .json, .tsv, or .txt.</p>
+      <p class="text-xs text-[var(--text-secondary)]">Pick a CSV or Excel file, or use the built-in 500-row university dataset.</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
-      <a href="{% static 'samples/university_training_dataset_500.csv' %}" download data-no-loading="true" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
-        <i class="fa-solid fa-download text-xs"></i>
+      <a href="{% static 'samples/university_training_dataset_500.csv' %}" download="university_training_dataset_500.csv" class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+        <i class="fa-solid fa-download text-xs text-[var(--accent-primary)]"></i>
         <span>Download Sample</span>
       </a>
-      <form method="post" action="{% url 'panels:admin_training' %}" class="inline-flex">
+      <form method="post" action="{% url 'panels:admin_training' %}">
         {% csrf_token %}
         <input type="hidden" name="action" value="train_builtin_dataset">
-        <button type="submit" class="inline-flex h-9 items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
-          <i class="fa-solid fa-database text-xs text-[var(--accent-primary)]"></i>
-          <span>Load &amp; Train 500-Row Sample</span>
+        <button type="submit" class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+          <i class="fa-solid fa-bolt text-xs text-[var(--accent-primary)]"></i>
+          <span>Train 500-Row Sample</span>
         </button>
       </form>
     </div>
@@ -69,33 +69,35 @@
     <input type="hidden" name="action" value="upload_master_csv">
     <input type="file" name="dataset_file" accept=".csv,.xlsx,.json,.jsonl,.ndjson,.tsv,.txt" required class="block w-full sm:w-auto flex-1 max-w-md rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs text-[var(--text-primary)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--accent-soft)] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[var(--accent-primary)]">
     <button type="submit" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
-      <i class="fa-solid fa-brain text-xs"></i>
+      <i class="fa-solid fa-upload text-xs"></i>
       <span>Upload &amp; Train</span>
     </button>
   </form>
 </section>
 
 <section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
-  {% include 'components/data_table.html' with table_id="admin-training-uploads-table" table_title="Uploaded Datasets" headers=training_headers rows=training_rows page_size=5 empty_message="No training files uploaded yet." %}
+  {% include 'components/data_table.html' with table_id="admin-training-uploads-table" table_title="Uploaded Files" headers=training_headers rows=training_rows page_size=5 empty_message="No training files uploaded yet." %}
 </section>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  window.openDeleteDatasetModal = function (btn) {
-    var d = (btn && btn.dataset) ? btn.dataset : {};
-    var label = d.filename || 'this dataset';
-    openConfirmModal({
-      title: 'Delete Dataset',
-      message: 'Delete "' + label + '" from uploaded datasets? This cannot be undone.',
-      confirmText: 'Delete',
-      onConfirmUrl: '{% url "panels:admin_training" %}',
-      fields: {
-        action: 'delete_training_dataset',
-        dataset_id: d.datasetId || '',
-        filename: d.filename || ''
-      }
-    });
-  };
+  (function () {
+    window.openDeleteDatasetModal = function (btn) {
+      const d = btn ? btn.dataset : {};
+      const label = d.filename || d.datasetId || 'this dataset';
+      window.openConfirmModal({
+        title: 'Delete Dataset',
+        message: 'Delete "' + label + '"? This removes the file from your training list.',
+        confirmText: 'Delete',
+        onConfirmUrl: '{% url "panels:admin_training" %}',
+        fields: {
+          action: 'delete_training_dataset',
+          dataset_id: d.datasetId || '',
+          filename: d.filename || ''
+        }
+      });
+    };
+  })();
 </script>
 {% endblock %}

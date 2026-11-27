@@ -7,8 +7,8 @@
       <span class="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]"><i class="fa-solid fa-bell text-[10px]" aria-hidden="true"></i><span>Alert Center</span></span>
       <span class="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">Total {{ tab_counts.ALL|default:0 }} &middot; Unread {{ tab_counts.UNREAD|default:0 }} &middot; Replies {{ tab_counts.REPLIES|default:0 }}</span>
     </div>
-    <h2 class="text-base sm:text-lg font-bold tracking-tight text-[var(--text-primary)]">Notifications &amp; Alert History</h2>
-    <p class="text-xs text-[var(--text-secondary)]">Review unread alerts, past notifications, and admin ticket replies in one place.</p>
+    <h2 class="text-base sm:text-lg font-bold tracking-tight text-[var(--text-primary)]">Notifications</h2>
+    <p class="text-xs text-[var(--text-secondary)]">View your alerts and replies.</p>
   </div>
   <form method="post" action="{% url 'panels:notifications_history' %}" class="shrink-0">
     {% csrf_token %}<input type="hidden" name="action" value="mark_all"><input type="hidden" name="tab" value="{{ active_tab|default:'ALL' }}">

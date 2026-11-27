@@ -18,25 +18,25 @@
 {% endif %}
 
 <div role="tablist" aria-label="Student dashboard tabs" class="flex flex-wrap items-center gap-2 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1.5">
-  <button type="button" role="tab" aria-selected="true" data-student-tab="overview" class="inline-flex items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-semibold text-white transition-colors"><i class="fa-solid fa-chart-line text-xs" aria-hidden="true"></i><span>Overview &amp; Progress</span></button>
-  <button type="button" role="tab" aria-selected="false" data-student-tab="courses" class="inline-flex items-center gap-1.5 rounded-[12px] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-table-list text-xs" aria-hidden="true"></i><span>Course Marks &amp; Alerts</span></button>
+  <button type="button" role="tab" aria-selected="true" data-student-tab="overview" class="inline-flex items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-semibold text-white transition-colors"><i class="fa-solid fa-chart-line text-xs" aria-hidden="true"></i><span>Overview</span></button>
+  <button type="button" role="tab" aria-selected="false" data-student-tab="courses" class="inline-flex items-center gap-1.5 rounded-[12px] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-table-list text-xs" aria-hidden="true"></i><span>My Courses</span></button>
 </div>
 
 <div id="student-panel-overview" role="tabpanel" data-student-panel="overview" class="space-y-3.5">
   <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 [&_[data-dot-kpi]]:py-2">
-    {% include 'components/metric_card.html' with title="Average Marks" value=record.avg_marks|stringformat:"s"|add:" / 100" badge=class_standing_display status="success" icon="fa-solid fa-award" %}
-    {% include 'components/metric_card.html' with title="My Attendance" value=record.avg_attendance|stringformat:"s"|add:"%" badge="All courses" status="info" icon="fa-solid fa-calendar-check" %}
-    {% include 'components/metric_card.html' with title="Predicted GPA" value=predicted_gpa_display badge="AI forecast" status="info" icon="fa-solid fa-chart-line" %}
-    {% include 'components/metric_card.html' with title="Dropout Risk" value=record.risk_level badge="Current standing" status=risk_status icon="fa-solid fa-shield-halved" %}
+    {% include 'components/metric_card.html' with title="Marks" value=record.avg_marks|stringformat:"s"|add:" / 100" badge=class_standing_display status="success" icon="fa-solid fa-award" %}
+    {% include 'components/metric_card.html' with title="Attendance" value=record.avg_attendance|stringformat:"s"|add:"%" badge="All courses" status="info" icon="fa-solid fa-calendar-check" %}
+    {% include 'components/metric_card.html' with title="Expected GPA" value=predicted_gpa_display badge="Estimate" status="info" icon="fa-solid fa-chart-line" %}
+    {% include 'components/metric_card.html' with title="Risk Level" value=record.risk_level badge="Status" status=risk_status icon="fa-solid fa-shield-halved" %}
   </section>
 
   <section class="grid grid-cols-1 gap-3.5 xl:grid-cols-12">
     <div class="xl:col-span-7 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 space-y-2.5">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <div><h3 class="text-sm font-semibold text-[var(--text-primary)]">Academic Progress</h3><p class="text-[11px] text-[var(--text-muted)]">Read-only live marks and course stability</p></div>
+        <div><h3 class="text-sm font-semibold text-[var(--text-primary)]">My Progress</h3><p class="text-[11px] text-[var(--text-muted)]">Your marks across courses</p></div>
         <div class="inline-flex items-center gap-1 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-0.5">
-          <button type="button" data-chart-subtab="bars" aria-pressed="true" class="rounded-[10px] bg-[var(--accent-primary)] px-2.5 py-1 text-[11px] font-semibold text-white transition-colors">Marks vs Class Avg</button>
-          <button type="button" data-chart-subtab="contour" aria-pressed="false" class="rounded-[10px] px-2.5 py-1 text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">Contour Strata</button>
+          <button type="button" data-chart-subtab="bars" aria-pressed="true" class="rounded-[10px] bg-[var(--accent-primary)] px-2.5 py-1 text-[11px] font-semibold text-white transition-colors">Marks</button>
+          <button type="button" data-chart-subtab="contour" aria-pressed="false" class="rounded-[10px] px-2.5 py-1 text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">Trend</button>
         </div>
       </div>
 
