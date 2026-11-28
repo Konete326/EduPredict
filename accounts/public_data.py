@@ -63,35 +63,47 @@ def _build_live_credentials(current_term):
         seen_students.add(sid)
         raw_course = str(rec.get("course_code") or rec.get("course") or "").strip().upper()
         c_doc = course_map.get(raw_course) or (courses[len(cards) % len(courses)] if courses else {})
-        c_code = str(c_doc.get("course_code") or c_doc.get("code") or raw_course or "CS-101").strip().upper()
-        c_title = str(c_doc.get("title") or "Academic Course").strip()
-        instructor = str(c_doc.get("instructor") or "Assigned Faculty").strip()
+        c_code = str(c_doc.get("course_code") or c_doc.get("code") or raw_course or "").strip().upper()
+        c_title = str(c_doc.get("title") or "").strip()
+        instructor = str(c_doc.get("instructor") or "").strip()
         student_name = str(rec.get("student_name") or rec.get("full_name") or rec.get("name") or sid).strip()
-        program = str(rec.get("program_level") or c_doc.get("program_level") or rec.get("department") or "BS / Undergraduate").strip()
+        program = str(rec.get("program_level") or c_doc.get("program_level") or rec.get("department") or "").strip()
         gpa_val = pred.get("predicted_gpa") if pred else rec.get("gpa")
         try:
-            gpa_str = f"{float(gpa_val):.2f}" if gpa_val is not None else "3.20"
+            gpa_str = f"{float(gpa_val):.2f}" if gpa_val is not None else "0.00"
         except (TypeError, ValueError):
-            gpa_str = "3.20"
-        risk_raw = str((pred or {}).get("risk_level") or "LOW").strip().upper()
+            gpa_str = "0.00"
+        risk_raw = str((pred or {}).get("risk_level") or "").strip().upper()
         suffix = sid.split("-")[-1] if "-" in sid else sid[-4:]
         clean_code = "".join(ch for ch in c_code if ch.isalnum()) or "REC"
+        course_label = f"{c_code} · {c_title}" if (c_code and c_title) else (c_code or c_title)
+        short_course_label = f"{c_code} · {c_title[:22]}" if (c_code and c_title) else (c_code or c_title[:22])
+        raw_marks = rec.get("marks") if rec.get("marks") is not None else rec.get("final_score")
+        raw_att = rec.get("attendance") if rec.get("attendance") is not None else rec.get("attendance_pct")
+        try:
+            marks_val = int(round(float(raw_marks))) if raw_marks is not None else 0
+        except (TypeError, ValueError):
+            marks_val = 0
+        try:
+            att_val = int(round(float(raw_att))) if raw_att is not None else 0
+        except (TypeError, ValueError):
+            att_val = 0
         cards.append(
             {
                 "id": f"CERT-{clean_code}-{suffix}",
                 "program": program,
-                "course": f"{c_code} · {c_title}",
-                "short_course": f"{c_code} · {c_title[:22]}",
+                "course": course_label,
+                "short_course": short_course_label,
                 "student": f"{sid} · {student_name}",
                 "student_name": student_name,
                 "student_id": sid,
                 "gpa": gpa_str,
-                "risk": f"{risk_raw} RISK",
+                "risk": f"{risk_raw} RISK" if risk_raw else "",
                 "risk_short": risk_raw,
                 "term": current_term,
-                "issuer": f"Registrar & {instructor}",
-                "marks": int(round(float(rec.get("marks") or rec.get("final_score") or 80))),
-                "attendance": int(round(float(rec.get("attendance") or rec.get("attendance_pct") or 85))),
+                "issuer": f"Registrar & {instructor}" if instructor else "Registrar",
+                "marks": marks_val,
+                "attendance": att_val,
                 "instructor": instructor,
                 "course_code": c_code,
             }
@@ -193,14 +205,14 @@ def get_public_landing_showcase():
             testimonials = []
         first = credentials[0] if credentials else {}
         walkthrough = {
-            "course_label": first.get("course") or "No active courses yet",
-            "course_program": first.get("program") or "BS / Undergraduate",
-            "course_teacher": first.get("instructor") or "Assigned Faculty",
-            "student_id": first.get("student_id") or "STD-2026-001",
+            "course_label": first.get("course") or "",
+            "course_program": first.get("program") or "",
+            "course_teacher": first.get("instructor") or "",
+            "student_id": first.get("student_id") or "",
             "marks": first.get("marks") if first else 0,
             "attendance": first.get("attendance") if first else 0,
             "gpa": first.get("gpa") or "0.00",
-            "risk": first.get("risk_short") or "LOW",
+            "risk": first.get("risk_short") or "",
         }
         return {"credentials": credentials, "testimonials": testimonials, "walkthrough": walkthrough}
 

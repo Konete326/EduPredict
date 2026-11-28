@@ -243,9 +243,9 @@ def register_user(full_name, email, password, role, department, batch, phone="",
     return user_doc, None
 
 
-def _safe_count(col_fn):
+def _safe_count(col_fn, query=None):
     try:
-        return max(int(col_fn().count_documents({})), 0)
+        return max(int(col_fn().count_documents(query or {})), 0)
     except Exception:
         return 0
 
@@ -257,8 +257,8 @@ def get_public_portal_metrics():
             "institution_name": inst_name,
             "current_term": current_term,
             "users_count": _safe_count(users_col),
-            "students_count": _safe_count(student_records_col),
-            "teachers_count": int(users_col().count_documents({"role": "TEACHER"})) if callable(users_col) else 0,
+            "students_count": _safe_count(users_col, {"role": "STUDENT"}),
+            "teachers_count": _safe_count(users_col, {"role": "TEACHER"}),
             "courses_count": _safe_count(courses_col),
             "records_count": _safe_count(student_records_col),
             "predictions_count": _safe_count(predictions_col),
@@ -276,7 +276,16 @@ def get_public_admin_contact():
         except Exception:
             admin_doc = None
         doc = admin_doc if isinstance(admin_doc, dict) else {}
-        return {"institution_name": inst_name, "current_term": current_term, "full_name": str(doc.get("full_name") or "System Administrator").strip() or "System Administrator", "email": str(doc.get("email") or "admin@gmail.com").strip() or "admin@gmail.com", "department": str(doc.get("department") or "Administration").strip() or "Administration", "phone": str(doc.get("phone") or "").strip()}
+        full_name = str(doc.get("full_name") or "").strip()
+        return {
+            "institution_name": inst_name,
+            "current_term": current_term,
+            "name": full_name,
+            "full_name": full_name,
+            "email": str(doc.get("email") or "").strip(),
+            "department": str(doc.get("department") or "").strip(),
+            "phone": str(doc.get("phone") or "").strip(),
+        }
     return get_cached("public:admin_contact", _fetch, ttl=60.0)
 
 
