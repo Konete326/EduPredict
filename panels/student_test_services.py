@@ -156,16 +156,33 @@ def get_student_tests_context(student_id, user_id, role):
         else:
             counts["pending"] += 1
         c_info = course_map.get(c_code) or {}
+        c_title = str(c_info.get("title") or c_code).strip()
+        t_title = str(t.get("title") or "Untitled Test").strip()
+        t_type = str(t.get("test_type") or "Quiz").strip()
+        max_m = _safe_float(t.get("max_marks"), 100.0)
+        rem_txt = str(sub.get("remarks") or "").strip()
+        note_txt = str(sub.get("submission_note") or sub.get("note") or "").strip()
+        sub_at_disp = submitted_at[:16].replace("T", " ") if submitted_at else ""
+        pct_val = sub.get("percentage", "")
+        is_locked = bool(t.get("is_locked") or t.get("locked"))
+        view_payload = {
+            "test_id": tid, "title": t_title, "course_code": c_code, "course_title": c_title,
+            "test_type": t_type, "max_marks": max_m, "test_date": t_date, "due_date": due_date,
+            "submission_status": sub_status, "is_late_now": is_late_now, "is_locked": is_locked,
+            "submitted_at": sub_at_disp, "obtained_marks": obtained if has_marks else "",
+            "percentage": pct_val, "remarks": rem_txt, "submission_note": note_txt, "files": files,
+        }
         tests.append({
-            "test_id": tid, "title": str(t.get("title") or "Untitled Test").strip(), "course_code": c_code,
-            "course_title": str(c_info.get("title") or c_code).strip(), "test_type": str(t.get("test_type") or "Quiz").strip(),
-            "max_marks": _safe_float(t.get("max_marks"), 100.0), "test_date": t_date, "due_date": due_date,
+            "test_id": tid, "title": t_title, "course_code": c_code,
+            "course_title": c_title, "test_type": t_type,
+            "max_marks": max_m, "test_date": t_date, "due_date": due_date,
             "notes": str(t.get("notes") or t.get("description") or "").strip(),
             "attachment_url": str(t.get("attachment_url") or "").strip(), "attachment_name": str(t.get("attachment_name") or "").strip(),
-            "submission_status": sub_status, "is_late_now": is_late_now,
-            "obtained_marks": obtained if has_marks else "", "percentage": sub.get("percentage", ""),
-            "remarks": str(sub.get("remarks") or "").strip(), "submission_note": str(sub.get("submission_note") or sub.get("note") or "").strip(),
-            "submitted_at": submitted_at, "files": files,
+            "submission_status": sub_status, "is_late_now": is_late_now, "is_locked": is_locked,
+            "obtained_marks": obtained if has_marks else "", "percentage": pct_val,
+            "remarks": rem_txt, "submission_note": note_txt,
+            "submitted_at": submitted_at, "submitted_at_display": sub_at_disp, "files": files,
+            "submission_json": json.dumps(view_payload),
         })
     return {
         "tests": tests, "kpis": counts, "semester_id": sem_id, "semester_label": sem_label,

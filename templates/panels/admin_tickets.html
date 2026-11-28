@@ -16,15 +16,15 @@
 
 <section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-4">
   <div class="flex flex-wrap items-center gap-2">
-    <a href="{% url 'panels:admin_tickets' %}" title="Show all help tickets" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_status == 'ALL' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_tickets' %}" title="Show all help tickets" class="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors {% if selected_status == 'ALL' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>All</span>
       <span class="tabular-nums opacity-80">({{ status_counts.ALL|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_tickets' %}?status=OPEN" title="Show open tickets" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_status == 'OPEN' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_tickets' %}?status=OPEN" title="Show open tickets" class="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors {% if selected_status == 'OPEN' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>Open</span>
       <span class="tabular-nums opacity-80">({{ status_counts.OPEN|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_tickets' %}?status=RESOLVED" title="Show solved tickets" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_status == 'RESOLVED' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_tickets' %}?status=RESOLVED" title="Show solved tickets" class="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors {% if selected_status == 'RESOLVED' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>Resolved</span>
       <span class="tabular-nums opacity-80">({{ status_counts.RESOLVED|default:0 }})</span>
     </a>

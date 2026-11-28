@@ -164,6 +164,11 @@ class StudentTestsAndClassroomChatTests(TestCase):
             late_sub = self.tests.find_one({"test_id": "TST-PAST"})["submissions"]["STU-101"]
             self.assertEqual(late_sub["submission_status"], "LATE")
 
+            after_resp = client.get(reverse("panels:student_tests"))
+            self.assertEqual(after_resp.status_code, 200)
+            self.assertContains(after_resp, "student-submission-view-modal")
+            self.assertContains(after_resp, "View Submission")
+
     def test_teacher_create_test_autoposts_assignment_card_to_chat(self):
         tea = self.users.find_one({"user_id": "USR-TEA-1"})
         with patch("panels.teacher_academic_services.courses_col", return_value=self.courses), \
@@ -197,6 +202,7 @@ class StudentTestsAndClassroomChatTests(TestCase):
 
             r_page = c_stu.get(reverse("panels:classroom_chat"))
             self.assertEqual(r_page.status_code, 200)
+            self.assertIn("no-store", r_page.get("Cache-Control", ""))
 
             poll_res = c_tea.post(api_url, data=json.dumps({"action": "poll", "group_id": "CS101", "poll_question": "Extra class?", "poll_options": ["Friday", "Saturday"]}), content_type="application/json").json()
             self.assertTrue(poll_res["ok"])
@@ -270,10 +276,10 @@ class StudentTestsAndClassroomChatTests(TestCase):
             self.assertTrue(doc_res["ok"])
             parent_id = doc_res["msg_id"]
 
-            big_pdf = SimpleUploadedFile("huge.pdf", b"%PDF-1.4\n" + b"0" * (5 * 1024 * 1024 + 100), content_type="application/pdf")
+            big_pdf = SimpleUploadedFile("huge.pdf", b"%PDF-1.4\n" + b"0" * (10 * 1024 * 1024 + 100), content_type="application/pdf")
             big_resp = c_stu.post(api_url, {"action": "send", "group_id": "CS101", "file": big_pdf})
             self.assertEqual(big_resp.status_code, 400)
-            self.assertIn("5 MB", big_resp.json()["error"])
+            self.assertIn("10 MB", big_resp.json()["error"])
 
             rep_res = c_stu.post(api_url, {"action": "send", "group_id": "CS101", "text": "Got it!", "reply_to_id": parent_id}).json()
             self.assertTrue(rep_res["ok"])
@@ -289,5 +295,78 @@ class StudentTestsAndClassroomChatTests(TestCase):
             self.assertTrue(tea_upd["ok"])
             self.assertEqual(tea_upd["group"]["title"], "CS101 Fall Section A")
             self.assertIn("group.png", tea_upd["group"]["dp_url"])
+
+    def test_classroom_chat_multi_media_and_limits(self):
+        stu = self.users.find_one({"user_id": "USR-STU-1"})
+        c_stu = self._client_as(stu)
+        api_url = reverse("panels:classroom_chat_api")
+
+        def _img(n):
+            return SimpleUploadedFile(f"img{n}.png", b"\x89PNG\r\n\x1a\n" + b"1" * 16, content_type="image/png")
+
+        def _doc(n):
+            return SimpleUploadedFile(f"doc{n}.pdf", b"%PDF-1.4\n" + b"0" * 32, content_type="application/pdf")
+
+        with patch("panels.chat_services.users_col", return_value=self.users), \
+             patch("panels.chat_services.semesters_col", return_value=self.semesters), \
+             patch("panels.chat_services.courses_col", return_value=self.courses), \
+             patch("panels.chat_services.student_records_col", return_value=self.records), \
+             patch("panels.chat_services.classroom_messages_col", return_value=self.chat_msgs), \
+             patch("panels.chat_receipt_services.users_col", return_value=self.users), \
+             patch("panels.chat_receipt_services.courses_col", return_value=self.courses), \
+             patch("panels.chat_receipt_services.student_records_col", return_value=self.records), \
+             patch("panels.chat_receipt_services.classroom_messages_col", return_value=self.chat_msgs), \
+             patch("panels.chat_services.upload_academic_attachment", side_effect=lambda f, **kw: (f"https://cdn.example.com/{f.name}", f.name, f.name.endswith(".png"), None)):
+            ok_res = c_stu.post(api_url, {"action": "send", "group_id": "CS101", "text": "Batch", "images": [_img(1), _img(2)], "files": [_doc(1), _doc(2)]})
+            self.assertEqual(ok_res.status_code, 200)
+            msg = next(m for m in ok_res.json()["messages"] if m["msg_id"] == ok_res.json()["msg_id"])
+            self.assertEqual(len(msg["images"]), 2)
+            self.assertEqual(len(msg["files"]), 2)
+
+            too_many_imgs = c_stu.post(api_url, {"action": "send", "group_id": "CS101", "images": [_img(i) for i in range(6)]})
+            self.assertEqual(too_many_imgs.status_code, 400)
+            self.assertIn("5 images", too_many_imgs.json()["error"])
+
+            too_many_docs = c_stu.post(api_url, {"action": "send", "group_id": "CS101", "files": [_doc(i) for i in range(6)]})
+            self.assertEqual(too_many_docs.status_code, 400)
+            self.assertIn("5 files", too_many_docs.json()["error"])
+
+    def test_classroom_chat_read_receipts_and_tick_state(self):
+        stu = self.users.find_one({"user_id": "USR-STU-1"})
+        tea = self.users.find_one({"user_id": "USR-TEA-1"})
+        adm = self.users.find_one({"user_id": "USR-ADM-1"})
+        c_stu, c_tea, c_adm = self._client_as(stu), self._client_as(tea), self._client_as(adm)
+        api_url = reverse("panels:classroom_chat_api")
+
+        with patch("panels.chat_services.users_col", return_value=self.users), \
+             patch("panels.chat_services.semesters_col", return_value=self.semesters), \
+             patch("panels.chat_services.courses_col", return_value=self.courses), \
+             patch("panels.chat_services.student_records_col", return_value=self.records), \
+             patch("panels.chat_services.classroom_messages_col", return_value=self.chat_msgs), \
+             patch("panels.chat_receipt_services.users_col", return_value=self.users), \
+             patch("panels.chat_receipt_services.courses_col", return_value=self.courses), \
+             patch("panels.chat_receipt_services.student_records_col", return_value=self.records), \
+             patch("panels.chat_receipt_services.classroom_messages_col", return_value=self.chat_msgs):
+            sent = c_tea.post(api_url, data=json.dumps({"action": "send", "group_id": "CS101", "text": "Notice"}), content_type="application/json").json()
+            self.assertTrue(sent["ok"])
+            mid = sent["msg_id"]
+            initial_msg = next(m for m in sent["messages"] if m["msg_id"] == mid)
+            self.assertEqual(initial_msg["tick_state"], "single")
+
+            stu_view = c_stu.get(api_url, {"group_id": "CS101"}).json()["messages"]
+            stu_msg = next(m for m in stu_view if m["msg_id"] == mid)
+            self.assertEqual(stu_msg["tick_state"], "double_blue")
+            self.assertIsNone(stu_msg["read_receipts"])
+
+            tea_view = c_tea.get(api_url, {"group_id": "CS101"}).json()["messages"]
+            tea_msg = next(m for m in tea_view if m["msg_id"] == mid)
+            self.assertEqual(tea_msg["tick_state"], "double_blue")
+            self.assertIsNotNone(tea_msg["read_receipts"])
+            self.assertTrue(any(u["user_id"] == "USR-STU-1" for u in tea_msg["read_receipts"]["seen_by"]))
+
+            adm_view = c_adm.get(api_url, {"group_id": "CS101"}).json()["messages"]
+            adm_msg = next(m for m in adm_view if m["msg_id"] == mid)
+            self.assertIsNotNone(adm_msg["read_receipts"])
+            self.assertTrue(any(u["user_id"] == "USR-STU-1" for u in adm_msg["read_receipts"]["seen_by"]))
 
 
