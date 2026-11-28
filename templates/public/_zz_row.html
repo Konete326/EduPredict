@@ -1,20 +1,41 @@
 ﻿{% load static %}
 <article class="zz-row">
-  <div class="zz-media zz-{{ media }}{% if variant %} zz-v-{{ variant }}{% endif %}" aria-hidden="true">
+  <div class="zz-media zz-{{ media }}" aria-hidden="true">
     {% if media == 'video-hero' %}
-    <video class="zz-video" data-targo-video="zz-{{ variant }}" poster="{% static 'video/targo_hero.jpg' %}?v=18" autoplay muted loop playsinline preload="auto"><source src="{% static 'video/targo_hero.mp4' %}?v=18" type="video/mp4"></video>
-    <span class="zz-tint"></span>
+    <video class="zz-video" data-targo-video="zz-hero" poster="{% static 'video/targo_hero.jpg' %}?v=18" autoplay muted loop playsinline preload="auto">
+      <source src="{% static 'video/targo_hero.mp4' %}?v=18" type="video/mp4">
+    </video>
     {% elif media == 'video-about' %}
-    <video class="zz-video" data-targo-video="zz-{{ variant }}" poster="{% static 'video/targo_about.jpg' %}?v=18" autoplay muted loop playsinline preload="auto"><source src="{% static 'video/targo_about.mp4' %}?v=18" type="video/mp4"></video>
+    <video class="zz-video" data-targo-video="zz-about" poster="{% static 'video/targo_about.jpg' %}?v=18" autoplay muted loop playsinline preload="auto">
+      <source src="{% static 'video/targo_about.mp4' %}?v=18" type="video/mp4">
+    </video>
+    {% elif media == 'video-admin' %}
+    <video class="zz-video" data-targo-video="zz-admin" poster="{% static 'video/edu_admin.jpg' %}?v=18" autoplay muted loop playsinline preload="auto">
+      <source src="{% static 'video/edu_admin.mp4' %}?v=18" type="video/mp4">
+      <source src="{% static 'video/targo_hero.mp4' %}?v=18" type="video/mp4">
+    </video>
+    {% elif media == 'video-ml' %}
+    <video class="zz-video" data-targo-video="zz-ml" poster="{% static 'video/edu_ml.jpg' %}?v=18" autoplay muted loop playsinline preload="auto">
+      <source src="{% static 'video/edu_ml.mp4' %}?v=18" type="video/mp4">
+      <source src="{% static 'video/targo_about.mp4' %}?v=18" type="video/mp4">
+    </video>
+    {% elif media == 'video-voice' %}
+    <video class="zz-video" data-targo-video="zz-voice" poster="{% static 'video/edu_voice.jpg' %}?v=18" autoplay muted loop playsinline preload="auto">
+      <source src="{% static 'video/edu_voice.mp4' %}?v=18" type="video/mp4">
+      <source src="{% static 'video/targo_hero.mp4' %}?v=18" type="video/mp4">
+    </video>
+    {% elif media == 'video-chat' %}
+    <video class="zz-video" data-targo-video="zz-chat" poster="{% static 'video/edu_chat_pdf.jpg' %}?v=18" autoplay muted loop playsinline preload="auto">
+      <source src="{% static 'video/edu_chat_pdf.mp4' %}?v=18" type="video/mp4">
+      <source src="{% static 'video/targo_about.mp4' %}?v=18" type="video/mp4">
+    </video>
+    {% else %}
+    <video class="zz-video" data-targo-video="zz-default" poster="{% static 'video/targo_hero.jpg' %}?v=18" autoplay muted loop playsinline preload="auto">
+      <source src="{% static 'video/targo_hero.mp4' %}?v=18" type="video/mp4">
+    </video>
+    {% endif %}
+    {% if media == 'video-hero' or media == 'video-about' %}
     <span class="zz-tint"></span>
-    {% elif media == 'cube' %}
-    <div class="zz-scene"><div class="zz-cube"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
-    {% elif media == 'rings' %}
-    <div class="zz-scene"><div class="zz-ring-set"><b></b><b></b><b></b><em></em></div></div>
-    {% elif media == 'orbit' %}
-    <div class="zz-scene"><div class="zz-orbit"><em></em><b></b><b></b></div></div>
-    {% elif media == 'stack' %}
-    <div class="zz-scene"><div class="zz-stack"><i></i><i></i><i></i><i></i></div></div>
     {% endif %}
   </div>
   <div class="zz-body">

@@ -1,4 +1,6 @@
+from pathlib import Path
 from unittest.mock import MagicMock, patch
+from django.conf import settings
 from django.contrib.messages import get_messages
 from django.test import SimpleTestCase
 from django.urls import reverse
@@ -329,3 +331,36 @@ class PublicContactAndLandingTests(SimpleTestCase):
         self.assertIn("M16 7L3 13l13 6 13-6-13-6z", html)
         self.assertNotIn('<span class="targo-logo-mark" aria-hidden="true"><span></span></span>', html)
         self.assertNotIn("rx='9'", html)
+
+    def test_preloader_studio_videos_clean_frames_and_v18_assets(self):
+        base_dir = Path(settings.BASE_DIR)
+        sample_metrics = {
+            "institution_name": "EduPredict",
+            "current_term": "Spring 2026",
+            "users_count": 10,
+            "students_count": 6,
+            "teachers_count": 2,
+            "courses_count": 3,
+            "records_count": 0,
+            "predictions_count": 8,
+        }
+        with patch("accounts.views.get_public_portal_metrics", return_value=sample_metrics), \
+             patch("accounts.views.get_public_landing_showcase", return_value={"credentials": [], "testimonials": [], "walkthrough": {}}):
+            html = self.client.get(reverse("root")).content.decode("utf-8")
+
+        for token in ('id="ep-preloader"', "EDUPREDICT", "STUDENT RISK &amp; GPA AI", 'id="ep-preloader-skip"'):
+            self.assertIn(token, html)
+        for video_name in ("edu_admin.mp4", "edu_ml.mp4", "edu_voice.mp4", "edu_chat_pdf.mp4"):
+            self.assertIn(video_name, html)
+            stem = video_name.replace(".mp4", "")
+            self.assertTrue((base_dir / "static" / "video" / video_name).is_file(), video_name)
+            self.assertTrue((base_dir / "static" / "video" / f"{stem}.jpg").is_file(), f"{stem}.jpg")
+        for fake_cls in ("zz-cube", "zz-ring-set", "zz-orbit", "zz-stack"):
+            self.assertNotIn(fake_cls, html)
+
+        css_src = (base_dir / "static" / "css" / "landing_provably.css").read_text(encoding="utf-8")
+        self.assertNotIn("scale(1.35)", css_src)
+        self.assertNotIn("scale(1.6)", css_src)
+
+        public_base = (base_dir / "templates" / "public" / "_base.html").read_text(encoding="utf-8")
+        self.assertIn("?v=18", public_base)

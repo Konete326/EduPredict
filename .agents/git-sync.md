@@ -61,30 +61,26 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 117 Borderless 3D Zig-Zag Home, Chat Fixes, Default Targo Theme & Animated AI Dock"
-active_branch_merged_to_main: "feature/p117-home-zigzag-chat-theme-ai -> main"
-project_phase: "Phase 117: Borderless 3D Zig-Zag Home, Chat No-Scroll/Group Info/Polling, Default Targo Theme & Animated AI Avatars/Mic"
+last_updated_by_agent: "Phase 118 EduPredict Perimeter Preloader, 4 Studio 3D Looping Videos & Clean Video Framing"
+active_branch_merged_to_main: "feature/p118-preloader-videos-frames -> main"
+project_phase: "Phase 118: EduPredict Perimeter Preloader, 4 Studio 3D Looping Videos & Clean Video Framing"
 
 completed_modules:
-  - "Phase 1-116: Core Shell, Auth/RBAC, Admin Academic CRUD, Classroom Tests, WhatsApp Class Chat, Staff Chat, AI Voice/Avatars, Split Analyst Pages + Teacher Alerts, Expanded Home + Unified Logo + Contact."
-  - "Phase 117a (home-zigzag): templates/public/landing.html (168), templates/public/_zz_row.html (25), static/css/landing_provably.css (169) - borderless alternating zig-zag rows with looping muted videos & 3D CSS cyan scenes."
-  - "Phase 117b (chat-fixes): templates/panels/classroom_chat.html (237), static/js/classroom_chat.js (389), static/js/chat_media.js (229) - 100dvh no-page-scroll chat, #chat-group-info-modal, pencil edit button, reliable 3s polling, compact bubbles."
-  - "Phase 117c (theme-default): core/theme_services.py (389), static/js/theme_studio.js (312), templates/components/theme_studio_modal.html (85), templates/base.html (204), panels/tests.py (383), panels/test_p105_workflow.py (399) - Default (Targo Cyan) shell + THEME_VERSION=2 migration."
-  - "Phase 117d (ai-avatars-mic): core/ai_agent_services.py (397), templates/components/ai_message_dock.html (121), static/js/ai_agent_dock.js (342), static/js/ai_dock_avatars.js (36), static/js/ai_dock_voice.js (89), panels/test_phase76.py (347) - animated SVG mascots & SpeechRecognition mic error handling."
+  - "Phase 1-117: Core Shell, Auth/RBAC, Admin Academic CRUD, Classroom Tests, WhatsApp Class Chat, Staff Chat, AI Voice/Avatars, Split Analyst Pages + Teacher Alerts, Borderless Zig-Zag Home, Default Targo Theme."
+  - "Phase 118 (home-preloader-frames): templates/public/_preloader.html (20), templates/public/_base.html (113), landing.html (169), _zz_row.html (46), static/css/landing_provably.css (157), static/js/landing_provably.js (121) - #ep-preloader perimeter trace + EDUPREDICT wordmark, 4 studio looping videos + posters in static/video/ (edu_admin, edu_ml, edu_voice, edu_chat_pdf), clean 16:9 object-fit:contain video framing without crop/zoom distortion, ?v=18 preserved."
+  - "Phase 118 QA: accounts/tests.py (366) - added test_preloader_studio_videos_clean_frames_and_v18_assets verifying preloader, 4 videos+posters, no fake CSS 3D shapes, no scale(1.35)/scale(1.6), and ?v=18."
 
 verification_results:
   - "manage.py check: 0 issues."
-  - "manage.py test: Ran 167 tests in 106.080s (167/167 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 12.70s - System 100% Operational."
-  - "node --check: classroom_chat.js, chat_media.js, theme_studio.js, ai_agent_dock.js, ai_dock_avatars.js, ai_dock_voice.js all OK."
-  - "Line cap & zero-comment audit: all 18 modified/created files <= 400 lines with 0 comments."
+  - "manage.py test: Ran 168 tests in 233.422s (168/168 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 14.60s - System 100% Operational."
+  - "node --check: static/js/landing_provably.js OK."
+  - "Line cap & zero-comment audit: all 7 modified/created files <= 400 lines with 0 comments."
 
 active_routes_and_files:
-  - "templates/public/landing.html (168), _zz_row.html (25), static/css/landing_provably.css (169)"
-  - "templates/panels/classroom_chat.html (237), static/js/classroom_chat.js (389), static/js/chat_media.js (229)"
-  - "core/theme_services.py (389), static/js/theme_studio.js (312), templates/components/theme_studio_modal.html (85), templates/base.html (204)"
-  - "core/ai_agent_services.py (397), templates/components/ai_message_dock.html (121), static/js/ai_agent_dock.js (342), ai_dock_avatars.js (36), ai_dock_voice.js (89)"
-  - "panels/tests.py (383), panels/test_p105_workflow.py (399), panels/test_phase76.py (347)"
+  - "templates/public/_preloader.html (20), templates/public/_base.html (113), templates/public/landing.html (169), templates/public/_zz_row.html (46)"
+  - "static/css/landing_provably.css (157), static/js/landing_provably.js (121), accounts/tests.py (366)"
+  - "static/video/edu_admin.mp4/.jpg, edu_ml.mp4/.jpg, edu_voice.mp4/.jpg, edu_chat_pdf.mp4/.jpg"
 
 pending_modules_in_order:
   - "Password Change Approval Workflow: Teacher/Student requests -> Admin approves -> notification sent (new pending_password_changes_col or notifications_col extension)."
