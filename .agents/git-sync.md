@@ -61,26 +61,28 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 118 EduPredict Perimeter Preloader, 4 Studio 3D Looping Videos & Clean Video Framing"
-active_branch_merged_to_main: "feature/p118-preloader-videos-frames -> main"
-project_phase: "Phase 118: EduPredict Perimeter Preloader, 4 Studio 3D Looping Videos & Clean Video Framing"
+last_updated_by_agent: "Phase 119 Real-Time Chat Fixes & Landing Studio Shadow / Edge-Dissolve Polish"
+active_branch_merged_to_main: "feature/p119-chat-realtime-fix-shadow -> main"
+project_phase: "Phase 119: WhatsApp Class & Staff Chat Real-Time Sync + Landing Studio Shadow & Video Edge-Dissolve"
 
 completed_modules:
-  - "Phase 1-117: Core Shell, Auth/RBAC, Admin Academic CRUD, Classroom Tests, WhatsApp Class Chat, Staff Chat, AI Voice/Avatars, Split Analyst Pages + Teacher Alerts, Borderless Zig-Zag Home, Default Targo Theme."
-  - "Phase 118 (home-preloader-frames): templates/public/_preloader.html (20), templates/public/_base.html (113), landing.html (169), _zz_row.html (46), static/css/landing_provably.css (157), static/js/landing_provably.js (121) - #ep-preloader perimeter trace + EDUPREDICT wordmark, 4 studio looping videos + posters in static/video/ (edu_admin, edu_ml, edu_voice, edu_chat_pdf), clean 16:9 object-fit:contain video framing without crop/zoom distortion, ?v=18 preserved."
-  - "Phase 118 QA: accounts/tests.py (366) - added test_preloader_studio_videos_clean_frames_and_v18_assets verifying preloader, 4 videos+posters, no fake CSS 3D shapes, no scale(1.35)/scale(1.6), and ?v=18."
+  - "Phase 1-118: Core Shell, Auth/RBAC, Admin Academic CRUD, Classroom Tests, WhatsApp Class Chat, Staff Chat, AI Voice/Avatars, Split Analyst Pages + Teacher Alerts, Perimeter Preloader & 4 Studio Looping Videos."
+  - "Phase 119a (chat-fixes): static/js/nav.js (251), panels/views_chat.py (248), panels/chat_receipt_services.py (204), static/js/classroom_chat.js (391), templates/panels/classroom_chat.html (240), templates/base.html (204, nav.js?v=22&r=119) - SPA cache bypass for /chat & /staff-chat, s.async=false & no-store guard, json_script double-encoding fix, upward 3-dot menu flip, AI dock bottom offset, 1200ms polling + BroadcastChannel sync, edit/delete/vote returning updated messages+groups, mark_messages_read updating updated_at + cache invalidation."
+  - "Phase 119b (home-preloader-frames): static/css/landing_provably.css (161), templates/public/_base.html (113, ?v=18&r=124), landing.html (169), _zz_row.html (46) - restored targo_hero.mp4 + targo_about.mp4 with seamless radial outer-edge feathering, localized edu_*.mp4 pure #F7F6F8 edges, removed edu_hero.*, and enlarged multi-layered card/CTA shadows."
+  - "Phase 119 QA: panels/test_p119_chat_shadow.py (133) - multi-user real-time class/staff chat send/edit/delete/vote/read-receipt tests & frontend contract assertions."
 
 verification_results:
   - "manage.py check: 0 issues."
-  - "manage.py test: Ran 168 tests in 233.422s (168/168 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 14.60s - System 100% Operational."
-  - "node --check: static/js/landing_provably.js OK."
-  - "Line cap & zero-comment audit: all 7 modified/created files <= 400 lines with 0 comments."
+  - "manage.py test: Ran 171 tests in 113.189s (171/171 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 11.81s - System 100% Operational."
+  - "node --check: nav.js, chat_media.js, classroom_chat.js all OK."
+  - "Line cap, zero-comment & .env audit: all 12 touched files <= 400 lines (views_chat.py 248 <= 250) with 0 comments; GEMINI_BACKEND_KEY_3= blank; no edu_hero.* leftovers."
 
 active_routes_and_files:
-  - "templates/public/_preloader.html (20), templates/public/_base.html (113), templates/public/landing.html (169), templates/public/_zz_row.html (46)"
-  - "static/css/landing_provably.css (157), static/js/landing_provably.js (121), accounts/tests.py (366)"
-  - "static/video/edu_admin.mp4/.jpg, edu_ml.mp4/.jpg, edu_voice.mp4/.jpg, edu_chat_pdf.mp4/.jpg"
+  - "panels/views_chat.py (248), panels/chat_receipt_services.py (204), panels/test_p119_chat_shadow.py (133)"
+  - "static/js/nav.js (251), static/js/classroom_chat.js (391), static/js/chat_media.js (229)"
+  - "templates/base.html (204), templates/panels/classroom_chat.html (240)"
+  - "static/css/landing_provably.css (161), templates/public/_base.html (113), landing.html (169), _zz_row.html (46)"
 
 pending_modules_in_order:
   - "Password Change Approval Workflow: Teacher/Student requests -> Admin approves -> notification sent (new pending_password_changes_col or notifications_col extension)."

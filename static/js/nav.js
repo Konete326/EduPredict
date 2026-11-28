@@ -89,6 +89,7 @@
     if (url.origin !== window.location.origin) return null;
     const path = url.pathname.toLowerCase();
     const cleanPath = normPath(path);
+    if (cleanPath === '/chat' || cleanPath.startsWith('/chat/') || cleanPath === '/staff-chat' || cleanPath.startsWith('/staff-chat/')) return null;
     if (path.startsWith('/auth') || path.includes('/backup/') || path.includes('download') || path.includes('export') || cleanPath.endsWith('-pdf') || cleanPath.endsWith('.pdf') || cleanPath.endsWith('.csv') || url.searchParams.has('export')) return null;
     return url;
   }
@@ -123,8 +124,11 @@
         const dest = new URL(resp.url, window.location.href);
         if (dest.pathname.startsWith('/auth')) return { redirect: resp.url };
         return resp.text().then((html) => {
-          writeCache(cacheKey(dest), html);
-          if (key !== cacheKey(dest)) writeCache(key, html);
+          const cc = (resp.headers.get('cache-control') || '').toLowerCase();
+          if (!cc.includes('no-store')) {
+            writeCache(cacheKey(dest), html);
+            if (key !== cacheKey(dest)) writeCache(key, html);
+          }
           return { html: html, finalUrl: resp.url };
         });
       })
@@ -146,6 +150,7 @@
           return;
         }
         const s = document.createElement('script');
+        s.async = false;
         Array.from(node.attributes).forEach((attr) => s.setAttribute(attr.name, attr.value));
         s.textContent = node.textContent;
         curExtra.appendChild(s);

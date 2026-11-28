@@ -2,6 +2,7 @@ import json
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import NoReverseMatch, reverse
+from core.db import classroom_messages_col
 from core.decorators import role_required
 from panels.chat_services import (
     delete_group_message,
@@ -72,7 +73,17 @@ def _resolve_api_url(is_staff_chat):
     try:
         return reverse("panels:staff_chat_api")
     except NoReverseMatch:
-        return "/panels/staff-chat/api/"
+        return "/staff-chat/api/"
+
+
+def _resolve_msg_group_id(gid, msg_id):
+    if gid:
+        return gid
+    mid = str(msg_id or "").strip()
+    if not mid:
+        return ""
+    doc = classroom_messages_col().find_one({"msg_id": mid}, {"_id": 0, "group_id": 1, "course_code": 1}) or {}
+    return str(doc.get("group_id") or doc.get("course_code") or "").strip().upper()
 
 
 def _render_chat_page(request, is_staff_chat=False):
@@ -112,6 +123,8 @@ def _render_chat_page(request, is_staff_chat=False):
             "selected_group": selected_group,
             "selected_group_id": selected_gid,
             "messages_list": messages_list,
+            "messages_data": messages_list,
+            "groups_data": groups,
             "messages_json": json.dumps(messages_list),
             "groups_json": json.dumps(groups),
             "current_user_id": uid,
@@ -195,20 +208,20 @@ def _handle_chat_api(request, is_staff_chat=False):
                 return _no_cache(JsonResponse({"ok": False, "error": err}, status=status))
             return _no_cache(JsonResponse({"ok": True, "group_id": gid, "group": updated_group, "groups": get_user_chat_groups(user)}))
 
-        if action == "edit":
-            ok, err = edit_fn(payload.get("msg_id"), payload.get("text") or "", user)
-            return _no_cache(JsonResponse({"ok": True, "msg_id": payload.get("msg_id")}) if ok else JsonResponse({"ok": False, "error": err}, status=400))
-
-        if action == "delete":
-            ok, err = del_fn(payload.get("msg_id"), payload.get("scope") or "me", user)
-            return _no_cache(JsonResponse({"ok": True, "msg_id": payload.get("msg_id")}) if ok else JsonResponse({"ok": False, "error": err}, status=400))
-
-        if action == "vote":
-            ok, err = vote_fn(payload.get("msg_id"), payload.get("option_idx"), user)
+        if action in ("edit", "delete", "vote"):
+            mid = payload.get("msg_id")
+            target_gid = _resolve_msg_group_id(gid, mid)
+            if action == "edit":
+                ok, err = edit_fn(mid, payload.get("text") or "", user)
+            elif action == "delete":
+                ok, err = del_fn(mid, payload.get("scope") or "me", user)
+            else:
+                ok, err = vote_fn(mid, payload.get("option_idx"), user)
             if not ok:
                 status = 403 if any(k in str(err or "").lower() for k in ("deactivated", "access")) else 400
                 return _no_cache(JsonResponse({"ok": False, "error": err}, status=status))
-            return _no_cache(JsonResponse({"ok": True, "msg_id": payload.get("msg_id")}))
+            msgs, _ = list_fn(target_gid, user) if target_gid else ([], None)
+            return _no_cache(JsonResponse({"ok": True, "msg_id": mid, "group_id": target_gid, "messages": msgs, "groups": groups_fn(user)}))
 
         return _no_cache(JsonResponse({"ok": False, "error": "Unsupported chat action."}, status=400))
     except Exception as exc:

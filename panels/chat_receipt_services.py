@@ -1,10 +1,11 @@
 import os
 import re
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from django.conf import settings
 from core.cloudinary_services import ALLOWED_IMAGE_EXTS
-from core.db import classroom_messages_col, courses_col, student_records_col, users_col
+from core.db import classroom_messages_col, courses_col, invalidate_cache, student_records_col, users_col
 
 MAX_CHAT_FILE_BYTES = 10 * 1024 * 1024
 ALLOWED_CHAT_DOC_EXTS = {".pdf", ".csv", ".txt", ".docx", ".doc"}
@@ -153,11 +154,14 @@ def mark_messages_read(docs, uid):
     if not unread_ids:
         return
     col = classroom_messages_col()
+    now = datetime.now(timezone.utc)
     if hasattr(col, "update_many"):
-        col.update_many({"msg_id": {"$in": unread_ids}}, {"$addToSet": {"read_by": clean_uid}})
+        col.update_many({"msg_id": {"$in": unread_ids}}, {"$addToSet": {"read_by": clean_uid}, "$set": {"updated_at": now}})
     else:
         for mid in unread_ids:
-            col.update_one({"msg_id": mid}, {"$addToSet": {"read_by": clean_uid}})
+            col.update_one({"msg_id": mid}, {"$addToSet": {"read_by": clean_uid}, "$set": {"updated_at": now}})
+    invalidate_cache("chat:")
+    invalidate_cache("staff_chat:")
 
 
 def build_message_receipts(doc, group_members, extra_profiles, viewer_role):

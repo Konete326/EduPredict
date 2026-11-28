@@ -7,6 +7,7 @@
   body:has(#chat-section) #app-shell-main { height: 100dvh; max-height: 100dvh; overflow: hidden; }
   main:has(#chat-section) { padding-bottom: 0 !important; height: calc(100dvh - 3.5rem); min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
   main:has(#chat-section) > div { flex: 1 1 0%; min-height: 0; height: 100%; display: flex; flex-direction: column; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+  body:has(#chat-section) #ep-agent-dock-root { bottom: 4.5rem; }
 </style>
 <section id="chat-section" class="relative flex flex-1 min-h-0 h-full overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
   <div id="chat-groups-backdrop" class="absolute inset-0 z-10 hidden bg-[var(--bg-overlay)] backdrop-blur-[1px] md:hidden"></div>
@@ -192,6 +193,7 @@
   <div class="relative z-10 w-full max-w-md rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-2xl space-y-3">
     <div class="flex items-center justify-between"><h3 class="text-base font-semibold text-[var(--text-primary)]">Create Group Poll</h3><button type="button" onclick="closeChatModal('chat-poll-modal')" class="h-8 w-8 rounded-[8px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-xmark"></i></button></div>
     <form id="chat-poll-form" class="space-y-2.5" data-no-lock="true">
+      {% csrf_token %}
       <input id="poll-question" type="text" required placeholder="Ask a question..." class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
       <input type="text" data-poll-opt required placeholder="Option 1" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
       <input type="text" data-poll-opt required placeholder="Option 2" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
@@ -207,6 +209,7 @@
   <div class="relative z-10 w-full max-w-md rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-2xl space-y-3">
     <h3 class="text-base font-semibold text-[var(--text-primary)]">Edit Message</h3>
     <form id="chat-edit-form" class="space-y-3" data-no-lock="true">
+      {% csrf_token %}
       <input id="edit-msg-id" type="hidden">
       <textarea id="edit-msg-text" rows="3" required class="w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)]" style="field-sizing: content;"></textarea>
       <div class="flex justify-end gap-2"><button type="button" onclick="closeChatModal('chat-edit-modal')" class="h-9 rounded-[10px] border border-[var(--border-subtle)] px-3.5 text-xs font-medium text-[var(--text-primary)]">Cancel</button><button type="submit" class="h-9 rounded-[10px] bg-[var(--accent-primary)] px-4 text-xs font-semibold text-white">Save</button></div>
@@ -229,9 +232,9 @@
 {% endblock %}
 
 {% block extra_js %}
-{{ groups_json|json_script:"chat-groups-data" }}
-{{ messages_json|json_script:"chat-messages-data" }}
+{{ groups_data|json_script:"chat-groups-data" }}
+{{ messages_data|json_script:"chat-messages-data" }}
 <div id="chat-boot-cfg" data-api-url="{{ chat_api_url }}" data-role="{{ current_user_role }}" data-group-id="{{ selected_group_id|default:'' }}" data-staff-mode="{% if is_staff_chat %}1{% else %}0{% endif %}" class="hidden"></div>
-<script src="{% static 'js/chat_media.js' %}?v=2"></script>
-<script src="{% static 'js/classroom_chat.js' %}?v=4"></script>
+<script src="{% static 'js/chat_media.js' %}?v=3"></script>
+<script src="{% static 'js/classroom_chat.js' %}?v=6"></script>
 {% endblock %}
