@@ -1,9 +1,11 @@
 from unittest.mock import MagicMock, patch
+from django.contrib.messages import get_messages
 from django.test import SimpleTestCase
 from django.urls import reverse
 from accounts.public_data import get_public_landing_showcase
 from accounts.services import get_public_admin_contact, get_public_portal_metrics
 from core.db import invalidate_cache
+from panels.admin_services import build_ticket_table_data, list_tickets
 
 
 class _FakeCursor:
@@ -24,6 +26,7 @@ class _FakeCol:
     def __init__(self, docs=None, counts=None):
         self._docs = list(docs or [])
         self._counts = dict(counts or {})
+        self.inserted = []
 
     def count_documents(self, query=None):
         q = query or {}
@@ -43,6 +46,12 @@ class _FakeCol:
             if all(d.get(k) == v for k, v in q.items()):
                 return dict(d)
         return None
+
+    def insert_one(self, doc):
+        copy = dict(doc)
+        self.inserted.append(copy)
+        self._docs.append(copy)
+        return MagicMock(inserted_id=len(self._docs))
 
 
 class PublicRealDataTests(SimpleTestCase):
@@ -187,3 +196,136 @@ class PublicRealDataTests(SimpleTestCase):
         contact_html = contact_resp.content.decode("utf-8")
         self.assertIn("Hina Raza", contact_html)
         self.assertIn("hina@edupredict.edu", contact_html)
+
+
+class PublicContactAndLandingTests(SimpleTestCase):
+    def setUp(self):
+        invalidate_cache("public:")
+        invalidate_cache("admin:")
+        invalidate_cache("notifs:")
+
+    def tearDown(self):
+        invalidate_cache("public:")
+        invalidate_cache("admin:")
+        invalidate_cache("notifs:")
+
+    def test_anonymous_contact_post_creates_ticket_and_admin_notification(self):
+        fake_tickets = _FakeCol()
+        fake_notifs = _FakeCol()
+        sample_contact = {
+            "institution_name": "EduPredict",
+            "current_term": "Spring 2026",
+            "name": "Hina Raza",
+            "full_name": "Hina Raza",
+            "email": "hina@edupredict.edu",
+            "department": "Administration",
+            "phone": "0300-0000000",
+        }
+        payload = {
+            "name": "Ayesha Khan",
+            "email": "ayesha@example.com",
+            "subject": "Admission Query",
+            "message": "How do teachers join the portal?",
+        }
+        with patch("accounts.services.support_tickets_col", return_value=fake_tickets), \
+             patch("accounts.services.notifications_col", return_value=fake_notifs), \
+             patch("accounts.views.get_public_admin_contact", return_value=sample_contact):
+            resp = self.client.post(reverse("accounts:contact_view"), payload)
+
+        self.assertRedirects(resp, reverse("accounts:contact_view"), fetch_redirect_response=False)
+        self.assertEqual(len(fake_tickets.inserted), 1)
+        ticket = fake_tickets.inserted[0]
+        self.assertEqual(ticket["source"], "PUBLIC_CONTACT")
+        self.assertEqual(ticket["role"], "GUEST")
+        self.assertEqual(ticket["user_id"], "GUEST")
+        self.assertEqual(ticket["user_name"], "Ayesha Khan")
+        self.assertEqual(ticket["email"], "ayesha@example.com")
+        self.assertEqual(ticket["subject"], "Admission Query")
+        self.assertEqual(ticket["status"], "OPEN")
+        self.assertIn("How do teachers join the portal?", ticket["message"])
+
+        self.assertEqual(len(fake_notifs.inserted), 1)
+        notif = fake_notifs.inserted[0]
+        self.assertEqual(notif["target_role"], "ADMIN")
+        self.assertEqual(notif["category"], "TICKET")
+        self.assertEqual(notif["ticket_id"], ticket["ticket_id"])
+        self.assertFalse(notif["is_read"])
+
+        msgs = [str(m) for m in get_messages(resp.wsgi_request)]
+        self.assertTrue(any(ticket["ticket_id"] in m for m in msgs))
+
+    def test_anonymous_contact_post_validates_missing_or_invalid_fields(self):
+        fake_tickets = _FakeCol()
+        fake_notifs = _FakeCol()
+        with patch("accounts.services.support_tickets_col", return_value=fake_tickets), \
+             patch("accounts.services.notifications_col", return_value=fake_notifs), \
+             patch("accounts.views.get_public_admin_contact", return_value={"institution_name": "EduPredict", "current_term": "Spring 2026", "name": "", "full_name": "", "email": "", "department": "", "phone": ""}):
+            resp = self.client.post(
+                reverse("accounts:contact_view"),
+                {"name": "Ayesha", "email": "not-an-email", "subject": "Help", "message": "Test"},
+            )
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(fake_tickets.inserted), 0)
+        self.assertEqual(len(fake_notifs.inserted), 0)
+        self.assertIn("Please enter a valid email address.", resp.content.decode("utf-8"))
+
+    def test_admin_tickets_list_includes_public_contact_guest_tickets(self):
+        fake_tickets = _FakeCol(
+            docs=[
+                {
+                    "ticket_id": "TCK-1001",
+                    "user_id": "GUEST",
+                    "user_name": "Ayesha Khan",
+                    "email": "ayesha@example.com",
+                    "role": "GUEST",
+                    "subject": "Admission Query",
+                    "message": "[Public Contact: ayesha@example.com] Need info.",
+                    "attachments": [],
+                    "status": "OPEN",
+                    "source": "PUBLIC_CONTACT",
+                }
+            ]
+        )
+        with patch("panels.admin_services.ensure_admin_seed_data"), \
+             patch("panels.admin_services.support_tickets_col", return_value=fake_tickets):
+            tickets, counts = list_tickets("ALL")
+
+        self.assertEqual(counts["ALL"], 1)
+        self.assertEqual(counts["OPEN"], 1)
+        self.assertEqual(len(tickets), 1)
+        self.assertEqual(tickets[0]["ticket_id"], "TCK-1001")
+        self.assertEqual(tickets[0]["role"], "GUEST")
+        self.assertEqual(tickets[0]["user_id"], "GUEST")
+
+        headers, rows = build_ticket_table_data(tickets, "ALL")
+        self.assertEqual(len(headers), 4)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0][0], "Admission Query")
+        self.assertEqual(rows[0][1], "Ayesha Khan")
+
+    def test_landing_page_renders_real_metrics_footer_and_unified_cap_logo(self):
+        sample_metrics = {
+            "institution_name": "EduPredict",
+            "current_term": "Spring 2026",
+            "users_count": 20,
+            "students_count": 12,
+            "teachers_count": 4,
+            "courses_count": 5,
+            "records_count": 0,
+            "predictions_count": 18,
+        }
+        with patch("accounts.views.get_public_portal_metrics", return_value=sample_metrics), \
+             patch("accounts.views.get_public_landing_showcase", return_value={"credentials": [], "testimonials": [], "walkthrough": {}}):
+            home_resp = self.client.get(reverse("root"))
+
+        self.assertEqual(home_resp.status_code, 200)
+        html = home_resp.content.decode("utf-8")
+        self.assertIn("12", html)
+        self.assertIn("4", html)
+        self.assertIn("5", html)
+        self.assertIn("18", html)
+        self.assertIn("<footer", html)
+        self.assertIn("M16 7L3 13l13 6 13-6-13-6z", html)
+        self.assertNotIn('<span class="targo-logo-mark" aria-hidden="true"><span></span></span>', html)
+        self.assertNotIn("rx='9'", html)

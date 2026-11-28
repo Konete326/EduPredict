@@ -61,29 +61,24 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 115 AI Voice/Avatars, Split Analyst Pages + Teacher Alerts, Staff Chat & Group Deactivation"
-active_branch_merged_to_main: "feature/p115-ai-voice-analyst-staffchat -> main"
-project_phase: "Phase 115: AI Voice/Avatars, Split Analyst Pages + Teacher Alerts, Staff Chat & Group Deactivation"
+last_updated_by_agent: "Phase 116 Expanded Home Page with Videos & Footer, Unified Logo & Anonymous Contact"
+active_branch_merged_to_main: "feature/p116-public-home-logo-contact -> main"
+project_phase: "Phase 116: Expanded Home Page with Videos & Footer, Unified Graduation-Cap Logo & Anonymous Public Contact"
 
 completed_modules:
-  - "Phase 1-114: Core Shell, Auth/RBAC, Admin Academic CRUD, Classroom Tests, WhatsApp Class Chat, Tear-Off Calendar, Student Scope, File Preview, Real Public Data & Landing Cyan Default Theme."
-  - "Phase 115a (ai-dock-upgrade): core/ai_agent_services.py (392), templates/components/ai_message_dock.html (104), static/js/ai_agent_dock.js (373) - role-scoped chat/training context (STAFF & datasets excluded from STUDENT), animated SVG avatars, #ep-dock-mic SpeechRecognition voice input."
-  - "Phase 115b (analyst-split-alerts): panels/views_analyst.py (270), panels/analyst_alert_services.py (137), templates/panels/analyst_dashboard.html (347), analyst_accuracy.html (47), analyst_health.html (141), panels/urls.py (44), templates/components/sidebar.html (230) - split Data & ML Hub, AI Accuracy, Model Health; added Analyst/Admin -> Teacher RISK_ALERT notifications."
-  - "Phase 115c (chat-perf-staff): panels/chat_services.py (399), panels/staff_chat_services.py (249), panels/views_chat.py (235), templates/panels/classroom_chat.html (219), static/js/classroom_chat.js (398) - instant WhatsApp render, Admin toggle_group_active (deactivated groups keep history, block writes with 403), and Dedicated Staff Chat (/staff-chat/, ADMIN/TEACHER/ANALYST only)."
+  - "Phase 1-115: Core Shell, Auth/RBAC, Admin Academic CRUD, Classroom Tests, WhatsApp Class Chat, Staff Chat, AI Voice/Avatars, Split Analyst Pages + Teacher Alerts."
+  - "Phase 116a (public-home-logo): templates/public/_base.html (112), landing.html (248), contact.html (71), templates/accounts/auth.html (252), static/css/landing_provably.css (132) - unified #15BCDF graduation-cap SVG logo & favicon, responsive footer with institution/term, expanded landing with Live Campus Snapshot, 4-Role capabilities, Video Workflow Showcase, and ?v=18 assets."
+  - "Phase 116b (public-contact-qa): accounts/tests.py (331) - added PublicContactAndLandingTests verifying anonymous /contact/ POST -> support_tickets_col (PUBLIC_CONTACT/GUEST) + ADMIN notifications, Admin ticket table inclusion, and expanded landing/logo assertions."
 
 verification_results:
   - "manage.py check: 0 issues."
-  - "manage.py test: Ran 162 tests in 117.592s (162/162 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 12.90s - System 100% Operational."
-  - "node --check: static/js/ai_agent_dock.js OK, static/js/classroom_chat.js OK."
-  - "Line cap & zero-comment audit: all Phase 115 modified/created files <= 400 lines with 0 comments."
+  - "manage.py test: Ran 166 tests in 145.452s (166/166 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 15.01s - System 100% Operational."
+  - "Line cap & zero-comment audit: all 6 modified files <= 400 lines with 0 comments."
 
 active_routes_and_files:
-  - "core/ai_agent_services.py (392), templates/components/ai_message_dock.html (104), static/js/ai_agent_dock.js (373)"
-  - "panels/views_analyst.py (270), panels/analyst_alert_services.py (137), panels/urls.py (44)"
-  - "templates/panels/analyst_dashboard.html (347), analyst_accuracy.html (47), analyst_health.html (141), templates/components/sidebar.html (230)"
-  - "panels/chat_services.py (399), panels/staff_chat_services.py (249), panels/views_chat.py (235), templates/panels/classroom_chat.html (219), static/js/classroom_chat.js (398)"
-  - "panels/test_p115_ai_analyst_staff_chat.py (251), panels/tests.py (364), panels/test_phase66.py (400), panels/test_phase74.py (364), panels/test_phase75.py (389)"
+  - "templates/public/_base.html (112), templates/public/landing.html (248), templates/public/contact.html (71)"
+  - "templates/accounts/auth.html (252), static/css/landing_provably.css (132), accounts/tests.py (331)"
 
 pending_modules_in_order:
   - "Password Change Approval Workflow: Teacher/Student requests -> Admin approves -> notification sent (new pending_password_changes_col or notifications_col extension)."
@@ -93,7 +88,7 @@ pending_modules_in_order:
 
 important_notes_for_next_agent:
   - "All input[type='date'] globally intercepted by static/js/calendar_modal.js. Add data-native-date='true' to skip the custom modal."
-  - "?v=22 required on ALL static assets in templates/base.html - test_phase66.py explicitly checks this."
+  - "?v=22 required on ALL static assets in templates/base.html; ?v=18 required on templates/public/_base.html - test_phase66.py explicitly checks both."
   - "student_id auto-resolution in _student_identity() in panels/views_student.py - reads users_col() by user_id/email fallback then student_records_col()."
   - "File preview modal opens via window.openFilePreview(url, name, mime) from templates/components/file_preview_modal.html."
   - "Project connected GitHub Konete326/EduPredict main -> Vercel auto-deploy on every push."
