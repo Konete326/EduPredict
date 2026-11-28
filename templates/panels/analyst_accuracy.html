@@ -1,20 +1,25 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 <header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
     <div class="flex flex-wrap items-center gap-2">
-      <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Model Health</h2>
+      <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">AI Accuracy</h2>
       <span class="inline-flex items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-0.5 text-[11px] font-mono text-[var(--text-secondary)]">
         <i class="fa-solid fa-sliders text-[10px] text-[var(--accent-primary)]"></i>
         <span>Min Att {{ portal_settings.min_attendance_pct|default:75 }}% &middot; Pass GPA {{ portal_settings.passing_gpa|default:"2.0" }} &middot; High Risk &ge;{{ portal_settings.high_risk_threshold|default:70 }}%</span>
       </span>
     </div>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Model evaluation metrics for RandomForest, Ridge, and IsolationForest.</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
     <span class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-mono text-[var(--text-secondary)]" title="Active model version">
       <i class="fa-solid fa-microchip text-[var(--accent-primary)]"></i><span>{{ model_info.version }}</span>
     </span>
+    <a href="{% url 'panels:analyst_health' %}" title="View Model Health" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <i class="fa-solid fa-heart-pulse text-xs text-[var(--accent-primary)]"></i><span>Model Health</span>
+    </a>
     <a href="{% url 'panels:analyst_dashboard' %}" title="Back to data hub" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
       <i class="fa-solid fa-arrow-left text-xs"></i><span>Data Hub</span>
     </a>
@@ -31,126 +36,12 @@
   {% include 'components/metric_card.html' with title="Predictions" value=kpis.total_predictions badge="Saved" status="info" icon="fa-solid fa-bullseye" %}
   {% include 'components/metric_card.html' with title="GPA Error" value=gpa_mae_display badge="Average gap" status="warning" icon="fa-solid fa-ruler" %}
   {% include 'components/metric_card.html' with title="Accurate Share" value=stable_share_display badge="Within 0.25" status="success" icon="fa-solid fa-scale-balanced" %}
-  {% include 'components/metric_card.html' with title="Sudden Drops" value=kpis.anomaly_count badge="Flagged" status="danger" icon="fa-solid fa-wave-square" %}
+  {% include 'components/metric_card.html' with title="Flag Agreement" value=risk_agreement_display badge="Low att. check" status="info" icon="fa-solid fa-shield-halved" %}
 </section>
 
-<div role="tablist" aria-label="Model health tabs" class="flex flex-wrap items-center gap-2 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1.5">
-  <button type="button" role="tab" aria-selected="true" data-accuracy-tab="health" class="inline-flex items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-semibold text-white transition-colors">
-    <i class="fa-solid fa-heart-pulse text-xs" aria-hidden="true"></i><span>Health &amp; Trends</span>
-  </button>
-  <button type="button" role="tab" aria-selected="false" data-accuracy-tab="logs" class="inline-flex items-center gap-1.5 rounded-[12px] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
-    <i class="fa-solid fa-table-list text-xs" aria-hidden="true"></i><span>Courses &amp; Logs</span>
-  </button>
-</div>
-
-<div id="accuracy-panel-health" role="tabpanel" data-accuracy-panel="health" class="space-y-3">
-  <section class="grid grid-cols-1 gap-3.5 xl:grid-cols-12">
-    <div id="academic-contour-card" class="xl:col-span-7 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 space-y-2">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="min-w-0">
-          <h3 class="text-sm font-semibold text-[var(--text-primary)]">Academic Performance Contour Strata</h3>
-          <p class="text-[11px] text-[var(--text-muted)]">Real MongoDB per-course cohort health curve</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
-          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[var(--text-secondary)]">Mean <strong id="contour-stat-mean" class="text-[var(--text-primary)]">-</strong></span>
-          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[var(--text-secondary)]">Peak <strong id="contour-stat-peak" class="text-[var(--status-success)]">-</strong></span>
-          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[var(--text-secondary)]">Cutoffs <strong id="contour-stat-cutoffs" class="text-[var(--text-primary)]">-</strong></span>
-          <label class="inline-flex items-center gap-1.5 rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 text-[var(--text-secondary)]">
-            <span>Strata</span>
-            <input id="contour-strata-range" type="range" min="4" max="10" value="7" aria-label="Contour strata density" class="w-14 accent-[var(--accent-primary)]">
-            <span id="contour-strata-val" class="font-mono font-semibold text-[var(--text-primary)]">7</span>
-          </label>
-        </div>
-      </div>
-      <div class="relative h-44 w-full">
-        <canvas id="academic-contour-canvas" class="h-full w-full cursor-crosshair"></canvas>
-        <div id="contour-tooltip" class="hidden pointer-events-none absolute z-10 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs shadow-md"></div>
-      </div>
-      <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--text-muted)]">
-        <span id="contour-pin-status">Click any course node to pin &amp; compare</span>
-        <span class="font-mono">Dashed amber line: Min Attendance cutoff</span>
-      </div>
-    </div>
-
-    <div class="xl:col-span-5 min-w-0 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-      <div class="min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
-        <div class="mb-2 flex items-center justify-between gap-2">
-          <h3 class="text-xs font-semibold text-[var(--text-primary)]">Risk Level Split</h3>
-          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] font-mono text-[var(--text-muted)]">Live</span>
-        </div>
-        <div class="relative h-44 w-full"><canvas id="chart-accuracy-risk"></canvas></div>
-      </div>
-      <div class="min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
-        <div class="mb-2 flex items-center justify-between gap-2">
-          <h3 class="text-xs font-semibold text-[var(--text-primary)]">GPA Error Buckets</h3>
-          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] font-mono text-[var(--text-muted)]">MAE</span>
-        </div>
-        <div class="relative h-44 w-full"><canvas id="chart-accuracy-errors"></canvas></div>
-      </div>
-    </div>
-  </section>
-
-  <section data-ep-marquee class="ep-marquee-wrap rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] py-1 px-3 text-[11px]">
-    <div data-marquee-track class="ep-marquee-track items-center text-[11px]">
-      <span class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full bg-[var(--accent-primary)]"></span>Model {{ model_info.version }}</span>
-      <span class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full bg-[var(--status-success)]"></span>Coverage {{ kpis.coverage_pct|default:0 }}%</span>
-      <span class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full bg-[var(--status-warning)]"></span>MAE {{ gpa_mae_display }}</span>
-      <span class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full bg-[var(--status-success)]"></span>Stable {{ stable_share_display }}</span>
-      <span class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full bg-[var(--accent-primary)]"></span>Agreement {{ risk_agreement_display }}</span>
-      <span class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[var(--text-secondary)]"><span class="h-1.5 w-1.5 rounded-full bg-[var(--status-danger)]"></span>Anomalies {{ kpis.anomaly_count|default:0 }}</span>
-    </div>
-  </section>
-</div>
-
-<div id="accuracy-panel-logs" role="tabpanel" data-accuracy-panel="logs" class="hidden space-y-3">
-  <section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 grid grid-cols-1 gap-2 sm:grid-cols-4 text-xs">
-    <div class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 flex items-center justify-between"><span class="text-[var(--text-muted)]">Model</span><span class="font-mono font-semibold text-[var(--text-primary)]">{{ model_info.version }}</span></div>
-    <div class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 flex items-center justify-between"><span class="text-[var(--text-muted)]">Last Run</span><span class="font-mono text-[var(--text-primary)]">{{ model_info.generated }}</span></div>
-    <div class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 flex items-center justify-between"><span class="text-[var(--text-muted)]">Flag Agreement</span><span class="font-mono font-semibold text-[var(--text-primary)]">{{ risk_agreement_display }}</span></div>
-    <div class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 flex items-center justify-between"><span class="text-[var(--text-muted)]">Risk Cutoffs</span><span class="font-mono font-semibold text-[var(--text-primary)]">High &ge;{{ portal_settings.high_risk_threshold|default:70 }}% / Med &ge;{{ portal_settings.medium_risk_threshold|default:35 }}%</span></div>
-  </section>
-  <section class="grid grid-cols-1 gap-3.5">
-    <div class="min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
-      {% include 'components/data_table.html' with table_id="accuracy-demand-table" table_title="Course Demand Forecast" headers=demand_headers rows=demand_rows page_size=4 empty_message="No course demand data yet. Upload a dataset in the Data Hub." %}
-    </div>
-    <div class="min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
-      {% include 'components/data_table.html' with table_id="accuracy-upload-table" table_title="Training Data Summary" headers=upload_headers rows=upload_rows page_size=4 empty_message="No uploads recorded yet." %}
-    </div>
-  </section>
-</div>
+{% include 'panels/analyst_evaluation_section.html' %}
 {% endblock %}
 
 {% block extra_js %}
-{{ chart_data|json_script:"accuracy-chart-data" }}
-{{ chart_data|json_script:"accuracy-contour-data" }}
-<script>
-  (function () {
-    function initAccuracyCharts() {
-      if (typeof window.initAcademicWidgets === 'function') window.initAcademicWidgets();
-      const node = document.getElementById('accuracy-chart-data');
-      if (!node || typeof window.createThemedChart !== 'function') return;
-      const payload = JSON.parse(node.textContent || '{}');
-      const risks = payload.risk_counts || { LOW: 0, MEDIUM: 0, HIGH: 0 };
-      const buckets = payload.error_buckets || { excellent: 0, acceptable: 0, large: 0 };
-      window.createThemedChart('chart-accuracy-risk', function (tokens) {
-        return { type: 'doughnut', data: { labels: ['Low Risk', 'Medium Risk', 'High Risk'], datasets: [{ data: [risks.LOW || 0, risks.MEDIUM || 0, risks.HIGH || 0], backgroundColor: [tokens.statusSuccess, tokens.statusWarning, tokens.statusDanger], borderColor: tokens.bgSurface, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '64%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } } } } };
-      });
-      window.createThemedChart('chart-accuracy-errors', function (tokens) {
-        return { type: 'bar', data: { labels: ['<=0.25', '0.25-0.5', '>0.50'], datasets: [{ label: 'Students', data: [buckets.excellent || 0, buckets.acceptable || 0, buckets.large || 0], backgroundColor: [tokens.statusSuccess, tokens.statusWarning, tokens.statusDanger], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: tokens.textMuted } }, y: { beginAtZero: true, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted, precision: 0 } } } } };
-      });
-    }
-    const act = ['bg-[var(--accent-primary)]', 'text-white', 'font-semibold'], inact = ['text-[var(--text-secondary)]', 'font-medium'];
-    document.querySelectorAll('[data-accuracy-tab]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        const key = btn.getAttribute('data-accuracy-tab');
-        document.querySelectorAll('[data-accuracy-tab]').forEach(function (b) { const on = b.getAttribute('data-accuracy-tab') === key; b.setAttribute('aria-selected', on ? 'true' : 'false'); act.forEach((c) => b.classList.toggle(c, on)); inact.forEach((c) => b.classList.toggle(c, !on)); });
-        document.querySelectorAll('[data-accuracy-panel]').forEach(function (p) { p.classList.toggle('hidden', p.getAttribute('data-accuracy-panel') !== key); });
-        if (typeof window.initAcademicWidgets === 'function') window.initAcademicWidgets();
-        window.dispatchEvent(new Event('resize'));
-      });
-    });
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAccuracyCharts);
-    else initAccuracyCharts();
-  })();
-</script>
+<script src="{% static 'js/analyst_evaluation.js' %}?v=17"></script>
 {% endblock %}

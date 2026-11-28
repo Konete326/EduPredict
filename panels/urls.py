@@ -35,6 +35,10 @@ urlpatterns = [
     path('student-panel/tests/', views_student.student_tests, name='student_tests'),
     path('chat/', views_chat.classroom_chat_view, name='classroom_chat'),
     path('chat/api/messages/', views_chat.classroom_chat_api, name='classroom_chat_api'),
+    path('staff-chat/', views_chat.staff_chat_view, name='staff_chat'),
+    path('staff-chat/api/', views_chat.staff_chat_api, name='staff_chat_api'),
     path('analyst-panel/', views_analyst.analyst_dashboard, name='analyst_dashboard'),
     path('analyst-panel/accuracy/', views_analyst.analyst_accuracy, name='analyst_accuracy'),
+    path('analyst-panel/health/', views_analyst.analyst_health, name='analyst_health'),
+    path('analyst-panel/notify-teacher/', views_analyst.analyst_notify_teacher, name='analyst_notify_teacher'),
 ]

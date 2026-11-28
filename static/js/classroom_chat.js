@@ -5,7 +5,8 @@
 
   const API_URL = cfgEl.dataset.apiUrl || '/panels/chat/api/messages/';
   const CURRENT_ROLE = (cfgEl.dataset.role || 'STUDENT').toUpperCase();
-  const IS_STAFF = CURRENT_ROLE === 'TEACHER' || CURRENT_ROLE === 'ADMIN';
+  const IS_STAFF_MODE = cfgEl.dataset.staffMode === '1';
+  const IS_STAFF = CURRENT_ROLE === 'TEACHER' || CURRENT_ROLE === 'ADMIN' || (IS_STAFF_MODE && CURRENT_ROLE === 'ANALYST');
   const EMOJIS = ['\uD83D\uDC4D', '\uD83D\uDC4E', '\u2764\uFE0F', '\uD83D\uDE02', '\uD83D\uDE2E', '\uD83D\uDE22', '\uD83D\uDE4F', '\uD83C\uDF89', '\uD83D\uDC4F', '\uD83D\uDD25', '\u2705', '\u274C', '\uD83D\uDCCC', '\uD83D\uDCDD', '\uD83D\uDCDA', '\uD83D\uDCA1', '\uD83E\uDD14', '\uD83D\uDC40', '\uD83D\uDE80', '\uD83D\uDCAF', '\u270B', '\uD83D\uDC4B', '\uD83D\uDE0A', '\uD83D\uDE05'];
 
   let groups = JSON.parse((document.getElementById('chat-groups-data') || {}).textContent || '[]');
@@ -41,33 +42,39 @@
   function setGroupsDrawer(open) {
     if (!groupsPane) return;
     const isMobile = window.innerWidth < 768;
-    groupsPane.classList.toggle('hidden', !open);
-    groupsPane.classList.toggle('flex', open);
+    groupsPane.classList.toggle('hidden', !open); groupsPane.classList.toggle('flex', open);
     if (groupsBackdrop) groupsBackdrop.classList.toggle('hidden', !(open && isMobile));
     if (!isMobile) localStorage.setItem('ep_chat_groups_collapsed', open ? '0' : '1');
   }
-  function initDrawerState() {
-    if (window.innerWidth < 768) setGroupsDrawer(!activeGroupId);
-    else setGroupsDrawer(localStorage.getItem('ep_chat_groups_collapsed') !== '1');
-  }
+  function initDrawerState() { setGroupsDrawer(window.innerWidth < 768 ? !activeGroupId : localStorage.getItem('ep_chat_groups_collapsed') !== '1'); }
 
   function updateHeaderFromGroup(g) {
     if (!g) return;
     const imgEl = document.getElementById('chat-hdr-avatar-img'), initEl = document.getElementById('chat-hdr-avatar');
-    if (g.dp_url && imgEl && initEl) {
-      imgEl.src = g.dp_url; imgEl.alt = g.group_id; imgEl.classList.remove('hidden'); initEl.classList.add('hidden'); initEl.classList.remove('flex');
-    } else if (imgEl && initEl) {
-      imgEl.classList.add('hidden'); initEl.textContent = g.group_id.slice(0, 2); initEl.classList.remove('hidden'); initEl.classList.add('flex');
-    }
+    if (g.dp_url && imgEl && initEl) { imgEl.src = g.dp_url; imgEl.alt = g.group_id; imgEl.classList.remove('hidden'); initEl.classList.add('hidden'); initEl.classList.remove('flex'); }
+    else if (imgEl && initEl) { imgEl.classList.add('hidden'); initEl.textContent = g.group_id.slice(0, 2); initEl.classList.remove('hidden'); initEl.classList.add('flex'); }
     const titleEl = document.getElementById('chat-hdr-title'), subEl = document.getElementById('chat-hdr-sub');
     if (titleEl) titleEl.textContent = g.group_id + ' - ' + g.title;
     if (subEl) subEl.textContent = g.semester_label + ' · ' + g.teacher_name + ' · ' + g.member_count + ' members';
+  }
+
+  function syncComposerState() {
+    const g = groups.find((x) => x.group_id === activeGroupId);
+    const deactivated = Boolean(g && g.chat_active === false);
+    const wrap = document.getElementById('chat-composer-wrap'), banner = document.getElementById('chat-deactivated-banner');
+    if (wrap) wrap.classList.toggle('hidden', deactivated);
+    if (banner) banner.classList.toggle('hidden', !deactivated);
+    if (deactivated) { clearReplyTo(); if (plusMenu) plusMenu.classList.add('hidden'); if (emojiPicker) emojiPicker.classList.add('hidden'); }
+    const actBtn = document.getElementById('chat-toggle-active-btn');
+    if (actBtn) actBtn.innerHTML = deactivated ? '<i class="fa-solid fa-circle-play text-[var(--status-success)]"></i><span class="hidden sm:inline">Activate</span>' : '<i class="fa-solid fa-ban text-[var(--status-danger)]"></i><span class="hidden sm:inline">Deactivate</span>';
   }
 
   function syncGroupCard(g) {
     if (!g) return;
     const titleEl = document.querySelector('[data-group-title="' + g.group_id + '"]');
     if (titleEl) titleEl.textContent = g.title;
+    const pausedEl = document.querySelector('[data-group-paused="' + g.group_id + '"]');
+    if (pausedEl) pausedEl.classList.toggle('hidden', g.chat_active !== false);
     const dpEl = document.querySelector('[data-group-dp="' + g.group_id + '"]');
     if (dpEl && g.dp_url) {
       if (dpEl.tagName === 'IMG') dpEl.src = g.dp_url;
@@ -103,17 +110,10 @@
 
   function renderPendingAttachments() {
     if (!filePrev || !fileListEl) return;
-    const total = pendingImages.length + pendingFiles.length;
-    if (!total) { filePrev.classList.add('hidden'); filePrev.classList.remove('flex'); fileListEl.innerHTML = ''; return; }
-    const chips = [];
-    pendingImages.forEach((f, i) => {
-      chips.push('<span class="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-[11px]"><i class="fa-solid fa-image text-emerald-500"></i><span class="max-w-[9rem] truncate">' + esc(f.name) + '</span><button type="button" data-rm-img="' + i + '" class="text-[var(--text-muted)] hover:text-[var(--status-danger)]"><i class="fa-solid fa-xmark"></i></button></span>');
-    });
-    pendingFiles.forEach((f, i) => {
-      chips.push('<span class="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-[11px]"><i class="' + M.docIconClass(f.name) + '"></i><span class="max-w-[9rem] truncate">' + esc(f.name) + '</span><button type="button" data-rm-doc="' + i + '" class="text-[var(--text-muted)] hover:text-[var(--status-danger)]"><i class="fa-solid fa-xmark"></i></button></span>');
-    });
-    fileListEl.innerHTML = chips.join('');
-    filePrev.classList.remove('hidden'); filePrev.classList.add('flex');
+    if (!pendingImages.length && !pendingFiles.length) { filePrev.classList.add('hidden'); filePrev.classList.remove('flex'); fileListEl.innerHTML = ''; return; }
+    const chips = pendingImages.map((f, i) => '<span class="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-[11px]"><i class="fa-solid fa-image text-emerald-500"></i><span class="max-w-[9rem] truncate">' + esc(f.name) + '</span><button type="button" data-rm-img="' + i + '" class="text-[var(--text-muted)] hover:text-[var(--status-danger)]"><i class="fa-solid fa-xmark"></i></button></span>')
+      .concat(pendingFiles.map((f, i) => '<span class="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-[11px]"><i class="' + M.docIconClass(f.name) + '"></i><span class="max-w-[9rem] truncate">' + esc(f.name) + '</span><button type="button" data-rm-doc="' + i + '" class="text-[var(--text-muted)] hover:text-[var(--status-danger)]"><i class="fa-solid fa-xmark"></i></button></span>'));
+    fileListEl.innerHTML = chips.join(''); filePrev.classList.remove('hidden'); filePrev.classList.add('flex');
   }
 
   function renderTicksHtml(m) {
@@ -195,7 +195,7 @@
       if (!res.ok) return;
       const data = await res.json();
       if (targetGid !== activeGroupId) return;
-      if (data.ok && Array.isArray(data.groups)) { groups = data.groups; const cg = groups.find((x) => x.group_id === activeGroupId); if (cg) { updateHeaderFromGroup(cg); syncGroupCard(cg); } }
+      if (data.ok && Array.isArray(data.groups)) { groups = data.groups; const cg = groups.find((x) => x.group_id === activeGroupId); if (cg) { updateHeaderFromGroup(cg); syncGroupCard(cg); syncComposerState(); } }
       if (data.ok && Array.isArray(data.messages)) { currentMessages = data.messages; renderMessages(currentMessages, stickBottom); }
     } catch (_) {} finally { isPolling = false; }
   }
@@ -209,16 +209,14 @@
     return data;
   }
 
-  document.querySelectorAll('[data-group-btn]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      activeGroupId = btn.dataset.groupId; lastRenderSig = ''; clearReplyTo();
-      document.querySelectorAll('[data-group-btn]').forEach((b) => b.classList.toggle('bg-[var(--accent-soft)]', b.dataset.groupId === activeGroupId));
-      const g = groups.find((x) => x.group_id === activeGroupId);
-      if (g) updateHeaderFromGroup(g);
-      if (window.innerWidth < 768) setGroupsDrawer(false);
-      fetchMessages(true);
-    });
-  });
+  document.querySelectorAll('[data-group-btn]').forEach((btn) => btn.addEventListener('click', () => {
+    activeGroupId = btn.dataset.groupId; lastRenderSig = ''; clearReplyTo();
+    document.querySelectorAll('[data-group-card]').forEach((c) => c.classList.toggle('bg-[var(--accent-soft)]', c.dataset.groupCard === activeGroupId));
+    const g = groups.find((x) => x.group_id === activeGroupId);
+    if (g) { updateHeaderFromGroup(g); syncComposerState(); }
+    if (window.innerWidth < 768) setGroupsDrawer(false);
+    fetchMessages(true);
+  }));
 
   const toggleGroupsBtn = document.getElementById('chat-toggle-groups-btn');
   if (toggleGroupsBtn) toggleGroupsBtn.addEventListener('click', () => setGroupsDrawer(groupsPane.classList.contains('hidden')));
@@ -227,7 +225,7 @@
   const gSearch = document.getElementById('chat-group-search');
   if (gSearch) gSearch.addEventListener('input', () => {
     const q = gSearch.value.trim().toLowerCase();
-    document.querySelectorAll('[data-group-btn]').forEach((b) => b.classList.toggle('hidden', q && !(b.dataset.search || '').includes(q)));
+    document.querySelectorAll('[data-group-card]').forEach((c) => c.classList.toggle('hidden', q && !(c.dataset.search || '').includes(q)));
   });
 
   M.bindMediaEvents(box);
@@ -278,12 +276,10 @@
   if (emojiGrid) {
     emojiGrid.innerHTML = EMOJIS.map((em) => '<button type="button" data-emoji-val="' + em + '" class="flex h-8 w-8 items-center justify-center rounded-lg text-base hover:bg-[var(--bg-elevated)]">' + em + '</button>').join('');
     emojiGrid.addEventListener('click', (e) => {
-      const b = e.target.closest('[data-emoji-val]');
-      if (!b) return;
+      const b = e.target.closest('[data-emoji-val]'); if (!b) return;
       const val = b.dataset.emojiVal, s = textInput.selectionStart || textInput.value.length, end = textInput.selectionEnd || s;
       textInput.value = textInput.value.slice(0, s) + val + textInput.value.slice(end);
-      textInput.focus(); textInput.setSelectionRange(s + val.length, s + val.length);
-      emojiPicker.classList.add('hidden');
+      textInput.focus(); textInput.setSelectionRange(s + val.length, s + val.length); emojiPicker.classList.add('hidden');
     });
   }
   document.getElementById('chat-emoji-btn').addEventListener('click', (e) => { e.stopPropagation(); emojiPicker.classList.toggle('hidden'); if (plusMenu) plusMenu.classList.add('hidden'); });
@@ -335,43 +331,48 @@
     } catch (_) { toast('Microphone access denied or unavailable.', 'warning'); }
   });
 
-  const gsBtn = document.getElementById('chat-group-settings-btn');
+  const gsBtn = document.getElementById('chat-group-settings-btn'), toggleActiveBtn = document.getElementById('chat-toggle-active-btn');
   if (gsBtn) {
     const gsDpInput = document.getElementById('gs-dp-input'), gsDpImg = document.getElementById('gs-dp-preview-img'), gsDpInit = document.getElementById('gs-dp-preview-init');
-    gsBtn.addEventListener('click', () => {
+    const openGroupSettingsFor = (gid) => {
+      if (!gid) return;
+      if (gid !== activeGroupId) {
+        activeGroupId = gid; lastRenderSig = '';
+        document.querySelectorAll('[data-group-card]').forEach((c) => c.classList.toggle('bg-[var(--accent-soft)]', c.dataset.groupCard === activeGroupId));
+        const sg = groups.find((x) => x.group_id === activeGroupId);
+        if (sg) { updateHeaderFromGroup(sg); syncComposerState(); }
+        fetchMessages(true);
+      }
       const g = groups.find((x) => x.group_id === activeGroupId);
       if (!g) return;
-      pendingGroupDp = null;
-      document.getElementById('gs-group-name').value = g.title || g.group_id;
+      pendingGroupDp = null; document.getElementById('gs-group-name').value = g.title || g.group_id;
       if (g.dp_url) { gsDpImg.src = g.dp_url; gsDpImg.classList.remove('hidden'); gsDpInit.classList.add('hidden'); }
       else { gsDpImg.classList.add('hidden'); gsDpInit.textContent = g.group_id.slice(0, 2); gsDpInit.classList.remove('hidden'); }
       openChatModal('chat-group-settings-modal');
-    });
+    };
+    gsBtn.addEventListener('click', () => openGroupSettingsFor(activeGroupId));
+    document.querySelectorAll('[data-edit-group-btn]').forEach((eb) => eb.addEventListener('click', (e) => { e.stopPropagation(); openGroupSettingsFor(eb.dataset.editGroupBtn); }));
     document.getElementById('gs-dp-btn').addEventListener('click', () => gsDpInput.click());
     gsDpInput.addEventListener('change', () => {
-      const f = gsDpInput.files && gsDpInput.files[0];
-      if (!f) return;
+      const f = gsDpInput.files && gsDpInput.files[0]; if (!f) return;
       if (f.size > M.MAX_FILE_BYTES) { gsDpInput.value = ''; toast('Group photo must be 10 MB or smaller.', 'danger'); return; }
-      if (typeof window.openImageCropperModal === 'function') {
-        window.openImageCropperModal({ mode: 'avatar', aspect: '1:1', title: 'Crop Group Photo', file: f, fileName: f.name, onApply: (res) => { pendingGroupDp = res.file; gsDpImg.src = res.dataUrl; gsDpImg.classList.remove('hidden'); gsDpInit.classList.add('hidden'); } });
-      } else { pendingGroupDp = f; }
+      if (typeof window.openImageCropperModal === 'function') window.openImageCropperModal({ mode: 'avatar', aspect: '1:1', title: 'Crop Group Photo', file: f, fileName: f.name, onApply: (res) => { pendingGroupDp = res.file; gsDpImg.src = res.dataUrl; gsDpImg.classList.remove('hidden'); gsDpInit.classList.add('hidden'); } });
+      else pendingGroupDp = f;
       gsDpInput.value = '';
     });
     document.getElementById('chat-group-settings-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!activeGroupId) return;
-      const fd = new FormData();
-      fd.append('action', 'update_group'); fd.append('group_id', activeGroupId);
-      fd.append('group_name', document.getElementById('gs-group-name').value.trim());
+      e.preventDefault(); if (!activeGroupId) return;
+      const fd = new FormData(); fd.append('action', 'update_group'); fd.append('group_id', activeGroupId); fd.append('group_name', document.getElementById('gs-group-name').value.trim());
       if (pendingGroupDp) fd.append('group_dp', pendingGroupDp);
       const data = await postApi(fd, true);
-      if (data.ok) {
-        if (Array.isArray(data.groups)) groups = data.groups;
-        if (data.group) { updateHeaderFromGroup(data.group); syncGroupCard(data.group); }
-        window.closeChatModal('chat-group-settings-modal'); toast('Group updated.', 'success');
-      }
+      if (data.ok) { if (Array.isArray(data.groups)) groups = data.groups; if (data.group) { updateHeaderFromGroup(data.group); syncGroupCard(data.group); syncComposerState(); } window.closeChatModal('chat-group-settings-modal'); toast('Group updated.', 'success'); }
     });
   }
+  if (toggleActiveBtn) toggleActiveBtn.addEventListener('click', async () => {
+    if (!activeGroupId) return;
+    const data = await postApi({ action: 'toggle_group_active', group_id: activeGroupId }, false);
+    if (data.ok) { if (Array.isArray(data.groups)) groups = data.groups; if (data.group) { updateHeaderFromGroup(data.group); syncGroupCard(data.group); syncComposerState(); toast(data.group.chat_active === false ? 'Group chat deactivated.' : 'Group chat activated.', 'success'); } }
+  });
 
   document.getElementById('chat-poll-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -385,15 +386,13 @@
     const data = await postApi({ action: 'edit', group_id: activeGroupId, msg_id: document.getElementById('edit-msg-id').value, text: document.getElementById('edit-msg-text').value.trim() }, false);
     if (data.ok) { window.closeChatModal('chat-edit-modal'); fetchMessages(false); }
   });
-  [['del-me-btn', 'me'], ['del-all-btn', 'everyone']].forEach(([id, scope]) => {
-    document.getElementById(id).addEventListener('click', async () => { const r = await postApi({ action: 'delete', group_id: activeGroupId, msg_id: delMsgId, scope }, false); if (r.ok) { window.closeChatModal('chat-delete-modal'); fetchMessages(false); } });
-  });
+  [['del-me-btn', 'me'], ['del-all-btn', 'everyone']].forEach(([id, scope]) => document.getElementById(id).addEventListener('click', async () => { const r = await postApi({ action: 'delete', group_id: activeGroupId, msg_id: delMsgId, scope }, false); if (r.ok) { window.closeChatModal('chat-delete-modal'); fetchMessages(false); } }));
 
   initDrawerState();
+  syncComposerState();
   renderMessages(currentMessages, true);
-  if (activeGroupId) fetchMessages(true);
   window.__epChatPollTimer = setInterval(() => {
     if (!document.getElementById('chat-messages-box')) { clearInterval(window.__epChatPollTimer); window.__epChatPollTimer = null; return; }
     if (!document.hidden && activeGroupId) fetchMessages(false);
-  }, 2500);
+  }, 3000);
 })();

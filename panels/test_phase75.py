@@ -384,6 +384,6 @@ class Phase75VerificationTests(TestCase):
             self.assertIn(marker, st_dash)
 
         analyst = self._login("ANALYST", "USR-1004", "analyst@edupredict.edu", "Data Analyst")
-        acc_html = analyst.get(reverse("panels:analyst_accuracy")).content.decode("utf-8")
-        for marker in ('data-accuracy-tab="health"', 'data-accuracy-tab="logs"', 'id="academic-contour-canvas"', 'id="accuracy-demand-table"', 'id="accuracy-upload-table"', 'data-ep-marquee'):
-            self.assertIn(marker, acc_html)
+        health_html = analyst.get(reverse("panels:analyst_health")).content.decode("utf-8")
+        for marker in ('data-health-tab="uploads"', 'data-health-tab="charts"', 'id="academic-contour-canvas"', 'id="health-demand-table"', 'id="health-dataset-logs-table"'):
+            self.assertIn(marker, health_html)

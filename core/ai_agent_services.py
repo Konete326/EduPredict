@@ -14,7 +14,7 @@ from core.ai_dom_actions import (
     sanitize_llm_dom_actions,
     sanitize_llm_poll,
 )
-from core.db import courses_col, predictions_col, student_records_col, support_tickets_col
+from core.db import classroom_messages_col, course_tests_col, courses_col, datasets_log_col, predictions_col, student_records_col, support_tickets_col
 
 
 def _svg_dp(bg_hex, body):
@@ -109,6 +109,47 @@ def detect_best_agent(message, current_agent_id=None):
     return dict(EDUPREDICT_AGENTS[mapped_current]), False
 
 
+def _build_chat_and_training_context(user, role, user_id):
+    chat_ctx = {"permitted_groups": [], "unread_chat_count": 0, "recent_chat_messages": []}
+    staff_groups = ("STAFF", "STAFF_CHAT", "STAFF_ROOM")
+    try:
+        from panels.chat_services import get_user_chat_groups
+        groups = get_user_chat_groups(user) or []
+        group_ids = [str(g.get("group_id") or "").upper() for g in groups if g.get("group_id")]
+        group_ids = [g for g in group_ids if g not in staff_groups] if role == "STUDENT" else list(dict.fromkeys(group_ids + (list(staff_groups) if role in ("ADMIN", "TEACHER", "ANALYST") else [])))
+        chat_ctx["permitted_groups"] = [g.get("group_id") for g in groups[:8] if g.get("group_id")]
+        if group_ids:
+            q = {"$or": [{"group_id": {"$in": group_ids}}, {"course_code": {"$in": group_ids}}], "deleted_for_all": {"$ne": True}}
+            docs = list(classroom_messages_col().find(q, {"_id": 0, "group_id": 1, "course_code": 1, "sender_user_id": 1, "sender_name": 1, "text": 1, "msg_type": 1, "read_by": 1}).sort("created_at", -1).limit(20))
+            unread, recent = 0, []
+            for d in docs:
+                if user_id and str(d.get("sender_user_id") or "").strip() != user_id and user_id not in [str(x).strip() for x in (d.get("read_by") or [])]:
+                    unread += 1
+                gid = str(d.get("group_id") or d.get("course_code") or "").upper()
+                if len(recent) < 5 and not (role == "STUDENT" and gid in staff_groups):
+                    recent.append({"group": gid, "sender": str(d.get("sender_name") or "Member"), "type": str(d.get("msg_type") or "TEXT").upper(), "preview": str(d.get("text") or "")[:90]})
+            chat_ctx["unread_chat_count"], chat_ctx["recent_chat_messages"] = unread, recent
+    except Exception:
+        pass
+    extra_ctx = {"tests_count": 0, "training_datasets_count": 0, "latest_training_dataset": None}
+    try:
+        if role == "STUDENT":
+            sem_id = str(user.get("semester_id") or "").strip()
+            tq = {"semester_id": sem_id} if sem_id else ({"course_code": {"$in": chat_ctx["permitted_groups"]}} if chat_ctx["permitted_groups"] else None)
+            extra_ctx["tests_count"] = course_tests_col().count_documents(tq) if tq is not None else 0
+        elif role == "TEACHER":
+            extra_ctx["tests_count"] = course_tests_col().count_documents({"teacher_user_id": user_id} if user_id else {})
+        elif role in ("ADMIN", "ANALYST"):
+            ds_docs = list(datasets_log_col().find({}, {"_id": 0, "filename": 1, "rows_processed": 1, "missing_values_fixed": 1, "status": 1}).sort("uploaded_at", -1).limit(3))
+            extra_ctx["training_datasets_count"] = datasets_log_col().count_documents({})
+            if ds_docs:
+                top = ds_docs[0]
+                extra_ctx["latest_training_dataset"] = {"filename": str(top.get("filename") or ""), "rows_processed": int(_safe_float(top.get("rows_processed"), 0)), "missing_values_fixed": int(_safe_float(top.get("missing_values_fixed"), 0)), "status": str(top.get("status") or "COMPLETED")}
+    except Exception:
+        pass
+    return {**chat_ctx, **extra_ctx}
+
+
 def _build_live_mongo_context(user_doc):
     user = user_doc if isinstance(user_doc, dict) else {}
     role = str(user.get("role") or "").strip().upper() or "STUDENT"
@@ -122,6 +163,8 @@ def _build_live_mongo_context(user_doc):
         "anomaly_count": 0, "avg_predicted_gpa": None, "latest_risk_level": None, "latest_recommendation": "",
         "courses_count": 0, "active_courses_count": 0, "total_course_capacity": 0, "sample_courses": [],
         "tickets_total": 0, "open_tickets_count": 0, "resolved_tickets_count": 0,
+        "permitted_groups": [], "unread_chat_count": 0, "recent_chat_messages": [],
+        "tests_count": 0, "training_datasets_count": 0, "latest_training_dataset": None,
     }
     try:
         rec_rows = [] if (role == "STUDENT" and not student_id) else list(student_records_col().find({"student_id": student_id} if role == "STUDENT" else {}, {"_id": 0, "student_id": 1, "course_code": 1, "attendance_pct": 1, "internal_marks": 1, "previous_gpa": 1}))
@@ -168,6 +211,7 @@ def _build_live_mongo_context(user_doc):
         ctx["resolved_tickets_count"] = sum(1 for t in ticket_rows if str(t.get("status") or "").upper() == "RESOLVED")
     except Exception:
         pass
+    ctx.update(_build_chat_and_training_context(user, role, user_id))
     return ctx
 
 
@@ -305,13 +349,16 @@ def handle_agent_dock_message(user_doc, agent_id, message, history=None, current
     mongo_ctx = _build_live_mongo_context(user)
     path_note = str(current_path or "").strip()[:120] or "unknown"
     system_prompt = (
-        f"You are {active_agent['name']}, {active_agent['role']} in EduPredict. Skills: {active_agent['skills']}. "
-        f"Current User Role: {role}. Current Path: {path_note}. {ROLE_PRD_CAPS.get(role, '')} "
+        f"You are {active_agent['name']}, a warm, friendly, and supportive {active_agent['role']} in EduPredict. "
+        f"Your specialty: {active_agent['skills']}. Speak like a helpful human teammate — natural, encouraging, and concise (2-4 clear sentences). "
+        f"Current User: {mongo_ctx['full_name']} (Role: {role}). Current Path: {path_note}. {ROLE_PRD_CAPS.get(role, '')} "
         f"{describe_role_action_schema(role)} "
         "Respond ONLY as a JSON object with keys: "
         '{"reply": string, "dom_actions": array, "poll": null | {"question": string, "options": [{"label": string, "prompt": string}]}, "handoff_to": null | "coach" | "analyst" | "ops" | "desk"}. '
-        "Match user's language naturally (Latin-script Roman Urdu only, never Arabic/Urdu script, if they write Roman Urdu; clear English if English; 2-4 concise sentences). "
-        "Use ONLY exact numbers from LIVE_DB_CONTEXT; never invent GPA, marks, attendance, or counts. Never reveal passwords, secrets, or cross-role data. "
+        "Match the user's language naturally (Latin-script Roman Urdu only, never Arabic/Urdu script, if they write Roman Urdu; warm everyday English if English). "
+        "Use ONLY exact numbers and facts from LIVE_DB_CONTEXT; never invent GPA, marks, attendance, datasets, or chat messages. "
+        "If the user asks about class chat or unread messages, summarize from recent_chat_messages and unread_chat_count in LIVE_DB_CONTEXT. "
+        "STRICT PRIVACY: Never reveal passwords, secrets, other students' records, or Admin/Teacher/Analyst details or Staff Chat to Students. "
         "Emit dom_actions ONLY when user requests navigation, filtering, theme/sidebar toggle, clicking a portal action, or opening/filling a form; otherwise []. "
         f"HINT_DOM_ACTIONS={json.dumps(det_actions, ensure_ascii=True)}. LIVE_DB_CONTEXT={json.dumps(mongo_ctx, ensure_ascii=True)}"
     )
