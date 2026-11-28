@@ -8,8 +8,10 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
 from accounts.services import authenticate_user
+from core.cloudinary_services import upload_academic_attachment
 from core.db import invalidate_cache
 from core.theme_services import get_theme_studio_catalog, normalize_theme_prefs
+from panels.teacher_academic_services import _save_test_attachment
 
 
 class _FakeCursor(list):
@@ -275,6 +277,7 @@ class TeacherAttendanceAndTestsWorkflowTests(TestCase):
                 patch("panels.teacher_academic_services.course_tests_col", return_value=self.tests),
                 patch("panels.teacher_academic_services.users_col", return_value=self.users),
                 patch("panels.teacher_academic_services.run_prediction_pipeline") as mock_ml,
+                patch("panels.teacher_academic_services.is_cloudinary_configured", return_value=False),
                 patch("core.context_processors.notifications_col", return_value=self.notifs),
                 patch("core.db.MongoDBClient.check_health", return_value=True),
             ):
@@ -341,3 +344,55 @@ class TeacherAttendanceAndTestsWorkflowTests(TestCase):
         finally:
             if uploaded_file and uploaded_file.exists():
                 uploaded_file.unlink()
+
+    def test_upload_academic_attachment_cloudinary_and_local_fallback(self):
+        img = SimpleUploadedFile("diagram.png", b"png-bytes", content_type="image/png")
+        csv_f = SimpleUploadedFile("scores.csv", b"id,m\n1,90", content_type="text/csv")
+        pdf_f = SimpleUploadedFile("notes.pdf", b"%PDF-1.4", content_type="application/pdf")
+        with patch("core.cloudinary_services.is_cloudinary_configured", return_value=True), patch("core.cloudinary_services._configure_cloudinary"), patch("core.cloudinary_services.cloudinary.uploader.upload", return_value={"secure_url": "https://res.cloudinary.com/demo/image/upload/att_1.png"}) as mock_up:
+            self.assertEqual(upload_academic_attachment(img, folder="edupredict/tests"), ("https://res.cloudinary.com/demo/image/upload/att_1.png", "diagram.png", True, None))
+            self.assertEqual(mock_up.call_args.kwargs["resource_type"], "image")
+        with patch("core.cloudinary_services.is_cloudinary_configured", return_value=True), patch("core.cloudinary_services._configure_cloudinary"), patch("core.cloudinary_services.cloudinary.uploader.upload", side_effect=[{"secure_url": "https://res.cloudinary.com/demo/raw/upload/scores.csv"}, {"secure_url": "https://res.cloudinary.com/demo/raw/upload/notes.pdf"}]) as mock_raw:
+            self.assertEqual(upload_academic_attachment(csv_f, folder="edupredict/tests"), ("https://res.cloudinary.com/demo/raw/upload/scores.csv", "scores.csv", False, None))
+            self.assertEqual(upload_academic_attachment(pdf_f, folder="edupredict/tests"), ("https://res.cloudinary.com/demo/raw/upload/notes.pdf", "notes.pdf", False, None))
+            self.assertEqual([c.kwargs["resource_type"] for c in mock_raw.call_args_list], ["raw", "raw"])
+        local_f = SimpleUploadedFile("fallback.csv", b"a,b\n1,2", content_type="text/csv")
+        saved_path = None
+        try:
+            with patch("core.cloudinary_services.is_cloudinary_configured", return_value=False):
+                self.assertEqual(upload_academic_attachment(local_f), (None, "fallback.csv", False, "not_configured"))
+                loc_url, loc_name, loc_err = _save_test_attachment(local_f)
+                self.assertIsNone(loc_err)
+                self.assertEqual(loc_name, "fallback.csv")
+                self.assertTrue(loc_url.startswith("/static/uploads/tests/"))
+                saved_path = Path(settings.BASE_DIR) / loc_url.lstrip("/")
+                self.assertTrue(saved_path.exists())
+        finally:
+            if saved_path and saved_path.exists():
+                saved_path.unlink()
+
+    def test_teacher_test_grade_view_and_single_student_post_ml_sync(self):
+        self.tests.insert_one({
+            "test_id": "TST-H1", "title": "hello", "course_code": "CS-101", "semester_id": "SEM-1",
+            "test_type": "Quiz", "max_marks": 50.0, "test_date": "2026-11-28", "due_date": "2026-12-01",
+            "submissions": {"STD-101": {"submission_status": "SUBMITTED", "submission_note": "See attached image and CSV", "files": [{"url": "https://cdn.example.com/work.png", "name": "work.png"}, {"url": "https://cdn.example.com/data.csv", "name": "data.csv"}]}},
+        })
+        cfg = {"high_risk_threshold": 65, "medium_risk_threshold": 35, "anomaly_drop_pct": 20, "min_attendance_pct": 75, "auto_teacher_alerts": True, "auto_student_alerts": True}
+        with patch("panels.teacher_services.courses_col", return_value=self.courses), patch("panels.teacher_services.semesters_col", return_value=self.semesters), patch("panels.teacher_services.student_records_col", return_value=self.students), patch("panels.teacher_services.users_col", return_value=self.users), patch("panels.teacher_services.predictions_col", return_value=self.preds), patch("panels.teacher_academic_services.courses_col", return_value=self.courses), patch("panels.teacher_academic_services.semesters_col", return_value=self.semesters), patch("panels.teacher_academic_services.student_records_col", return_value=self.students), patch("panels.teacher_academic_services.course_tests_col", return_value=self.tests), patch("panels.teacher_academic_services.users_col", return_value=self.users), patch("analytics.ml_engine.student_records_col", return_value=self.students), patch("analytics.ml_engine.predictions_col", return_value=self.preds), patch("analytics.ml_engine.notifications_col", return_value=self.notifs), patch("analytics.ml_engine._resolve_runtime_settings", return_value=cfg), patch("core.context_processors.notifications_col", return_value=self.notifs), patch("core.db.MongoDBClient.check_health", return_value=True):
+            client = self._teacher_client()
+            grade_url = reverse("panels:teacher_test_grade", kwargs={"test_id": "TST-H1"})
+            page = client.get(grade_url)
+            self.assertEqual(page.status_code, 200)
+            self.assertContains(page, "Test Submissions")
+            self.assertNotContains(page, "Grade: hello")
+            self.assertContains(page, "openSubmissionViewModal(this)")
+            self.assertContains(page, "openGradeUpdateModal(this)")
+            self.assertNotContains(page, 'name="marks_')
+            sub_payload = json.loads(page.context["students"][0]["submission_json"])
+            self.assertEqual((len(sub_payload["images"]), sub_payload["images"][0]["name"]), (1, "work.png"))
+            self.assertEqual((len(sub_payload["documents"]), sub_payload["documents"][0]["ext"]), (1, "CSV"))
+            resp = client.post(grade_url, {"action": "grade_single_student", "test_id": "TST-H1", "student_id": "STD-101", "obtained_marks": "45", "remarks": "Well done"})
+            self.assertRedirects(resp, grade_url, fetch_redirect_response=False)
+            stu = self.students.find_one({"student_id": "STD-101"})
+            self.assertEqual((stu["internal_marks"], stu["assignment_score"]), (90.0, 90.0))
+            self.assertIsNotNone(self.preds.find_one({"student_id": "STD-101"}))

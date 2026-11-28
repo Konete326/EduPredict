@@ -220,7 +220,7 @@ def teacher_test_grade(request, test_id):
     if request.method == "POST":
         action = _param(request, "action").lower()
         try:
-            if action in ("", "grade_test"):
+            if action in ("", "grade_test", "grade_single_student"):
                 post_data = request.POST.copy()
                 post_data["test_id"] = test_id
                 graded, err = grade_test_submissions(post_data, user)

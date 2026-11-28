@@ -3,30 +3,22 @@
 {% block content %}
 <header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
-    <div class="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-      <a href="{% url 'panels:teacher_tests' %}" class="inline-flex items-center gap-1 hover:text-[var(--accent-primary)]">
-        <i class="fa-solid fa-arrow-left text-[11px]"></i>
-        <span>Back to Tests</span>
-      </a>
-      {% if test %}<span>·</span><span class="font-mono">{{ test.course_code }} · {{ test.test_type }}</span>{% endif %}
-    </div>
-    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)] truncate">{% if test %}Grade: {{ test.title }}{% else %}Grade Test{% endif %}</h2>
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)] truncate">Test Submissions</h2>
     {% if test %}
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Max Marks: {{ test.max_marks|floatformat:0 }} · Test Date: {{ test.test_date|default:"-" }}{% if test.due_date %} · Due: {{ test.due_date }}{% endif %}</p>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)] truncate">{{ test.title }} · {{ test.course_code }} · Max Marks: {{ test.max_marks|floatformat:0 }}</p>
+    <p class="text-xs text-[var(--text-muted)]">Test Date: {{ test.test_date|default:"-" }}{% if test.due_date %} · Due: {{ test.due_date }}{% endif %}</p>
     {% endif %}
   </div>
-  {% if test and test.attachment_url %}
-  <a href="{{ test.attachment_url }}" target="_blank" rel="noopener" class="inline-flex h-9 shrink-0 items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">
-    <i class="fa-solid fa-paperclip text-[var(--accent-primary)]"></i>
-    <span>{{ test.attachment_name|default:"View Attachment" }}</span>
-  </a>
-  {% endif %}
+  <div class="flex flex-wrap items-center gap-2 shrink-0">
+    {% if test and test.attachment_url %}
+    <a href="{{ test.attachment_url }}" target="_blank" rel="noopener" download class="inline-flex h-9 items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-paperclip text-[var(--accent-primary)]" aria-hidden="true"></i><span>{{ test.attachment_name|default:"Download Attachment" }}</span></a>
+    {% endif %}
+    <a href="{% url 'panels:teacher_tests' %}" class="inline-flex h-9 items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-arrow-left text-[11px]" aria-hidden="true"></i><span>Back to Tests</span></a>
+  </div>
 </header>
 
 {% if db_error or error %}
-<div class="rounded-[12px] border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]">
-  <i class="fa-solid fa-circle-exclamation mr-2"></i>Notice: {{ error|default:db_error }}
-</div>
+<div class="rounded-[12px] border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--status-danger)]"><i class="fa-solid fa-circle-exclamation mr-2" aria-hidden="true"></i>Notice: {{ error|default:db_error }}</div>
 {% endif %}
 
 {% if test %}
@@ -37,50 +29,44 @@
   {% include 'components/metric_card.html' with title="Average" value=kpis.avg_score|default:0|stringformat:"s"|add:"%" badge="Class" status="info" icon="fa-solid fa-chart-simple" %}
 </section>
 
-<form id="grade-test-form" method="post" action="{% url 'panels:teacher_test_grade' test_id=test.test_id %}" class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-4">
-  {% csrf_token %}
-  <input type="hidden" name="action" value="grade_test">
-  <input type="hidden" name="test_id" value="{{ test.test_id }}">
-  <div class="flex flex-wrap items-center justify-between gap-2">
-    <div>
-      <h3 class="text-sm font-semibold text-[var(--text-primary)]">{{ test.course_code }} Student Roster</h3>
-      <p class="text-xs text-[var(--text-muted)]">Enter marks out of {{ test.max_marks|floatformat:0 }} and optional remarks for each student.</p>
+<section id="submissions-roster" data-paginated-container data-page-size="5" class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3.5">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="min-w-0">
+      <h3 class="text-sm font-semibold text-[var(--text-primary)]">{{ test.course_code }} Student Submissions</h3>
+      <p class="text-xs text-[var(--text-muted)]">View uploaded files or update marks out of {{ test.max_marks|floatformat:0 }}.</p>
     </div>
     {% if students %}
-    <button type="submit" class="inline-flex h-9 items-center gap-2 rounded-[12px] bg-[var(--accent-primary)] px-4 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-      <i class="fa-solid fa-floppy-disk text-xs"></i>
-      <span>Save Grades</span>
-    </button>
+    <div class="relative w-full sm:w-64">
+      <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]" aria-hidden="true"></i>
+      <input type="search" data-table-search="submissions-roster" placeholder="Search student..." class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] pl-8 pr-3 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
+    </div>
     {% endif %}
   </div>
 
   {% if students %}
-  <div id="grade-desktop-wrap" class="hidden md:block overflow-x-auto rounded-[12px] border border-[var(--border-subtle)]">
-    <table class="w-full text-left text-sm">
-      <thead class="border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+  <div class="hidden md:block overflow-x-auto rounded-[12px] border border-[var(--border-subtle)]">
+    <table data-searchable-table class="w-full text-left text-sm">
+      <thead class="border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
         <tr>
-          <th class="px-4 py-2.5">Student</th>
-          <th class="px-4 py-2.5">Status</th>
-          <th class="px-4 py-2.5">Marks (/ {{ test.max_marks|floatformat:0 }})</th>
-          <th class="px-4 py-2.5">Remarks</th>
+          <th data-sortable class="px-4 py-2.5 cursor-pointer select-none">Student</th>
+          <th data-sortable class="px-4 py-2.5 cursor-pointer select-none">Files</th>
+          <th data-sortable class="px-4 py-2.5 cursor-pointer select-none">Marks</th>
+          <th data-sortable class="px-4 py-2.5 cursor-pointer select-none">Status</th>
+          <th class="px-4 py-2.5 text-right">Actions</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-[var(--border-subtle)]">
         {% for s in students %}
-        <tr class="hover:bg-[var(--bg-elevated)]">
-          <td class="px-4 py-2.5">
-            <input type="hidden" name="student_id" value="{{ s.student_id }}">
-            <p class="font-medium text-[var(--text-primary)]">{{ s.full_name }}</p>
-            <p class="text-xs font-mono text-[var(--text-muted)]">{{ s.student_id }} · {{ s.semester_label }}</p>
-          </td>
-          <td class="px-4 py-2.5">
-            <span class="rounded-full border border-[var(--border-subtle)] px-2.5 py-0.5 text-[11px] font-semibold {% if s.submission_status == 'GRADED' %}bg-[var(--accent-soft)] text-[var(--accent-primary)]{% else %}bg-[var(--bg-canvas)] text-[var(--text-muted)]{% endif %}">{{ s.submission_status }}</span>
-          </td>
-          <td class="px-4 py-2.5 w-40">
-            <input type="number" name="marks_{{ s.student_id }}" value="{{ s.obtained_marks }}" min="0" max="{{ test.max_marks|floatformat:0 }}" step="0.5" placeholder="0 - {{ test.max_marks|floatformat:0 }}" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm tabular-nums text-[var(--text-primary)]">
-          </td>
-          <td class="px-4 py-2.5">
-            <input type="text" name="remarks_{{ s.student_id }}" value="{{ s.remarks }}" placeholder="Optional feedback..." class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+        <tr data-page-item class="hover:bg-[var(--bg-elevated)]">
+          <td class="px-4 py-2.5"><p class="font-medium text-[var(--text-primary)]">{{ s.full_name }}</p><p class="text-xs font-mono text-[var(--text-muted)]">{{ s.student_id }} · {{ s.semester_label }}</p></td>
+          <td class="px-4 py-2.5 text-xs text-[var(--text-secondary)]">{% if s.file_count %}<span class="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-0.5 font-medium"><i class="fa-solid fa-paperclip text-[10px] text-[var(--accent-primary)]" aria-hidden="true"></i>{{ s.file_count }} file{{ s.file_count|pluralize }}</span>{% else %}<span class="text-[var(--text-muted)]">No files</span>{% endif %}</td>
+          <td class="px-4 py-2.5 text-xs font-semibold tabular-nums text-[var(--text-primary)]">{% if s.obtained_marks != "" and s.obtained_marks != None %}{{ s.obtained_marks }} / {{ test.max_marks|floatformat:0 }}{% else %}<span class="font-normal text-[var(--text-muted)]">—</span>{% endif %}</td>
+          <td class="px-4 py-2.5"><span class="rounded-full border border-[var(--border-subtle)] px-2.5 py-0.5 text-[11px] font-semibold {% if s.submission_status == 'GRADED' %}bg-[var(--accent-soft)] text-[var(--accent-primary)]{% elif s.submission_status == 'SUBMITTED' %}bg-[var(--bg-elevated)] text-[var(--text-primary)]{% else %}bg-[var(--bg-canvas)] text-[var(--text-muted)]{% endif %}">{{ s.submission_status }}</span></td>
+          <td class="px-4 py-2.5 text-right">
+            <div class="inline-flex items-center justify-end gap-1.5 flex-nowrap">
+              <button type="button" onclick="openSubmissionViewModal(this)" data-submission='{{ s.submission_json|escapejs }}' class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-regular fa-eye text-[11px] text-[var(--accent-primary)]" aria-hidden="true"></i><span>View</span></button>
+              <button type="button" onclick="openGradeUpdateModal(this)" data-student-id="{{ s.student_id }}" data-student-name="{{ s.full_name }}" data-marks="{{ s.obtained_marks }}" data-remarks="{{ s.remarks }}" class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[8px] bg-[var(--accent-primary)] px-2.5 text-xs font-medium text-white hover:bg-[var(--accent-hover)]"><i class="fa-solid fa-pen text-[10px]" aria-hidden="true"></i><span>Update</span></button>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -88,56 +74,148 @@
     </table>
   </div>
 
-  <div id="grade-mobile-wrap" class="md:hidden space-y-3">
+  <div class="md:hidden space-y-2.5">
     {% for s in students %}
-    <div class="rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 space-y-2.5">
-      <input type="hidden" name="student_id" value="{{ s.student_id }}">
+    <div data-mobile-card data-page-item class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 space-y-2.5">
       <div class="flex items-start justify-between gap-2">
-        <div class="min-w-0">
-          <p class="truncate text-sm font-semibold text-[var(--text-primary)]">{{ s.full_name }}</p>
-          <p class="text-xs font-mono text-[var(--text-muted)]">{{ s.student_id }} · {{ s.semester_label }}</p>
-        </div>
-        <span class="shrink-0 rounded-full border border-[var(--border-subtle)] px-2 py-0.5 text-[10px] font-semibold {% if s.submission_status == 'GRADED' %}bg-[var(--accent-soft)] text-[var(--accent-primary)]{% else %}bg-[var(--bg-surface)] text-[var(--text-muted)]{% endif %}">{{ s.submission_status }}</span>
+        <div class="min-w-0"><p class="truncate text-sm font-semibold text-[var(--text-primary)]">{{ s.full_name }}</p><p class="text-xs font-mono text-[var(--text-muted)]">{{ s.student_id }} · {{ s.semester_label }}</p></div>
+        <span class="shrink-0 rounded-full border border-[var(--border-subtle)] px-2 py-0.5 text-[10px] font-semibold {% if s.submission_status == 'GRADED' %}bg-[var(--accent-soft)] text-[var(--accent-primary)]{% elif s.submission_status == 'SUBMITTED' %}bg-[var(--bg-elevated)] text-[var(--text-primary)]{% else %}bg-[var(--bg-surface)] text-[var(--text-muted)]{% endif %}">{{ s.submission_status }}</span>
       </div>
-      <div class="grid grid-cols-1 gap-2">
-        <div>
-          <label class="mb-1 block text-[11px] font-medium text-[var(--text-secondary)]">Marks (/ {{ test.max_marks|floatformat:0 }})</label>
-          <input type="number" name="marks_{{ s.student_id }}" value="{{ s.obtained_marks }}" min="0" max="{{ test.max_marks|floatformat:0 }}" step="0.5" placeholder="0 - {{ test.max_marks|floatformat:0 }}" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-sm tabular-nums text-[var(--text-primary)]">
-        </div>
-        <div>
-          <label class="mb-1 block text-[11px] font-medium text-[var(--text-secondary)]">Remarks</label>
-          <input type="text" name="remarks_{{ s.student_id }}" value="{{ s.remarks }}" placeholder="Optional feedback..." class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-sm text-[var(--text-primary)]">
-        </div>
+      <div class="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+        <span>Files: <strong class="text-[var(--text-primary)]">{{ s.file_count|default:0 }}</strong></span>
+        <span>Marks: <strong class="tabular-nums text-[var(--text-primary)]">{% if s.obtained_marks != "" and s.obtained_marks != None %}{{ s.obtained_marks }} / {{ test.max_marks|floatformat:0 }}{% else %}—{% endif %}</strong></span>
+      </div>
+      <div class="flex items-center justify-end gap-2 flex-nowrap pt-1 border-t border-[var(--border-subtle)]">
+        <button type="button" onclick="openSubmissionViewModal(this)" data-submission='{{ s.submission_json|escapejs }}' class="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-regular fa-eye text-[11px] text-[var(--accent-primary)]" aria-hidden="true"></i><span>View</span></button>
+        <button type="button" onclick="openGradeUpdateModal(this)" data-student-id="{{ s.student_id }}" data-student-name="{{ s.full_name }}" data-marks="{{ s.obtained_marks }}" data-remarks="{{ s.remarks }}" class="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[var(--accent-primary)] px-3 text-xs font-medium text-white hover:bg-[var(--accent-hover)]"><i class="fa-solid fa-pen text-[10px]" aria-hidden="true"></i><span>Update</span></button>
       </div>
     </div>
     {% endfor %}
   </div>
-  {% else %}
-  <div class="rounded-[12px] border border-[var(--border-subtle)] px-4 py-8 text-center text-sm text-[var(--text-muted)]">
-    No students are enrolled in {{ test.course_code }} yet.
+
+  <p data-search-empty class="hidden py-6 text-center text-xs text-[var(--text-muted)]">No matching students found.</p>
+  <div data-pagination-bar class="hidden flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)]">
+    <span data-pagination-info>Showing 0 of 0</span>
+    <div class="inline-flex items-center gap-2">
+      <button type="button" data-page-prev class="h-8 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 font-medium text-[var(--text-primary)] disabled:opacity-40 hover:bg-[var(--bg-elevated)]">Prev</button>
+      <span data-page-indicator class="font-medium text-[var(--text-secondary)]">Page 1 of 1</span>
+      <button type="button" data-page-next class="h-8 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 font-medium text-[var(--text-primary)] disabled:opacity-40 hover:bg-[var(--bg-elevated)]">Next</button>
+    </div>
   </div>
+  {% else %}
+  <div class="rounded-[12px] border border-[var(--border-subtle)] px-4 py-8 text-center text-sm text-[var(--text-muted)]">No students are enrolled in {{ test.course_code }} yet.</div>
   {% endif %}
-</form>
+</section>
+
+<div id="submission-view-modal" data-ep-modal="true" class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6" role="dialog" aria-modal="true" aria-labelledby="sub-modal-title" aria-hidden="true">
+  <div data-modal-backdrop="submission-view-modal" class="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"></div>
+  <div class="relative z-10 flex min-h-full w-full items-center justify-center pointer-events-none">
+    <div class="pointer-events-auto relative w-full max-w-2xl mx-auto my-auto flex flex-col rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden max-h-[90vh]">
+      <div class="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5 py-3.5">
+        <div class="min-w-0"><h3 id="sub-modal-title" class="text-base font-semibold text-[var(--text-primary)] truncate">Student Submission</h3><p id="sub-modal-meta" class="text-xs font-mono text-[var(--text-muted)] truncate"></p></div>
+        <button type="button" onclick="closeCustomModal('submission-view-modal')" aria-label="Close modal" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-xmark text-sm"></i></button>
+      </div>
+      <div id="sub-modal-body" class="flex-1 overflow-y-auto px-5 py-4 space-y-4"></div>
+      <div class="flex shrink-0 items-center justify-end border-t border-[var(--border-subtle)] px-5 py-3">
+        <button type="button" onclick="closeCustomModal('submission-view-modal')" class="inline-flex h-9 items-center justify-center rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endif %}
 {% endblock %}
 
 {% block extra_js %}
+{% if test %}
 <script>
   (function () {
-    const desktopWrap = document.getElementById('grade-desktop-wrap');
-    const mobileWrap = document.getElementById('grade-mobile-wrap');
-    const form = document.getElementById('grade-test-form');
-    if (!desktopWrap || !mobileWrap) return;
-
-    function syncGradeInputs() {
-      const isDesktop = window.innerWidth >= 768;
-      desktopWrap.querySelectorAll('input').forEach(function (el) { el.disabled = !isDesktop; });
-      mobileWrap.querySelectorAll('input').forEach(function (el) { el.disabled = isDesktop; });
+    const GRADE_URL = '{% url "panels:teacher_test_grade" test_id=test.test_id %}', TEST_ID = '{{ test.test_id|escapejs }}', MAX_MARKS = '{{ test.max_marks|floatformat:0|escapejs }}';
+    function parseSub(raw) {
+      if (!raw) return {};
+      try { return JSON.parse(raw); } catch (e) {}
+      try { return JSON.parse(raw.replace(/\\u([0-9a-fA-F]{4})/g, function (_, h) { return String.fromCharCode(parseInt(h, 16)); })); } catch (e2) { return {}; }
     }
-
-    syncGradeInputs();
-    window.addEventListener('resize', syncGradeInputs);
-    if (form) form.addEventListener('submit', syncGradeInputs);
+    function mk(tag, cls, text) {
+      const el = document.createElement(tag);
+      if (cls) el.className = cls;
+      if (text !== undefined && text !== null) el.textContent = String(text);
+      return el;
+    }
+    function fileIcon(name) {
+      const n = String(name || '').toLowerCase();
+      if (n.endsWith('.csv')) return 'fa-solid fa-file-csv';
+      if (n.endsWith('.xlsx') || n.endsWith('.xls')) return 'fa-solid fa-file-excel';
+      if (n.endsWith('.pdf')) return 'fa-solid fa-file-pdf';
+      if (n.endsWith('.doc') || n.endsWith('.docx')) return 'fa-solid fa-file-word';
+      return 'fa-solid fa-file-lines';
+    }
+    window.openGradeUpdateModal = function (btn) {
+      if (!btn || typeof window.openFormModal !== 'function') return;
+      const sid = btn.getAttribute('data-student-id') || '', name = btn.getAttribute('data-student-name') || sid;
+      window.openFormModal({
+        title: 'Update Marks',
+        headerBadge: name + ' (' + sid + ')',
+        actionUrl: GRADE_URL,
+        submitText: 'Save Marks',
+        fields: [
+          { name: 'action', type: 'hidden', value: 'grade_single_student' },
+          { name: 'test_id', type: 'hidden', value: TEST_ID },
+          { name: 'student_id', type: 'hidden', value: sid },
+          { name: 'obtained_marks', label: 'Marks (0 - ' + MAX_MARKS + ')', type: 'number', min: '0', max: MAX_MARKS, step: '0.5', value: btn.getAttribute('data-marks') || '', placeholder: '0 - ' + MAX_MARKS, required: true },
+          { name: 'remarks', label: 'Remarks (Optional)', type: 'textarea', rows: 3, value: btn.getAttribute('data-remarks') || '', placeholder: 'Optional feedback...' }
+        ]
+      });
+    };
+    window.openSubmissionViewModal = function (btn) {
+      const data = parseSub(btn ? btn.getAttribute('data-submission') : ''), titleEl = document.getElementById('sub-modal-title'), metaEl = document.getElementById('sub-modal-meta'), bodyEl = document.getElementById('sub-modal-body');
+      if (!bodyEl) return;
+      if (titleEl) titleEl.textContent = data.full_name || 'Student Submission';
+      if (metaEl) metaEl.textContent = [data.student_id, data.semester_label, data.submission_status].filter(Boolean).join(' · ');
+      bodyEl.innerHTML = '';
+      const summary = mk('div', 'grid grid-cols-1 sm:grid-cols-2 gap-3');
+      const mCard = mk('div', 'rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3');
+      mCard.append(mk('p', 'text-[11px] font-medium uppercase text-[var(--text-muted)]', 'Marks'), mk('p', 'mt-1 text-sm font-semibold text-[var(--text-primary)]', (data.obtained_marks !== '' && data.obtained_marks !== undefined && data.obtained_marks !== null) ? (data.obtained_marks + ' / ' + (data.max_marks || MAX_MARKS)) : 'Not graded yet'));
+      const rCard = mk('div', 'rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3');
+      rCard.append(mk('p', 'text-[11px] font-medium uppercase text-[var(--text-muted)]', 'Remarks'), mk('p', 'mt-1 text-sm text-[var(--text-primary)] break-words', data.remarks || 'No remarks yet.'));
+      summary.append(mCard, rCard);
+      const nBox = mk('div', 'rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3');
+      nBox.append(mk('p', 'text-[11px] font-medium uppercase text-[var(--text-muted)]', 'Student Note'), mk('p', 'mt-1 text-sm text-[var(--text-secondary)] break-words', data.note || data.submission_note || 'No note added.'));
+      bodyEl.append(summary, nBox);
+      const images = Array.isArray(data.images) ? data.images : [], docs = Array.isArray(data.documents) ? data.documents : [];
+      if (images.length > 0) {
+        let idx = 0;
+        const slider = mk('div', 'rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3 space-y-2.5'), head = mk('div', 'flex items-center justify-between gap-2'), counter = mk('span', 'text-xs font-semibold text-[var(--text-primary)]', ''), dlBtn = mk('a', 'inline-flex h-8 items-center gap-1.5 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Download');
+        dlBtn.target = '_blank'; dlBtn.rel = 'noopener'; dlBtn.setAttribute('download', '');
+        head.append(counter, dlBtn);
+        const imgEl = mk('img', 'w-full max-h-64 object-contain rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)]'), foot = mk('div', 'flex items-center justify-between gap-2'), prevB = mk('button', 'h-8 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Prev'), imgName = mk('span', 'truncate text-xs text-[var(--text-muted)]', ''), nextB = mk('button', 'h-8 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Next');
+        prevB.type = 'button'; nextB.type = 'button';
+        foot.append(prevB, imgName, nextB);
+        function renderSlide() {
+          const item = images[idx] || {}, url = typeof item === 'string' ? item : (item.url || '');
+          imgEl.src = url; imgEl.alt = item.name || ('Image ' + (idx + 1)); dlBtn.href = url;
+          counter.textContent = 'Image ' + (idx + 1) + ' / ' + images.length; imgName.textContent = item.name || ('Image ' + (idx + 1));
+          prevB.disabled = images.length <= 1; nextB.disabled = images.length <= 1;
+        }
+        prevB.onclick = function () { idx = (idx - 1 + images.length) % images.length; renderSlide(); };
+        nextB.onclick = function () { idx = (idx + 1) % images.length; renderSlide(); };
+        renderSlide(); slider.append(head, imgEl, foot); bodyEl.appendChild(slider);
+      }
+      if (docs.length > 0) {
+        const docWrap = mk('div', 'space-y-2');
+        docWrap.appendChild(mk('p', 'text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]', 'Submitted Files'));
+        docs.forEach(function (doc) {
+          const url = typeof doc === 'string' ? doc : (doc.url || ''), name = (typeof doc === 'object' && doc.name) ? doc.name : 'Document', row = mk('div', 'flex items-center justify-between gap-3 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2.5'), left = mk('div', 'flex items-center gap-2.5 min-w-0');
+          left.append(mk('i', fileIcon(name) + ' text-base text-[var(--accent-primary)] shrink-0'), mk('span', 'truncate text-xs font-medium text-[var(--text-primary)]', name));
+          const dl = mk('a', 'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Download');
+          dl.href = url; dl.target = '_blank'; dl.rel = 'noopener'; dl.setAttribute('download', '');
+          row.append(left, dl); docWrap.appendChild(row);
+        });
+        bodyEl.appendChild(docWrap);
+      }
+      if (images.length === 0 && docs.length === 0) bodyEl.appendChild(mk('div', 'rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-6 text-center text-xs text-[var(--text-muted)]', 'No files submitted yet.'));
+      if (typeof window.openCustomModal === 'function') window.openCustomModal('submission-view-modal');
+    };
   })();
 </script>
+{% endif %}
 {% endblock %}

@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from django.conf import settings
 from analytics.ml_engine import run_prediction_pipeline
+from core.cloudinary_services import is_cloudinary_configured, upload_academic_attachment
 from core.db import attendance_records_col, course_tests_col, courses_col, get_cached, invalidate_cache, semesters_col, student_records_col, users_col
 from panels.teacher_services import _action, _alert_attrs, _is_admin, _load_joined_students, _safe_float, _scope_key, _semester_label, _student_attrs, _view_action, provision_student_accounts
 
@@ -22,23 +23,17 @@ def _teacher_courses_list(teacher_user=None):
 
 
 def _build_teacher_courses_context(teacher_user=None):
-    courses = _teacher_courses_list(teacher_user)
-    students = _load_joined_students(teacher_user)
-    stats = {}
+    courses, students, stats = _teacher_courses_list(teacher_user), _load_joined_students(teacher_user), {}
     for s in students:
         bucket = stats.setdefault(s["course_code"], {"count": 0, "att": 0.0, "marks": 0.0})
-        bucket["count"] += 1
-        bucket["att"] += s["attendance_pct"]
-        bucket["marks"] += s["internal_marks"]
+        bucket["count"], bucket["att"], bucket["marks"] = bucket["count"] + 1, bucket["att"] + s["attendance_pct"], bucket["marks"] + s["internal_marks"]
     rows, cards, sem_ids = [], [], set()
     for c in courses:
         code = c["course_code"]
-        if c["semester_id"]:
-            sem_ids.add(c["semester_id"])
+        if c["semester_id"]: sem_ids.add(c["semester_id"])
         st = stats.get(code) or {"count": 0, "att": 0.0, "marks": 0.0}
         cnt = st["count"]
-        avg_att = round(st["att"] / cnt, 1) if cnt else 0.0
-        avg_marks = round(st["marks"] / cnt, 1) if cnt else 0.0
+        avg_att, avg_marks = (round(st["att"] / cnt, 1), round(st["marks"] / cnt, 1)) if cnt else (0.0, 0.0)
         c["student_count"], c["avg_attendance"], c["avg_marks"] = cnt, avg_att, avg_marks
         badge = {"text": c["status"], "status": "success" if c["status"] == "ACTIVE" else "warning"}
         actions = [_view_action(f"Course {code}", {"title": f"{code} · {c['title']}", "subtitle": c["semester_label"], "badge": c["status"], "items": [{"label": "Course Code", "value": code}, {"label": "Semester", "value": c["semester_label"]}, {"label": "Instructor", "value": c["instructor"]}, {"label": "Enrolled Students", "value": str(cnt)}, {"label": "Avg Attendance", "value": f"{avg_att:.1f}%"}, {"label": "Avg Marks", "value": f"{avg_marks:.1f}"}]})]
@@ -53,11 +48,7 @@ def get_teacher_courses_context(teacher_user=None):
 
 def _risk_badge(risk_level):
     r = str(risk_level or "LOW").strip().upper()
-    if r == "HIGH":
-        return {"text": "HIGH", "status": "danger"}
-    if r == "MEDIUM":
-        return {"text": "MEDIUM", "status": "warning"}
-    return {"text": "LOW", "status": "success"}
+    return {"text": r, "status": "danger" if r == "HIGH" else ("warning" if r == "MEDIUM" else "success")}
 
 
 def get_teacher_students_context(teacher_user=None, course_filter="ALL", semester_filter="ALL"):
@@ -126,8 +117,7 @@ def save_student_marks_and_attendance(post_data, teacher_user=None):
     saved, now = 0, datetime.now(timezone.utc)
     for item in items:
         raw_sid = str(item.get("student_id") or "").strip()
-        if len(raw_sid) < 2:
-            continue
+        if len(raw_sid) < 2: continue
         existing = student_records_col().find_one({"student_id": raw_sid}, {"_id": 0}) or student_records_col().find_one({"student_id": raw_sid.upper()}, {"_id": 0}) or {}
         u_doc = users_col().find_one({"student_id": raw_sid}, {"_id": 0, "full_name": 1, "semester_id": 1, "batch": 1}) or {}
         sid = str(existing.get("student_id") or raw_sid).strip()
@@ -161,13 +151,11 @@ def save_student_marks_and_attendance(post_data, teacher_user=None):
 
 
 def _parse_json_list(raw):
-    if not raw:
-        return []
+    if not raw: return []
     try:
         parsed = json.loads(raw)
         return parsed if isinstance(parsed, list) else []
-    except (TypeError, ValueError):
-        return []
+    except (TypeError, ValueError): return []
 
 
 def _norm_att_status(val):
@@ -232,15 +220,19 @@ def save_course_attendance(post_data, teacher_user=None):
     return saved, None
 
 
-def _save_test_attachment(attachment):
-    if not attachment or not getattr(attachment, "name", ""): return "", ""
+def _save_test_attachment(file_obj):
+    if not file_obj or not getattr(file_obj, "name", ""): return "", "", None
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(file_obj.name).name).strip("_") or "attachment"
+    if is_cloudinary_configured():
+        url, orig_name, _is_img, _err = upload_academic_attachment(file_obj, folder="edupredict/tests")
+        if url: return url, orig_name or safe_name, None
     upload_dir = Path(settings.BASE_DIR) / "static" / "uploads" / "tests"
     upload_dir.mkdir(parents=True, exist_ok=True)
-    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(attachment.name).name).strip("_") or "attachment"
     stored_name = f"{uuid.uuid4().hex[:8]}_{safe_name}"
+    if hasattr(file_obj, "seek"): file_obj.seek(0)
     with (upload_dir / stored_name).open("wb") as fh:
-        for chunk in attachment.chunks(): fh.write(chunk)
-    return f"/static/uploads/tests/{stored_name}", safe_name
+        for chunk in file_obj.chunks(): fh.write(chunk)
+    return f"/static/uploads/tests/{stored_name}", safe_name, None
 
 
 def get_teacher_tests_context(teacher_user=None, course_filter="ALL"):
@@ -281,7 +273,8 @@ def create_course_test(post_data, teacher_user=None, attachment=None):
     now = datetime.now(timezone.utc)
     c_doc = courses_col().find_one({"course_code": data["course_code"]}, {"_id": 0, "semester_id": 1}) or {}
     t_date = data["test_date"] or now.strftime("%Y-%m-%d")
-    att_url, att_name = _save_test_attachment(attachment)
+    att_url, att_name, att_err = _save_test_attachment(attachment)
+    if att_err: return None, att_err
     doc = {**data, "test_id": f"TST-{uuid.uuid4().hex[:6].upper()}", "semester_id": str(c_doc.get("semester_id") or "").strip(), "test_date": t_date, "due_date": data["due_date"] or t_date, "attachment_url": att_url, "attachment_name": att_name, "submissions": {}, "teacher_user_id": str((teacher_user or {}).get("user_id") or "").strip(), "teacher_name": str((teacher_user or {}).get("full_name") or "Teacher").strip(), "created_at": now, "updated_at": now}
     course_tests_col().insert_one(doc)
     invalidate_cache()
@@ -295,7 +288,8 @@ def update_course_test(post_data, teacher_user=None, attachment=None):
     existing = course_tests_col().find_one({"test_id": tid}, {"_id": 0})
     if not existing: return None, "Test not found."
     t_date = data["test_date"] or str(existing.get("test_date") or "").strip()
-    att_url, att_name = _save_test_attachment(attachment)
+    att_url, att_name, att_err = _save_test_attachment(attachment)
+    if att_err: return None, att_err
     updates = {**data, "test_date": t_date, "due_date": data["due_date"] or t_date, "attachment_url": att_url or str(existing.get("attachment_url") or ""), "attachment_name": att_name or str(existing.get("attachment_name") or ""), "updated_at": datetime.now(timezone.utc)}
     course_tests_col().update_one({"test_id": tid}, {"$set": updates})
     invalidate_cache()
@@ -310,11 +304,35 @@ def delete_course_test(test_id):
     return (True, None) if res.deleted_count else (False, "Test not found.")
 
 
+_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".svg"}
+
+
+def _normalize_submission_files(sub):
+    raw_items = list(sub.get("files") or sub.get("attachments") or [])
+    legacy_url = str(sub.get("submission_file_url") or "").strip()
+    if legacy_url: raw_items.append({"url": legacy_url, "name": str(sub.get("submission_file_name") or "").strip()})
+    images, documents, seen = [], [], set()
+    for item in raw_items:
+        if isinstance(item, str): url, name, is_img_hint = item.strip(), "", None
+        elif isinstance(item, dict): url, name, is_img_hint = str(item.get("url") or item.get("file_url") or "").strip(), str(item.get("name") or item.get("filename") or "").strip(), item.get("is_image")
+        else: continue
+        if not url or url in seen: continue
+        seen.add(url)
+        clean_path = url.split("?", 1)[0].split("#", 1)[0]
+        if not name: name = Path(clean_path).name or "file"
+        ext = (Path(name).suffix or Path(clean_path).suffix).lower()
+        is_image = bool(is_img_hint) if isinstance(is_img_hint, bool) else (ext in _IMAGE_EXTS)
+        if is_image: images.append({"url": url, "name": name})
+        else: documents.append({"url": url, "name": name, "ext": ext.lstrip(".").upper() or "FILE"})
+    return images, documents
+
+
 def get_teacher_test_grade_context(teacher_user, test_id):
     tid = str(test_id or "").strip()
     test_doc = course_tests_col().find_one({"test_id": tid}, {"_id": 0})
     if not test_doc: return {"test": None, "students": [], "kpis": {"total_students": 0, "graded_count": 0, "pending_count": 0, "avg_score": 0.0}, "error": "Test not found."}
     c_code, sem_id, subs = str(test_doc.get("course_code") or "").strip().upper(), str(test_doc.get("semester_id") or "").strip(), test_doc.get("submissions") or {}
+    max_marks = _safe_float(test_doc.get("max_marks"), 100.0)
     c_students = [s for s in _load_joined_students(teacher_user) if s["course_code"] == c_code and (not sem_id or not s.get("semester_id") or s.get("semester_id") == sem_id)]
     grade_students, graded_cnt, pct_vals = [], 0, []
     for s in c_students:
@@ -322,9 +340,14 @@ def get_teacher_test_grade_context(teacher_user, test_id):
         has_marks = sub.get("obtained_marks") not in (None, "")
         graded_cnt += int(has_marks)
         if has_marks: pct_vals.append(_safe_float(sub.get("percentage")))
-        grade_students.append({"student_id": s["student_id"], "full_name": s["full_name"], "course_code": s["course_code"], "semester_label": s.get("semester_label") or "-", "attendance_pct": s["attendance_pct"], "internal_marks": s["internal_marks"], "submission_status": str(sub.get("submission_status") or ("GRADED" if has_marks else "PENDING")).strip().upper(), "obtained_marks": sub.get("obtained_marks", ""), "percentage": sub.get("percentage", ""), "remarks": str(sub.get("remarks") or "").strip()})
+        images, documents = _normalize_submission_files(sub)
+        submitted_at, submission_note = str(sub.get("submitted_at") or "").strip(), str(sub.get("submission_note") or sub.get("note") or "").strip()
+        sub_status = str(sub.get("submission_status") or ("GRADED" if has_marks else ("SUBMITTED" if (images or documents or submitted_at) else "PENDING"))).strip().upper()
+        obtained_marks, remarks = sub.get("obtained_marks", ""), str(sub.get("remarks") or "").strip()
+        payload = {"student_id": s["student_id"], "full_name": s["full_name"], "semester_label": s.get("semester_label") or "-", "submission_status": sub_status, "submitted_at": submitted_at, "submission_note": submission_note, "obtained_marks": obtained_marks, "max_marks": max_marks, "remarks": remarks, "images": images, "documents": documents}
+        grade_students.append({"student_id": s["student_id"], "full_name": s["full_name"], "course_code": s["course_code"], "semester_label": s.get("semester_label") or "-", "attendance_pct": s["attendance_pct"], "internal_marks": s["internal_marks"], "submission_status": sub_status, "submitted_at": submitted_at, "submission_note": submission_note, "obtained_marks": obtained_marks, "percentage": sub.get("percentage", ""), "remarks": remarks, "images": images, "documents": documents, "file_count": len(images) + len(documents), "submission_json": json.dumps(payload)})
     avg_score, t_date = round(sum(pct_vals) / len(pct_vals), 1) if pct_vals else 0.0, str(test_doc.get("test_date") or "").strip()
-    test_info = {"test_id": tid, "title": str(test_doc.get("title") or "Untitled Test").strip(), "course_code": c_code, "semester_id": sem_id, "test_type": str(test_doc.get("test_type") or "Quiz").strip(), "max_marks": _safe_float(test_doc.get("max_marks"), 100.0), "test_date": t_date, "due_date": str(test_doc.get("due_date") or t_date).strip(), "description": str(test_doc.get("description") or "").strip(), "notes": str(test_doc.get("notes") or "").strip(), "attachment_url": str(test_doc.get("attachment_url") or "").strip(), "attachment_name": str(test_doc.get("attachment_name") or "").strip(), "graded_count": graded_cnt, "total_students": len(grade_students), "avg_score": avg_score}
+    test_info = {"test_id": tid, "title": str(test_doc.get("title") or "Untitled Test").strip(), "course_code": c_code, "semester_id": sem_id, "test_type": str(test_doc.get("test_type") or "Quiz").strip(), "max_marks": max_marks, "test_date": t_date, "due_date": str(test_doc.get("due_date") or t_date).strip(), "description": str(test_doc.get("description") or "").strip(), "notes": str(test_doc.get("notes") or "").strip(), "attachment_url": str(test_doc.get("attachment_url") or "").strip(), "attachment_name": str(test_doc.get("attachment_name") or "").strip(), "graded_count": graded_cnt, "total_students": len(grade_students), "avg_score": avg_score}
     return {"test": test_info, "students": grade_students, "kpis": {"total_students": len(grade_students), "graded_count": graded_cnt, "pending_count": len(grade_students) - graded_cnt, "avg_score": avg_score}, "error": None}
 
 
@@ -334,9 +357,16 @@ def grade_test_submissions(post_data, teacher_user=None):
     if not test_doc: return 0, "Test not found."
     max_marks = _safe_float(test_doc.get("max_marks"), 100.0) or 100.0
     scores = _parse_json_list(post_data.get("scores_json"))
-    if not scores and hasattr(post_data, "getlist"):
-        sids, marks_l = [str(x).strip() for x in post_data.getlist("student_id") if str(x).strip()], post_data.getlist("obtained_marks")
-        scores = [{"student_id": sid, "obtained_marks": post_data.get(f"marks_{sid}") if post_data.get(f"marks_{sid}") not in (None, "") else (marks_l[i] if i < len(marks_l) else ""), "remarks": post_data.get(f"remarks_{sid}") or "", "submission_status": post_data.get(f"status_{sid}") or ""} for i, sid in enumerate(sids)]
+    if not scores:
+        sids = [str(x).strip() for x in post_data.getlist("student_id") if str(x).strip()] if hasattr(post_data, "getlist") else ([str(post_data.get("student_id") or "").strip()] if str(post_data.get("student_id") or "").strip() else [])
+        if len(sids) == 1 and (post_data.get("marks") not in (None, "") or post_data.get("obtained_marks") not in (None, "") or post_data.get(f"marks_{sids[0]}") not in (None, "")):
+            sid = sids[0]
+            raw_m = post_data.get("marks") if post_data.get("marks") not in (None, "") else (post_data.get("obtained_marks") if post_data.get("obtained_marks") not in (None, "") else post_data.get(f"marks_{sid}"))
+            rem = post_data.get("remarks") if post_data.get("remarks") is not None else (post_data.get(f"remarks_{sid}") or "")
+            scores = [{"student_id": sid, "obtained_marks": raw_m, "remarks": rem, "submission_status": post_data.get("submission_status") or post_data.get(f"status_{sid}") or ""}]
+        elif sids:
+            marks_l = post_data.getlist("obtained_marks") if hasattr(post_data, "getlist") else []
+            scores = [{"student_id": sid, "obtained_marks": post_data.get(f"marks_{sid}") if post_data.get(f"marks_{sid}") not in (None, "") else (marks_l[i] if i < len(marks_l) else ""), "remarks": post_data.get(f"remarks_{sid}") or "", "submission_status": post_data.get(f"status_{sid}") or ""} for i, sid in enumerate(sids)]
     subs, now, graded_sids, rec_col = dict(test_doc.get("submissions") or {}), datetime.now(timezone.utc), set(), student_records_col()
     for item in scores:
         sid, raw_m = str(item.get("student_id") or "").strip(), item.get("obtained_marks")
@@ -345,15 +375,16 @@ def grade_test_submissions(post_data, teacher_user=None):
         except (TypeError, ValueError): return 0, f"Invalid marks for student {sid}."
         if val < 0 or val > max_marks: return 0, f"Marks for {sid} must be between 0 and {max_marks:g}."
         pct, rec = round((val / max_marks) * 100.0, 2), rec_col.find_one({"student_id": sid}, {"_id": 0, "full_name": 1}) or {}
-        subs[sid] = {"student_id": sid, "full_name": str(rec.get("full_name") or sid), "obtained_marks": round(val, 2), "percentage": pct, "remarks": str(item.get("remarks") or "").strip(), "submission_status": str(item.get("submission_status") or "GRADED").strip().upper(), "graded_at": now.isoformat()}
+        prev_sub = subs.get(sid) if isinstance(subs.get(sid), dict) else {}
+        subs[sid] = {**prev_sub, "student_id": sid, "full_name": str(rec.get("full_name") or prev_sub.get("full_name") or sid), "obtained_marks": round(val, 2), "percentage": pct, "remarks": str(item.get("remarks") or "").strip(), "submission_status": str(item.get("submission_status") or "GRADED").strip().upper(), "graded_at": now.isoformat()}
         graded_sids.add(sid)
     if not graded_sids: return 0, "Please enter marks for at least one student."
     t_col.update_one({"test_id": tid}, {"$set": {"submissions": subs, "updated_at": now}})
     all_tests = list(t_col.find({}, {"_id": 0, "submissions": 1}))
     for sid in graded_sids:
-        pcts = [_safe_float((t.get("submissions") or {}).get(sid, {}).get("percentage")) for t in all_tests if isinstance((t.get("submissions") or {}).get(sid), dict)]
+        pcts = [_safe_float((t.get("submissions") or {}).get(sid, {}).get("percentage")) for t in all_tests if isinstance((t.get("submissions") or {}).get(sid), dict) and (t.get("submissions") or {}).get(sid, {}).get("obtained_marks") not in (None, "")]
         avg_pct = round(sum(pcts) / len(pcts), 2) if pcts else 0.0
-        rec_col.update_one({"student_id": sid}, {"$set": {"internal_marks": avg_pct, "marks": avg_pct, "final_score": avg_pct, "updated_at": now}})
+        rec_col.update_one({"student_id": sid}, {"$set": {"internal_marks": avg_pct, "marks": avg_pct, "final_score": avg_pct, "assignment_score": avg_pct, "updated_at": now}})
     run_prediction_pipeline(persist=True)
     invalidate_cache()
     return len(graded_sids), None

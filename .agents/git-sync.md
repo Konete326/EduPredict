@@ -61,28 +61,26 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 106 9 Shell Themes + Hover, Searchable Attendance & Classroom Tests + Grade Page"
-active_branch_merged_to_main: "feature/p106-theme9-teacher-classroom-tests -> main"
-project_phase: "Phase 106: 9 Shell Themes + Matching Hover, Single-Course Searchable Attendance, View-Only Students & Classroom Tests + Dedicated Grade Page"
+last_updated_by_agent: "Phase 107 Cloudinary Test Attachments, Clean Grade Modal & Image Slider"
+active_branch_merged_to_main: "feature/p107-cloudinary-grade-modal-slider -> main"
+project_phase: "Phase 107: Cloudinary Raw/Image Attachments, Clean Test Submissions View/Update Modals & ML Sync"
 
 completed_modules:
-  - "Phase 1-105: Core Shell, Auth/RBAC, Admin Academic CRUD, Password Approval, Simple Theme Studio & Teacher Attendance/Tests."
-  - "Phase 106 (9 Shell Themes, Searchable Attendance & Classroom Tests):"
-      - "core/theme_services.py, static/css/global.css: removed dark-red, defined 9 SHELL_THEMES (3x3) with richer light-mode tints and color-mix sidebar/topbar hover matching."
-      - "panels/teacher_academic_services.py, templates/panels/teacher_students.html: removed Update from My Students, shortened table to 4 columns (Student, Course, Risk, Actions) with full details in View modal."
-      - "panels/teacher_academic_services.py, templates/panels/teacher_attendance.html: single-course default (never ALL) + searchable course dropdown with live suggestions."
-      - "panels/{teacher_academic_services,views_teacher,urls}.py, templates/panels/{teacher_tests,teacher_test_grade}.html: Classroom-style Test modal (due_date, notes, file attachment), Card View button, and dedicated /teacher-panel/tests/<test_id>/grade/ page (desktop list + mobile cards)."
-      - "panels/{tests,test_p105_workflow}.py: updated theme count to 9 and added P106 tests."
+  - "Phase 1-106: Core Shell, Auth/RBAC, Admin Academic CRUD, 9 Shell Themes, Searchable Attendance & Classroom Tests."
+  - "Phase 107 (Cloudinary Attachments, Clean Grade Modal & Image Slider):"
+      - "core/cloudinary_services.py: added upload_academic_attachment() supporting image & raw (PDF/CSV/Excel/Doc) uploads with local fallback when unconfigured."
+      - "panels/teacher_academic_services.py, panels/views_teacher.py: wired Cloudinary test attachments, normalized multi-image + document submission_json, and synced both internal_marks & assignment_score into student_records_col() + ML prediction on grade_single_student/attendance."
+      - "templates/panels/teacher_test_grade.html: replaced inline inputs & Grade title with clean 'Test Submissions' header, short Student | Files | Marks | Status | Actions list, View modal (with interactive image slider + downloadable files), and Update modal."
+      - "panels/test_p105_workflow.py: added Cloudinary upload/fallback & Test Submissions modal/slider/ML sync tests."
 
 verification_results:
   - "manage.py check: System check identified no issues (0 silenced)."
-  - "node --check static/js/charts.js: exited 0."
-  - "Zero-comment & line-cap (<= 400) audit across all 11 touched files: 0 comments, max 387 lines."
-  - "manage.py test: Ran 143 tests in 109.247s (143/143 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 10.93s - System 100% Operational."
+  - "Zero-comment & line-cap (<= 400) audit across all 5 touched files: 0 comments, max 398 lines."
+  - "manage.py test: Ran 145 tests in 171.576s (145/145 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 15.03s - System 100% Operational."
 
 active_routes_and_files:
-  - "core/theme_services.py, static/css/global.css, panels/{teacher_academic_services,views_teacher,urls,tests,test_p105_workflow}.py, templates/panels/teacher_{students,attendance,tests,test_grade}.html, .agents/git-sync.md"
+  - "core/cloudinary_services.py, panels/{teacher_academic_services,views_teacher,test_p105_workflow}.py, templates/panels/teacher_test_grade.html, .agents/git-sync.md"
 
 pending_modules_in_order:
   - "Live on Vercel (auto-deployed from GitHub Konete326/EduPredict main branch)."

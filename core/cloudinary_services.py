@@ -6,6 +6,20 @@ import cloudinary
 import cloudinary.uploader
 
 ALLOWED_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+ALLOWED_ACADEMIC_EXTS = {
+    ".pdf",
+    ".csv",
+    ".xlsx",
+    ".xls",
+    ".doc",
+    ".docx",
+    ".txt",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".gif",
+}
 MAX_AVATAR_BYTES = 5 * 1024 * 1024
 
 
@@ -131,6 +145,49 @@ def upload_ticket_attachment(file_obj, user_id, index=0):
     public_id = f"ticket_{_safe_public_suffix(user_id)}_{int(index)}_{uuid.uuid4().hex[:8]}"
     transform = [{"quality": "auto", "fetch_format": "auto"}]
     return _upload_to_cloudinary(file_obj, "edupredict/tickets", public_id, transform, overwrite=False)
+
+
+def upload_academic_attachment(file_obj, folder="edupredict/tests", max_bytes=10 * 1024 * 1024):
+    if file_obj is None:
+        return None, "", False, "Please choose a file to upload."
+    filename = os.path.basename(str(getattr(file_obj, "name", "") or "").strip())
+    if not filename:
+        return None, "", False, "Please choose a file to upload."
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in ALLOWED_ACADEMIC_EXTS:
+        return None, "", False, "Unsupported file type."
+    file_size = getattr(file_obj, "size", None)
+    if file_size is None and hasattr(file_obj, "seek") and hasattr(file_obj, "tell"):
+        try:
+            file_obj.seek(0, os.SEEK_END)
+            file_size = file_obj.tell()
+            file_obj.seek(0)
+        except Exception:
+            file_size = None
+    if file_size is None or int(file_size) <= 0:
+        return None, "", False, "Selected file is empty."
+    if int(file_size) > int(max_bytes):
+        return None, "", False, "Selected file exceeds the maximum allowed size."
+    is_image = ext in ALLOWED_IMAGE_EXTS
+    if not is_cloudinary_configured():
+        return None, filename, is_image, "not_configured"
+    try:
+        if hasattr(file_obj, "seek"):
+            file_obj.seek(0)
+        _configure_cloudinary()
+        res = cloudinary.uploader.upload(
+            file_obj,
+            folder=folder,
+            public_id=f"att_{uuid.uuid4().hex[:10]}",
+            resource_type=("image" if is_image else "raw"),
+            overwrite=False,
+        )
+        url = str((res or {}).get("secure_url") or (res or {}).get("url") or "").strip()
+        if not url:
+            return None, filename, is_image, "Upload failed: empty media URL returned."
+        return url, filename, is_image, None
+    except Exception as exc:
+        return None, filename, is_image, str(exc)
 
 
 def encode_image_data_uri(file_obj, max_bytes=1048576):
