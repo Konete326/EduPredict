@@ -20,32 +20,32 @@
 
 <section class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-4">
   <div class="flex flex-wrap items-center gap-2">
-    <a href="{% url 'panels:admin_users' %}" title="Show all users" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'ALL' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_users' %}" title="Show all users" class="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors {% if selected_role == 'ALL' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>All</span>
       <span class="tabular-nums opacity-80">({{ role_counts.ALL|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_users' %}?role=ADMIN" title="Show only admins" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'ADMIN' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_users' %}?role=ADMIN" title="Show only admins" class="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors {% if selected_role == 'ADMIN' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>Admins</span>
       <span class="tabular-nums opacity-80">({{ role_counts.ADMIN|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_users' %}?role=TEACHER" title="Show only teachers" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'TEACHER' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_users' %}?role=TEACHER" title="Show only teachers" class="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors {% if selected_role == 'TEACHER' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>Teachers</span>
       <span class="tabular-nums opacity-80">({{ role_counts.TEACHER|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_users' %}?role=STUDENT" title="Show only students" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'STUDENT' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_users' %}?role=STUDENT" title="Show only students" class="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors {% if selected_role == 'STUDENT' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>Students</span>
       <span class="tabular-nums opacity-80">({{ role_counts.STUDENT|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_users' %}?role=ANALYST" title="Show only analysts" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'ANALYST' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_users' %}?role=ANALYST" title="Show only analysts" class="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors {% if selected_role == 'ANALYST' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       <span>Analysts</span>
       <span class="tabular-nums opacity-80">({{ role_counts.ANALYST|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_users' %}?role=PENDING" title="Show teachers and analysts waiting for approval" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'PENDING' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_users' %}?role=PENDING" title="Show teachers and analysts waiting for approval" class="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors {% if selected_role == 'PENDING' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       {% if role_counts.PENDING %}<span class="h-2 w-2 rounded-full bg-[var(--status-warning)]"></span>{% endif %}
       <span>Pending Approval</span>
       <span class="tabular-nums opacity-80">({{ role_counts.PENDING|default:0 }})</span>
     </a>
-    <a href="{% url 'panels:admin_users' %}?role=REJECTED" title="Show rejected accounts" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {% if selected_role == 'REJECTED' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+    <a href="{% url 'panels:admin_users' %}?role=REJECTED" title="Show rejected accounts" class="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors {% if selected_role == 'REJECTED' %}bg-[var(--accent-primary)] text-white{% else %}border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
       {% if role_counts.REJECTED %}<span class="h-2 w-2 rounded-full bg-[var(--status-danger)]"></span>{% endif %}
       <span>Rejected</span>
       <span class="tabular-nums opacity-80">({{ role_counts.REJECTED|default:0 }})</span>

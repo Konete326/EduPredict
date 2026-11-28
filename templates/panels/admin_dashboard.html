@@ -38,7 +38,6 @@
         <h3 class="text-sm font-semibold text-[var(--text-primary)]">User Accounts</h3>
         <p class="text-xs text-[var(--text-muted)]">Active accounts by university role</p>
       </div>
-      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">Users</span>
     </div>
     <div class="relative h-48 w-full"><canvas id="chart-admin-roles"></canvas></div>
   </div>
@@ -49,7 +48,7 @@
         <h3 class="text-sm font-semibold text-[var(--text-primary)]">Student Risk Levels</h3>
         <p class="text-xs text-[var(--text-muted)]">Students grouped by low, medium, and high risk</p>
       </div>
-      <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[11px] font-mono text-[var(--text-muted)]">{{ kpis.avg_attendance }}% Attendance</span>
+      <span class="text-xs font-medium tabular-nums text-[var(--text-muted)]">{{ kpis.avg_attendance }}% Attendance</span>
     </div>
     <div class="relative h-48 w-full"><canvas id="chart-admin-risk"></canvas></div>
   </div>

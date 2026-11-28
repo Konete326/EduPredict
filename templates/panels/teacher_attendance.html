@@ -46,7 +46,7 @@
     <label for="att-date-input" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Date</label>
     <input id="att-date-input" type="date" name="date" value="{{ selected_date }}" max="{{ today_str }}" onchange="this.form.submit()" class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
   </div>
-  <a href="{% url 'panels:teacher_attendance' %}" class="inline-flex h-9 items-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">Reset</a>
+  <a href="{% url 'panels:teacher_attendance' %}" class="inline-flex h-9 shrink-0 items-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">Reset</a>
 </form>
 
 <form method="post" action="{% url 'panels:teacher_attendance' %}" class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">

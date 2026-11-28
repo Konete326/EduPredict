@@ -13,6 +13,12 @@ from panels.chat_services import (
 )
 
 
+def _no_cache(response):
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    response["Pragma"] = "no-cache"
+    return response
+
+
 def _parse_payload(request):
     content_type = str(request.content_type or "").lower()
     if "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:
@@ -76,7 +82,7 @@ def classroom_chat_view(request):
         except Exception as exc:
             db_error = str(exc)
 
-    return render(
+    return _no_cache(render(
         request,
         "panels/classroom_chat.html",
         {
@@ -92,7 +98,7 @@ def classroom_chat_view(request):
             "current_user_role": role,
             "db_error": db_error,
         },
-    )
+    ))
 
 
 @role_required(["STUDENT", "TEACHER", "ADMIN"])
@@ -106,20 +112,20 @@ def classroom_chat_api(request):
             if not gid and groups:
                 gid = groups[0]["group_id"]
             if not gid:
-                return JsonResponse({"ok": True, "group_id": "", "groups": groups, "messages": []})
+                return _no_cache(JsonResponse({"ok": True, "group_id": "", "groups": groups, "messages": []}))
             msgs, err = list_group_messages(gid, user, since_iso=since_iso)
             if err:
-                return JsonResponse({"ok": False, "error": err}, status=403)
-            return JsonResponse({"ok": True, "group_id": gid, "groups": groups, "messages": msgs})
+                return _no_cache(JsonResponse({"ok": False, "error": err}, status=403))
+            return _no_cache(JsonResponse({"ok": True, "group_id": gid, "groups": groups, "messages": msgs}))
         except Exception as exc:
-            return JsonResponse({"ok": False, "error": str(exc)}, status=500)
+            return _no_cache(JsonResponse({"ok": False, "error": str(exc)}, status=500))
 
     if request.method != "POST":
-        return JsonResponse({"ok": False, "error": "Method not allowed."}, status=405)
+        return _no_cache(JsonResponse({"ok": False, "error": "Method not allowed."}, status=405))
 
     payload, parse_err = _parse_payload(request)
     if parse_err:
-        return JsonResponse({"ok": False, "error": parse_err}, status=400)
+        return _no_cache(JsonResponse({"ok": False, "error": parse_err}, status=400))
 
     action = str(payload.get("action") or "send").strip().lower()
     gid = str(payload.get("group_id") or "").strip().upper()
@@ -127,21 +133,30 @@ def classroom_chat_api(request):
         if action in ("send", "poll"):
             poll_q = str(payload.get("poll_question") or "").strip()
             poll_opts = _extract_poll_options(payload, request) if poll_q else []
+            image_files = list(request.FILES.getlist("images"))
+            single_image = request.FILES.get("image")
+            if single_image and single_image not in image_files:
+                image_files.append(single_image)
+            doc_files = list(request.FILES.getlist("files"))
+            for key in ("file", "document"):
+                single_doc = request.FILES.get(key)
+                if single_doc and single_doc not in doc_files:
+                    doc_files.append(single_doc)
             msg_id, err = send_group_message(
                 gid,
                 user,
                 text=payload.get("text") or "",
-                image_file=request.FILES.get("image"),
-                doc_file=request.FILES.get("file") or request.FILES.get("document"),
                 audio_file=request.FILES.get("audio"),
                 poll_question=poll_q,
                 poll_options=poll_opts,
                 reply_to_id=payload.get("reply_to_id") or "",
+                image_files=image_files,
+                doc_files=doc_files,
             )
             if err:
-                return JsonResponse({"ok": False, "error": err}, status=400)
+                return _no_cache(JsonResponse({"ok": False, "error": err}, status=400))
             msgs, _ = list_group_messages(gid, user)
-            return JsonResponse({"ok": True, "msg_id": msg_id, "group_id": gid, "messages": msgs})
+            return _no_cache(JsonResponse({"ok": True, "msg_id": msg_id, "group_id": gid, "messages": msgs}))
 
         if action == "update_group":
             updated_group, err = update_group_settings(
@@ -152,28 +167,28 @@ def classroom_chat_api(request):
             )
             if err:
                 status = 403 if "only teachers or admins" in err.lower() or "access" in err.lower() else 400
-                return JsonResponse({"ok": False, "error": err}, status=status)
+                return _no_cache(JsonResponse({"ok": False, "error": err}, status=status))
             groups = get_user_chat_groups(user)
-            return JsonResponse({"ok": True, "group_id": gid, "group": updated_group, "groups": groups})
+            return _no_cache(JsonResponse({"ok": True, "group_id": gid, "group": updated_group, "groups": groups}))
 
         if action == "edit":
             ok, err = edit_group_message(payload.get("msg_id"), payload.get("text") or "", user)
             if not ok:
-                return JsonResponse({"ok": False, "error": err}, status=400)
-            return JsonResponse({"ok": True, "msg_id": payload.get("msg_id")})
+                return _no_cache(JsonResponse({"ok": False, "error": err}, status=400))
+            return _no_cache(JsonResponse({"ok": True, "msg_id": payload.get("msg_id")}))
 
         if action == "delete":
             ok, err = delete_group_message(payload.get("msg_id"), payload.get("scope") or "me", user)
             if not ok:
-                return JsonResponse({"ok": False, "error": err}, status=400)
-            return JsonResponse({"ok": True, "msg_id": payload.get("msg_id")})
+                return _no_cache(JsonResponse({"ok": False, "error": err}, status=400))
+            return _no_cache(JsonResponse({"ok": True, "msg_id": payload.get("msg_id")}))
 
         if action == "vote":
             ok, err = vote_group_poll(payload.get("msg_id"), payload.get("option_idx"), user)
             if not ok:
-                return JsonResponse({"ok": False, "error": err}, status=400)
-            return JsonResponse({"ok": True, "msg_id": payload.get("msg_id")})
+                return _no_cache(JsonResponse({"ok": False, "error": err}, status=400))
+            return _no_cache(JsonResponse({"ok": True, "msg_id": payload.get("msg_id")}))
 
-        return JsonResponse({"ok": False, "error": "Unsupported chat action."}, status=400)
+        return _no_cache(JsonResponse({"ok": False, "error": "Unsupported chat action."}, status=400))
     except Exception as exc:
-        return JsonResponse({"ok": False, "error": str(exc)}, status=500)
+        return _no_cache(JsonResponse({"ok": False, "error": str(exc)}, status=500))

@@ -61,25 +61,27 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 113 Real Public Data & Landing Cyan Default Panel Theme"
-active_branch_merged_to_main: "feature/p113-public-real-data-cyan-theme -> main"
-project_phase: "Phase 113: Real Public Data (MongoDB Atlas Portal Metrics/Courses/Contact) & Landing Cyan Default Panel Theme"
+last_updated_by_agent: "Phase 114 WhatsApp Class Chat, Student Test View Modal, Clean Filters & Badges"
+active_branch_merged_to_main: "feature/p114-whatsapp-chat-clean-filters -> main"
+project_phase: "Phase 114: WhatsApp Class Chat (Ticks/Slider/10MB), Student Test View Modal, Clean Filters & Badges"
 
 completed_modules:
-  - "Phase 1-112: Core Shell, Auth/RBAC, Admin Academic CRUD, Classroom Tests, Real-Time Chat, Tear-Off Calendar, Student Scope, File Preview."
-  - "Phase 113a (public-real-data): accounts/public_data.py (219 lines) & accounts/services.py (320 lines) - real MongoDB Atlas metrics, courses, and contact submissions; templates/public/contact.html (60 lines) updated; accounts/tests.py (189 lines) added unit tests."
-  - "Phase 113b (cyan-default-theme): core/theme_services.py (389 lines) - Landing Cyan default panel theme tokens & preferences; static/css/global.css (304 lines) & templates/base.html (195 lines) updated; panels/tests.py (364 lines) updated with theme tests."
+  - "Phase 1-113: Core Shell, Auth/RBAC, Admin Academic CRUD, Classroom Tests, Real-Time Chat, Tear-Off Calendar, Student Scope, File Preview, Real Public Data & Landing Cyan Default Theme."
+  - "Phase 114a (tests-filters-badges): panels/student_test_services.py (384) & student_tests.html (265) - #student-submission-view-modal with View Submission button; standardized h-9 filter bars across 7 panel templates; cleaned noisy semester/pill badges."
+  - "Phase 114b (chat-backend-v2): panels/chat_services.py (398), panels/chat_receipt_services.py (200), panels/views_chat.py (194) - 10 MB limit, max 5 images / 5 files multi-upload, WhatsApp read receipts (tick_state & TEACHER/ADMIN-only read_receipts), Cache-Control: no-store."
+  - "Phase 114c (chat-whatsapp-ui): templates/panels/classroom_chat.html (201), static/js/chat_media.js (182), static/js/classroom_chat.js (399) - compact bubbles, + menu, #chat-msg-info-modal, multi-image slider, in-app preview & Download All."
 
 verification_results:
   - "manage.py check: 0 issues."
-  - "manage.py test: Ran 156 tests in 118.324s (156/156 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 12.16s - System 100% Operational."
-  - "Line cap & zero-comment audit: all 8 modified files <= 400 lines with 0 comments."
+  - "manage.py test: Ran 158 tests in 120.337s (158/158 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 11.95s - System 100% Operational."
+  - "node --check: static/js/classroom_chat.js OK, static/js/chat_media.js OK."
+  - "Line cap & zero-comment audit: all 18 modified/created files <= 400 lines with 0 comments."
 
 active_routes_and_files:
-  - "accounts/services.py (320), accounts/public_data.py (219), accounts/tests.py (189)"
-  - "templates/public/contact.html (60), templates/base.html (195)"
-  - "core/theme_services.py (389), static/css/global.css (304), panels/tests.py (364)"
+  - "panels/student_test_services.py (384), panels/chat_services.py (398), panels/chat_receipt_services.py (200), panels/views_chat.py (194), panels/test_p109_student_chat.py (372)"
+  - "static/js/chat_media.js (182), static/js/classroom_chat.js (399)"
+  - "templates/panels/classroom_chat.html (201), student_tests.html (265), student_attendance.html (145), teacher_tests.html (204), teacher_students.html (91), teacher_attendance.html (135), teacher_test_grade.html (233), admin_users.html (227), admin_tickets.html (193), admin_dashboard.html (123), admin_settings.html (197)"
 
 pending_modules_in_order:
   - "Password Change Approval Workflow: Teacher/Student requests -> Admin approves -> notification sent (new pending_password_changes_col or notifications_col extension)."

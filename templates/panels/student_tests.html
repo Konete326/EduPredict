@@ -3,11 +3,8 @@
 {% block content %}
 <header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
   <div class="min-w-0 space-y-1">
-    <div class="flex flex-wrap items-center gap-2">
-      <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">My Tests</h2>
-      {% if semester_label %}<span class="inline-flex items-center gap-1 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--accent-primary)]"><i class="fa-solid fa-calendar-days text-[10px]"></i>{{ semester_label }}</span>{% endif %}
-    </div>
-    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">View assigned quizzes and exams, download attachments, and turn in your work.</p>
+    <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">My Tests</h2>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">{% if semester_label and semester_label != '-' %}<span class="font-medium text-[var(--text-primary)]">{{ semester_label }}</span> · {% endif %}View assigned quizzes and exams, download attachments, and turn in your work.</p>
   </div>
 </header>
 
@@ -23,21 +20,25 @@
   {% include 'components/metric_card.html' with title="Graded" value=kpis.graded|default:0 badge="Scored" status="success" icon="fa-solid fa-check-double" %}
 </section>
 
-<div class="flex flex-wrap items-center gap-3 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
-  <div class="min-w-[200px] flex-1">
-    <input id="st-search" type="search" placeholder="Search tests by title or course..." class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+<div class="flex flex-wrap items-center gap-2.5 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
+  <div class="relative min-w-[200px] flex-1">
+    <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)]" aria-hidden="true"></i>
+    <input id="st-search" type="search" placeholder="Search tests by title or course..." class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] pl-8 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:outline-none">
   </div>
-  <select id="st-course-filter" class="h-9 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+  <select id="st-course-filter" aria-label="Filter by course" class="h-9 w-full sm:w-auto rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
     <option value="ALL">All Courses</option>
     {% for c in courses %}<option value="{{ c.course_code }}">{{ c.course_code }} - {{ c.title }}</option>{% endfor %}
   </select>
-  <select id="st-status-filter" class="h-9 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+  <select id="st-status-filter" aria-label="Filter by status" class="h-9 w-full sm:w-auto rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
     <option value="ALL">All Statuses</option>
     <option value="PENDING">Pending</option>
     <option value="SUBMITTED">Submitted</option>
     <option value="LATE">Late</option>
     <option value="GRADED">Graded</option>
   </select>
+  <button id="st-filter-reset" type="button" class="hidden h-9 shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+    <i class="fa-solid fa-rotate-left text-[11px]" aria-hidden="true"></i><span>Reset</span>
+  </button>
 </div>
 
 <section id="st-cards-grid" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -45,9 +46,10 @@
   <article data-test-card data-course="{{ t.course_code }}" data-status="{{ t.submission_status }}" data-search="{{ t.title|lower }} {{ t.course_code|lower }} {{ t.course_title|lower }} {{ t.test_type|lower }}" class="flex flex-col justify-between rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 space-y-4">
     <div class="space-y-2.5">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5">
-          <span class="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]">{{ t.test_type }}</span>
-          <span class="font-mono text-xs text-[var(--text-muted)]">{{ t.course_code }}</span>
+        <div class="flex items-center gap-1.5 text-xs">
+          <span class="font-semibold text-[var(--accent-primary)]">{{ t.test_type }}</span>
+          <span class="text-[var(--text-muted)]">·</span>
+          <span class="font-mono text-[var(--text-muted)]">{{ t.course_code }}</span>
         </div>
         <div class="flex items-center gap-1.5">
           {% if t.is_late_now and t.submission_status == 'PENDING' %}<span class="rounded-[8px] border border-[var(--status-danger)] bg-[var(--bg-canvas)] px-2 py-0.5 text-[10px] font-semibold text-[var(--status-danger)]">PAST DUE</span>{% endif %}
@@ -78,11 +80,12 @@
       </div>
       {% endif %}
     </div>
-    <div class="pt-1">
-      {% if t.submission_status == 'GRADED' %}
-      <span class="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-xs font-semibold text-[var(--status-success)]"><i class="fa-solid fa-check-double"></i>Graded</span>
-      {% else %}
-      <button type="button" onclick="openSubmitWorkModal(this)" data-test-id="{{ t.test_id }}" data-title="{{ t.title }}" data-course-code="{{ t.course_code }}" data-due-date="{{ t.due_date }}" data-is-late="{% if t.is_late_now %}1{% else %}0{% endif %}" data-note="{{ t.submission_note }}" class="inline-flex h-9 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--accent-primary)] px-3 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"><i class="fa-solid fa-cloud-arrow-up"></i><span>{% if t.submission_status == 'PENDING' %}Submit Work{% else %}Resubmit Work{% endif %}</span></button>
+    <div class="flex items-center gap-2 pt-1">
+      {% if t.submission_status != 'PENDING' or t.is_late_now or t.is_locked %}
+      <button type="button" onclick="openStudentSubmissionModal(this)" data-submission='{{ t.submission_json|escapejs }}' class="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-canvas)]"><i class="fa-regular fa-eye text-[var(--accent-primary)]"></i><span>View Submission</span></button>
+      {% endif %}
+      {% if t.submission_status != 'GRADED' and not t.is_locked %}
+      <button type="button" onclick="openSubmitWorkModal(this)" data-test-id="{{ t.test_id }}" data-title="{{ t.title }}" data-course-code="{{ t.course_code }}" data-due-date="{{ t.due_date }}" data-is-late="{% if t.is_late_now %}1{% else %}0{% endif %}" data-note="{{ t.submission_note }}" class="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[var(--accent-primary)] px-3 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"><i class="fa-solid fa-cloud-arrow-up"></i><span>{% if t.submission_status == 'PENDING' %}Submit Work{% else %}Resubmit{% endif %}</span></button>
       {% endif %}
     </div>
   </article>
@@ -124,13 +127,86 @@
     </form>
   </div>
 </div>
+
+<div id="student-submission-view-modal" data-ep-modal="true" class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6" role="dialog" aria-modal="true" aria-labelledby="ssv-title" aria-hidden="true">
+  <div data-modal-backdrop="student-submission-view-modal" class="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"></div>
+  <div class="relative z-10 flex min-h-full w-full items-center justify-center pointer-events-none">
+    <div class="pointer-events-auto relative w-full max-w-xl mx-auto my-auto flex flex-col rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden max-h-[88vh]">
+      <div class="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-5 py-3.5">
+        <div class="min-w-0">
+          <h3 id="ssv-title" class="text-base font-semibold text-[var(--text-primary)] truncate">Submission Details</h3>
+          <p id="ssv-meta" class="text-xs text-[var(--text-muted)] truncate"></p>
+        </div>
+        <button type="button" onclick="closeCustomModal('student-submission-view-modal')" aria-label="Close modal" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-xmark text-sm"></i></button>
+      </div>
+      <div id="ssv-body" class="flex-1 overflow-y-auto px-5 py-4 space-y-3.5"></div>
+      <div class="flex shrink-0 items-center justify-end border-t border-[var(--border-subtle)] px-5 py-3">
+        <button type="button" onclick="closeCustomModal('student-submission-view-modal')" class="inline-flex h-9 items-center justify-center rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
   (function () {
-    const modal = document.getElementById('submit-work-modal'), backdrop = document.getElementById('sw-backdrop'), filesInput = document.getElementById('sw-files'), fileList = document.getElementById('sw-file-list');
+    const modal = document.getElementById('submit-work-modal'), backdrop = document.getElementById('sw-backdrop'), filesInput = document.getElementById('sw-files'), fileList = document.getElementById('sw-file-list'), resetBtn = document.getElementById('st-filter-reset');
     let pointerDownOnBackdrop = false;
+    function parseSub(raw) {
+      if (!raw) return {};
+      try { return JSON.parse(raw); } catch (e) {}
+      try { return JSON.parse(raw.replace(/\\u([0-9a-fA-F]{4})/g, function (_, h) { return String.fromCharCode(parseInt(h, 16)); })); } catch (e2) { return {}; }
+    }
+    function mk(tag, cls, text) {
+      const el = document.createElement(tag);
+      if (cls) el.className = cls;
+      if (text !== undefined && text !== null) el.textContent = String(text);
+      return el;
+    }
+    window.openStudentSubmissionModal = function (btn) {
+      const d = parseSub(btn ? btn.getAttribute('data-submission') : ''), titleEl = document.getElementById('ssv-title'), metaEl = document.getElementById('ssv-meta'), bodyEl = document.getElementById('ssv-body');
+      if (!bodyEl) return;
+      if (titleEl) titleEl.textContent = d.title || 'Submission Details';
+      if (metaEl) metaEl.textContent = [d.course_code, d.course_title, d.test_type].filter(Boolean).join(' · ');
+      bodyEl.innerHTML = '';
+      const grid = mk('div', 'grid grid-cols-1 sm:grid-cols-3 gap-2.5');
+      const sCard = mk('div', 'rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3');
+      sCard.append(mk('p', 'text-[11px] font-medium uppercase text-[var(--text-muted)]', 'Status'), mk('p', 'mt-1 text-sm font-semibold text-[var(--text-primary)]', d.submission_status || 'PENDING'));
+      const tCard = mk('div', 'rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3');
+      tCard.append(mk('p', 'text-[11px] font-medium uppercase text-[var(--text-muted)]', 'Submitted At'), mk('p', 'mt-1 text-xs font-medium text-[var(--text-primary)] tabular-nums', d.submitted_at || (d.is_late_now ? 'Not submitted (Past Due)' : 'Not submitted yet')));
+      const mCard = mk('div', 'rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3');
+      const hasScore = d.obtained_marks !== '' && d.obtained_marks !== undefined && d.obtained_marks !== null;
+      const scoreText = hasScore ? (d.obtained_marks + ' / ' + (d.max_marks || 100) + (d.percentage !== '' && d.percentage !== undefined ? ' (' + d.percentage + '%)' : '')) : 'Not graded yet';
+      mCard.append(mk('p', 'text-[11px] font-medium uppercase text-[var(--text-muted)]', 'Marks'), mk('p', 'mt-1 text-sm font-semibold text-[var(--text-primary)] tabular-nums', scoreText));
+      grid.append(sCard, tCard, mCard);
+      const noteBox = mk('div', 'rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3');
+      noteBox.append(mk('p', 'text-[11px] font-medium uppercase text-[var(--text-muted)]', 'Your Note'), mk('p', 'mt-1 text-xs leading-relaxed text-[var(--text-secondary)] break-words', d.submission_note || 'No note added.'));
+      const remBox = mk('div', 'rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3');
+      remBox.append(mk('p', 'text-[11px] font-medium uppercase text-[var(--text-muted)]', 'Teacher Remarks'), mk('p', 'mt-1 text-xs leading-relaxed text-[var(--text-secondary)] break-words', d.remarks || 'No remarks yet.'));
+      bodyEl.append(grid, noteBox, remBox);
+      const files = Array.isArray(d.files) ? d.files : [];
+      if (files.length > 0) {
+        const fWrap = mk('div', 'space-y-2');
+        fWrap.appendChild(mk('p', 'text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]', 'Submitted Files'));
+        files.forEach(function (f) {
+          const url = f.url || '', name = f.name || 'File', row = mk('div', 'flex items-center justify-between gap-3 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2');
+          const left = mk('div', 'flex items-center gap-2 min-w-0');
+          left.append(mk('i', (f.is_image ? 'fa-solid fa-image' : 'fa-solid fa-file-lines') + ' text-sm text-[var(--accent-primary)] shrink-0'), mk('span', 'truncate text-xs font-medium text-[var(--text-primary)]', name));
+          const acts = mk('div', 'flex shrink-0 items-center gap-1.5');
+          const pv = mk('button', 'inline-flex h-8 shrink-0 items-center gap-1 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Preview');
+          pv.type = 'button';
+          pv.onclick = function () { if (typeof window.openFilePreviewModal === 'function') window.openFilePreviewModal({ url: url, name: name, isImage: Boolean(f.is_image) }); };
+          const dl = mk('a', 'inline-flex h-8 shrink-0 items-center gap-1 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Download');
+          dl.href = url; dl.target = '_blank'; dl.rel = 'noopener'; dl.setAttribute('download', '');
+          acts.append(pv, dl); row.append(left, acts); fWrap.appendChild(row);
+        });
+        bodyEl.appendChild(fWrap);
+      } else {
+        bodyEl.appendChild(mk('div', 'rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-4 text-center text-xs text-[var(--text-muted)]', 'No files submitted yet.'));
+      }
+      if (typeof window.openCustomModal === 'function') window.openCustomModal('student-submission-view-modal');
+    };
     window.openSubmitWorkModal = function (btn) {
       if (!modal || !btn) return;
       const d = btn.dataset;
@@ -162,6 +238,11 @@
     }
     function applyFilters() {
       const q = (document.getElementById('st-search').value || '').trim().toLowerCase(), c = document.getElementById('st-course-filter').value, s = document.getElementById('st-status-filter').value;
+      if (resetBtn) {
+        const active = Boolean(q) || c !== 'ALL' || s !== 'ALL';
+        resetBtn.classList.toggle('hidden', !active);
+        resetBtn.classList.toggle('inline-flex', active);
+      }
       document.querySelectorAll('[data-test-card]').forEach(function (card) {
         const ok = (!q || (card.dataset.search || '').includes(q)) && (c === 'ALL' || card.dataset.course === c) && (s === 'ALL' || card.dataset.status === s);
         card.classList.toggle('hidden', !ok);
@@ -171,6 +252,14 @@
       const el = document.getElementById(id);
       if (el) el.addEventListener(id === 'st-search' ? 'input' : 'change', applyFilters);
     });
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        document.getElementById('st-search').value = '';
+        document.getElementById('st-course-filter').value = 'ALL';
+        document.getElementById('st-status-filter').value = 'ALL';
+        applyFilters();
+      });
+    }
   })();
 </script>
 {% endblock %}
