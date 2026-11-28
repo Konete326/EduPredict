@@ -32,6 +32,17 @@
   </div>
 
   <div class="targo-contact-form-wrap">
+    {% if messages %}
+    <div class="targo-alerts" role="status" aria-live="polite">
+      {% for msg in messages %}
+      <div class="targo-alert {% if 'error' in msg.tags %}targo-alert-error{% else %}targo-alert-success{% endif %}">
+        <span class="targo-alert-tag">{% if 'error' in msg.tags %}ERROR{% else %}CONFIRMED{% endif %}</span>
+        <p>{{ msg }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     <form method="post" action="{% url 'accounts:contact_view' %}" class="targo-card targo-form">
       {% csrf_token %}
       <div class="targo-field">

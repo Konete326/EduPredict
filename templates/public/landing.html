@@ -1,9 +1,6 @@
 {% extends 'public/_base.html' %}
 {% load static %}
 {% block title %}Student Risk &amp; GPA Analytics{% endblock %}
-{% block extra_head %}
-  <link rel="stylesheet" href="{% static 'css/landing_provably.css' %}?v=18&r=97">
-{% endblock %}
 {% block content %}
 <section class="targo-hero">
   <video
@@ -77,7 +74,175 @@
     </div>
   </div>
 </section>
-{% endblock %}
-{% block extra_js %}
-  <script src="{% static 'js/landing_provably.js' %}?v=18&r=97"></script>
+
+<section class="targo-snapshot-section">
+  <div class="targo-roles-header">
+    <div>
+      <span class="targo-section-kicker">MONGODB ATLAS TELEMETRY &middot; {{ portal_current_term|default:"Fall 2026" }}</span>
+      <h2 class="targo-h2">
+        <span>LIVE CAMPUS</span>
+        <span class="targo-h2-indent">SNAPSHOT</span>
+      </h2>
+    </div>
+    <div class="targo-roles-actions">
+      <a href="{% url 'accounts:auth_view' %}" class="targo-btn-outline">OPEN PORTAL</a>
+    </div>
+  </div>
+
+  <div class="targo-snapshot-grid">
+    <div class="targo-metric">
+      <span class="targo-metric-label">STUDENTS TRACKED</span>
+      <strong class="targo-metric-value">{{ metrics.students_count|default:0 }}</strong>
+      <span class="targo-metric-sub">Active academic records</span>
+    </div>
+    <div class="targo-metric">
+      <span class="targo-metric-label">ACTIVE COURSES</span>
+      <strong class="targo-metric-value">{{ metrics.courses_count|default:0 }}</strong>
+      <span class="targo-metric-sub">Mapped term subjects</span>
+    </div>
+    <div class="targo-metric">
+      <span class="targo-metric-label">APPROVED FACULTY</span>
+      <strong class="targo-metric-value">{{ metrics.teachers_count|default:0 }}</strong>
+      <span class="targo-metric-sub">Verified teachers &amp; staff</span>
+    </div>
+    <div class="targo-metric">
+      <span class="targo-metric-label">ML PREDICTIONS</span>
+      <strong class="targo-metric-value targo-accent">{{ metrics.predictions_count|default:0 }}</strong>
+      <span class="targo-metric-sub">Risk &amp; GPA forecasts run</span>
+    </div>
+  </div>
+</section>
+
+<section class="targo-roles-section">
+  <div class="targo-roles-header">
+    <div>
+      <span class="targo-section-kicker">UNIFIED ROLE ARCHITECTURE</span>
+      <h2 class="targo-h2">
+        <span>4-ROLE</span>
+        <span class="targo-h2-indent">PLATFORM</span>
+      </h2>
+    </div>
+    <div class="targo-roles-actions">
+      <a href="{% url 'accounts:auth_view' %}?tab=register" class="targo-cta">
+        <span>REGISTER ACCOUNT</span>
+        <span class="targo-cta-line" aria-hidden="true"></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="targo-roles-grid">
+    <article class="targo-card">
+      <span class="targo-card-tag">01 / ADMIN</span>
+      <h3>GOVERNANCE &amp; TICKETS</h3>
+      <p>Manages courses, approves Teacher and Analyst registrations, configures institution branding, and resolves support tickets.</p>
+    </article>
+
+    <article class="targo-card">
+      <span class="targo-card-tag">02 / TEACHER</span>
+      <h3>SMART MARKS INGESTION</h3>
+      <p>Uploads .csv, .xlsx, .json, .jsonl, .tsv, or .txt marks sheets with auto-mapping, student provisioning, and risk alerts.</p>
+    </article>
+
+    <article class="targo-card">
+      <span class="targo-card-tag">03 / ANALYST</span>
+      <h3>ML RISK ENGINE</h3>
+      <p>Runs Ridge, RandomForest, and IsolationForest pipelines to score GPA trajectories, detect anomalies, and stream LMS ticks.</p>
+    </article>
+
+    <article class="targo-card">
+      <span class="targo-card-tag">04 / STUDENT</span>
+      <h3>GPA &amp; A4 TRANSCRIPTS</h3>
+      <p>Monitors live GPA forecasts, attendance warnings, study guidance, and prints formal black-on-white A4 academic transcripts.</p>
+    </article>
+  </div>
+
+  <div class="targo-capabilities-grid">
+    <article class="targo-card targo-card-accent">
+      <span class="targo-card-tag">CAPABILITY / AI VOICE</span>
+      <h3>AI VOICE ASSISTANTS</h3>
+      <p>Role-scoped AI agents (EduCoach, PulseML, CourseOps, HelpDesk) with multi-turn voice and DOM workflow assistance.</p>
+    </article>
+
+    <article class="targo-card targo-card-accent">
+      <span class="targo-card-tag">CAPABILITY / COLLABORATION</span>
+      <h3>WHATSAPP CLASS &amp; STAFF CHAT</h3>
+      <p>Real-time course channels and staff threads for instant announcements, intervention notes, and student follow-ups.</p>
+    </article>
+
+    <article class="targo-card targo-card-accent">
+      <span class="targo-card-tag">CAPABILITY / REPORTING</span>
+      <h3>OFFICIAL A4 TRANSCRIPTS</h3>
+      <p>Zero-UI print-ready monochrome A4 PDF transcripts and batch rosters branded with {{ portal_institution_name|default:"EduPredict" }}.</p>
+    </article>
+  </div>
+</section>
+
+<section class="targo-workflow-section">
+  <div class="targo-roles-header">
+    <div>
+      <span class="targo-section-kicker">END-TO-END ACADEMIC PIPELINE</span>
+      <h2 class="targo-h2">
+        <span>WORKFLOW</span>
+        <span class="targo-h2-indent">SHOWCASE</span>
+      </h2>
+    </div>
+    <div class="targo-roles-actions">
+      <a href="{% url 'accounts:contact_view' %}" class="targo-btn-outline">CONTACT ADMIN</a>
+      <a href="{% url 'accounts:auth_view' %}?tab=register" class="targo-cta">
+        <span>GET STARTED</span>
+        <span class="targo-cta-line" aria-hidden="true"></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="targo-workflow-grid">
+    <article class="targo-workflow-card">
+      <div class="targo-workflow-media">
+        <video
+          data-targo-video="workflow-ingest"
+          class="targo-workflow-video"
+          poster="{% static 'video/targo_hero.jpg' %}?v=18"
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="auto"
+          aria-hidden="true"
+        >
+          <source src="{% static 'video/targo_hero.mp4' %}?v=18" type="video/mp4">
+        </video>
+        <div class="targo-workflow-tint" aria-hidden="true"></div>
+      </div>
+      <div class="targo-workflow-body">
+        <span class="targo-card-tag">STEP 01 &mdash; INGEST &amp; SCORE</span>
+        <h3>AUTOMATED MARKS TO ML RISK</h3>
+        <p>Teachers drop multi-format grade sheets into the portal; EduPredict cleans records, provisions student accounts, and triggers Ridge + RandomForest risk scoring in seconds.</p>
+      </div>
+    </article>
+
+    <article class="targo-workflow-card">
+      <div class="targo-workflow-media">
+        <video
+          data-targo-video="workflow-intervene"
+          class="targo-workflow-video"
+          poster="{% static 'video/targo_about.jpg' %}?v=18"
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="auto"
+          aria-hidden="true"
+        >
+          <source src="{% static 'video/targo_about.mp4' %}?v=18" type="video/mp4">
+        </video>
+        <div class="targo-workflow-tint" aria-hidden="true"></div>
+      </div>
+      <div class="targo-workflow-body">
+        <span class="targo-card-tag">STEP 02 &mdash; INTERVENE &amp; EXPORT</span>
+        <h3>REAL-TIME ALERTS &amp; A4 REPORTS</h3>
+        <p>High-risk students receive immediate notifications, faculty coordinate inside class chat, and verified academic records export directly to monochrome A4 PDF transcripts.</p>
+      </div>
+    </article>
+  </div>
+</section>
 {% endblock %}
