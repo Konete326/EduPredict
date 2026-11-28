@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.shortcuts import redirect, render
 from core.decorators import role_required
 from panels.student_services import get_student_overview_context
-from panels.student_test_services import get_student_tests_context, submit_student_test
+from panels.student_test_services import get_student_attendance_context, get_student_tests_context, submit_student_test
 
 
 def _student_identity(request):
@@ -119,6 +119,24 @@ def student_tests(request):
         db_error = str(exc)
     return render(request, "panels/student_tests.html", {
         "page_title": "My Tests",
+        "active_role": "STUDENT",
+        **ctx,
+        "db_error": db_error,
+    })
+
+
+@role_required(["STUDENT", "ADMIN"])
+def student_attendance(request):
+    student_id, user_id, role, user = _student_identity(request)
+    course_filter = str(request.GET.get("course") or "ALL").strip().upper() or "ALL"
+    ctx = {"semester_label": "-", "courses": [], "course_filter": course_filter, "course_cards": [], "attendance_headers": ["Date", "Course", "Status", "Teacher"], "attendance_rows": [], "attendance_cards": [], "kpis": {"attendance_pct": 0.0, "total_days": 0, "present_days": 0, "absent_days": 0, "leave_days": 0}}
+    db_error = None
+    try:
+        ctx = get_student_attendance_context(student_id, user_id, role, course_filter=course_filter)
+    except Exception as exc:
+        db_error = str(exc)
+    return render(request, "panels/student_attendance.html", {
+        "page_title": "My Attendance",
         "active_role": "STUDENT",
         **ctx,
         "db_error": db_error,

@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="space-y-4">
+  <header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
+    <div class="min-w-0 space-y-1">
+      <div class="flex flex-wrap items-center gap-2">
+        <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">My Attendance</h2>
+        {% if semester_label and semester_label != '-' %}
+        <span class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">{{ semester_label }}</span>
+        {% endif %}
+      </div>
+      <p class="text-xs sm:text-sm text-[var(--text-secondary)]">View your daily attendance and course summary.</p>
+    </div>
+    <form method="get" action="{% url 'panels:student_attendance' %}" class="flex items-center gap-2">
+      <select name="course" onchange="this.form.submit()" aria-label="Filter by course" class="h-9 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs text-[var(--text-primary)]">
+        <option value="ALL" {% if course_filter == 'ALL' %}selected{% endif %}>All Courses</option>
+        {% for c in courses %}
+        <option value="{{ c.course_code }}" {% if course_filter == c.course_code %}selected{% endif %}>{{ c.course_code }} · {{ c.title }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </header>
+
+  {% if db_error %}
+  <div class="rounded-[12px] border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2 text-xs text-[var(--status-danger)]">
+    <i class="fa-solid fa-circle-exclamation mr-1.5"></i>Notice: {{ db_error }}
+  </div>
+  {% endif %}
+
+  <section class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    {% include 'components/metric_card.html' with title="Attendance" value=kpis.attendance_pct|stringformat:"s"|add:"%" badge="Overall" status="info" icon="fa-solid fa-chart-pie" %}
+    {% include 'components/metric_card.html' with title="Present" value=kpis.present_days|default:0 badge="Days" status="success" icon="fa-solid fa-circle-check" %}
+    {% include 'components/metric_card.html' with title="Absent" value=kpis.absent_days|default:0 badge="Days" status="danger" icon="fa-solid fa-circle-xmark" %}
+    {% include 'components/metric_card.html' with title="Leave" value=kpis.leave_days|default:0 badge="Days" status="warning" icon="fa-solid fa-clock" %}
+  </section>
+
+  {% if course_cards %}
+  <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    {% for cc in course_cards %}
+    <article class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-2">
+      <div class="flex items-center justify-between gap-2">
+        <div class="min-w-0">
+          <p class="text-xs font-mono text-[var(--text-muted)]">{{ cc.course_code }}</p>
+          <h3 class="truncate text-sm font-semibold text-[var(--text-primary)]">{{ cc.title }}</h3>
+        </div>
+        <span class="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)] tabular-nums">{{ cc.pct }}%</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2 text-center text-[11px]">
+        <div><p class="text-[var(--text-muted)]">Present</p><p class="font-semibold text-[var(--status-success)]">{{ cc.present }}</p></div>
+        <div><p class="text-[var(--text-muted)]">Absent</p><p class="font-semibold text-[var(--status-danger)]">{{ cc.absent }}</p></div>
+        <div><p class="text-[var(--text-muted)]">Leave</p><p class="font-semibold text-[var(--status-warning)]">{{ cc.leave }}</p></div>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% include 'components/data_table.html' with table_id="student-attendance-table" title="Daily Attendance" subtitle="Recent Present, Absent, and Leave records" headers=attendance_headers rows=attendance_rows cards=attendance_cards empty_message="No attendance records yet." %}
+</div>
+{% endblock %}

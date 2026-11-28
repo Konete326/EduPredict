@@ -142,8 +142,8 @@ class StudentTestsAndClassroomChatTests(TestCase):
              patch("panels.student_test_services.courses_col", return_value=self.courses), \
              patch("panels.student_test_services.student_records_col", return_value=self.records), \
              patch("panels.student_test_services.course_tests_col", return_value=self.tests), \
-             patch("panels.student_test_services.is_cloudinary_configured", return_value=False), \
-             patch("panels.student_test_services.upload_academic_attachment", return_value=("", "", False, "not_configured")):
+             patch("panels.student_test_services.is_cloudinary_configured", return_value=True), \
+             patch("panels.student_test_services.upload_academic_attachment", side_effect=lambda f, **kw: (f"https://cdn.example.com/{f.name}", f.name, f.name.endswith(".png"), None)):
             resp = client.get(reverse("panels:student_tests"))
             self.assertEqual(resp.status_code, 200)
             self.assertContains(resp, "Quiz 1")
@@ -189,7 +189,7 @@ class StudentTestsAndClassroomChatTests(TestCase):
              patch("panels.chat_services.courses_col", return_value=self.courses), \
              patch("panels.chat_services.student_records_col", return_value=self.records), \
              patch("panels.chat_services.classroom_messages_col", return_value=self.chat_msgs), \
-             patch("panels.chat_services.upload_academic_attachment", return_value=("", "", False, "not_configured")):
+             patch("panels.chat_services.upload_academic_attachment", side_effect=lambda f, **kw: (f"https://cdn.example.com/{f.name}", f.name, f.name.endswith(".png"), None)):
             self.assertEqual([g["group_id"] for g in c_stu.get(api_url).json()["groups"]], ["CS101"])
             self.assertEqual([g["group_id"] for g in c_tea.get(api_url).json()["groups"]], ["CS101", "CS201"])
             self.assertEqual([g["group_id"] for g in c_adm.get(api_url).json()["groups"]], ["CS101", "CS201", "CS301"])
@@ -227,3 +227,26 @@ class StudentTestsAndClassroomChatTests(TestCase):
             deleted_msg = next(m for m in tea_msgs if m["msg_id"] == img_id)
             self.assertTrue(deleted_msg["deleted_for_all"])
             self.assertEqual(deleted_msg["text"], "This message was deleted")
+
+    def test_student_attendance_history_page(self):
+        stu = self.users.find_one({"user_id": "USR-STU-1"})
+        client = self._client_as(stu)
+        att_col = _FakeCol([
+            {"student_id": "STU-101", "course_code": "CS101", "date": "2026-11-25", "status": "PRESENT", "marked_by": "Prof. Ali"},
+            {"student_id": "STU-101", "course_code": "CS101", "date": "2026-11-26", "status": "ABSENT", "marked_by": "Prof. Ali"},
+            {"student_id": "STU-101", "course_code": "CS101", "date": "2026-11-27", "status": "LEAVE", "marked_by": "Prof. Ali"},
+        ])
+        with patch("panels.student_test_services.users_col", return_value=self.users), \
+             patch("panels.student_test_services.semesters_col", return_value=self.semesters), \
+             patch("panels.student_test_services.courses_col", return_value=self.courses), \
+             patch("panels.student_test_services.student_records_col", return_value=self.records), \
+             patch("panels.student_test_services.attendance_records_col", return_value=att_col):
+            resp = client.get(reverse("panels:student_attendance"))
+            self.assertEqual(resp.status_code, 200)
+            self.assertContains(resp, "My Attendance")
+            self.assertContains(resp, "CS101")
+            self.assertContains(resp, "Present")
+            self.assertContains(resp, "Absent")
+            self.assertContains(resp, "Leave")
+            self.assertContains(resp, "2026-11-27")
+

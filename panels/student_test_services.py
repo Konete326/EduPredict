@@ -3,8 +3,9 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from django.conf import settings
+from pymongo import DESCENDING
 from core.cloudinary_services import ALLOWED_IMAGE_EXTS, is_cloudinary_configured, upload_academic_attachment
-from core.db import course_tests_col, courses_col, invalidate_cache, semesters_col, student_records_col, users_col
+from core.db import attendance_records_col, course_tests_col, courses_col, invalidate_cache, semesters_col, student_records_col, users_col
 
 
 def _safe_float(val, default=0.0):
@@ -74,8 +75,7 @@ def _normalize_files(sub):
     return files
 
 
-def get_student_tests_context(student_id, user_id, role):
-    sid, sem_id, sem_label, enrolled_codes, _ = _resolve_student_scope(student_id, user_id, role)
+def _resolve_student_courses(sem_id, enrolled_codes, role):
     role_upper = str(role or "STUDENT").strip().upper()
     course_query = {"status": {"$ne": "INACTIVE"}}
     if sem_id:
@@ -84,7 +84,13 @@ def get_student_tests_context(student_id, user_id, role):
         course_query["course_code"] = {"$in": sorted(enrolled_codes)}
     elif role_upper != "ADMIN":
         course_query["course_code"] = "__NONE__"
-    course_docs = list(courses_col().find(course_docs_query := course_query, {"_id": 0}).sort("course_code", 1))
+    return list(courses_col().find(course_query, {"_id": 0}).sort("course_code", 1))
+
+
+def get_student_tests_context(student_id, user_id, role):
+    sid, sem_id, sem_label, enrolled_codes, _ = _resolve_student_scope(student_id, user_id, role)
+    role_upper = str(role or "STUDENT").strip().upper()
+    course_docs = _resolve_student_courses(sem_id, enrolled_codes, role)
     course_map = {str(c.get("course_code") or "").strip().upper(): c for c in course_docs if c.get("course_code")}
     target_codes = sorted(set(course_map.keys()) | enrolled_codes)
     if sem_id or target_codes:
@@ -220,3 +226,58 @@ def submit_student_test(test_id, student_id, user_id, note="", files=None):
     t_col.update_one({"test_id": tid}, {"$set": {f"submissions.{sid}": sub_doc, "updated_at": now}})
     invalidate_cache()
     return sub_doc, None
+
+
+def get_student_attendance_context(student_id, user_id, role, course_filter="ALL"):
+    sid, sem_id, sem_label, enrolled_codes, _ = _resolve_student_scope(student_id, user_id, role)
+    courses = _resolve_student_courses(sem_id, enrolled_codes, role)
+    title_map = {str(c.get("course_code") or "").strip().upper(): str(c.get("title") or "").strip() for c in courses}
+    cf = str(course_filter or "ALL").strip().upper() or "ALL"
+    all_att = list(attendance_records_col().find({"student_id": sid}, {"_id": 0}).sort("date", DESCENDING)) if sid else []
+    course_stats = {}
+    for c in courses:
+        code = str(c.get("course_code") or "").strip().upper()
+        if code:
+            course_stats[code] = {"course_code": code, "title": title_map.get(code) or code, "present": 0, "absent": 0, "leave": 0, "total": 0, "pct": 0.0}
+    for r in all_att:
+        code = str(r.get("course_code") or "COURSE").strip().upper()
+        st = str(r.get("status") or "PRESENT").strip().upper()
+        b = course_stats.setdefault(code, {"course_code": code, "title": title_map.get(code) or code, "present": 0, "absent": 0, "leave": 0, "total": 0, "pct": 0.0})
+        b["total"] += 1
+        if st == "PRESENT":
+            b["present"] += 1
+        elif st == "ABSENT":
+            b["absent"] += 1
+        else:
+            b["leave"] += 1
+    for b in course_stats.values():
+        b["pct"] = round((b["present"] / b["total"]) * 100.0, 1) if b["total"] else 0.0
+    filtered = [r for r in all_att if cf == "ALL" or str(r.get("course_code") or "").strip().upper() == cf]
+    status_map = {"PRESENT": ("Present", "success"), "ABSENT": ("Absent", "danger"), "LEAVE": ("Leave", "warning")}
+    rows, cards = [], []
+    p_cnt, a_cnt, l_cnt = 0, 0, 0
+    for r in filtered:
+        st = str(r.get("status") or "PRESENT").strip().upper()
+        p_cnt += int(st == "PRESENT")
+        a_cnt += int(st == "ABSENT")
+        l_cnt += int(st == "LEAVE")
+        lbl, tone = status_map.get(st, ("Present", "success"))
+        code = str(r.get("course_code") or "-").strip().upper()
+        dt = str(r.get("date") or "-")
+        t_name = str(r.get("teacher_name") or "Teacher").strip()
+        badge = {"text": lbl, "status": tone}
+        rows.append([dt, f"{code} · {title_map.get(code) or code}", badge, t_name])
+        cards.append({"id": f"{dt}-{code}", "title": f"{code} · {dt}", "subtitle": t_name, "badge": badge, "meta": [{"label": "Course", "value": title_map.get(code) or code}]})
+    total_days = len(filtered)
+    att_pct = round((p_cnt / total_days) * 100.0, 1) if total_days else 0.0
+    return {
+        "semester_id": sem_id,
+        "semester_label": sem_label,
+        "courses": [{"course_code": k, "title": v["title"]} for k, v in sorted(course_stats.items())],
+        "course_filter": cf,
+        "course_cards": list(course_stats.values()),
+        "attendance_headers": ["Date", "Course", "Status", "Teacher"],
+        "attendance_rows": rows,
+        "attendance_cards": cards,
+        "kpis": {"attendance_pct": att_pct, "total_days": total_days, "present_days": p_cnt, "absent_days": a_cnt, "leave_days": l_cnt},
+    }

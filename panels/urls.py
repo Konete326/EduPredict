@@ -31,6 +31,7 @@ urlpatterns = [
     path('teacher-panel/tests/<str:test_id>/grade/', views_teacher.teacher_test_grade, name='teacher_test_grade'),
     path('teacher-panel/marks/', views_teacher.teacher_marks, name='teacher_marks'),
     path('student-panel/', views_student.student_dashboard, name='student_dashboard'),
+    path('student-panel/attendance/', views_student.student_attendance, name='student_attendance'),
     path('student-panel/tests/', views_student.student_tests, name='student_tests'),
     path('chat/', views_chat.classroom_chat_view, name='classroom_chat'),
     path('chat/api/messages/', views_chat.classroom_chat_api, name='classroom_chat_api'),
