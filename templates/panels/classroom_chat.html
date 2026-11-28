@@ -7,29 +7,40 @@
   <aside id="chat-groups-pane" class="absolute inset-y-0 left-0 z-20 flex w-72 max-w-[85vw] flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-canvas)] shadow-xl md:static md:z-auto md:w-72 lg:w-80 md:shrink-0 md:shadow-none">
     <div class="flex items-center justify-between gap-2 border-b border-[var(--border-subtle)] px-4 py-3">
       <div class="min-w-0">
-        <h2 class="text-base font-semibold text-[var(--text-primary)] truncate">Class Chat</h2>
-        <p class="text-[11px] text-[var(--text-muted)]">{{ groups|length }} course group{{ groups|length|pluralize }}</p>
+        <h2 class="text-base font-semibold text-[var(--text-primary)] truncate">{% if is_staff_chat %}Staff Chat{% else %}Class Chat{% endif %}</h2>
+        <p class="text-[11px] text-[var(--text-muted)]">{{ groups|length }} {% if is_staff_chat %}channel{% else %}course group{% endif %}{{ groups|length|pluralize }}</p>
       </div>
     </div>
     <div class="p-2.5 border-b border-[var(--border-subtle)]">
-      <input id="chat-group-search" type="search" placeholder="Search course groups..." class="h-8 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-xs text-[var(--text-primary)]">
+      <input id="chat-group-search" type="search" placeholder="{% if is_staff_chat %}Search staff channels...{% else %}Search course groups...{% endif %}" class="h-8 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-xs text-[var(--text-primary)]">
     </div>
     <div id="chat-groups-list" class="flex-1 overflow-y-auto divide-y divide-[var(--border-subtle)]">
       {% for g in groups %}
-      <button type="button" data-group-btn data-group-id="{{ g.group_id }}" data-search="{{ g.group_id|lower }} {{ g.title|lower }} {{ g.semester_label|lower }}" class="flex w-full items-center gap-3 px-3.5 py-3 text-left transition-none hover:bg-[var(--bg-elevated)] {% if g.group_id == selected_group_id %}bg-[var(--accent-soft)]{% endif %}">
-        {% if g.dp_url %}
-        <img data-group-dp="{{ g.group_id }}" src="{{ g.dp_url }}" alt="{{ g.group_id }}" class="h-10 w-10 shrink-0 rounded-full border border-[var(--border-subtle)] object-cover">
-        {% else %}
-        <div data-group-dp="{{ g.group_id }}" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent-primary)] text-xs font-bold text-white">{{ g.group_id|slice:":2" }}</div>
+      <div data-group-card="{{ g.group_id }}" data-search="{{ g.group_id|lower }} {{ g.title|lower }} {{ g.semester_label|lower }}" class="flex w-full items-center gap-1 pr-2 transition-none hover:bg-[var(--bg-elevated)] {% if g.group_id == selected_group_id %}bg-[var(--accent-soft)]{% endif %}">
+        <button type="button" data-group-btn data-group-id="{{ g.group_id }}" class="flex min-w-0 flex-1 items-center gap-3 px-3.5 py-3 text-left">
+          {% if g.dp_url %}
+          <img data-group-dp="{{ g.group_id }}" src="{{ g.dp_url }}" alt="{{ g.group_id }}" class="h-10 w-10 shrink-0 rounded-full border border-[var(--border-subtle)] object-cover">
+          {% else %}
+          <div data-group-dp="{{ g.group_id }}" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent-primary)] text-xs font-bold text-white">{{ g.group_id|slice:":2" }}</div>
+          {% endif %}
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-2">
+              <span class="truncate text-sm font-semibold text-[var(--text-primary)]">{{ g.group_id }}</span>
+              <span class="flex items-center gap-1 shrink-0">
+                <span data-group-paused="{{ g.group_id }}" class="{% if g.chat_active != False %}hidden{% endif %} rounded px-1.5 py-0.5 text-[9px] font-semibold bg-[var(--status-danger)]/15 text-[var(--status-danger)]">Paused</span>
+                <span class="text-[10px] text-[var(--text-muted)]">{{ g.member_count }} mbrs</span>
+              </span>
+            </div>
+            <p data-group-title="{{ g.group_id }}" class="truncate text-xs text-[var(--text-secondary)]">{{ g.title }}</p>
+            <p class="truncate text-[10px] text-[var(--text-muted)]">{{ g.semester_label }} · {{ g.teacher_name }}</p>
+          </div>
+        </button>
+        {% if not is_staff_chat and current_user_role == 'TEACHER' or not is_staff_chat and current_user_role == 'ADMIN' %}
+        <button type="button" data-edit-group-btn="{{ g.group_id }}" title="Rename or change group photo" aria-label="Edit {{ g.group_id }}" class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--accent-primary)]"><i class="fa-solid fa-pen text-[11px]"></i></button>
         {% endif %}
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center justify-between gap-2"><span class="truncate text-sm font-semibold text-[var(--text-primary)]">{{ g.group_id }}</span><span class="shrink-0 text-[10px] text-[var(--text-muted)]">{{ g.member_count }} mbrs</span></div>
-          <p data-group-title="{{ g.group_id }}" class="truncate text-xs text-[var(--text-secondary)]">{{ g.title }}</p>
-          <p class="truncate text-[10px] text-[var(--text-muted)]">{{ g.semester_label }} · {{ g.teacher_name }}</p>
-        </div>
-      </button>
+      </div>
       {% empty %}
-      <div class="p-6 text-center text-xs text-[var(--text-muted)]">No course groups available for your account yet.</div>
+      <div class="p-6 text-center text-xs text-[var(--text-muted)]">No groups available for your account yet.</div>
       {% endfor %}
     </div>
   </aside>
@@ -53,8 +64,11 @@
         </div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
-        {% if current_user_role == 'TEACHER' or current_user_role == 'ADMIN' %}
-        <button id="chat-group-settings-btn" type="button" title="Group photo & name" class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-pen-to-square text-[var(--accent-primary)]"></i><span class="hidden sm:inline">Group</span></button>
+        {% if not is_staff_chat and current_user_role == 'TEACHER' or not is_staff_chat and current_user_role == 'ADMIN' %}
+        <button id="chat-group-settings-btn" type="button" title="Rename group or change photo" class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-pen-to-square text-[var(--accent-primary)]"></i><span class="hidden sm:inline">Rename / DP</span></button>
+        {% endif %}
+        {% if not is_staff_chat and current_user_role == 'ADMIN' %}
+        <button id="chat-toggle-active-btn" type="button" title="Deactivate or reactivate group chat" class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">{% if selected_group and selected_group.chat_active == False %}<i class="fa-solid fa-circle-play text-[var(--status-success)]"></i><span class="hidden sm:inline">Activate</span>{% else %}<i class="fa-solid fa-ban text-[var(--status-danger)]"></i><span class="hidden sm:inline">Deactivate</span>{% endif %}</button>
         {% endif %}
       </div>
     </header>
@@ -71,7 +85,8 @@
       <div id="chat-file-list" class="flex flex-wrap items-center gap-1.5 min-w-0 flex-1"></div>
       <button id="chat-file-clear" type="button" class="shrink-0 text-[var(--status-danger)] hover:underline">Clear</button>
     </div>
-    <div class="relative border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
+    <div id="chat-deactivated-banner" class="{% if not selected_group or selected_group.chat_active != False %}hidden{% endif %} flex items-center justify-center gap-2 border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-3 text-xs font-medium text-[var(--text-secondary)]"><i class="fa-solid fa-lock text-[var(--status-danger)]"></i><span>This group chat has been deactivated by an administrator. History is read-only.</span></div>
+    <div id="chat-composer-wrap" class="relative border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] {% if selected_group and selected_group.chat_active == False %}hidden{% endif %}">
       <div id="chat-plus-menu" class="hidden absolute bottom-full left-2.5 mb-2 z-30 w-48 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] py-1.5 shadow-xl text-xs">
         <button id="chat-plus-photos" type="button" class="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-images w-4 text-emerald-500"></i><span>Photos / Images</span></button>
         <button id="chat-plus-docs" type="button" class="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-file-lines w-4 text-[var(--accent-primary)]"></i><span>Documents</span></button>
@@ -109,7 +124,7 @@
   </div>
 </div>
 
-{% if current_user_role == 'TEACHER' or current_user_role == 'ADMIN' %}
+{% if current_user_role == 'TEACHER' or current_user_role == 'ADMIN' or is_staff_chat %}
 <div id="chat-msg-info-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
   <div data-chat-backdrop="chat-msg-info-modal" class="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"></div>
   <div class="relative z-10 w-full max-w-md rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-2xl space-y-3">
@@ -126,6 +141,9 @@
     </div>
   </div>
 </div>
+{% endif %}
+
+{% if not is_staff_chat and current_user_role == 'TEACHER' or not is_staff_chat and current_user_role == 'ADMIN' %}
 
 <div id="chat-group-settings-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
   <div data-chat-backdrop="chat-group-settings-modal" class="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"></div>
@@ -195,7 +213,7 @@
 {% block extra_js %}
 {{ groups_json|json_script:"chat-groups-data" }}
 {{ messages_json|json_script:"chat-messages-data" }}
-<div id="chat-boot-cfg" data-api-url="{% url 'panels:classroom_chat_api' %}" data-role="{{ current_user_role }}" data-group-id="{{ selected_group_id|default:'' }}" class="hidden"></div>
+<div id="chat-boot-cfg" data-api-url="{{ chat_api_url }}" data-role="{{ current_user_role }}" data-group-id="{{ selected_group_id|default:'' }}" data-staff-mode="{% if is_staff_chat %}1{% else %}0{% endif %}" class="hidden"></div>
 <script src="{% static 'js/chat_media.js' %}?v=1"></script>
-<script src="{% static 'js/classroom_chat.js' %}?v=2"></script>
+<script src="{% static 'js/classroom_chat.js' %}?v=3"></script>
 {% endblock %}

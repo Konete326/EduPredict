@@ -283,13 +283,13 @@ class Phase74VerificationTests(TestCase):
 
     def test_topbar_search_spinner_gap_academic_widgets_pages_and_node_vm(self):
         analyst = self._login("ANALYST", "USR-1004", "analyst@edupredict.edu", "Data Analyst")
-        acc_html = analyst.get(reverse("panels:analyst_accuracy")).content.decode("utf-8")
+        health_html = analyst.get(reverse("panels:analyst_health")).content.decode("utf-8")
         for marker in (
             'id="topbar-quick-search"', "openCommandSearchModal()", "academic_widgets.js?v=17",
             'id="academic-contour-card"', 'id="academic-contour-canvas"',
-            'id="contour-strata-range"', "data-ep-marquee", 'id="accuracy-contour-data"',
+            'id="contour-strata-range"', 'id="accuracy-contour-data"',
         ):
-            self.assertIn(marker, acc_html)
+            self.assertIn(marker, health_html)
 
         student = self._login("STUDENT", "USR-1003", "zainab@edupredict.edu", "Zainab Raza", student_id="STD-2026-01")
         st_dash = student.get(reverse("panels:student_dashboard")).content.decode("utf-8")

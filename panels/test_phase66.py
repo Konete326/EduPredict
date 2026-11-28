@@ -244,12 +244,12 @@ assert.ok(c2.children[7].querySelector('span.rounded-full').classList.contains('
 """
         proc = subprocess.run(["node", "-e", node_script, str(base_dir / "static" / "js" / "app.js"), str(base_dir / "static" / "js" / "directory_ui.js")], capture_output=True, text=True, check=False)
         self.assertEqual(proc.returncode, 0, msg=proc.stderr or proc.stdout)
-        tpl_src = (base_dir / "templates" / "panels" / "analyst_dashboard.html").read_text(encoding="utf-8")
+        tpl_src = (base_dir / "templates" / "panels" / "analyst_accuracy.html").read_text(encoding="utf-8")
         self.assertIn("analyst_evaluation.js' %}?v=17\"", tpl_src)
         self.assertNotIn("analyst_evaluation.js' %}?v=1\"", tpl_src)
         self.assertEqual(re.findall(r"analyst_evaluation\.js'\s*%\}\?v=(\d+)", tpl_src), ["17"])
 
-        analyst_html = self._login_analyst().get(reverse("panels:analyst_dashboard")).content.decode("utf-8")
+        analyst_html = self._login_analyst().get(reverse("panels:analyst_accuracy")).content.decode("utf-8")
         self.assertIn("analyst_evaluation.js?v=17", analyst_html)
         self.assertNotIn('analyst_evaluation.js?v=1"', analyst_html)
         self.assertEqual(re.findall(r"analyst_evaluation\.js\?v=(\d+)", analyst_html), ["17"])
@@ -261,7 +261,7 @@ assert.ok(c2.children[7].querySelector('span.rounded-full').classList.contains('
         req.session = {}
         ctx = global_context(req)
         self.assertEqual(ctx.get("asset_version"), STATIC_ASSET_VERSION)
-        for rel in ("templates/base.html", "templates/accounts/auth.html", "templates/panels/analyst_dashboard.html"):
+        for rel in ("templates/base.html", "templates/accounts/auth.html", "templates/panels/analyst_accuracy.html"):
             src = (base_dir / rel).read_text(encoding="utf-8")
             versions = re.findall(r"%\}\?v=(\d+)", src)
             self.assertTrue(versions and all(v in (STATIC_ASSET_VERSION, "22") for v in versions), rel)
@@ -348,7 +348,8 @@ assert.strictEqual(c1.children[4].querySelector('div.text-right').textContent, '
         self.assertEqual(dlog.get("rows_processed"), payload.get("events_pushed"))
         self.assertRegex(str(dlog.get("uploaded_at") or ""), r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$")
         html = analyst.get(reverse("panels:analyst_dashboard")).content.decode("utf-8")
-        self.assertIn("window.syncStreamDatasetLogsTable(data.dataset_log)", html)
+        self.assertIn("window.syncStreamPredictionTable(data.events)", html)
+        self.assertNotIn('id="dataset-logs-table"', html)
         self.assertIn("data-table-count-badge", (base_dir / "templates/components/data_table.html").read_text(encoding="utf-8"))
         ad_src = (base_dir / "templates/panels/analyst_dashboard.html").read_text(encoding="utf-8")
         self.assertIn("if (text) td.setAttribute('title', text);", ad_src)

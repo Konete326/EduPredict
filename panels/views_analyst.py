@@ -1,13 +1,15 @@
 import csv
+import json
 import pandas as pd
+from django.contrib import messages
 from django.http import HttpResponse
-from django.shortcuts import render
-from pymongo import DESCENDING
+from django.shortcuts import redirect, render
 from analytics.data_pipeline import REQUIRED_COLUMNS
 from analytics.ml_engine import _resolve_runtime_settings, compute_course_demand, evaluate_models
 from analytics.model_health import get_analyst_accuracy_page_context
 from core.db import datasets_log_col, get_cached, predictions_col, student_records_col
 from core.decorators import role_required
+from panels.analyst_alert_services import get_analyst_health_context, send_teacher_risk_alert
 
 
 def _safe_float(val, default=0.0):
@@ -35,15 +37,7 @@ def _load_analyst_snapshot():
         prev_gen = prev_pred.get('generated_at') if prev_pred else None
         if prev_pred is None or (hasattr(gen, 'strftime') and (not hasattr(prev_gen, 'strftime') or gen >= prev_gen)):
             pred_map[sid] = pred
-    total_uploads_count = int(datasets_log_col().count_documents({}))
-    logs = list(datasets_log_col().find({}, {'_id': 0}).sort('uploaded_at', DESCENDING))
-    evaluation = None
-    evaluation_error = None
-    try:
-        evaluation = get_cached('analyst:evaluation:default', lambda: evaluate_models(records=records), ttl=45.0)
-    except Exception as exc:
-        evaluation_error = str(exc)
-    return records, pred_map, logs, total_uploads_count, evaluation, evaluation_error
+    return records, pred_map
 
 
 def _build_joined_records(records, pred_map):
@@ -112,9 +106,7 @@ def _ordered_evaluation_models(evaluation):
 
 
 def _compute_analyst_data(selected_batch, selected_course, selected_risk):
-    records, pred_map, logs, total_uploads_count, evaluation, evaluation_error = get_cached(
-        'analyst:snapshot', _load_analyst_snapshot, ttl=45.0
-    )
+    records, pred_map = get_cached('analyst:snapshot', _load_analyst_snapshot, ttl=45.0)
     joined = _build_joined_records(records, pred_map)
     batches = sorted({item['batch'] for item in joined if item['batch']})
     courses = sorted({item['course_code'] for item in joined if item['course_code']})
@@ -122,13 +114,6 @@ def _compute_analyst_data(selected_batch, selected_course, selected_risk):
     risk_order = {'HIGH': 0, 'MEDIUM': 1, 'LOW': 2, 'PENDING': 3}
     filtered.sort(key=lambda x: (risk_order.get(x['risk_level'], 4), -(x['dropout_risk_score'] or 0.0)))
     gpa_vals = [r['predicted_gpa'] for r in filtered if r['predicted_gpa'] is not None]
-    eval_summary = evaluation.get('dataset_summary') if isinstance(evaluation, dict) else None
-    genuine_gpa_labels = int(eval_summary.get('genuine_gpa_labels') or 0) if isinstance(eval_summary, dict) else 0
-    accuracy_note = (
-        f"{genuine_gpa_labels} genuine actual_gpa labels verified for train/test validation."
-        if genuine_gpa_labels > 0
-        else "0 genuine actual_gpa labels: Model Evaluation hides real-world test scores; AI Accuracy shows Predicted vs Previous GPA as a proxy drift check."
-    )
     kpis = {
         'total_records': len(filtered),
         'predictions_stored': sum(1 for r in filtered if r['predicted_gpa'] is not None),
@@ -147,17 +132,13 @@ def _compute_analyst_data(selected_batch, selected_course, selected_risk):
             {'text': risk_text, 'status': risk_status_map.get(r['risk_level'], 'info')},
             {'text': 'Flagged' if r['is_anomaly'] else 'Normal', 'status': 'danger' if r['is_anomaly'] else 'success'},
             r['anomaly_reason'] if r['is_anomaly'] and r['anomaly_reason'] else r['recommendation'],
-        ])
-    dataset_rows = []
-    for log in logs:
-        status_val = str(log.get('status') or 'COMPLETED').upper()
-        uploaded_at = log.get('uploaded_at')
-        uploaded_text = uploaded_at.strftime('%Y-%m-%d %H:%M') if hasattr(uploaded_at, 'strftime') else '-'
-        dataset_rows.append([
-            str(log.get('filename') or 'dataset.csv'), int(log.get('rows_processed') or 0),
-            int(log.get('missing_values_fixed') or 0),
-            {'text': status_val, 'status': 'success' if status_val == 'COMPLETED' else 'danger'},
-            uploaded_text,
+            {'actions': [{
+                'label': 'Notify Teacher',
+                'icon': 'fa-solid fa-bell',
+                'title': f"Notify {r['course_code']} teacher about {r['full_name']}",
+                'variant': 'primary' if r['risk_level'] == 'HIGH' else 'default',
+                'onclick': f"openNotifyTeacherModal({json.dumps(r['student_id'])}, {json.dumps(r['full_name'])}, {json.dumps(r['course_code'])}, {json.dumps(r['risk_level'])})",
+            }]},
         ])
     raw_filtered = [r['raw_record'] for r in filtered]
     course_demand = compute_course_demand(pd.DataFrame(raw_filtered)) if raw_filtered else []
@@ -175,13 +156,39 @@ def _compute_analyst_data(selected_batch, selected_course, selected_risk):
     }
     return {
         'kpis': kpis, 'filter_options': {'batches': batches, 'courses': courses},
-        'prediction_rows': prediction_rows, 'dataset_rows': dataset_rows,
-        'total_uploads_count': total_uploads_count, 'accuracy_note': accuracy_note,
-        'chart_data': chart_data, 'filtered': filtered, 'evaluation': evaluation,
-        'evaluation_models': _ordered_evaluation_models(evaluation),
-        'evaluation_error': evaluation_error,
-        'portal_settings': _resolve_runtime_settings(persist=True),
+        'prediction_rows': prediction_rows, 'chart_data': chart_data,
+        'filtered': filtered, 'portal_settings': _resolve_runtime_settings(persist=True),
     }
+
+
+def _handle_notify_teacher_post(request):
+    user = request.session.get('user') or {}
+    actor_name = str(user.get('full_name') or user.get('email') or 'Analyst').strip()
+    actor_role = str(user.get('role') or 'ANALYST').strip().upper()
+    actor_uid = str(user.get('user_id') or '').strip()
+    doc, recipient, err = send_teacher_risk_alert(
+        request.POST.get('student_id'),
+        request.POST.get('course_code'),
+        request.POST.get('severity'),
+        request.POST.get('message'),
+        actor_name,
+        actor_role,
+        actor_user_id=actor_uid,
+    )
+    if err or not doc:
+        messages.error(request, err or 'Could not send notification to teacher.')
+    else:
+        messages.success(request, f"Risk alert sent to {recipient} for {doc['student_id']}.")
+
+
+@role_required(['ANALYST', 'ADMIN'])
+def analyst_notify_teacher(request):
+    if request.method == 'POST':
+        try:
+            _handle_notify_teacher_post(request)
+        except Exception as exc:
+            messages.error(request, f"Database error: {exc}")
+    return redirect('panels:analyst_dashboard')
 
 
 @role_required(['ANALYST', 'ADMIN'])
@@ -193,30 +200,47 @@ def analyst_accuracy(request):
     except Exception as exc:
         data = {
             'kpis': {}, 'model_info': {'version': 'untrained', 'generated': 'Never', 'features': []},
-            'risk_counts': {'LOW': 0, 'MEDIUM': 0, 'HIGH': 0}, 'error_buckets': {},
-            'demand_headers': [], 'demand_rows': [], 'upload_headers': [], 'upload_rows': [],
-            'total_uploads_count': 0, 'accuracy_note': '',
-            'display': {'gpa_mae': 'N/A', 'stable_share': 'N/A', 'risk_agreement': 'N/A', 'gpa_mae_title': 'GPA Drift (Proxy MAE)', 'gpa_mae_badge': 'Proxy: Pred vs Prev GPA (0 labels)', 'accuracy_note': ''},
-            'chart_data': {}, 'portal_settings': _resolve_runtime_settings(persist=False), 'db_error': str(exc),
+            'accuracy_note': '',
+            'display': {'gpa_mae': 'N/A', 'stable_share': 'N/A', 'risk_agreement': 'N/A'},
+            'portal_settings': _resolve_runtime_settings(persist=False), 'db_error': str(exc),
         }
+    evaluation = None
+    evaluation_error = None
+    try:
+        records, _ = get_cached('analyst:snapshot', _load_analyst_snapshot, ttl=45.0)
+        evaluation = get_cached('analyst:evaluation:default', lambda: evaluate_models(records=records), ttl=45.0)
+    except Exception as exc:
+        evaluation_error = str(exc)
     return render(request, 'panels/analyst_accuracy.html', {
         'page_title': 'AI Accuracy', 'active_role': active_role, 'kpis': data['kpis'],
-        'model_info': data['model_info'], 'risk_counts': data['risk_counts'],
-        'error_buckets': data['error_buckets'], 'gpa_mae_display': data['display']['gpa_mae'],
+        'model_info': data['model_info'],
+        'gpa_mae_display': data['display']['gpa_mae'],
         'stable_share_display': data['display']['stable_share'],
         'risk_agreement_display': data['display']['risk_agreement'],
-        'gpa_mae_title': data['display'].get('gpa_mae_title', 'GPA Drift (Proxy MAE)'),
-        'gpa_mae_badge': data['display'].get('gpa_mae_badge', 'Proxy: Pred vs Prev GPA'),
-        'accuracy_note': data.get('accuracy_note') or data['display'].get('accuracy_note', ''),
-        'total_uploads_count': data.get('total_uploads_count', 0),
-        'demand_headers': data['demand_headers'], 'demand_rows': data['demand_rows'],
-        'upload_headers': data['upload_headers'], 'upload_rows': data['upload_rows'],
-        'chart_data': data['chart_data'], 'portal_settings': data['portal_settings'], 'db_error': data['db_error'],
+        'accuracy_note': data.get('accuracy_note') or '',
+        'evaluation': evaluation,
+        'evaluation_models': _ordered_evaluation_models(evaluation),
+        'evaluation_error': evaluation_error,
+        'portal_settings': data['portal_settings'], 'db_error': data.get('db_error'),
     })
 
 
 @role_required(['ANALYST', 'ADMIN'])
+def analyst_health(request):
+    session_user = request.session.get('user') or {}
+    active_role = str(session_user.get('role') or 'ANALYST').upper()
+    ctx = get_analyst_health_context()
+    ctx.update({'page_title': 'Model Health', 'active_role': active_role})
+    return render(request, 'panels/analyst_health.html', ctx)
+
+
+@role_required(['ANALYST', 'ADMIN'])
 def analyst_dashboard(request):
+    if request.method == 'POST':
+        if str(request.POST.get('action') or '').strip().lower() == 'notify_teacher':
+            return analyst_notify_teacher(request)
+        return redirect('panels:analyst_dashboard')
+
     selected_batch = str(request.GET.get('batch', 'ALL')).strip() or 'ALL'
     selected_course = str(request.GET.get('course_code', 'ALL')).strip() or 'ALL'
     selected_risk = str(request.GET.get('risk_level', 'ALL')).strip().upper() or 'ALL'
@@ -231,16 +255,13 @@ def analyst_dashboard(request):
     def _render():
         data = _compute_analyst_data(selected_batch, selected_course, selected_risk)
         resp = render(request, 'panels/analyst_dashboard.html', {
-            'page_title': 'Data Dashboard', 'active_role': active_role, 'kpis': data['kpis'],
+            'page_title': 'Data & ML Hub', 'active_role': active_role, 'kpis': data['kpis'],
             'filter_options': data['filter_options'],
             'selected_filters': {'batch': selected_batch, 'course_code': selected_course, 'risk_level': selected_risk},
-            'prediction_headers': ['Student ID', 'Name', 'Batch', 'Course', 'Attendance', 'Past GPA', 'Next GPA', 'Risk Level', 'Unusual', 'Tip'],
+            'prediction_headers': ['Student ID', 'Name', 'Batch', 'Course', 'Attendance', 'Past GPA', 'Next GPA', 'Risk Level', 'Unusual', 'Tip', 'Actions'],
             'prediction_rows': data['prediction_rows'],
-            'dataset_headers': ['File Name', 'Rows', 'Fixed', 'Status', 'Date'],
-            'dataset_rows': data['dataset_rows'], 'total_uploads_count': data['total_uploads_count'],
-            'accuracy_note': data['accuracy_note'], 'chart_data': data['chart_data'],
-            'evaluation': data['evaluation'], 'evaluation_models': data['evaluation_models'],
-            'evaluation_error': data['evaluation_error'], 'portal_settings': data['portal_settings'],
+            'chart_data': data['chart_data'],
+            'portal_settings': data['portal_settings'],
             'required_columns': REQUIRED_COLUMNS, 'db_error': None,
         })
         return resp.content, resp.get('Content-Type', 'text/html; charset=utf-8')

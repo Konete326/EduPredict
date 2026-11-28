@@ -75,13 +75,11 @@ def _build_user_chat_groups(session_user):
         teacher_name = _norm(c.get("instructor") or "TBA") or "TBA"
         s_count = max(sem_counts.get(c_sem, 0), len(rec_counts.get(code, set())))
         groups.append({
-            "group_id": code,
-            "title": _norm(c.get("chat_title") or c.get("title") or code) or code,
-            "dp_url": _norm(c.get("group_dp_url")),
-            "semester_id": c_sem,
-            "semester_label": _semester_label(smap.get(c_sem)),
-            "teacher_name": teacher_name,
+            "group_id": code, "title": _norm(c.get("chat_title") or c.get("title") or code) or code,
+            "dp_url": _norm(c.get("group_dp_url")), "semester_id": c_sem,
+            "semester_label": _semester_label(smap.get(c_sem)), "teacher_name": teacher_name,
             "member_count": s_count + (1 if teacher_name != "TBA" else 0),
+            "chat_active": c.get("chat_active") is not False,
         })
     return groups
 
@@ -96,6 +94,14 @@ def get_user_chat_groups(session_user):
 def _has_group_access(group_id, session_user):
     gid = _norm(group_id).upper()
     return bool(gid and any(g["group_id"] == gid for g in get_user_chat_groups(session_user)))
+
+
+def is_group_chat_active(group_id):
+    gid = _norm(group_id).upper()
+    if not gid:
+        return False
+    doc = courses_col().find_one({"course_code": gid}, {"_id": 0, "chat_active": 1})
+    return True if not doc else doc.get("chat_active") is not False
 
 
 def _parse_iso_dt(raw):
@@ -126,14 +132,7 @@ def _load_sender_profiles(user_ids, smap):
     for u in users_col().find({"user_id": {"$in": clean_ids}}, proj):
         uid = _norm(u.get("user_id"))
         if uid:
-            profiles[uid] = {
-                "user_id": uid,
-                "student_id": _norm(u.get("student_id")),
-                "full_name": _norm(u.get("full_name") or "User"),
-                "role": _norm(u.get("role") or "STUDENT").upper(),
-                "email": _norm(u.get("email")),
-                "semester_label": _semester_label(smap.get(_norm(u.get("semester_id")))),
-            }
+            profiles[uid] = {"user_id": uid, "student_id": _norm(u.get("student_id")), "full_name": _norm(u.get("full_name") or "User"), "role": _norm(u.get("role") or "STUDENT").upper(), "email": _norm(u.get("email")), "semester_label": _semester_label(smap.get(_norm(u.get("semester_id"))))}
     return profiles
 
 
@@ -172,7 +171,8 @@ def list_group_messages(group_id, session_user, since_iso=""):
     if since_dt is not None:
         query["$and"] = [{"$or": [{"created_at": {"$gt": since_dt}}, {"updated_at": {"$gt": since_dt}}]}]
     docs = list(classroom_messages_col().find(query, {"_id": 0}).sort("created_at", 1))
-    mark_messages_read(docs, uid)
+    if uid and any(_norm(d.get("msg_id")) and uid not in [str(x).strip() for x in (d.get("read_by") or [])] for d in docs):
+        mark_messages_read(docs, uid)
     is_staff = viewer_role in ("TEACHER", "ADMIN")
     profile_ids = [_norm(d.get("sender_user_id")) for d in docs]
     if is_staff:
@@ -193,29 +193,22 @@ def list_group_messages(group_id, session_user, since_iso=""):
         files_list = [] if deleted_all else normalize_media_list(d.get("files"), d.get("file_url"), d.get("file_name"), d.get("file_size"), is_image=False)
         tick_state, read_receipts = build_message_receipts(d, group_members, profiles, viewer_role)
         out.append({
-            "msg_id": _norm(d.get("msg_id")),
-            "group_id": gid,
+            "msg_id": _norm(d.get("msg_id")), "group_id": gid,
             "msg_type": "DELETED" if deleted_all else _norm(d.get("msg_type") or "TEXT").upper(),
             "text": ("You deleted this message" if is_mine else "This message was deleted") if deleted_all else _norm(d.get("text")),
             "image_url": images_list[0]["url"] if images_list else "",
             "file_url": files_list[0]["url"] if files_list else "",
             "file_name": files_list[0]["name"] if files_list else "",
             "file_size": files_list[0]["size"] if files_list else 0,
-            "images": images_list,
-            "files": files_list,
+            "images": images_list, "files": files_list,
             "audio_url": "" if deleted_all else _norm(d.get("audio_url")),
             "poll": None if deleted_all else _format_poll(d.get("poll"), uid),
             "assignment": None if deleted_all else _assignment_link(d.get("assignment"), viewer_role),
             "reply_to": None if deleted_all else d.get("reply_to"),
-            "tick_state": tick_state,
-            "read_receipts": read_receipts,
-            "edited": bool(d.get("edited")) and not deleted_all,
-            "deleted_for_all": deleted_all,
-            "is_mine": is_mine,
-            "sender_profile": profile,
-            "created_at_iso": created_iso,
-            "updated_at_iso": updated_iso,
-            "created_at_str": created_str,
+            "tick_state": tick_state, "read_receipts": read_receipts,
+            "edited": bool(d.get("edited")) and not deleted_all, "deleted_for_all": deleted_all,
+            "is_mine": is_mine, "sender_profile": profile,
+            "created_at_iso": created_iso, "updated_at_iso": updated_iso, "created_at_str": created_str,
         })
     return out, None
 
@@ -227,29 +220,23 @@ def _build_reply_snapshot(gid, reply_to_id):
     ref = classroom_messages_col().find_one({"msg_id": rid, "$or": [{"group_id": gid}, {"course_code": gid}]}, {"_id": 0})
     if not ref or ref.get("deleted_for_all"):
         return None
-    return {
-        "msg_id": rid,
-        "sender_name": _norm(ref.get("sender_name") or "Member"),
-        "text": _norm(ref.get("text"))[:140],
-        "msg_type": _norm(ref.get("msg_type") or "TEXT").upper(),
-        "file_name": _norm(ref.get("file_name")),
-    }
+    return {"msg_id": rid, "sender_name": _norm(ref.get("sender_name") or "Member"), "text": _norm(ref.get("text"))[:140], "msg_type": _norm(ref.get("msg_type") or "TEXT").upper(), "file_name": _norm(ref.get("file_name"))}
 
 
 def send_group_message(group_id, session_user, text="", image_file=None, doc_file=None, audio_file=None, poll_question="", poll_options=None, reply_to_id="", image_files=None, doc_files=None):
     gid = _norm(group_id).upper()
     if not _has_group_access(gid, session_user):
         return None, "You do not have access to this classroom chat."
+    if not is_group_chat_active(gid):
+        return None, "This group chat is currently deactivated by an administrator."
     clean_text, clean_q = _norm(text), _norm(poll_question)
     clean_opts = [_norm(o) for o in (poll_options or []) if _norm(o)]
     if clean_q and len(clean_opts) < 2:
         return None, "Polls require a question and at least 2 options."
     all_images = [f for f in (list(image_files or []) + ([image_file] if image_file else [])) if f]
     all_docs = [f for f in (list(doc_files or []) + ([doc_file] if doc_file else [])) if f]
-    if len(all_images) > 5:
-        return None, "You can upload a maximum of 5 images per message."
-    if len(all_docs) > 5:
-        return None, "You can upload a maximum of 5 files per message."
+    if len(all_images) > 5 or len(all_docs) > 5:
+        return None, f"You can upload a maximum of 5 {'images' if len(all_images) > 5 else 'files'} per message."
     for img_f in all_images:
         _, _, _, val_err = validate_chat_media(img_f, ALLOWED_IMAGE_EXTS)
         if val_err:
@@ -279,10 +266,8 @@ def send_group_message(group_id, session_user, text="", image_file=None, doc_fil
     audio_url, _an, _as, _ai, aud_err = save_chat_media(audio_file, ALLOWED_CHAT_AUDIO_EXTS, "chat", upload_fn=upload_academic_attachment)
     if aud_err:
         return None, aud_err
-    image_url = images[0]["url"] if images else ""
-    file_url = files[0]["url"] if files else ""
-    file_name = files[0]["name"] if files else ""
-    file_size = files[0]["size"] if files else 0
+    image_url, file_url = (images[0]["url"] if images else ""), (files[0]["url"] if files else "")
+    file_name, file_size = (files[0]["name"] if files else ""), (files[0]["size"] if files else 0)
     if not clean_text and not images and not files and not audio_url and not clean_q:
         return None, "Message cannot be empty."
     msg_type = "POLL" if clean_q else ("IMAGE" if images else ("FILE" if files else ("AUDIO" if audio_url else "TEXT")))
@@ -327,6 +312,20 @@ def update_group_settings(group_id, session_user, group_name="", dp_file=None):
         return None, "Provide a new group name or photo to update."
     updates["updated_at"] = datetime.now(timezone.utc)
     courses_col().update_one({"course_code": gid}, {"$set": updates})
+    invalidate_cache("chat:"); invalidate_cache("courses:")
+    return next((g for g in get_user_chat_groups(session_user) if g["group_id"] == gid), None), None
+
+
+def toggle_group_active(group_id, session_user, active=None):
+    gid = _norm(group_id).upper()
+    role = _norm((session_user or {}).get("role")).upper()
+    if role != "ADMIN":
+        return None, "Only admins can activate or deactivate a group chat."
+    if not _has_group_access(gid, session_user):
+        return None, "You do not have access to this classroom chat."
+    cur = is_group_chat_active(gid)
+    new_state = (not cur) if active is None else bool(active)
+    courses_col().update_one({"course_code": gid}, {"$set": {"chat_active": new_state, "updated_at": datetime.now(timezone.utc)}})
     invalidate_cache("chat:")
     invalidate_cache("courses:")
     groups = get_user_chat_groups(session_user)
@@ -387,6 +386,8 @@ def vote_group_poll(msg_id, option_idx, session_user):
     gid = _norm(doc.get("group_id") or doc.get("course_code")).upper()
     if not _has_group_access(gid, session_user):
         return False, "You do not have access to this poll."
+    if not is_group_chat_active(gid):
+        return False, "This group chat is currently deactivated by an administrator."
     try:
         idx = int(option_idx)
     except (TypeError, ValueError):

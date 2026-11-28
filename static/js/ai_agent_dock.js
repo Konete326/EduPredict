@@ -11,10 +11,10 @@
     ops: { id: 'ops', name: 'CourseOps AI', role: 'Course, Roster & Marks Agent', shortRole: 'Courses & Marks', accent: '#d97706', avatar_url: mkSvgDp('#d97706', '#b45309', '<rect x="12" y="11" width="16" height="18" rx="3" fill="none" stroke="#ffffff" stroke-width="2.3"/><path d="M16 11h8v3h-8z" fill="#ffffff"/><path d="M16 20l2.5 2.5L24 17" fill="none" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>'), intro: 'Hi! I am CourseOps AI. Ask about course capacity, class rosters, or CSV/Excel marks uploads.' },
     desk: { id: 'desk', name: 'HelpDesk AI', role: 'Portal Guide, PDF & Support Agent', shortRole: 'Portal Support', accent: '#dc2626', avatar_url: mkSvgDp('#dc2626', '#b91c1c', '<path d="M12 21v-2a8 8 0 0 1 16 0v2" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"/><rect x="10" y="19" width="4" height="7" rx="2" fill="#ffffff"/><rect x="26" y="19" width="4" height="7" rx="2" fill="#ffffff"/><path d="M28 26c0 2.2-1.8 3.5-4.5 3.5H20" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>'), intro: 'Hi! I am HelpDesk AI. Ask about A4 PDF transcripts, help tickets, profile settings, or passwords.' }
   };
-  let ephemeralMessages = [], activeAgentId = null, isDockOpen = false, isChatOpen = false, isSending = false, sessionSeq = 0, lastEngine = 'live';
+  let ephemeralMessages = [], activeAgentId = null, isDockOpen = false, isChatOpen = false, isSending = false, sessionSeq = 0, speechRec = null, isListening = false;
   const byId = (id) => document.getElementById(id);
   const mk = (tag, cls, text, attrs) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined && text !== null) n.textContent = String(text); if (attrs) Object.keys(attrs).forEach((k) => n.setAttribute(k, attrs[k])); return n; };
-  const getEls = () => ({ root: byId('ep-agent-dock-root'), toggleBtn: byId('ep-agent-dock-toggle'), dockBar: byId('ep-message-dock'), chatPanel: byId('ep-agent-chat-panel'), stream: byId('ep-zig-zag-stream'), form: byId('ep-dock-form'), input: byId('ep-dock-input'), sendBtn: byId('ep-dock-send'), clearBtn: byId('ep-dock-clear-btn'), closeBtn: byId('ep-dock-close-btn'), chatDp: byId('ep-chat-agent-dp'), nameEl: byId('ep-chat-agent-name'), roleEl: byId('ep-chat-agent-role'), engBadge: byId('ep-dock-engine-badge'), engDot: byId('ep-dock-engine-dot'), engLabel: byId('ep-dock-engine-label') });
+  const getEls = () => ({ root: byId('ep-agent-dock-root'), toggleBtn: byId('ep-agent-dock-toggle'), dockBar: byId('ep-message-dock'), chatPanel: byId('ep-agent-chat-panel'), stream: byId('ep-zig-zag-stream'), form: byId('ep-dock-form'), input: byId('ep-dock-input'), micBtn: byId('ep-dock-mic'), sendBtn: byId('ep-dock-send'), clearBtn: byId('ep-dock-clear-btn'), closeBtn: byId('ep-dock-close-btn'), chatDp: byId('ep-chat-agent-dp'), nameEl: byId('ep-chat-agent-name'), roleEl: byId('ep-chat-agent-role') });
   const getCsrfToken = () => { const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/); return m ? decodeURIComponent(m[1]) : (document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || ''); };
   const formatTime = () => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
   const normPath = (p) => { const s = String(p || '').split('?')[0].split('#')[0]; return s.length > 1 && s.endsWith('/') ? s.slice(0, -1) : (s || '/'); };
@@ -25,7 +25,7 @@
   const makeEvent = (name) => (typeof Event === 'function' ? new Event(name, { bubbles: true }) : { type: name, bubbles: true });
   const schedulePendingRun = () => { if (typeof setTimeout === 'function') setTimeout(consumePendingDomAction, 85); else consumePendingDomAction(); };
   const isFallbackEngine = (eng) => String(eng || '').toLowerCase().startsWith('fallback:');
-  const saveActiveSession = () => { try { if (window.sessionStorage) window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ messages: ephemeralMessages.slice(-40), activeAgentId, isDockOpen, isChatOpen, lastEngine })); } catch (e) {} };
+  const saveActiveSession = () => { try { if (window.sessionStorage) window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ messages: ephemeralMessages.slice(-40), activeAgentId, isDockOpen, isChatOpen })); } catch (e) {} };
   const clearActiveSession = () => { try { if (window.sessionStorage) { window.sessionStorage.removeItem(SESSION_KEY); window.sessionStorage.removeItem(PENDING_DOM_KEY); } } catch (e) {} };
   const queuePendingAction = (act) => { try { if (window.sessionStorage && act) window.sessionStorage.setItem(PENDING_DOM_KEY, JSON.stringify(act)); } catch (e) {} };
   const pushStreamNode = (stream, node) => { if (!stream) return; const e = stream.querySelector('[data-dock-empty]'); if (e && e.parentNode) e.parentNode.removeChild(e); stream.appendChild(node); stream.scrollTop = stream.scrollHeight || 0; };
@@ -38,14 +38,6 @@
   const removeTypingBubble = () => { const s = getEls().stream, n = s ? s.querySelector('[data-dock-typing]') : null; if (n && n.parentNode) n.parentNode.removeChild(n); };
   const highlightInputs = (nodes) => { nodes.forEach((i) => PREFILL_CLS.forEach((c) => i.classList.add(c))); if (typeof setTimeout === 'function' && nodes.length) setTimeout(() => nodes.forEach((i) => PREFILL_CLS.forEach((c) => i.classList.remove(c))), 2200); };
 
-  function updateEngineBadge(engine) {
-    lastEngine = String(engine || 'live'); const el = getEls(), low = lastEngine.toLowerCase(); if (!el.engBadge || !el.engDot || !el.engLabel) return;
-    const isFb = low.startsWith('fallback:'), isGuard = low.startsWith('guard:') || low.startsWith('rbac:');
-    el.engBadge.title = 'Engine: ' + lastEngine;
-    el.engBadge.className = 'inline-flex shrink-0 items-center gap-1 font-medium ' + (isFb ? 'text-[var(--status-warning)]' : (isGuard ? 'text-[var(--accent-primary)]' : 'text-[var(--status-success)]'));
-    el.engDot.className = 'h-1.5 w-1.5 rounded-full ' + (isFb ? 'bg-[var(--status-warning)]' : (isGuard ? 'bg-[var(--accent-primary)]' : 'bg-[var(--status-success)]'));
-    el.engLabel.textContent = isFb ? 'Offline Mode' : (isGuard ? 'Policy Guard' : 'Live AI');
-  }
   function navigateToUrl(rawUrl, forceDirect) {
     if (!rawUrl) return; saveActiveSession();
     try {
@@ -58,7 +50,7 @@
   function renderEmptyState(stream) {
     if (!stream) return; stream.textContent = '';
     const box = mk('div', 'flex h-full flex-col items-center justify-center gap-1.5 px-4 text-center text-[var(--text-muted)]', null, { 'data-dock-empty': 'true' });
-    box.append(mk('i', 'fa-solid fa-comments text-lg text-[var(--accent-primary)]', null, { 'aria-hidden': 'true' }), mk('p', 'text-xs font-medium text-[var(--text-primary)]', 'Pick an EduPredict AI Agent'), mk('p', 'text-[11px] leading-relaxed', 'Select an agent below or type your request. Specialists auto-route and can run portal actions.'));
+    box.append(mk('i', 'fa-solid fa-comments text-lg text-[var(--accent-primary)]', null, { 'aria-hidden': 'true' }), mk('p', 'text-xs font-medium text-[var(--text-primary)]', 'Pick an EduPredict Assistant'), mk('p', 'text-[11px] leading-relaxed', 'Select an agent below, type, or use the mic to talk.'));
     stream.appendChild(box);
   }
   function updateAgentVisuals(agent) {
@@ -72,7 +64,7 @@
     if (el.nameEl) el.nameEl.textContent = viewAgent.name; if (el.roleEl) el.roleEl.textContent = viewAgent.role;
     if (el.input) el.input.placeholder = agent ? ('Ask ' + agent.name + '...') : 'Select an agent or type a message...';
   }
-  function resetConversation(clearActive) { const el = getEls(); sessionSeq += 1; ephemeralMessages = []; isSending = false; if (el.sendBtn) el.sendBtn.disabled = false; renderEmptyState(el.stream); updateEngineBadge('live'); if (clearActive) { activeAgentId = null; updateAgentVisuals(null); } }
+  function resetConversation(clearActive) { stopVoiceInput(); const el = getEls(); sessionSeq += 1; ephemeralMessages = []; isSending = false; if (el.sendBtn) el.sendBtn.disabled = false; renderEmptyState(el.stream); if (clearActive) { activeAgentId = null; updateAgentVisuals(null); } }
   function setDockOpen(open) {
     const el = getEls(); isDockOpen = Boolean(open); toggleFlexPanel(el.dockBar, isDockOpen); syncDockPlacement(el);
     if (el.toggleBtn) el.toggleBtn.setAttribute('aria-expanded', isDockOpen ? 'true' : 'false');
@@ -258,6 +250,7 @@
   function handleSendSubmit(e) {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
     if (isSending) return;
+    stopVoiceInput();
     const el = getEls(), rawText = el.input ? el.input.value.trim() : '';
     if (!rawText) { if (typeof window.showToast === 'function') window.showToast('Please type a message first.', 'warning'); return; }
     const targetId = resolveAgentId(activeAgentId || 'coach'), reqSeq = sessionSeq, historyPayload = buildHistoryPayload();
@@ -275,7 +268,6 @@
       removeTypingBubble();
       if (!data || !data.ok) { appendAgentBubble(AGENTS[targetId], (data && data.error) || 'Could not process your request.'); return; }
       const actions = Array.isArray(data.dom_actions) ? data.dom_actions : [], responder = normalizeAgent(data.active_agent || AGENTS[targetId]), engine = data.engine || 'live', meta = { engine, retryPrompt: rawText };
-      updateEngineBadge(engine);
       if (data.handoff === true) {
         const fromAgent = normalizeAgent(data.from_agent || AGENTS[targetId]);
         appendAgentBubble(fromAgent, data.handoff_message || ('Reassigning your request to ' + responder.name + '...'));
@@ -286,8 +278,46 @@
       if (data.poll) appendPollBubble(responder, data.poll);
       const autoActs = actions.filter((a) => a && a.auto);
       if (autoActs.length) executeDomActions(autoActs);
-    }).catch(() => { if (reqSeq === sessionSeq && isChatOpen) { removeTypingBubble(); updateEngineBadge('fallback:network'); appendAgentBubble(AGENTS[targetId], 'Connection issue while contacting the specialist.', '', [], null, false, { engine: 'fallback:network', retryPrompt: rawText }); } })
+    }).catch(() => { if (reqSeq === sessionSeq && isChatOpen) { removeTypingBubble(); appendAgentBubble(AGENTS[targetId], 'Connection issue while contacting the specialist.', '', [], null, false, { engine: 'fallback:network', retryPrompt: rawText }); } })
       .finally(() => { if (reqSeq !== sessionSeq) return; isSending = false; const cur = getEls(); if (cur.sendBtn) cur.sendBtn.disabled = false; if (cur.input && typeof cur.input.focus === 'function') cur.input.focus(); });
+  }
+  function setMicUi(active) {
+    const el = getEls(); isListening = Boolean(active);
+    if (el.micBtn) { el.micBtn.setAttribute('aria-pressed', isListening ? 'true' : 'false'); el.micBtn.classList.toggle('ep-mic-listening', isListening); }
+    if (el.input) el.input.placeholder = isListening ? 'Listening... speak now' : (activeAgentId && AGENTS[activeAgentId] ? ('Ask ' + AGENTS[activeAgentId].name + '...') : 'Select an agent or type a message...');
+  }
+  function stopVoiceInput() {
+    if (speechRec && isListening) { try { speechRec.stop(); } catch (e) {} }
+    setMicUi(false);
+  }
+  function bindVoiceInput(el) {
+    if (!el.micBtn || el.micBtn.dataset.micBound === '1') return;
+    el.micBtn.dataset.micBound = '1';
+    el.micBtn.addEventListener('click', () => {
+      const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!Rec) { if (typeof window.showToast === 'function') window.showToast('Voice input is not supported in this browser.', 'warning'); return; }
+      if (isListening) { stopVoiceInput(); return; }
+      try {
+        speechRec = new Rec(); speechRec.interimResults = true; speechRec.continuous = false; speechRec.lang = 'en-US';
+        let finalTranscript = '';
+        speechRec.onstart = () => setMicUi(true);
+        speechRec.onresult = (ev) => {
+          let interim = '';
+          for (let i = ev.resultIndex || 0; i < ev.results.length; i += 1) {
+            const txt = ev.results[i][0] ? String(ev.results[i][0].transcript || '') : '';
+            if (ev.results[i].isFinal) finalTranscript += txt + ' '; else interim += txt;
+          }
+          const cur = getEls();
+          if (cur.input) cur.input.value = (finalTranscript + interim).trim();
+        };
+        speechRec.onerror = (ev) => {
+          setMicUi(false);
+          if (ev && ev.error === 'not-allowed' && typeof window.showToast === 'function') window.showToast('Microphone permission was denied.', 'warning');
+        };
+        speechRec.onend = () => { setMicUi(false); const cur = getEls(); if (cur.input && typeof cur.input.focus === 'function') cur.input.focus(); };
+        speechRec.start();
+      } catch (err) { setMicUi(false); if (typeof window.showToast === 'function') window.showToast('Could not start voice input.', 'warning'); }
+    });
   }
   function restoreActiveSession() {
     try {
@@ -298,7 +328,6 @@
       isDockOpen = Boolean(st.isDockOpen); isChatOpen = Boolean(st.isChatOpen); activeAgentId = st.activeAgentId ? resolveAgentId(st.activeAgentId) : null;
       toggleFlexPanel(el.dockBar, isDockOpen); if (el.toggleBtn) el.toggleBtn.setAttribute('aria-expanded', isDockOpen ? 'true' : 'false');
       toggleFlexPanel(el.chatPanel, isChatOpen); syncDockPlacement(el); updateAgentVisuals(activeAgentId ? AGENTS[activeAgentId] : null);
-      if (st.lastEngine) updateEngineBadge(st.lastEngine);
       ephemeralMessages = msgs;
       if (el.stream && msgs.length) {
         el.stream.textContent = '';
@@ -328,6 +357,7 @@
     if (el.root.dataset.dockBound === '1') { schedulePendingRun(); return; }
     el.root.dataset.dockBound = '1';
     bindDockDrag(el);
+    bindVoiceInput(el);
     if (el.closeBtn) el.closeBtn.addEventListener('click', () => { setChatOpen(false); resetConversation(true); clearActiveSession(); });
     if (el.clearBtn) el.clearBtn.addEventListener('click', () => { resetConversation(false); clearActiveSession(); const cur = getEls(); if (cur.input && typeof cur.input.focus === 'function') cur.input.focus(); });
     el.root.querySelectorAll('[data-dock-agent]').forEach((btn) => btn.addEventListener('click', () => selectAgent(btn.getAttribute('data-dock-agent'), false)));

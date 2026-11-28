@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
+  <div class="min-w-0 space-y-1">
+    <div class="flex flex-wrap items-center gap-2">
+      <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Model Health</h2>
+      <span class="inline-flex items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-0.5 text-[11px] font-mono text-[var(--text-secondary)]">
+        <i class="fa-solid fa-sliders text-[10px] text-[var(--accent-primary)]"></i>
+        <span>Min Att {{ portal_settings.min_attendance_pct|default:75 }}% &middot; Pass GPA {{ portal_settings.passing_gpa|default:"2.0" }} &middot; High Risk &ge;{{ portal_settings.high_risk_threshold|default:70 }}%</span>
+      </span>
+    </div>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">Dataset uploads, missing-cell cleaning stats, and pipeline health.</p>
+  </div>
+  <div class="flex flex-wrap items-center gap-2">
+    <span class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-mono text-[var(--text-secondary)]" title="Active model version">
+      <i class="fa-solid fa-microchip text-[var(--accent-primary)]"></i><span>{{ model_info.version }}</span>
+    </span>
+    <a href="{% url 'panels:analyst_accuracy' %}" title="View AI Accuracy" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]">
+      <i class="fa-solid fa-bullseye text-xs text-[var(--accent-primary)]"></i><span>AI Accuracy</span>
+    </a>
+    <a href="{% url 'panels:analyst_dashboard' %}" title="Back to data hub" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <i class="fa-solid fa-arrow-left text-xs"></i><span>Data Hub</span>
+    </a>
+  </div>
+</header>
+
+{% if db_error %}
+<div class="rounded-[12px] border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2 text-xs text-[var(--status-danger)]">
+  <i class="fa-solid fa-circle-exclamation mr-1.5"></i>Database notice: {{ db_error }}
+</div>
+{% endif %}
+
+<section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 [&_[data-dot-kpi]]:py-2">
+  {% include 'components/metric_card.html' with title="Dataset Uploads" value=health_kpis.total_uploads badge="Logged batches" status="info" icon="fa-solid fa-cloud-arrow-up" %}
+  {% include 'components/metric_card.html' with title="Rows Processed" value=health_kpis.total_rows badge="Pipeline total" status="success" icon="fa-solid fa-table-list" %}
+  {% include 'components/metric_card.html' with title="Imputed Cells" value=health_kpis.total_fixed badge=health_kpis.impute_rate_pct|stringformat:"s"|add:"% of rows" status="warning" icon="fa-solid fa-wand-magic-sparkles" %}
+  {% include 'components/metric_card.html' with title="Model Coverage" value=health_kpis.coverage_pct|stringformat:"s"|add:"%" badge="Students scored" status="info" icon="fa-solid fa-heart-pulse" %}
+</section>
+
+<div role="tablist" aria-label="Model health tabs" class="flex flex-wrap items-center gap-2 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1.5">
+  <button type="button" role="tab" aria-selected="true" data-health-tab="uploads" class="inline-flex items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-3 py-1.5 text-xs font-semibold text-white transition-colors">
+    <i class="fa-solid fa-table-list text-xs" aria-hidden="true"></i><span>Recent Uploads &amp; Forecast</span>
+  </button>
+  <button type="button" role="tab" aria-selected="false" data-health-tab="charts" class="inline-flex items-center gap-1.5 rounded-[12px] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+    <i class="fa-solid fa-heart-pulse text-xs" aria-hidden="true"></i><span>Pipeline Trends</span>
+  </button>
+</div>
+
+<div id="health-panel-uploads" role="tabpanel" data-health-panel="uploads" class="space-y-3">
+  <div class="min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
+    {% include 'components/data_table.html' with table_id="health-dataset-logs-table" table_title="Recent Dataset Uploads" headers=dataset_headers rows=dataset_rows page_size=5 empty_message="No datasets uploaded yet. Upload a file in the Data Hub." %}
+  </div>
+  <div class="min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
+    {% include 'components/data_table.html' with table_id="health-demand-table" table_title="Course Demand Forecast" headers=demand_headers rows=demand_rows page_size=5 empty_message="No course demand data yet." %}
+  </div>
+</div>
+
+<div id="health-panel-charts" role="tabpanel" data-health-panel="charts" class="hidden space-y-3">
+  <section class="grid grid-cols-1 gap-3.5 xl:grid-cols-12">
+    <div id="academic-contour-card" class="xl:col-span-7 min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 space-y-2">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="min-w-0">
+          <h3 class="text-sm font-semibold text-[var(--text-primary)]">Academic Performance Contour Strata</h3>
+          <p class="text-[11px] text-[var(--text-muted)]">Real MongoDB per-course cohort health curve</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[var(--text-secondary)]">Mean <strong id="contour-stat-mean" class="text-[var(--text-primary)]">-</strong></span>
+          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[var(--text-secondary)]">Peak <strong id="contour-stat-peak" class="text-[var(--status-success)]">-</strong></span>
+          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 font-mono text-[var(--text-secondary)]">Cutoffs <strong id="contour-stat-cutoffs" class="text-[var(--text-primary)]">-</strong></span>
+          <label class="inline-flex items-center gap-1.5 rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2 py-0.5 text-[var(--text-secondary)]">
+            <span>Strata</span>
+            <input id="contour-strata-range" type="range" min="4" max="10" value="7" aria-label="Contour strata density" class="w-14 accent-[var(--accent-primary)]">
+            <span id="contour-strata-val" class="font-mono font-semibold text-[var(--text-primary)]">7</span>
+          </label>
+        </div>
+      </div>
+      <div class="relative h-44 w-full">
+        <canvas id="academic-contour-canvas" class="h-full w-full cursor-crosshair"></canvas>
+        <div id="contour-tooltip" class="hidden pointer-events-none absolute z-10 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs shadow-md"></div>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--text-muted)]">
+        <span id="contour-pin-status">Click any course node to pin &amp; compare</span>
+        <span class="font-mono">Dashed amber line: Min Attendance cutoff</span>
+      </div>
+    </div>
+
+    <div class="xl:col-span-5 min-w-0 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+      <div class="min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
+        <div class="mb-2 flex items-center justify-between gap-2">
+          <h3 class="text-xs font-semibold text-[var(--text-primary)]">Risk Level Split</h3>
+          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] font-mono text-[var(--text-muted)]">Live</span>
+        </div>
+        <div class="relative h-44 w-full"><canvas id="chart-health-risk"></canvas></div>
+      </div>
+      <div class="min-w-0 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
+        <div class="mb-2 flex items-center justify-between gap-2">
+          <h3 class="text-xs font-semibold text-[var(--text-primary)]">GPA Error Buckets</h3>
+          <span class="rounded border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] font-mono text-[var(--text-muted)]">MAE</span>
+        </div>
+        <div class="relative h-44 w-full"><canvas id="chart-health-errors"></canvas></div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ chart_data|json_script:"health-chart-data" }}
+{{ chart_data|json_script:"accuracy-contour-data" }}
+<script>
+  (function () {
+    function initHealthCharts() {
+      if (typeof window.initAcademicWidgets === 'function') window.initAcademicWidgets();
+      const node = document.getElementById('health-chart-data');
+      if (!node || typeof window.createThemedChart !== 'function') return;
+      const payload = JSON.parse(node.textContent || '{}');
+      const risks = payload.risk_counts || { LOW: 0, MEDIUM: 0, HIGH: 0 };
+      const buckets = payload.error_buckets || { excellent: 0, acceptable: 0, large: 0 };
+      window.createThemedChart('chart-health-risk', function (tokens) {
+        return { type: 'doughnut', data: { labels: ['Low Risk', 'Medium Risk', 'High Risk'], datasets: [{ data: [risks.LOW || 0, risks.MEDIUM || 0, risks.HIGH || 0], backgroundColor: [tokens.statusSuccess, tokens.statusWarning, tokens.statusDanger], borderColor: tokens.bgSurface, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '64%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, color: tokens.textSecondary } } } } };
+      });
+      window.createThemedChart('chart-health-errors', function (tokens) {
+        return { type: 'bar', data: { labels: ['<=0.25', '0.25-0.5', '>0.50'], datasets: [{ label: 'Students', data: [buckets.excellent || 0, buckets.acceptable || 0, buckets.large || 0], backgroundColor: [tokens.statusSuccess, tokens.statusWarning, tokens.statusDanger], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: tokens.textMuted } }, y: { beginAtZero: true, grid: { color: tokens.borderSubtle }, ticks: { color: tokens.textMuted, precision: 0 } } } } };
+      });
+    }
+    const act = ['bg-[var(--accent-primary)]', 'text-white', 'font-semibold'], inact = ['text-[var(--text-secondary)]', 'font-medium'];
+    document.querySelectorAll('[data-health-tab]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const key = btn.getAttribute('data-health-tab');
+        document.querySelectorAll('[data-health-tab]').forEach(function (b) { const on = b.getAttribute('data-health-tab') === key; b.setAttribute('aria-selected', on ? 'true' : 'false'); act.forEach((c) => b.classList.toggle(c, on)); inact.forEach((c) => b.classList.toggle(c, !on)); });
+        document.querySelectorAll('[data-health-panel]').forEach(function (p) { p.classList.toggle('hidden', p.getAttribute('data-health-panel') !== key); });
+        if (typeof window.initAcademicWidgets === 'function') window.initAcademicWidgets();
+        window.dispatchEvent(new Event('resize'));
+      });
+    });
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initHealthCharts);
+    else initHealthCharts();
+  })();
+</script>
+{% endblock %}

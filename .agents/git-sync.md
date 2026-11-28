@@ -61,27 +61,29 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 114 WhatsApp Class Chat, Student Test View Modal, Clean Filters & Badges"
-active_branch_merged_to_main: "feature/p114-whatsapp-chat-clean-filters -> main"
-project_phase: "Phase 114: WhatsApp Class Chat (Ticks/Slider/10MB), Student Test View Modal, Clean Filters & Badges"
+last_updated_by_agent: "Phase 115 AI Voice/Avatars, Split Analyst Pages + Teacher Alerts, Staff Chat & Group Deactivation"
+active_branch_merged_to_main: "feature/p115-ai-voice-analyst-staffchat -> main"
+project_phase: "Phase 115: AI Voice/Avatars, Split Analyst Pages + Teacher Alerts, Staff Chat & Group Deactivation"
 
 completed_modules:
-  - "Phase 1-113: Core Shell, Auth/RBAC, Admin Academic CRUD, Classroom Tests, Real-Time Chat, Tear-Off Calendar, Student Scope, File Preview, Real Public Data & Landing Cyan Default Theme."
-  - "Phase 114a (tests-filters-badges): panels/student_test_services.py (384) & student_tests.html (265) - #student-submission-view-modal with View Submission button; standardized h-9 filter bars across 7 panel templates; cleaned noisy semester/pill badges."
-  - "Phase 114b (chat-backend-v2): panels/chat_services.py (398), panels/chat_receipt_services.py (200), panels/views_chat.py (194) - 10 MB limit, max 5 images / 5 files multi-upload, WhatsApp read receipts (tick_state & TEACHER/ADMIN-only read_receipts), Cache-Control: no-store."
-  - "Phase 114c (chat-whatsapp-ui): templates/panels/classroom_chat.html (201), static/js/chat_media.js (182), static/js/classroom_chat.js (399) - compact bubbles, + menu, #chat-msg-info-modal, multi-image slider, in-app preview & Download All."
+  - "Phase 1-114: Core Shell, Auth/RBAC, Admin Academic CRUD, Classroom Tests, WhatsApp Class Chat, Tear-Off Calendar, Student Scope, File Preview, Real Public Data & Landing Cyan Default Theme."
+  - "Phase 115a (ai-dock-upgrade): core/ai_agent_services.py (392), templates/components/ai_message_dock.html (104), static/js/ai_agent_dock.js (373) - role-scoped chat/training context (STAFF & datasets excluded from STUDENT), animated SVG avatars, #ep-dock-mic SpeechRecognition voice input."
+  - "Phase 115b (analyst-split-alerts): panels/views_analyst.py (270), panels/analyst_alert_services.py (137), templates/panels/analyst_dashboard.html (347), analyst_accuracy.html (47), analyst_health.html (141), panels/urls.py (44), templates/components/sidebar.html (230) - split Data & ML Hub, AI Accuracy, Model Health; added Analyst/Admin -> Teacher RISK_ALERT notifications."
+  - "Phase 115c (chat-perf-staff): panels/chat_services.py (399), panels/staff_chat_services.py (249), panels/views_chat.py (235), templates/panels/classroom_chat.html (219), static/js/classroom_chat.js (398) - instant WhatsApp render, Admin toggle_group_active (deactivated groups keep history, block writes with 403), and Dedicated Staff Chat (/staff-chat/, ADMIN/TEACHER/ANALYST only)."
 
 verification_results:
   - "manage.py check: 0 issues."
-  - "manage.py test: Ran 158 tests in 120.337s (158/158 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 11.95s - System 100% Operational."
-  - "node --check: static/js/classroom_chat.js OK, static/js/chat_media.js OK."
-  - "Line cap & zero-comment audit: all 18 modified/created files <= 400 lines with 0 comments."
+  - "manage.py test: Ran 162 tests in 117.592s (162/162 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 12.90s - System 100% Operational."
+  - "node --check: static/js/ai_agent_dock.js OK, static/js/classroom_chat.js OK."
+  - "Line cap & zero-comment audit: all Phase 115 modified/created files <= 400 lines with 0 comments."
 
 active_routes_and_files:
-  - "panels/student_test_services.py (384), panels/chat_services.py (398), panels/chat_receipt_services.py (200), panels/views_chat.py (194), panels/test_p109_student_chat.py (372)"
-  - "static/js/chat_media.js (182), static/js/classroom_chat.js (399)"
-  - "templates/panels/classroom_chat.html (201), student_tests.html (265), student_attendance.html (145), teacher_tests.html (204), teacher_students.html (91), teacher_attendance.html (135), teacher_test_grade.html (233), admin_users.html (227), admin_tickets.html (193), admin_dashboard.html (123), admin_settings.html (197)"
+  - "core/ai_agent_services.py (392), templates/components/ai_message_dock.html (104), static/js/ai_agent_dock.js (373)"
+  - "panels/views_analyst.py (270), panels/analyst_alert_services.py (137), panels/urls.py (44)"
+  - "templates/panels/analyst_dashboard.html (347), analyst_accuracy.html (47), analyst_health.html (141), templates/components/sidebar.html (230)"
+  - "panels/chat_services.py (399), panels/staff_chat_services.py (249), panels/views_chat.py (235), templates/panels/classroom_chat.html (219), static/js/classroom_chat.js (398)"
+  - "panels/test_p115_ai_analyst_staff_chat.py (251), panels/tests.py (364), panels/test_phase66.py (400), panels/test_phase74.py (364), panels/test_phase75.py (389)"
 
 pending_modules_in_order:
   - "Password Change Approval Workflow: Teacher/Student requests -> Admin approves -> notification sent (new pending_password_changes_col or notifications_col extension)."

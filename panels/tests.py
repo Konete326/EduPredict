@@ -78,9 +78,19 @@ class AnalystDashboardEvaluationTests(TestCase):
         client = self._login_as("ANALYST")
         resp = client.get(reverse("panels:analyst_dashboard"))
         self.assertEqual(resp.status_code, 200)
-        html = resp.content.decode("utf-8")
-
+        dash_html = resp.content.decode("utf-8")
         self.assertEqual(records_col.find.call_count, 1)
+        self.assertNotIn('id="ml-evaluation-section"', dash_html)
+        self.assertIn("Data &amp; ML Hub", dash_html)
+        self.assertIn("Student Predictions", dash_html)
+        self.assertIn('href="/analyst-panel/accuracy/"', dash_html)
+        self.assertNotIn('data-coming-title="AI Accuracy"', dash_html)
+        self.assertIn('High &ge;70% &middot; Med &ge;35%', dash_html)
+
+        with patch("analytics.model_health.student_records_col", return_value=records_col), patch("analytics.model_health.predictions_col", return_value=preds_col), patch("analytics.model_health.datasets_log_col", return_value=logs_col):
+            acc_resp = client.get(reverse("panels:analyst_accuracy"))
+        self.assertEqual(acc_resp.status_code, 200)
+        html = acc_resp.content.decode("utf-8")
         self.assertIn('id="ml-evaluation-section"', html)
         self.assertIn("Dropout Risk Classifier (RandomForestClassifier)", html)
         self.assertIn("GPA Forecaster (Ridge)", html)
@@ -98,24 +108,12 @@ class AnalystDashboardEvaluationTests(TestCase):
         self.assertIn("R&sup2; Score", html)
         self.assertIn("32", html)
         self.assertIn("8", html)
-        self.assertIn("Analytics", html)
-        self.assertIn("Student Predictions", html)
-        self.assertIn('href="/analyst-panel/#ml-evaluation-section"', html)
-        self.assertNotIn('data-coming-title="AI Accuracy"', html)
-        self.assertIn('High &ge;70% &middot; Med &ge;35%', html)
+        self.assertIn("Min Att 75% &middot; Pass GPA 2.0 &middot; High Risk &ge;70%", html)
 
         with patch("analytics.ml_engine.student_records_col") as mock_ml_records:
             eval_resp = client.get(reverse("analytics:model_evaluation"))
             self.assertEqual(eval_resp.status_code, 200)
             self.assertEqual(mock_ml_records.call_count, 0)
-
-        logs_col.count_documents.return_value = 0
-        with patch("analytics.model_health.student_records_col", return_value=records_col), patch("analytics.model_health.predictions_col", return_value=preds_col), patch("analytics.model_health.datasets_log_col", return_value=logs_col):
-            acc_resp = client.get(reverse("panels:analyst_accuracy"))
-        self.assertEqual(acc_resp.status_code, 200)
-        acc_html = acc_resp.content.decode("utf-8")
-        self.assertIn("Min Att 75% &middot; Pass GPA 2.0 &middot; High Risk &ge;70%", acc_html)
-        self.assertIn("High &ge;70% / Med &ge;35%", acc_html)
 
     @patch("core.context_processors.notifications_col")
     @patch("core.db.MongoDBClient.check_health")
@@ -150,7 +148,9 @@ class AnalystDashboardEvaluationTests(TestCase):
         client = self._login_as("ANALYST")
         resp = client.get(reverse("panels:analyst_dashboard"))
         self.assertEqual(resp.status_code, 200)
-        html = resp.content.decode("utf-8")
+        acc_resp = client.get(reverse("panels:analyst_accuracy"))
+        self.assertEqual(acc_resp.status_code, 200)
+        html = acc_resp.content.decode("utf-8")
 
         self.assertIn("NO_GENUINE_LABELS", html)
         self.assertIn("UNAVAILABLE", html)
@@ -181,11 +181,11 @@ class AnalystDashboardEvaluationTests(TestCase):
         mock_notifs.return_value = notifs_col
 
         client = self._login_as("ANALYST")
-        resp = client.get(reverse("panels:analyst_dashboard"))
+        resp = client.get(reverse("panels:analyst_accuracy"))
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode("utf-8")
         self.assertIn("Could not evaluate models: Eval engine test failure", html)
-        self.assertIn("Analytics", html)
+        self.assertIn("AI Accuracy", html)
 
     def test_unauthorized_users_cannot_access_analyst_evaluation(self):
         anon = Client()
