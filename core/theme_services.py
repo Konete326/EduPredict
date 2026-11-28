@@ -31,10 +31,11 @@ SHELL_THEMES = (
     _shell("teal", "Teal", "#0d9488", "#0f766e", "#0d9488", "teal", "#99f6e4", "#ccfbf1", "#081c1a", "#0d2523"),
     _shell("purple", "Purple", "#7e22ce", "#6b21a8", "#7e22ce", "violet", "#ddd6fe", "#ede9fe", "#140f1f", "#1b1429"),
     _shell("amber", "Amber", "#d97706", "#b45309", "#d97706", "amber", "#fde68a", "#fef3c7", "#1a1409", "#241b0c"),
-    _shell("white", "White", "#ffffff", "#e2e8f0", "#f1f5f9", None, "#e2e8f0", "#f1f5f9", "#111114", "#111217"),
+    _shell("white", "White", "#ffffff", "#F2F1F0", "#F7F6F8", "cyan", "#F2F1F0", "#F7F6F8", "#111114", "#111217"),
 )
 
 BRAND_SWATCHES = (
+    {"slug": "cyan", "label": "Targo Cyan", "hex": "#15BCDF", "hover": "#0fa3c2", "soft_light": "#e6f9fd", "soft_dark": "rgba(21, 188, 223, 0.16)"},
     {"slug": "coral", "label": "Coral", "hex": "#e05a47", "hover": "#c94735", "soft_light": "#fdf2f0", "soft_dark": "rgba(224, 90, 71, 0.16)"},
     {"slug": "rose", "label": "Rose", "hex": "#db2777", "hover": "#be185d", "soft_light": "#fdf2f8", "soft_dark": "rgba(219, 39, 119, 0.16)"},
     {"slug": "teal", "label": "Teal", "hex": "#0d9488", "hover": "#0f766e", "soft_light": "#f0fdfa", "soft_dark": "rgba(13, 148, 136, 0.16)"},
@@ -59,6 +60,7 @@ def _preset(slug, label, cl, sl, el, tl, secl, ml, bl, cd, sd, ed, td, secd, md,
 
 
 SURFACE_PRESETS = (
+    _preset("targo", "Targo Studio", "#F2F1F0", "#ffffff", "#F7F6F8", "#2b3033", "#6b6f72", "#6b6f72", "#e1e2e4", "#09090b", "#111114", "#1b1b20", "#f4f4f5", "#d4d4d8", "#a1a1aa", "rgba(255, 255, 255, 0.08)", "EduPredict", "cyan", "white", "#15BCDF"),
     _preset("neutral", "Neutral", "#f8fafc", "#ffffff", "#f1f5f9", "#0f172a", "#475569", "#64748b", "#e2e8f0", "#09090b", "#111114", "#1b1b20", "#f4f4f5", "#d4d4d8", "#a1a1aa", "rgba(255, 255, 255, 0.08)"),
     _preset("butter", "Butter", "#fefce8", "#fffdf5", "#fef3c7", "#292524", "#57534e", "#78716c", "#fde68a", "#14120a", "#1e1a0f", "#2c2516", "#fef9c3", "#e7e5e4", "#a8a29e", "rgba(253, 230, 138, 0.14)"),
     _preset("matcha", "Matcha", "#f3faf4", "#fbfefb", "#e2f3e6", "#14261c", "#3f5a4a", "#647a6c", "#cbe5d2", "#09130d", "#101f16", "#192e21", "#ecfdf5", "#c8e0d2", "#8ba697", "rgba(167, 243, 208, 0.12)"),
@@ -120,11 +122,11 @@ def normalize_theme_prefs(raw, role="PORTAL", user_id="guest"):
     clean_role = str(role or "PORTAL").strip().upper() or "PORTAL"
     clean_uid = str(user_id or "guest").strip() or "guest"
     mode = _pick(source, "mode", _MODE_SLUGS, "light")
-    shell_theme = _pick(source, "shell_theme", _SHELL_MAP, "green")
+    shell_theme = _pick(source, "shell_theme", _SHELL_MAP, "white")
     if shell_theme == "dark-red":
         shell_theme = "red"
-    accent = _pick(source, "accent", _SWATCH_MAP, "emerald")
-    preset = _pick(source, "preset", _PRESET_MAP, "neutral")
+    accent = _pick(source, "accent", _SWATCH_MAP, "cyan")
+    preset = _pick(source, "preset", _PRESET_MAP, "targo")
     density = _pick(source, "density", _DENSITY_VALUES, "comfortable")
     sync_shell = _parse_bool(source.get("sync_shell"), default=True)
     shell_cfg, swatch_cfg, preset_cfg = _SHELL_MAP[shell_theme], _SWATCH_MAP[accent], _PRESET_MAP[preset]

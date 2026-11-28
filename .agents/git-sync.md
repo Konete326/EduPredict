@@ -61,35 +61,25 @@ Person working on Analyst & ML edits panels/views_analyst.py, analytics/*, and t
 
 ## 4. Active Handover State (Agents: Replace This Block on Every Push)
 ```yaml
-last_updated_by_agent: "Phase 111/112 Tear-Off Calendar + Student Scope + Chat Upgrades + File Preview"
-active_branch_merged_to_main: "feature/p111-tearoff-calendar-modal -> main (commit 998b214)"
-project_phase: "Phase 112: Theme-Aware Calendar Modal, Student ID Auto-Resolution, Chat Real-Time/Media/Reply, Attendance Filters, In-App File Preview"
+last_updated_by_agent: "Phase 113 Real Public Data & Landing Cyan Default Panel Theme"
+active_branch_merged_to_main: "feature/p113-public-real-data-cyan-theme -> main"
+project_phase: "Phase 113: Real Public Data (MongoDB Atlas Portal Metrics/Courses/Contact) & Landing Cyan Default Panel Theme"
 
 completed_modules:
-  - "Phase 1-110: Core Shell, Auth/RBAC, Admin Academic CRUD, 9 Shell Themes, Classroom Tests, Real-Time Chat, Student Attendance Page."
-  - "Phase 111 (Tear-Off Calendar Modal): static/css/calendar_modal.css (288 lines), static/js/calendar_modal.js (397 lines), templates/components/calendar_modal.html (111 lines). All input[type=date] globally intercepted. window.openTearOffCalendarModal exposed. Included in templates/base.html at ?v=22."
-  - "Phase 112a (student-scope): panels/student_services.py - resolve_student_identity() auto-resolves student_id from user_id/email, syncs semester+courses+teachers. panels/views_student.py - _student_identity() auto-syncs session. panels/admin_services.py - create/update user syncs student_records_col()."
-  - "Phase 112b (attendance-profile): templates/panels/student_attendance.html rebuilt with compact filters, 5-row pagination, View modal per row. templates/panels/user_profile.html - Theme & Colors button removed. panels/student_test_services.py - attendance context uses _resolve_student_courses() shared helper."
-  - "Phase 112c (class-chat): panels/chat_services.py - multipart RequestDataTooBig fix. panels/views_chat.py - CSRF/toast. static/js/classroom_chat.js - cache:no-store, mobile drawer, Teacher/Admin DP crop, group rename, PDF/CSV/TXT/DOC/DOCX docs (5MB limit), 24-emoji popover, 3-dot Reply, quoted preview. templates/panels/classroom_chat.html updated."
-  - "Phase 112d (preview-modal): templates/components/file_preview_modal.html (307 lines) - in-app preview for image/PDF/CSV/text files, New Tab & Download actions. templates/panels/student_tests.html and teacher_test_grade.html updated to open preview modal instead of download."
+  - "Phase 1-112: Core Shell, Auth/RBAC, Admin Academic CRUD, Classroom Tests, Real-Time Chat, Tear-Off Calendar, Student Scope, File Preview."
+  - "Phase 113a (public-real-data): accounts/public_data.py (219 lines) & accounts/services.py (320 lines) - real MongoDB Atlas metrics, courses, and contact submissions; templates/public/contact.html (60 lines) updated; accounts/tests.py (189 lines) added unit tests."
+  - "Phase 113b (cyan-default-theme): core/theme_services.py (389 lines) - Landing Cyan default panel theme tokens & preferences; static/css/global.css (304 lines) & templates/base.html (195 lines) updated; panels/tests.py (364 lines) updated with theme tests."
 
 verification_results:
   - "manage.py check: 0 issues."
-  - "manage.py test: Ran 150 tests in 101.731s (150/150 OK)."
-  - "manage.py verify_uat: UAT Results 7/7 passed in 11.02s - System 100% Operational."
-  - "node --check: calendar_modal.js OK, classroom_chat.js OK."
-  - "Line cap audit: all 18 modified files <= 400 lines."
+  - "manage.py test: Ran 156 tests in 118.324s (156/156 OK)."
+  - "manage.py verify_uat: UAT Results 7/7 passed in 12.16s - System 100% Operational."
+  - "Line cap & zero-comment audit: all 8 modified files <= 400 lines with 0 comments."
 
 active_routes_and_files:
-  - "panels/student_services.py (399), panels/views_student.py (163), panels/admin_services.py (296)"
-  - "panels/student_test_services.py (367), panels/chat_services.py (396), panels/views_chat.py (179)"
-  - "panels/test_p109_student_chat.py (293)"
-  - "static/css/calendar_modal.css (288), static/js/calendar_modal.js (397), static/js/classroom_chat.js (396)"
-  - "templates/base.html (195)"
-  - "templates/components/calendar_modal.html (111), templates/components/file_preview_modal.html (307)"
-  - "templates/panels/classroom_chat.html (185), templates/panels/student_attendance.html (150)"
-  - "templates/panels/student_tests.html (176), templates/panels/teacher_test_grade.html (233)"
-  - "templates/panels/user_profile.html (229)"
+  - "accounts/services.py (320), accounts/public_data.py (219), accounts/tests.py (189)"
+  - "templates/public/contact.html (60), templates/base.html (195)"
+  - "core/theme_services.py (389), static/css/global.css (304), panels/tests.py (364)"
 
 pending_modules_in_order:
   - "Password Change Approval Workflow: Teacher/Student requests -> Admin approves -> notification sent (new pending_password_changes_col or notifications_col extension)."

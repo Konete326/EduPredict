@@ -16,17 +16,17 @@
     <div class="targo-contact-meta">
       <div class="targo-metric">
         <span class="targo-metric-label">ADMINISTRATOR</span>
-        <strong class="targo-metric-text">{{ admin_contact.name|default:"System Administrator" }}</strong>
-        <span class="targo-metric-sub">{{ admin_contact.email|default:"admin@gmail.com" }}</span>
+        <strong class="targo-metric-text">{{ admin_contact.full_name|default:"System Administrator" }}</strong>
+        <span class="targo-metric-sub">{{ admin_contact.email|default:"Via Support Ticket" }}</span>
       </div>
       <div class="targo-metric">
         <span class="targo-metric-label">SUPPORT PHONE</span>
         <strong class="targo-metric-text">{{ admin_contact.phone|default:"Via Support Ticket" }}</strong>
-        <span class="targo-metric-sub">{{ portal_current_term|default:"Fall 2026" }}</span>
+        <span class="targo-metric-sub">{{ admin_contact.current_term|default:portal_current_term }}</span>
       </div>
       <div class="targo-metric targo-metric-wide">
         <span class="targo-metric-label">PLATFORM</span>
-        <strong class="targo-metric-text">EduPredict</strong>
+        <strong class="targo-metric-text">{{ admin_contact.institution_name|default:"EduPredict" }}</strong>
       </div>
     </div>
   </div>
@@ -36,19 +36,19 @@
       {% csrf_token %}
       <div class="targo-field">
         <label for="contact-name">YOUR NAME</label>
-        <input id="contact-name" name="name" type="text" required value="{{ form_data.name|default:'' }}" placeholder="Ayesha Khan" class="targo-input">
+        <input id="contact-name" name="name" type="text" required value="{{ form_data.name|default:'' }}" placeholder="Full name" class="targo-input">
       </div>
       <div class="targo-field">
         <label for="contact-email">EMAIL ADDRESS</label>
-        <input id="contact-email" name="email" type="email" required value="{{ form_data.email|default:'' }}" placeholder="you@edupredict.edu" class="targo-input">
+        <input id="contact-email" name="email" type="email" required value="{{ form_data.email|default:'' }}" placeholder="name@example.com" class="targo-input">
       </div>
       <div class="targo-field">
         <label for="contact-subject">SUBJECT</label>
-        <input id="contact-subject" name="subject" type="text" required value="{{ form_data.subject|default:'' }}" placeholder="Staff approval / Class inquiry" class="targo-input">
+        <input id="contact-subject" name="subject" type="text" required value="{{ form_data.subject|default:'' }}" placeholder="Inquiry subject" class="targo-input">
       </div>
       <div class="targo-field">
         <label for="contact-message">MESSAGE</label>
-        <textarea id="contact-message" name="message" rows="4" required placeholder="How can our team help?" class="targo-input">{{ form_data.message|default:'' }}</textarea>
+        <textarea id="contact-message" name="message" rows="4" required placeholder="Describe your question or request" class="targo-input">{{ form_data.message|default:'' }}</textarea>
       </div>
       <button type="submit" class="targo-cta targo-cta-full">
         <span>SEND INQUIRY</span>

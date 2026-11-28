@@ -211,7 +211,7 @@ class ThemePreferencesTests(TestCase):
     @patch("core.theme_services.users_col")
     def test_get_theme_preferences_defaults_and_path_fallback(self, mock_users_col):
         catalog = get_theme_studio_catalog()
-        self.assertEqual((len(catalog["modes"]), len(catalog["shell_themes"]), len(catalog["swatches"]), len(catalog["presets"])), (2, 9, 13, 12))
+        self.assertEqual((len(catalog["modes"]), len(catalog["shell_themes"]), len(catalog["swatches"]), len(catalog["presets"])), (2, 9, 14, 13))
         self.assertEqual(catalog["save_url"], "/theme/preferences/")
 
         resp = Client().get(reverse("panels:theme_preferences"))
@@ -219,9 +219,9 @@ class ThemePreferencesTests(TestCase):
         data = resp.json()
         self.assertTrue(data["ok"])
         prefs = data["theme_prefs"]
-        self.assertEqual((prefs["role"], prefs["user_id"], prefs["mode"], prefs["shell_theme"], prefs["accent"], prefs["preset"], prefs["density"]), ("PORTAL", "guest", "light", "green", "emerald", "neutral", "comfortable"))
+        self.assertEqual((prefs["role"], prefs["user_id"], prefs["mode"], prefs["shell_theme"], prefs["accent"], prefs["preset"], prefs["density"]), ("PORTAL", "guest", "light", "white", "cyan", "targo", "comfortable"))
         self.assertTrue(prefs["sync_shell"])
-        self.assertEqual(prefs["tokens"]["accent_primary"], "#10b981")
+        self.assertEqual(prefs["tokens"]["accent_primary"], "#15BCDF")
         self.assertEqual(mock_users_col.call_count, 0)
 
         req = RequestFactory().get("/teacher-panel/")
@@ -251,7 +251,7 @@ class ThemePreferencesTests(TestCase):
 
         self._set_user(client, "ADMIN", "USR-T1")
         admin_get = client.get(reverse("panels:theme_preferences")).json()["theme_prefs"]
-        self.assertEqual((admin_get["role"], admin_get["mode"], admin_get["shell_theme"], admin_get["accent"], admin_get["preset"]), ("ADMIN", "light", "green", "emerald", "neutral"))
+        self.assertEqual((admin_get["role"], admin_get["mode"], admin_get["shell_theme"], admin_get["accent"], admin_get["preset"]), ("ADMIN", "light", "white", "cyan", "targo"))
 
         admin_post = client.post(reverse("panels:theme_preferences"), data=json.dumps({"mode": "dark", "shell_theme": "red", "accent": "crimson", "preset": "gothic", "sync_shell": False}), content_type="application/json").json()["theme_prefs"]
         self.assertEqual((admin_post["role"], admin_post["shell_theme"], admin_post["accent"], admin_post["preset"], admin_post["sync_shell"]), ("ADMIN", "red", "crimson", "gothic", False))
@@ -260,7 +260,7 @@ class ThemePreferencesTests(TestCase):
         reset_resp = client.post(reverse("panels:theme_preferences"), data=json.dumps({"action": "reset"}), content_type="application/json")
         self.assertEqual(reset_resp.status_code, 200)
         reset_prefs = reset_resp.json()["theme_prefs"]
-        self.assertEqual((reset_prefs["role"], reset_prefs["mode"], reset_prefs["shell_theme"], reset_prefs["accent"], reset_prefs["preset"], reset_prefs["density"]), ("TEACHER", "light", "green", "emerald", "neutral", "comfortable"))
+        self.assertEqual((reset_prefs["role"], reset_prefs["mode"], reset_prefs["shell_theme"], reset_prefs["accent"], reset_prefs["preset"], reset_prefs["density"]), ("TEACHER", "light", "white", "cyan", "targo", "comfortable"))
         self.assertEqual(client.session["theme_prefs_by_role"]["ADMIN"]["shell_theme"], "red")
 
     @patch("core.theme_services.invalidate_cache")
