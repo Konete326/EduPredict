@@ -8,19 +8,27 @@ from panels.chat_services import (
     get_user_chat_groups,
     list_group_messages,
     send_group_message,
+    update_group_settings,
     vote_group_poll,
 )
 
 
 def _parse_payload(request):
     content_type = str(request.content_type or "").lower()
-    if "application/json" in content_type or (request.body and not request.POST and not request.FILES):
+    if "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:
+        try:
+            return request.POST, None
+        except Exception:
+            return None, "Uploaded payload exceeds the maximum allowed size."
+    if "application/json" in content_type or (not request.POST and not request.FILES):
         try:
             raw = request.body.decode("utf-8") if request.body else "{}"
             parsed = json.loads(raw or "{}")
             return parsed if isinstance(parsed, dict) else {}, None
         except (UnicodeDecodeError, json.JSONDecodeError):
             return None, "Invalid JSON payload."
+        except Exception:
+            return None, "Uploaded payload exceeds the maximum allowed size."
     return request.POST, None
 
 
@@ -124,14 +132,29 @@ def classroom_chat_api(request):
                 user,
                 text=payload.get("text") or "",
                 image_file=request.FILES.get("image"),
+                doc_file=request.FILES.get("file") or request.FILES.get("document"),
                 audio_file=request.FILES.get("audio"),
                 poll_question=poll_q,
                 poll_options=poll_opts,
+                reply_to_id=payload.get("reply_to_id") or "",
             )
             if err:
                 return JsonResponse({"ok": False, "error": err}, status=400)
             msgs, _ = list_group_messages(gid, user)
             return JsonResponse({"ok": True, "msg_id": msg_id, "group_id": gid, "messages": msgs})
+
+        if action == "update_group":
+            updated_group, err = update_group_settings(
+                gid,
+                user,
+                group_name=payload.get("group_name") or "",
+                dp_file=request.FILES.get("group_dp"),
+            )
+            if err:
+                status = 403 if "only teachers or admins" in err.lower() or "access" in err.lower() else 400
+                return JsonResponse({"ok": False, "error": err}, status=status)
+            groups = get_user_chat_groups(user)
+            return JsonResponse({"ok": True, "group_id": gid, "group": updated_group, "groups": groups})
 
         if action == "edit":
             ok, err = edit_group_message(payload.get("msg_id"), payload.get("text") or "", user)

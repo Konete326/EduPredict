@@ -10,15 +10,25 @@
         <span class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">{{ semester_label }}</span>
         {% endif %}
       </div>
-      <p class="text-xs sm:text-sm text-[var(--text-secondary)]">View your daily attendance and course summary.</p>
+      <p class="text-xs sm:text-sm text-[var(--text-secondary)]">View your daily attendance, course summary, and date activity.</p>
     </div>
-    <form method="get" action="{% url 'panels:student_attendance' %}" class="flex items-center gap-2">
-      <select name="course" onchange="this.form.submit()" aria-label="Filter by course" class="h-9 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs text-[var(--text-primary)]">
+    <form method="get" action="{% url 'panels:student_attendance' %}" id="att-filter-form" class="flex flex-wrap items-center gap-2">
+      <select id="att-filter-course" name="course" aria-label="Filter by course" class="h-9 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 text-xs text-[var(--text-primary)]">
         <option value="ALL" {% if course_filter == 'ALL' %}selected{% endif %}>All Courses</option>
         {% for c in courses %}
         <option value="{{ c.course_code }}" {% if course_filter == c.course_code %}selected{% endif %}>{{ c.course_code }} · {{ c.title }}</option>
         {% endfor %}
       </select>
+      <select id="att-filter-status" aria-label="Filter by status" class="h-9 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 text-xs text-[var(--text-primary)]">
+        <option value="ALL">All Statuses</option>
+        <option value="PRESENT">Present</option>
+        <option value="ABSENT">Absent</option>
+        <option value="LEAVE">Leave</option>
+      </select>
+      <input id="att-filter-date" type="date" aria-label="Filter by date" class="h-9 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 text-xs text-[var(--text-primary)]">
+      <button id="att-filter-reset" type="button" class="hidden h-9 items-center gap-1 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]">
+        <i class="fa-solid fa-rotate-left text-[11px]" aria-hidden="true"></i><span>Reset</span>
+      </button>
     </form>
   </header>
 
@@ -36,26 +46,105 @@
   </section>
 
   {% if course_cards %}
-  <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+  <section aria-label="Course attendance summary" class="flex flex-wrap items-center gap-2 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-2.5">
+    <span class="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mr-1">Courses</span>
     {% for cc in course_cards %}
-    <article class="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-2">
-      <div class="flex items-center justify-between gap-2">
-        <div class="min-w-0">
-          <p class="text-xs font-mono text-[var(--text-muted)]">{{ cc.course_code }}</p>
-          <h3 class="truncate text-sm font-semibold text-[var(--text-primary)]">{{ cc.title }}</h3>
-        </div>
-        <span class="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-primary)] tabular-nums">{{ cc.pct }}%</span>
-      </div>
-      <div class="grid grid-cols-3 gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2 text-center text-[11px]">
-        <div><p class="text-[var(--text-muted)]">Present</p><p class="font-semibold text-[var(--status-success)]">{{ cc.present }}</p></div>
-        <div><p class="text-[var(--text-muted)]">Absent</p><p class="font-semibold text-[var(--status-danger)]">{{ cc.absent }}</p></div>
-        <div><p class="text-[var(--text-muted)]">Leave</p><p class="font-semibold text-[var(--status-warning)]">{{ cc.leave }}</p></div>
-      </div>
-    </article>
+    <button type="button" data-course-chip="{{ cc.course_code }}" title="{{ cc.title }} ({{ cc.present }} Present, {{ cc.absent }} Absent, {{ cc.leave }} Leave)" class="inline-flex items-center gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1 text-xs transition-colors hover:bg-[var(--bg-elevated)]">
+      <span class="font-mono font-semibold text-[var(--text-primary)]">{{ cc.course_code }}</span>
+      <span class="rounded-full bg-[var(--accent-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)] tabular-nums">{{ cc.pct }}%</span>
+      <span class="hidden sm:inline text-[11px] text-[var(--text-muted)] tabular-nums">{{ cc.present }}P · {{ cc.absent }}A · {{ cc.leave }}L</span>
+    </button>
     {% endfor %}
   </section>
   {% endif %}
 
-  {% include 'components/data_table.html' with table_id="student-attendance-table" title="Daily Attendance" subtitle="Recent Present, Absent, and Leave records" headers=attendance_headers rows=attendance_rows cards=attendance_cards empty_message="No attendance records yet." %}
+  {% include 'components/data_table.html' with table_id="student-attendance-table" page_size=5 title="Daily Attendance" subtitle="Recent Present, Absent, and Leave records" headers=attendance_headers rows=attendance_rows cards=attendance_cards empty_message="No attendance records yet." %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const courseSel = document.getElementById('att-filter-course');
+    const statusSel = document.getElementById('att-filter-status');
+    const dateInput = document.getElementById('att-filter-date');
+    const resetBtn = document.getElementById('att-filter-reset');
+    const tableEl = document.getElementById('student-attendance-table');
+    if (!tableEl) return;
+    const container = tableEl.closest('[data-paginated-container]');
+    if (!container) return;
+    const tbody = tableEl.querySelector('tbody');
+    const mobileWrap = container.querySelector('.md\\:hidden');
+    const emptyRow = tbody ? tbody.querySelector('[data-empty-row]') : null;
+    const serverCourse = '{{ course_filter|escapejs }}';
+    const pairs = [];
+    const dRows = tbody ? Array.from(tbody.querySelectorAll('tr[data-page-item]')) : [];
+    const mCards = mobileWrap ? Array.from(mobileWrap.querySelectorAll('[data-mobile-card][data-page-item]')) : [];
+    for (let i = 0; i < Math.max(dRows.length, mCards.length); i++) {
+      const tr = dRows[i] || null;
+      const card = mCards[i] || null;
+      const dt = tr ? (tr.children[0]?.textContent || '').trim() : '';
+      const courseTxt = tr ? (tr.children[1]?.textContent || '').trim() : '';
+      const courseCode = courseTxt.split('·')[0].trim().toUpperCase();
+      const statusTxt = tr ? (tr.children[2]?.textContent || '').trim().toUpperCase() : '';
+      pairs.push({ tr, card, dt, courseCode, statusTxt });
+    }
+    function applyFilters() {
+      const cVal = (courseSel ? courseSel.value : 'ALL').toUpperCase();
+      const sVal = (statusSel ? statusSel.value : 'ALL').toUpperCase();
+      const dVal = dateInput ? (dateInput.value || '').trim() : '';
+      if (resetBtn) {
+        const active = cVal !== 'ALL' || sVal !== 'ALL' || Boolean(dVal);
+        resetBtn.classList.toggle('hidden', !active);
+        resetBtn.classList.toggle('inline-flex', active);
+      }
+      if (serverCourse !== 'ALL' && cVal !== serverCourse && courseSel) {
+        const form = document.getElementById('att-filter-form');
+        if (form) { form.submit(); return; }
+      }
+      let matchCount = 0;
+      pairs.forEach((p) => {
+        const okC = cVal === 'ALL' || p.courseCode === cVal;
+        const okS = sVal === 'ALL' || p.statusTxt === sVal;
+        const okD = !dVal || p.dt === dVal;
+        const match = okC && okS && okD;
+        if (match) {
+          matchCount += 1;
+          if (tbody && p.tr) tbody.appendChild(p.tr);
+          if (mobileWrap && p.card) mobileWrap.appendChild(p.card);
+        } else {
+          if (p.tr && p.tr.parentNode) p.tr.parentNode.removeChild(p.tr);
+          if (p.card && p.card.parentNode) p.card.parentNode.removeChild(p.card);
+        }
+      });
+      if (emptyRow) emptyRow.classList.toggle('hidden', matchCount > 0);
+      const searchEmpty = container.querySelector('[data-search-empty]');
+      if (searchEmpty) searchEmpty.classList.toggle('hidden', matchCount > 0 || pairs.length === 0);
+      container.dataset.paginationReady = '0';
+      if (typeof window.reinitEduPredictUI === 'function') window.reinitEduPredictUI();
+    }
+    if (courseSel) courseSel.addEventListener('change', applyFilters);
+    if (statusSel) statusSel.addEventListener('change', applyFilters);
+    if (dateInput) {
+      dateInput.addEventListener('change', applyFilters);
+      dateInput.addEventListener('input', applyFilters);
+    }
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        if (courseSel) courseSel.value = 'ALL';
+        if (statusSel) statusSel.value = 'ALL';
+        if (dateInput) dateInput.value = '';
+        applyFilters();
+      });
+    }
+    document.querySelectorAll('[data-course-chip]').forEach((chip) => {
+      chip.addEventListener('click', function () {
+        if (!courseSel) return;
+        const code = chip.getAttribute('data-course-chip') || 'ALL';
+        courseSel.value = courseSel.value === code ? 'ALL' : code;
+        applyFilters();
+      });
+    });
+  })();
+</script>
 {% endblock %}
