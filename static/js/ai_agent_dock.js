@@ -2,14 +2,13 @@
   const CHAT_ENDPOINT = '/ai-agents/chat/', SESSION_KEY = 'ep_ai_active_session', PENDING_DOM_KEY = 'ep_ai_pending_dom_action';
   const RING_CLS = ['ring-2', 'ring-[var(--accent-primary)]', 'ring-offset-2', 'ring-offset-[var(--bg-surface)]', 'scale-105'];
   const PREFILL_CLS = ['ring-2', 'ring-[var(--accent-primary)]', 'bg-[var(--accent-soft)]'];
-  const SVG_NS = ['http:', '', 'www.w3.org', '2000', 'svg'].join('/');
-  const mkSvgDp = (c1, c2, shape) => 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="' + SVG_NS + '" viewBox="0 0 40 40"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="' + c1 + '"/><stop offset="100%" stop-color="' + c2 + '"/></linearGradient></defs><rect width="40" height="40" rx="20" fill="url(#g)"/>' + shape + '</svg>');
   const AGENT_ALIASES = { amina: 'coach', zain: 'analyst', sara: 'ops', bilal: 'desk' };
+  const mkAnimDp = (bg, ink) => 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="' + bg + '"/><g><animateTransform attributeName="transform" type="translate" values="0 0;0 -1.6;0 0" dur="3.4s" repeatCount="indefinite"/><rect x="14" y="17" width="36" height="32" rx="14" fill="#ffffff"/><ellipse cx="25" cy="32" rx="3" ry="3.6" fill="' + ink + '"><animate attributeName="ry" values="3.6;3.6;0.3;3.6;3.6" keyTimes="0;0.9;0.94;0.98;1" dur="4s" repeatCount="indefinite"/></ellipse><ellipse cx="39" cy="32" rx="3" ry="3.6" fill="' + ink + '"><animate attributeName="ry" values="3.6;3.6;0.3;3.6;3.6" keyTimes="0;0.9;0.94;0.98;1" dur="4s" repeatCount="indefinite"/></ellipse><path d="M26 41q6 6 12 0" fill="none" stroke="' + ink + '" stroke-width="2.4" stroke-linecap="round"/></g></svg>');
   const AGENTS = {
-    coach: { id: 'coach', name: 'EduCoach AI', role: 'Academic & Study Advisor', shortRole: 'Study Advisor', accent: '#16a34a', avatar_url: mkSvgDp('#16a34a', '#059669', '<path d="M20 11L9 16l11 5 11-5-11-5zm-6 7.5v4.5c0 1.8 2.7 3 6 3s6-1.2 6-3v-4.5l-6 2.8-6-2.8z" fill="#ffffff"/>'), intro: 'Assalam-o-Alaikum! I am EduCoach AI. Ask about GPA, attendance recovery, coursework, or study plans.' },
-    analyst: { id: 'analyst', name: 'PulseML AI', role: 'Predictive Risk & Data Agent', shortRole: 'Risk & Data', accent: '#2563eb', avatar_url: mkSvgDp('#2563eb', '#1d4ed8', '<path d="M10 26h20M11 22l5-6 4.5 3.5L28 13" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="28" cy="13" r="2.4" fill="#ffffff"/>'), intro: 'Hello! I am PulseML AI. Ask about dropout risk scores, model metrics, anomalies, or predictions.' },
-    ops: { id: 'ops', name: 'CourseOps AI', role: 'Course, Roster & Marks Agent', shortRole: 'Courses & Marks', accent: '#d97706', avatar_url: mkSvgDp('#d97706', '#b45309', '<rect x="12" y="11" width="16" height="18" rx="3" fill="none" stroke="#ffffff" stroke-width="2.3"/><path d="M16 11h8v3h-8z" fill="#ffffff"/><path d="M16 20l2.5 2.5L24 17" fill="none" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>'), intro: 'Hi! I am CourseOps AI. Ask about course capacity, class rosters, or CSV/Excel marks uploads.' },
-    desk: { id: 'desk', name: 'HelpDesk AI', role: 'Portal Guide, PDF & Support Agent', shortRole: 'Portal Support', accent: '#dc2626', avatar_url: mkSvgDp('#dc2626', '#b91c1c', '<path d="M12 21v-2a8 8 0 0 1 16 0v2" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"/><rect x="10" y="19" width="4" height="7" rx="2" fill="#ffffff"/><rect x="26" y="19" width="4" height="7" rx="2" fill="#ffffff"/><path d="M28 26c0 2.2-1.8 3.5-4.5 3.5H20" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>'), intro: 'Hi! I am HelpDesk AI. Ask about A4 PDF transcripts, help tickets, profile settings, or passwords.' }
+    coach: { id: 'coach', name: 'EduCoach AI', role: 'Academic & Study Advisor', shortRole: 'Study Advisor', accent: '#16a34a', avatar_url: mkAnimDp('#16a34a', '#14532d'), intro: 'Assalam-o-Alaikum! I am EduCoach AI. Ask about GPA, attendance recovery, coursework, or study plans.' },
+    analyst: { id: 'analyst', name: 'PulseML AI', role: 'Predictive Risk & Data Agent', shortRole: 'Risk & Data', accent: '#2563eb', avatar_url: mkAnimDp('#2563eb', '#1e3a8a'), intro: 'Hello! I am PulseML AI. Ask about dropout risk scores, model metrics, anomalies, or predictions.' },
+    ops: { id: 'ops', name: 'CourseOps AI', role: 'Course, Roster & Marks Agent', shortRole: 'Courses & Marks', accent: '#d97706', avatar_url: mkAnimDp('#d97706', '#78350f'), intro: 'Hi! I am CourseOps AI. Ask about course capacity, class rosters, or CSV/Excel marks uploads.' },
+    desk: { id: 'desk', name: 'HelpDesk AI', role: 'Portal Guide, PDF & Support Agent', shortRole: 'Portal Support', accent: '#dc2626', avatar_url: mkAnimDp('#dc2626', '#7f1d1d'), intro: 'Hi! I am HelpDesk AI. Ask about A4 PDF transcripts, help tickets, profile settings, or passwords.' }
   };
   let ephemeralMessages = [], activeAgentId = null, isDockOpen = false, isChatOpen = false, isSending = false, sessionSeq = 0, speechRec = null, isListening = false;
   const byId = (id) => document.getElementById(id);
@@ -20,7 +19,7 @@
   const normPath = (p) => { const s = String(p || '').split('?')[0].split('#')[0]; return s.length > 1 && s.endsWith('/') ? s.slice(0, -1) : (s || '/'); };
   const currentPath = () => normPath((window.location && window.location.pathname) || '/');
   const resolveAgentId = (rawId) => { const k = String(rawId || '').trim().toLowerCase(), m = AGENT_ALIASES[k] || k; return AGENTS[m] ? m : 'coach'; };
-  const normalizeAgent = (raw) => { const id = resolveAgentId(raw && raw.id ? raw.id : 'coach'), base = AGENTS[id]; return (!raw || typeof raw !== 'object') ? base : { id, name: raw.name || base.name, role: raw.role || base.role, shortRole: raw.shortRole || base.shortRole, accent: raw.accent || base.accent, avatar_url: raw.avatar_url || base.avatar_url, intro: raw.intro || base.intro }; };
+  const normalizeAgent = (raw) => { const id = resolveAgentId(raw && raw.id ? raw.id : 'coach'), base = AGENTS[id]; return (!raw || typeof raw !== 'object') ? base : { id, name: raw.name || base.name, role: raw.role || base.role, shortRole: raw.shortRole || base.shortRole, accent: raw.accent || base.accent, intro: raw.intro || base.intro }; };
   const toggleFlexPanel = (node, open) => { if (!node) return; node.classList.toggle('hidden', !open); node.classList.toggle('flex', Boolean(open)); node.setAttribute('aria-hidden', open ? 'false' : 'true'); };
   const makeEvent = (name) => (typeof Event === 'function' ? new Event(name, { bubbles: true }) : { type: name, bubbles: true });
   const schedulePendingRun = () => { if (typeof setTimeout === 'function') setTimeout(consumePendingDomAction, 85); else consumePendingDomAction(); };
@@ -58,13 +57,13 @@
     el.root.querySelectorAll('[data-dock-agent]').forEach((btn) => {
       const bid = resolveAgentId(btn.getAttribute('data-dock-agent')), active = Boolean(agent && bid === agent.id), av = btn.querySelector('[data-dock-avatar]');
       btn.setAttribute('aria-pressed', active ? 'true' : 'false'); RING_CLS.forEach((cls) => btn.classList.toggle(cls, active));
-      if (av && AGENTS[bid]) { av.src = AGENTS[bid].avatar_url; av.alt = AGENTS[bid].name; }
+      if (av && AGENTS[bid]) { if (window.EpAvatars && av.tagName !== 'IMG') { if (!av.firstChild) window.EpAvatars.fill(av, bid); } else if (AGENTS[bid].avatar_url) { av.src = AGENTS[bid].avatar_url; av.alt = AGENTS[bid].name; } }
     });
-    if (el.chatDp) { el.chatDp.src = viewAgent.avatar_url; el.chatDp.alt = viewAgent.name; }
+    if (el.chatDp) { if (window.EpAvatars && el.chatDp.tagName !== 'IMG') { window.EpAvatars.fill(el.chatDp, viewAgent.id); el.chatDp.setAttribute('title', viewAgent.name); } else if (viewAgent.avatar_url) { el.chatDp.src = viewAgent.avatar_url; el.chatDp.alt = viewAgent.name; } }
     if (el.nameEl) el.nameEl.textContent = viewAgent.name; if (el.roleEl) el.roleEl.textContent = viewAgent.role;
     if (el.input) el.input.placeholder = agent ? ('Ask ' + agent.name + '...') : 'Select an agent or type a message...';
   }
-  function resetConversation(clearActive) { stopVoiceInput(); const el = getEls(); sessionSeq += 1; ephemeralMessages = []; isSending = false; if (el.sendBtn) el.sendBtn.disabled = false; renderEmptyState(el.stream); if (clearActive) { activeAgentId = null; updateAgentVisuals(null); } }
+  function resetConversation(clearActive) { stopVoiceInput(); if (window.EpDockVoice) window.EpDockVoice.clearStatus(); const el = getEls(); sessionSeq += 1; ephemeralMessages = []; isSending = false; if (el.sendBtn) el.sendBtn.disabled = false; renderEmptyState(el.stream); if (clearActive) { activeAgentId = null; updateAgentVisuals(null); } }
   function setDockOpen(open) {
     const el = getEls(); isDockOpen = Boolean(open); toggleFlexPanel(el.dockBar, isDockOpen); syncDockPlacement(el);
     if (el.toggleBtn) el.toggleBtn.setAttribute('aria-expanded', isDockOpen ? 'true' : 'false');
@@ -190,7 +189,8 @@
     const row = mk('div', 'flex justify-start', null, { 'data-dock-msg': 'agent', 'data-msg-side': 'left', 'data-agent-id': agent.id }), bubble = mk('div', 'mr-auto max-w-[86%] rounded-2xl rounded-bl-none border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 py-2.5 text-xs text-[var(--text-primary)] shadow-sm');
     const head = mk('div', 'mb-1 flex items-center gap-1.5 text-[11px] font-semibold'), badgeLbl = mk('span', '', agent.name + ' · ' + agent.shortRole);
     badgeLbl.style.color = agent.accent;
-    head.append(mk('img', 'h-5 w-5 rounded-full object-cover shrink-0', null, { src: agent.avatar_url, alt: agent.name }), badgeLbl);
+    const avNode = window.EpAvatars ? window.EpAvatars.create(agent.id, 'h-6 w-6') : mk('span', 'inline-flex h-6 w-6 rounded-full', null, { 'data-avatar-agent': agent.id });
+    head.append(avNode, badgeLbl);
     bubble.appendChild(head);
     if (continuePrefix) bubble.appendChild(mk('p', 'mb-1 font-semibold leading-snug text-[var(--text-primary)]', continuePrefix));
     bubble.appendChild(mk('p', 'whitespace-pre-wrap break-words leading-relaxed text-[var(--text-primary)]', text));
@@ -281,43 +281,11 @@
     }).catch(() => { if (reqSeq === sessionSeq && isChatOpen) { removeTypingBubble(); appendAgentBubble(AGENTS[targetId], 'Connection issue while contacting the specialist.', '', [], null, false, { engine: 'fallback:network', retryPrompt: rawText }); } })
       .finally(() => { if (reqSeq !== sessionSeq) return; isSending = false; const cur = getEls(); if (cur.sendBtn) cur.sendBtn.disabled = false; if (cur.input && typeof cur.input.focus === 'function') cur.input.focus(); });
   }
-  function setMicUi(active) {
-    const el = getEls(); isListening = Boolean(active);
-    if (el.micBtn) { el.micBtn.setAttribute('aria-pressed', isListening ? 'true' : 'false'); el.micBtn.classList.toggle('ep-mic-listening', isListening); }
-    if (el.input) el.input.placeholder = isListening ? 'Listening... speak now' : (activeAgentId && AGENTS[activeAgentId] ? ('Ask ' + AGENTS[activeAgentId].name + '...') : 'Select an agent or type a message...');
-  }
-  function stopVoiceInput() {
-    if (speechRec && isListening) { try { speechRec.stop(); } catch (e) {} }
-    setMicUi(false);
-  }
+  const currentPlaceholder = () => (activeAgentId && AGENTS[activeAgentId] ? ('Ask ' + AGENTS[activeAgentId].name + '...') : 'Select an agent or type a message...');
+  function stopVoiceInput() { if (window.EpDockVoice) window.EpDockVoice.stop(); }
   function bindVoiceInput(el) {
-    if (!el.micBtn || el.micBtn.dataset.micBound === '1') return;
-    el.micBtn.dataset.micBound = '1';
-    el.micBtn.addEventListener('click', () => {
-      const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!Rec) { if (typeof window.showToast === 'function') window.showToast('Voice input is not supported in this browser.', 'warning'); return; }
-      if (isListening) { stopVoiceInput(); return; }
-      try {
-        speechRec = new Rec(); speechRec.interimResults = true; speechRec.continuous = false; speechRec.lang = 'en-US';
-        let finalTranscript = '';
-        speechRec.onstart = () => setMicUi(true);
-        speechRec.onresult = (ev) => {
-          let interim = '';
-          for (let i = ev.resultIndex || 0; i < ev.results.length; i += 1) {
-            const txt = ev.results[i][0] ? String(ev.results[i][0].transcript || '') : '';
-            if (ev.results[i].isFinal) finalTranscript += txt + ' '; else interim += txt;
-          }
-          const cur = getEls();
-          if (cur.input) cur.input.value = (finalTranscript + interim).trim();
-        };
-        speechRec.onerror = (ev) => {
-          setMicUi(false);
-          if (ev && ev.error === 'not-allowed' && typeof window.showToast === 'function') window.showToast('Microphone permission was denied.', 'warning');
-        };
-        speechRec.onend = () => { setMicUi(false); const cur = getEls(); if (cur.input && typeof cur.input.focus === 'function') cur.input.focus(); };
-        speechRec.start();
-      } catch (err) { setMicUi(false); if (typeof window.showToast === 'function') window.showToast('Could not start voice input.', 'warning'); }
-    });
+    if (!el.micBtn || !window.EpDockVoice) return;
+    window.EpDockVoice.bind({ micBtn: el.micBtn, input: el.input, statusEl: byId('ep-dock-mic-status'), getPlaceholder: currentPlaceholder });
   }
   function restoreActiveSession() {
     try {
@@ -356,6 +324,7 @@
     const el = getEls(); if (!el.root) return;
     if (el.root.dataset.dockBound === '1') { schedulePendingRun(); return; }
     el.root.dataset.dockBound = '1';
+    if (window.EpAvatars) window.EpAvatars.hydrate(el.root);
     bindDockDrag(el);
     bindVoiceInput(el);
     if (el.closeBtn) el.closeBtn.addEventListener('click', () => { setChatOpen(false); resetConversation(true); clearActiveSession(); });

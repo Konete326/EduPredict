@@ -8,6 +8,8 @@ from core.cloudinary_services import destroy_cloudinary_asset, upload_user_avata
 from core.db import invalidate_cache, notifications_col, password_requests_col, student_records_col, users_col
 from panels.admin_audit_services import record_audit_log
 
+THEME_VERSION = 2
+
 APPEARANCE_MODES = (
     {"slug": "light", "label": "Light Mode"},
     {"slug": "dark", "label": "OLED Dark"},
@@ -28,10 +30,9 @@ SHELL_THEMES = (
     _shell("blue", "Blue", "#2563eb", "#1d4ed8", "#2563eb", "ocean", "#bfdbfe", "#dbeafe", "#0d0e12", "#111217"),
     _shell("green", "Green", "#10b981", "#047857", "#10b981", "emerald", "#a7f3d0", "#d1fae5", "#0b1d18", "#102620"),
     _shell("red", "Red", "#dc2626", "#991b1b", "#dc2626", "crimson", "#fecaca", "#fee2e2", "#1b0e12", "#221116"),
-    _shell("teal", "Teal", "#0d9488", "#0f766e", "#0d9488", "teal", "#99f6e4", "#ccfbf1", "#081c1a", "#0d2523"),
     _shell("purple", "Purple", "#7e22ce", "#6b21a8", "#7e22ce", "violet", "#ddd6fe", "#ede9fe", "#140f1f", "#1b1429"),
     _shell("amber", "Amber", "#d97706", "#b45309", "#d97706", "amber", "#fde68a", "#fef3c7", "#1a1409", "#241b0c"),
-    _shell("white", "White", "#ffffff", "#F2F1F0", "#F7F6F8", "cyan", "#F2F1F0", "#F7F6F8", "#111114", "#111217"),
+    _shell("targo", "Default (Targo Cyan)", "#15BCDF", "#F2F1F0", "#F7F6F8", "cyan", "#F2F1F0", "#F7F6F8", "#111114", "#111217"),
 )
 
 BRAND_SWATCHES = (
@@ -60,7 +61,7 @@ def _preset(slug, label, cl, sl, el, tl, secl, ml, bl, cd, sd, ed, td, secd, md,
 
 
 SURFACE_PRESETS = (
-    _preset("targo", "Targo Studio", "#F2F1F0", "#ffffff", "#F7F6F8", "#2b3033", "#6b6f72", "#6b6f72", "#e1e2e4", "#09090b", "#111114", "#1b1b20", "#f4f4f5", "#d4d4d8", "#a1a1aa", "rgba(255, 255, 255, 0.08)", "EduPredict", "cyan", "white", "#15BCDF"),
+    _preset("targo", "Targo Studio", "#F2F1F0", "#ffffff", "#F7F6F8", "#2b3033", "#6b6f72", "#6b6f72", "#e1e2e4", "#09090b", "#111114", "#1b1b20", "#f4f4f5", "#d4d4d8", "#a1a1aa", "rgba(255, 255, 255, 0.08)", "EduPredict", "cyan", "targo", "#15BCDF"),
     _preset("neutral", "Neutral", "#f8fafc", "#ffffff", "#f1f5f9", "#0f172a", "#475569", "#64748b", "#e2e8f0", "#09090b", "#111114", "#1b1b20", "#f4f4f5", "#d4d4d8", "#a1a1aa", "rgba(255, 255, 255, 0.08)"),
     _preset("butter", "Butter", "#fefce8", "#fffdf5", "#fef3c7", "#292524", "#57534e", "#78716c", "#fde68a", "#14120a", "#1e1a0f", "#2c2516", "#fef9c3", "#e7e5e4", "#a8a29e", "rgba(253, 230, 138, 0.14)"),
     _preset("matcha", "Matcha", "#f3faf4", "#fbfefb", "#e2f3e6", "#14261c", "#3f5a4a", "#647a6c", "#cbe5d2", "#09130d", "#101f16", "#192e21", "#ecfdf5", "#c8e0d2", "#8ba697", "rgba(167, 243, 208, 0.12)"),
@@ -77,7 +78,7 @@ SURFACE_PRESETS = (
 
 _MODE_SLUGS = {item["slug"] for item in APPEARANCE_MODES}
 _SHELL_MAP = {item["slug"]: item for item in SHELL_THEMES}
-_SHELL_MAP["dark-red"] = _SHELL_MAP["red"]
+_SHELL_ALIASES = {"dark-red": "red", "white": "targo"}
 _SWATCH_MAP = {item["slug"]: item for item in BRAND_SWATCHES}
 _PRESET_MAP = {item["slug"]: item for item in SURFACE_PRESETS}
 _DENSITY_VALUES = {"comfortable", "compact"}
@@ -118,13 +119,11 @@ def get_theme_studio_catalog():
 
 
 def normalize_theme_prefs(raw, role="PORTAL", user_id="guest"):
-    source = raw if isinstance(raw, dict) else {}
+    source = raw if isinstance(raw, dict) and raw.get("theme_version") == THEME_VERSION else {}
     clean_role = str(role or "PORTAL").strip().upper() or "PORTAL"
     clean_uid = str(user_id or "guest").strip() or "guest"
     mode = _pick(source, "mode", _MODE_SLUGS, "light")
-    shell_theme = _pick(source, "shell_theme", _SHELL_MAP, "white")
-    if shell_theme == "dark-red":
-        shell_theme = "red"
+    shell_theme = _SHELL_ALIASES.get(str(source.get("shell_theme") or "").strip().lower()) or _pick(source, "shell_theme", _SHELL_MAP, "targo")
     accent = _pick(source, "accent", _SWATCH_MAP, "cyan")
     preset = _pick(source, "preset", _PRESET_MAP, "targo")
     density = _pick(source, "density", _DENSITY_VALUES, "comfortable")
@@ -148,7 +147,7 @@ def normalize_theme_prefs(raw, role="PORTAL", user_id="guest"):
         "force_dark_chrome": bool(shell_cfg["force_dark_chrome"]),
     }
     return {
-        "role": clean_role, "user_id": clean_uid, "mode": mode, "shell_theme": shell_theme,
+        "theme_version": THEME_VERSION, "role": clean_role, "user_id": clean_uid, "mode": mode, "shell_theme": shell_theme,
         "accent": accent, "preset": preset, "density": density, "sync_shell": sync_shell, "tokens": tokens,
     }
 
@@ -193,10 +192,11 @@ def save_user_theme_prefs(request, data):
     if str(payload.get("action") or "").strip().lower() == "reset":
         normalized = normalize_theme_prefs({}, role=role, user_id=uid)
     else:
-        merged = dict(_read_session_role_prefs(request, role))
+        merged = {k: v for k, v in normalize_theme_prefs(_read_session_role_prefs(request, role), role=role, user_id=uid).items() if k != "tokens"}
         for key in _PREF_KEYS:
             if key in payload and payload[key] is not None and payload[key] != "":
                 merged[key] = payload[key]
+        merged["theme_version"] = THEME_VERSION
         normalized = normalize_theme_prefs(merged, role=role, user_id=uid)
     session = getattr(request, "session", None)
     if session is not None:

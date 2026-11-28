@@ -211,7 +211,7 @@ class ThemePreferencesTests(TestCase):
     @patch("core.theme_services.users_col")
     def test_get_theme_preferences_defaults_and_path_fallback(self, mock_users_col):
         catalog = get_theme_studio_catalog()
-        self.assertEqual((len(catalog["modes"]), len(catalog["shell_themes"]), len(catalog["swatches"]), len(catalog["presets"])), (2, 9, 14, 13))
+        self.assertEqual((len(catalog["modes"]), len(catalog["shell_themes"]), len(catalog["swatches"]), len(catalog["presets"])), (2, 8, 14, 13))
         self.assertEqual(catalog["save_url"], "/theme/preferences/")
 
         resp = Client().get(reverse("panels:theme_preferences"))
@@ -219,7 +219,7 @@ class ThemePreferencesTests(TestCase):
         data = resp.json()
         self.assertTrue(data["ok"])
         prefs = data["theme_prefs"]
-        self.assertEqual((prefs["role"], prefs["user_id"], prefs["mode"], prefs["shell_theme"], prefs["accent"], prefs["preset"], prefs["density"]), ("PORTAL", "guest", "light", "white", "cyan", "targo", "comfortable"))
+        self.assertEqual((prefs["role"], prefs["user_id"], prefs["mode"], prefs["shell_theme"], prefs["accent"], prefs["preset"], prefs["density"]), ("PORTAL", "guest", "light", "targo", "cyan", "targo", "comfortable"))
         self.assertTrue(prefs["sync_shell"])
         self.assertEqual(prefs["tokens"]["accent_primary"], "#15BCDF")
         self.assertEqual(mock_users_col.call_count, 0)
@@ -251,7 +251,7 @@ class ThemePreferencesTests(TestCase):
 
         self._set_user(client, "ADMIN", "USR-T1")
         admin_get = client.get(reverse("panels:theme_preferences")).json()["theme_prefs"]
-        self.assertEqual((admin_get["role"], admin_get["mode"], admin_get["shell_theme"], admin_get["accent"], admin_get["preset"]), ("ADMIN", "light", "white", "cyan", "targo"))
+        self.assertEqual((admin_get["role"], admin_get["mode"], admin_get["shell_theme"], admin_get["accent"], admin_get["preset"]), ("ADMIN", "light", "targo", "cyan", "targo"))
 
         admin_post = client.post(reverse("panels:theme_preferences"), data=json.dumps({"mode": "dark", "shell_theme": "red", "accent": "crimson", "preset": "gothic", "sync_shell": False}), content_type="application/json").json()["theme_prefs"]
         self.assertEqual((admin_post["role"], admin_post["shell_theme"], admin_post["accent"], admin_post["preset"], admin_post["sync_shell"]), ("ADMIN", "red", "crimson", "gothic", False))
@@ -260,7 +260,7 @@ class ThemePreferencesTests(TestCase):
         reset_resp = client.post(reverse("panels:theme_preferences"), data=json.dumps({"action": "reset"}), content_type="application/json")
         self.assertEqual(reset_resp.status_code, 200)
         reset_prefs = reset_resp.json()["theme_prefs"]
-        self.assertEqual((reset_prefs["role"], reset_prefs["mode"], reset_prefs["shell_theme"], reset_prefs["accent"], reset_prefs["preset"], reset_prefs["density"]), ("TEACHER", "light", "white", "cyan", "targo", "comfortable"))
+        self.assertEqual((reset_prefs["role"], reset_prefs["mode"], reset_prefs["shell_theme"], reset_prefs["accent"], reset_prefs["preset"], reset_prefs["density"]), ("TEACHER", "light", "targo", "cyan", "targo", "comfortable"))
         self.assertEqual(client.session["theme_prefs_by_role"]["ADMIN"]["shell_theme"], "red")
 
     @patch("core.theme_services.invalidate_cache")
@@ -331,18 +331,37 @@ class ThemePreferencesTests(TestCase):
 
     @patch("core.theme_services.users_col")
     def test_sync_theme_prefs_on_login_merges_portal_and_hydrates_db_roles(self, mock_users_col):
+        from core.theme_services import THEME_VERSION
         client = Client()
         client.post(reverse("panels:theme_preferences"), data=json.dumps({"mode": "dark", "shell_theme": "blue", "accent": "ocean"}), content_type="application/json")
         req = RequestFactory().get("/")
         req.session = client.session
-        synced = sync_theme_prefs_on_login(req, {"user_id": "USR-T9", "role": "TEACHER", "theme_prefs": {"ADMIN": {"mode": "dark", "accent": "crimson"}}})
+        synced = sync_theme_prefs_on_login(req, {"user_id": "USR-T9", "role": "TEACHER", "theme_prefs": {"ADMIN": {"theme_version": THEME_VERSION, "mode": "dark", "accent": "crimson"}}})
         self.assertEqual((synced["TEACHER"]["mode"], synced["TEACHER"]["accent"], synced["TEACHER"]["user_id"]), ("dark", "ocean", "USR-T9"))
         self.assertEqual((synced["ADMIN"]["mode"], synced["ADMIN"]["accent"]), ("dark", "crimson"))
         mock_users_col.return_value.update_one.assert_called_once_with({"user_id": "USR-T9"}, {"$set": {"theme_prefs.TEACHER": synced["TEACHER"]}})
         mock_users_col.return_value.update_one.reset_mock()
-        synced_keep = sync_theme_prefs_on_login(req, {"user_id": "USR-T9", "role": "TEACHER", "theme_prefs": {"TEACHER": {"mode": "light", "accent": "emerald"}}})
+        synced_keep = sync_theme_prefs_on_login(req, {"user_id": "USR-T9", "role": "TEACHER", "theme_prefs": {"TEACHER": {"theme_version": THEME_VERSION, "mode": "light", "accent": "emerald"}}})
         self.assertEqual((synced_keep["TEACHER"]["mode"], synced_keep["TEACHER"]["accent"]), ("light", "emerald"))
         mock_users_col.return_value.update_one.assert_not_called()
+        synced_legacy = sync_theme_prefs_on_login(req, {"user_id": "USR-T9", "role": "TEACHER", "theme_prefs": {"TEACHER": {"mode": "dark", "shell_theme": "green", "accent": "emerald"}}})
+        self.assertEqual((synced_legacy["TEACHER"]["theme_version"], synced_legacy["TEACHER"]["shell_theme"], synced_legacy["TEACHER"]["accent"]), (THEME_VERSION, "targo", "cyan"))
+
+    def test_default_targo_shell_reset_and_theme_migration(self):
+        from core.theme_services import THEME_VERSION, normalize_theme_prefs
+        catalog = get_theme_studio_catalog()
+        targo = next(item for item in catalog["shell_themes"] if item["slug"] == "targo")
+        self.assertEqual((targo["label"], targo["sidebar_bg_light"], targo["topbar_bg_light"]), ("Default (Targo Cyan)", "#F2F1F0", "#F7F6F8"))
+        self.assertEqual(catalog["swatches"][0]["slug"], "cyan")
+        legacy = {"mode": "dark", "shell_theme": "green", "accent": "emerald", "preset": "matcha", "density": "compact"}
+        migrated = normalize_theme_prefs(legacy)
+        self.assertEqual(migrated["theme_version"], THEME_VERSION)
+        self.assertEqual((migrated["mode"], migrated["shell_theme"], migrated["accent"], migrated["preset"], migrated["density"]), ("light", "targo", "cyan", "targo", "comfortable"))
+        kept = normalize_theme_prefs({**legacy, "theme_version": THEME_VERSION})
+        self.assertEqual((kept["mode"], kept["shell_theme"], kept["accent"]), ("dark", "green", "emerald"))
+        self.assertEqual(normalize_theme_prefs({"theme_version": THEME_VERSION, "shell_theme": "teal"})["shell_theme"], "targo")
+        self.assertEqual(normalize_theme_prefs({"theme_version": THEME_VERSION, "shell_theme": "white"})["shell_theme"], "targo")
+        self.assertEqual(normalize_theme_prefs({"theme_version": THEME_VERSION, "shell_theme": "red"})["shell_theme"], "red")
 
 
 class MultiFormatIngestionTests(TestCase):

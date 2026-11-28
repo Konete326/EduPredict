@@ -228,12 +228,13 @@ class TeacherAttendanceAndTestsWorkflowTests(TestCase):
         return client
 
     def test_nine_shell_themes_catalog_and_legacy_fallback(self):
+        from core.theme_services import THEME_VERSION
         catalog = get_theme_studio_catalog()
         slugs = [item["slug"] for item in catalog["shell_themes"]]
-        self.assertEqual(len(slugs), 9)
+        self.assertEqual(len(slugs), 8)
         self.assertNotIn("dark-red", slugs)
-        self.assertEqual(set(slugs), {"dark", "dark-green", "blue", "green", "red", "teal", "purple", "amber", "white"})
-        self.assertEqual(normalize_theme_prefs({"shell_theme": "dark-red"})["shell_theme"], "red")
+        self.assertEqual(set(slugs), {"dark", "dark-green", "blue", "green", "red", "purple", "amber", "targo"})
+        self.assertEqual(normalize_theme_prefs({"theme_version": THEME_VERSION, "shell_theme": "dark-red"})["shell_theme"], "red")
 
     def test_teacher_students_no_update_and_attendance_single_course_default(self):
         with (
