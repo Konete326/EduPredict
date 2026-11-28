@@ -1,4 +1,4 @@
-{% extends 'public/_base.html' %}
+﻿{% extends 'public/_base.html' %}
 {% load static %}
 {% block title %}Student Risk &amp; GPA Analytics{% endblock %}
 {% block content %}
@@ -130,50 +130,14 @@
     </div>
   </div>
 
-  <div class="targo-roles-grid">
-    <article class="targo-card">
-      <span class="targo-card-tag">01 / ADMIN</span>
-      <h3>GOVERNANCE &amp; TICKETS</h3>
-      <p>Manages courses, approves Teacher and Analyst registrations, configures institution branding, and resolves support tickets.</p>
-    </article>
-
-    <article class="targo-card">
-      <span class="targo-card-tag">02 / TEACHER</span>
-      <h3>SMART MARKS INGESTION</h3>
-      <p>Uploads .csv, .xlsx, .json, .jsonl, .tsv, or .txt marks sheets with auto-mapping, student provisioning, and risk alerts.</p>
-    </article>
-
-    <article class="targo-card">
-      <span class="targo-card-tag">03 / ANALYST</span>
-      <h3>ML RISK ENGINE</h3>
-      <p>Runs Ridge, RandomForest, and IsolationForest pipelines to score GPA trajectories, detect anomalies, and stream LMS ticks.</p>
-    </article>
-
-    <article class="targo-card">
-      <span class="targo-card-tag">04 / STUDENT</span>
-      <h3>GPA &amp; A4 TRANSCRIPTS</h3>
-      <p>Monitors live GPA forecasts, attendance warnings, study guidance, and prints formal black-on-white A4 academic transcripts.</p>
-    </article>
-  </div>
-
-  <div class="targo-capabilities-grid">
-    <article class="targo-card targo-card-accent">
-      <span class="targo-card-tag">CAPABILITY / AI VOICE</span>
-      <h3>AI VOICE ASSISTANTS</h3>
-      <p>Role-scoped AI agents (EduCoach, PulseML, CourseOps, HelpDesk) with multi-turn voice and DOM workflow assistance.</p>
-    </article>
-
-    <article class="targo-card targo-card-accent">
-      <span class="targo-card-tag">CAPABILITY / COLLABORATION</span>
-      <h3>WHATSAPP CLASS &amp; STAFF CHAT</h3>
-      <p>Real-time course channels and staff threads for instant announcements, intervention notes, and student follow-ups.</p>
-    </article>
-
-    <article class="targo-card targo-card-accent">
-      <span class="targo-card-tag">CAPABILITY / REPORTING</span>
-      <h3>OFFICIAL A4 TRANSCRIPTS</h3>
-      <p>Zero-UI print-ready monochrome A4 PDF transcripts and batch rosters branded with {{ portal_institution_name|default:"EduPredict" }}.</p>
-    </article>
+  <div class="zz-list">
+    {% include 'public/_zz_row.html' with tag='01 / ADMIN' title='GOVERNANCE &amp; TICKETS' text='Manages courses, approves Teacher and Analyst registrations, configures institution branding, and resolves support tickets.' media='cube' %}
+    {% include 'public/_zz_row.html' with tag='02 / TEACHER' title='SMART MARKS INGESTION' text='Uploads .csv, .xlsx, .json, .jsonl, .tsv, or .txt marks sheets with auto-mapping, student provisioning, and risk alerts.' media='video-hero' variant='a' %}
+    {% include 'public/_zz_row.html' with tag='03 / ANALYST' title='ML RISK ENGINE' text='Runs Ridge, RandomForest, and IsolationForest pipelines to score GPA trajectories, detect anomalies, and stream LMS ticks.' media='rings' %}
+    {% include 'public/_zz_row.html' with tag='04 / STUDENT' title='GPA &amp; A4 TRANSCRIPTS' text='Monitors live GPA forecasts, attendance warnings, study guidance, and prints formal black-on-white A4 academic transcripts.' media='video-about' variant='a' %}
+    {% include 'public/_zz_row.html' with tag='CAPABILITY / AI VOICE' title='AI VOICE ASSISTANTS' text='Role-scoped AI agents (EduCoach, PulseML, CourseOps, HelpDesk) with multi-turn voice and DOM workflow assistance.' media='orbit' %}
+    {% include 'public/_zz_row.html' with tag='CAPABILITY / COLLABORATION' title='WHATSAPP CLASS &amp; STAFF CHAT' text='Real-time course channels and staff threads for instant announcements, intervention notes, and student follow-ups.' media='stack' %}
+    {% with inst=portal_institution_name|default:"EduPredict" %}{% include 'public/_zz_row.html' with tag='CAPABILITY / REPORTING' title='OFFICIAL A4 TRANSCRIPTS' text='Zero-UI print-ready monochrome A4 PDF transcripts and batch rosters branded with '|add:inst|add:'.' media='video-hero' variant='b' %}{% endwith %}
   </div>
 </section>
 
@@ -195,54 +159,10 @@
     </div>
   </div>
 
-  <div class="targo-workflow-grid">
-    <article class="targo-workflow-card">
-      <div class="targo-workflow-media">
-        <video
-          data-targo-video="workflow-ingest"
-          class="targo-workflow-video"
-          poster="{% static 'video/targo_hero.jpg' %}?v=18"
-          autoplay
-          muted
-          loop
-          playsinline
-          preload="auto"
-          aria-hidden="true"
-        >
-          <source src="{% static 'video/targo_hero.mp4' %}?v=18" type="video/mp4">
-        </video>
-        <div class="targo-workflow-tint" aria-hidden="true"></div>
-      </div>
-      <div class="targo-workflow-body">
-        <span class="targo-card-tag">STEP 01 &mdash; INGEST &amp; SCORE</span>
-        <h3>AUTOMATED MARKS TO ML RISK</h3>
-        <p>Teachers drop multi-format grade sheets into the portal; EduPredict cleans records, provisions student accounts, and triggers Ridge + RandomForest risk scoring in seconds.</p>
-      </div>
-    </article>
-
-    <article class="targo-workflow-card">
-      <div class="targo-workflow-media">
-        <video
-          data-targo-video="workflow-intervene"
-          class="targo-workflow-video"
-          poster="{% static 'video/targo_about.jpg' %}?v=18"
-          autoplay
-          muted
-          loop
-          playsinline
-          preload="auto"
-          aria-hidden="true"
-        >
-          <source src="{% static 'video/targo_about.mp4' %}?v=18" type="video/mp4">
-        </video>
-        <div class="targo-workflow-tint" aria-hidden="true"></div>
-      </div>
-      <div class="targo-workflow-body">
-        <span class="targo-card-tag">STEP 02 &mdash; INTERVENE &amp; EXPORT</span>
-        <h3>REAL-TIME ALERTS &amp; A4 REPORTS</h3>
-        <p>High-risk students receive immediate notifications, faculty coordinate inside class chat, and verified academic records export directly to monochrome A4 PDF transcripts.</p>
-      </div>
-    </article>
+  <div class="zz-list">
+    {% include 'public/_zz_row.html' with tag='STEP 01 — INGEST &amp; SCORE' title='AUTOMATED MARKS TO ML RISK' text='Teachers drop multi-format grade sheets into the portal; EduPredict cleans records, provisions student accounts, and triggers Ridge + RandomForest risk scoring in seconds.' media='video-hero' variant='c' %}
+    {% include 'public/_zz_row.html' with tag='STEP 02 — INTERVENE &amp; EXPORT' title='REAL-TIME ALERTS &amp; A4 REPORTS' text='High-risk students receive immediate notifications, faculty coordinate inside class chat, and verified academic records export directly to monochrome A4 PDF transcripts.' media='video-about' variant='b' %}
   </div>
 </section>
 {% endblock %}
+

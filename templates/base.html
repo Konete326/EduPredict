@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en" data-user-id="{{ current_user.user_id|default:'guest' }}" data-active-role="{{ active_role|default:'PORTAL' }}" data-shell-theme="{{ theme_prefs.shell_theme|default:'white' }}" class="{% if theme_prefs.mode == 'dark' %}dark{% endif %}{% if theme_prefs.density == 'compact' %} density-compact{% endif %}"{% if theme_prefs.tokens %} style="--bg-canvas:{{ theme_prefs.tokens.bg_canvas }};--bg-surface:{{ theme_prefs.tokens.bg_surface }};--bg-elevated:{{ theme_prefs.tokens.bg_elevated }};--bg-overlay:{{ theme_prefs.tokens.bg_overlay }};--text-primary:{{ theme_prefs.tokens.text_primary }};--text-secondary:{{ theme_prefs.tokens.text_secondary }};--text-muted:{{ theme_prefs.tokens.text_muted }};--border-subtle:{{ theme_prefs.tokens.border_subtle }};--accent-primary:{{ theme_prefs.tokens.accent_primary }};--accent-hover:{{ theme_prefs.tokens.accent_hover }};--accent-soft:{{ theme_prefs.tokens.accent_soft }};--shell-sidebar-bg:{{ theme_prefs.tokens.shell_sidebar_bg }};--shell-topbar-bg:{{ theme_prefs.tokens.shell_topbar_bg }};"{% endif %}>
+<html lang="en" data-user-id="{{ current_user.user_id|default:'guest' }}" data-active-role="{{ active_role|default:'PORTAL' }}" data-shell-theme="{{ theme_prefs.shell_theme|default:'targo' }}" class="{% if theme_prefs.mode == 'dark' %}dark{% endif %}{% if theme_prefs.density == 'compact' %} density-compact{% endif %}"{% if theme_prefs.tokens %} style="--bg-canvas:{{ theme_prefs.tokens.bg_canvas }};--bg-surface:{{ theme_prefs.tokens.bg_surface }};--bg-elevated:{{ theme_prefs.tokens.bg_elevated }};--bg-overlay:{{ theme_prefs.tokens.bg_overlay }};--text-primary:{{ theme_prefs.tokens.text_primary }};--text-secondary:{{ theme_prefs.tokens.text_secondary }};--text-muted:{{ theme_prefs.tokens.text_muted }};--border-subtle:{{ theme_prefs.tokens.border_subtle }};--accent-primary:{{ theme_prefs.tokens.accent_primary }};--accent-hover:{{ theme_prefs.tokens.accent_hover }};--accent-soft:{{ theme_prefs.tokens.accent_soft }};--shell-sidebar-bg:{{ theme_prefs.tokens.shell_sidebar_bg }};--shell-topbar-bg:{{ theme_prefs.tokens.shell_topbar_bg }};"{% endif %}>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +13,13 @@
         const doc = document.documentElement;
         const uid = doc.getAttribute('data-user-id') || 'guest';
         const role = doc.getAttribute('data-active-role') || 'PORTAL';
+        const tv = {{ theme_prefs.theme_version|default:0 }};
+        Object.keys(localStorage).forEach(function (k) {
+          if (k.indexOf('ep_theme_prefs') !== 0) return;
+          let v = null;
+          try { v = JSON.parse(localStorage.getItem(k)); } catch (e) {}
+          if (!v || v.theme_version !== tv) localStorage.removeItem(k);
+        });
         let raw = localStorage.getItem('ep_theme_prefs:' + uid + ':' + role);
         if (!raw) {
           const fb = localStorage.getItem('ep_theme_prefs');
@@ -185,6 +192,8 @@
   <script src="{% static 'js/theme_studio.js' %}?v=17"></script>
   <script src="{% static 'js/ui_widgets.js' %}?v=17"></script>
   <script src="{% static 'js/academic_widgets.js' %}?v=17"></script>
+  <script src="{% static 'js/ai_dock_avatars.js' %}?v=22"></script>
+  <script src="{% static 'js/ai_dock_voice.js' %}?v=22"></script>
   <script src="{% static 'js/ai_agent_dock.js' %}?v=22"></script>
   <script src="{% static 'js/page_guides.js' %}?v=17"></script>
   <script src="{% static 'js/image_cropper.js' %}?v=17"></script>

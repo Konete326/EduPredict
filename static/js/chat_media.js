@@ -167,6 +167,52 @@
     });
   }
 
+  function renderBubbleHtml(m, opts) {
+    const sp = m.sender_profile || {}, align = m.is_mine ? 'justify-end' : 'justify-start';
+    const bubble = m.is_mine ? 'bg-[var(--accent-soft)] border-[var(--accent-primary)]/25 rounded-tr-[4px]' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] rounded-tl-[4px]';
+    const isDeleted = m.msg_type === 'DELETED' || m.deleted_for_all;
+    let quoteHtml = '';
+    if (m.reply_to && !m.deleted_for_all) {
+      const rq = m.reply_to;
+      const rqTxt = rq.text || (rq.msg_type === 'FILE' ? '[Document] ' + (rq.file_name || '') : (rq.msg_type === 'IMAGE' ? '[Photo]' : (rq.msg_type === 'AUDIO' ? '[Voice note]' : 'Message')));
+      quoteHtml = '<button type="button" data-jump-msg="' + esc(rq.msg_id) + '" class="mb-1 block w-full text-left rounded-r-[8px] border-l-4 border-[var(--accent-primary)] bg-[var(--bg-surface)]/80 px-2 py-0.5 text-[11px] hover:bg-[var(--bg-surface)]"><span class="block font-semibold text-[var(--accent-primary)] truncate">' + esc(rq.sender_name || 'Member') + '</span><span class="block text-[var(--text-secondary)] truncate">' + esc(rqTxt) + '</span></button>';
+    }
+    const canEdit = m.is_mine && m.msg_type === 'TEXT', canAll = m.is_mine || opts.currentRole === 'ADMIN';
+    const menuItems = '<button type="button" data-reply-msg="' + esc(m.msg_id) + '" class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-reply text-[10px]"></i>Reply</button>' +
+      (canEdit ? '<button type="button" data-edit-msg="' + esc(m.msg_id) + '" class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-pen text-[10px]"></i>Edit</button>' : '') +
+      (opts.isStaff ? '<button type="button" data-msg-info="' + esc(m.msg_id) + '" class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-circle-info text-[10px]"></i>Message Info</button>' : '') +
+      '<button type="button" data-del-msg="' + esc(m.msg_id) + '" data-can-all="' + (canAll ? '1' : '0') + '" class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-trash text-[10px]"></i>Delete</button>';
+    const menuBtnCls = m.is_mine ? 'float-right ml-1 -mr-1 opacity-75 sm:opacity-0 sm:group-hover:opacity-100 focus-within:opacity-100' : 'shrink-0';
+    const menuHtml = !isDeleted ? ('<div class="relative ' + menuBtnCls + '"><button type="button" data-msg-menu-btn="' + esc(m.msg_id) + '" title="Message options" class="inline-flex h-5 w-5 items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-ellipsis-vertical text-[10px]"></i></button><div data-msg-menu="' + esc(m.msg_id) + '" class="hidden absolute right-0 top-5 z-30 w-36 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] py-1 shadow-xl text-xs">' + menuItems + '</div></div>') : '';
+    const hdrHtml = !m.is_mine ? '<div class="flex items-center justify-between gap-2 mb-0.5"><button type="button" data-profile-msg="' + esc(m.msg_id) + '" class="truncate text-[11px] font-semibold leading-tight text-[var(--accent-primary)] hover:underline">' + esc(sp.full_name || 'Member') + '</button>' + menuHtml + '</div>' : menuHtml;
+    const metaInline = '<span class="inline-flex items-center gap-1 text-[10px] leading-none text-[var(--text-muted)] select-none whitespace-nowrap">' + esc(m.created_at_str || '') + (m.edited ? ' · edited' : '') + opts.ticksHtml + '</span>';
+    let body = '', usedInlineMeta = false;
+    if (isDeleted) {
+      body = '<p class="italic text-xs text-[var(--text-muted)]"><i class="fa-solid fa-ban mr-1"></i>' + esc(m.text || 'This message was deleted') + '</p>';
+    } else if (m.msg_type === 'ASSIGNMENT' && m.assignment) {
+      const a = m.assignment;
+      body = '<div class="rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-2 space-y-0.5"><div class="flex items-center justify-between gap-2"><span class="text-[10px] font-bold uppercase text-[var(--accent-primary)]"><i class="fa-solid fa-file-pen mr-1"></i>New ' + esc(a.test_type || 'Assignment') + '</span><span class="text-[10px] font-mono text-[var(--text-muted)]">' + esc(a.max_marks || 0) + ' marks</span></div><p class="text-[13px] font-semibold text-[var(--text-primary)]">' + esc(a.title) + '</p>' + (a.due_date ? '<p class="text-[11px] text-[var(--text-secondary)]">Due: ' + esc(a.due_date) + '</p>' : '') + (a.url ? '<a href="' + esc(a.url) + '" class="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent-primary)] hover:underline">View Test &rarr;</a>' : '') + '</div>';
+    } else if (m.msg_type === 'POLL' && m.poll) {
+      const p = m.poll;
+      body = '<div class="space-y-1"><p class="text-[13px] font-semibold text-[var(--text-primary)]"><i class="fa-solid fa-square-poll-vertical mr-1.5 text-[var(--accent-primary)]"></i>' + esc(p.question) + '</p>' + (p.options || []).map(function (o) {
+        return '<button type="button" data-vote-msg="' + esc(m.msg_id) + '" data-vote-idx="' + o.idx + '" class="relative w-full overflow-hidden rounded-[8px] border px-2.5 py-1 text-left text-xs ' + (p.my_vote === o.idx ? 'border-[var(--accent-primary)] font-semibold' : 'border-[var(--border-subtle)] bg-[var(--bg-surface)]') + '"><span class="absolute inset-y-0 left-0 bg-[var(--accent-primary)]/15" style="width:' + (o.pct || 0) + '%"></span><span class="relative flex items-center justify-between gap-2"><span>' + esc(o.text) + '</span><span class="font-mono text-[11px] text-[var(--text-muted)]">' + (o.votes || 0) + ' (' + (o.pct || 0) + '%)</span></span></button>';
+      }).join('') + '<p class="text-[10px] text-[var(--text-muted)]">' + (p.total_votes || 0) + ' vote(s)</p></div>';
+    } else {
+      const imgs = renderImagesHtml(m), fls = renderFilesHtml(m), aud = m.audio_url ? '<audio controls src="' + esc(m.audio_url) + '" class="mb-1 h-8 w-56 max-w-full"></audio>' : '';
+      body += imgs + fls + aud;
+      if (m.text) {
+        if (!imgs && !fls && !aud) {
+          body += '<p class="text-[13px] leading-[1.35] text-[var(--text-primary)] whitespace-pre-wrap break-words">' + esc(m.text) + '<span class="float-right ml-2 mt-1.5 inline-flex items-center gap-1">' + metaInline + '</span></p>';
+          usedInlineMeta = true;
+        } else {
+          body += '<p class="text-[13px] leading-[1.35] text-[var(--text-primary)] whitespace-pre-wrap break-words">' + esc(m.text) + '</p>';
+        }
+      }
+    }
+    const footerHtml = usedInlineMeta ? '' : '<div class="mt-0.5 flex items-center justify-end gap-1 leading-none">' + metaInline + '</div>';
+    return '<div class="flex ' + align + '"><div data-msg-bubble="' + esc(m.msg_id) + '" class="group relative flow-root max-w-[88%] sm:max-w-[70%] rounded-[12px] border px-2.5 py-1.5 transition-transform duration-150 ' + bubble + '">' + hdrHtml + quoteHtml + body + footerHtml + '</div></div>';
+  }
+
   window.EPChatMedia = {
     MAX_IMAGES: MAX_IMAGES,
     MAX_FILES: MAX_FILES,
@@ -177,6 +223,7 @@
     validateFiles: validateFiles,
     renderImagesHtml: renderImagesHtml,
     renderFilesHtml: renderFilesHtml,
+    renderBubbleHtml: renderBubbleHtml,
     bindMediaEvents: bindMediaEvents,
   };
 })();

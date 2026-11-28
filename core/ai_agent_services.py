@@ -17,8 +17,13 @@ from core.ai_dom_actions import (
 from core.db import classroom_messages_col, course_tests_col, courses_col, datasets_log_col, predictions_col, student_records_col, support_tickets_col
 
 
-def _svg_dp(bg_hex, body):
-    c = bg_hex.replace("#", "%23")
+def _svg_dp(bg_hex, ink_hex, extra="", front="", eye_y=32, antenna=False):
+    c, ink, my, cy = bg_hex.replace("#", "%23"), ink_hex.replace("#", "%23"), eye_y + 9, eye_y + 6
+    blink = "<animate attributeName='ry' values='3.6;3.6;0.3;3.6;3.6' keyTimes='0;0.9;0.94;0.98;1' dur='4s' repeatCount='indefinite'/>"
+    bob = "<animateTransform attributeName='transform' type='translate' values='0 0;0 -1.6;0 0' dur='3.4s' repeatCount='indefinite'/>"
+    m_an = "<animateTransform attributeName='transform' type='scale' values='1 1;1.06 0.9;1 1' additive='sum' dur='5s' repeatCount='indefinite'/>"
+    ant = f"<circle cx='32' cy='8' r='3.2' fill='{ink}'><animate attributeName='r' values='3.2;3.9;3.2' dur='1.8s' repeatCount='indefinite'/></circle>" if antenna else ""
+    body = f"<g>{bob}{extra}{ant}<rect x='14' y='17' width='36' height='32' rx='14' fill='%23ffffff'/>{front}<ellipse cx='25' cy='{eye_y}' rx='3' ry='3.6' fill='{ink}'>{blink}</ellipse><ellipse cx='39' cy='{eye_y}' rx='3' ry='3.6' fill='{ink}'>{blink}</ellipse><circle cx='19.5' cy='{cy}' r='2.8' fill='{c}' fill-opacity='0.28'/><circle cx='44.5' cy='{cy}' r='2.8' fill='{c}' fill-opacity='0.28'/><path d='M26 {my}q6 6 12 0' fill='none' stroke='{ink}' stroke-width='2.4' stroke-linecap='round'>{m_an}</path></g>"
     return f"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='32' fill='{c}'/>{body}</svg>"
 
 
@@ -29,25 +34,25 @@ EDUPREDICT_AGENTS = {
     "coach": {
         "id": "coach", "name": "EduCoach AI", "role": "Academic & Study Advisor", "shortRole": "Academic Advisor",
         "icon": "fa-solid fa-graduation-cap", "accent": "#16a34a", "online": True,
-        "avatar_url": _svg_dp("#16a34a", "<path d='M32 16L12 25l20 9 20-9-20-9z' fill='%23ffffff'/><path d='M20 31v10c0 4 5.4 7 12 7s12-3 12-7V31l-12 5-12-5z' fill='%23ffffff' fill-opacity='0.88'/><path d='M49 27v13' stroke='%23ffffff' stroke-width='3' stroke-linecap='round'/>"),
+        "avatar_url": _svg_dp("#16a34a", "#14532d", extra="<path d='M27 18q1-8 9-6q-4 1-3 6z' fill='%2314532d'/>"),
         "skills": "GPA improvement, attendance recovery, coursework and study tips",
     },
     "analyst": {
         "id": "analyst", "name": "PulseML AI", "role": "Predictive Risk & Data Agent", "shortRole": "ML & Risk Agent",
         "icon": "fa-solid fa-chart-line", "accent": "#2563eb", "online": True,
-        "avatar_url": _svg_dp("#2563eb", "<path d='M15 47h34' stroke='%23ffffff' stroke-width='3' stroke-linecap='round'/><path d='M16 40l10-10 8 6 14-16' fill='none' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/><circle cx='16' cy='40' r='3' fill='%23ffffff'/><circle cx='26' cy='30' r='3' fill='%23ffffff'/><circle cx='34' cy='36' r='3' fill='%23ffffff'/><circle cx='48' cy='20' r='3.5' fill='%23ffffff'/>"),
+        "avatar_url": _svg_dp("#2563eb", "#1e3a8a", extra="<path d='M32 17V9' stroke='%231e3a8a' stroke-width='2.4' stroke-linecap='round'/>", antenna=True),
         "skills": "dropout risk scores, RandomForest/Ridge/IsolationForest metrics and anomalies",
     },
     "ops": {
         "id": "ops", "name": "CourseOps AI", "role": "Course, Roster & Marks Agent", "shortRole": "Course & Marks",
         "icon": "fa-solid fa-chalkboard-user", "accent": "#d97706", "online": True,
-        "avatar_url": _svg_dp("#d97706", "<rect x='17' y='16' width='30' height='34' rx='5' fill='none' stroke='%23ffffff' stroke-width='3.2'/><path d='M25 14h14v5H25z' fill='%23ffffff'/><path d='M24 28h16M24 35h16M24 42h10' stroke='%23ffffff' stroke-width='3' stroke-linecap='round'/>"),
+        "avatar_url": _svg_dp("#d97706", "#78350f", front="<path d='M15 25a17 17 0 0 1 34 0z' fill='%2378350f'/><rect x='12' y='24' width='40' height='4' rx='2' fill='%2378350f'/><rect x='29' y='11' width='6' height='6' rx='2' fill='%2378350f'/>", eye_y=35),
         "skills": "courses, seat capacity, CSV/Excel marks upload, quick entry and class rosters",
     },
     "desk": {
         "id": "desk", "name": "HelpDesk AI", "role": "Portal Guide, PDF & Support Agent", "shortRole": "Portal & Support",
         "icon": "fa-solid fa-headset", "accent": "#dc2626", "online": True,
-        "avatar_url": _svg_dp("#dc2626", "<path d='M18 35v-4a14 14 0 0 1 28 0v4' fill='none' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round'/><rect x='14' y='32' width='7' height='12' rx='3.5' fill='%23ffffff'/><rect x='43' y='32' width='7' height='12' rx='3.5' fill='%23ffffff'/><path d='M36 47h7a4 4 0 0 0 4-4v-1' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round'/>"),
+        "avatar_url": _svg_dp("#dc2626", "#7f1d1d", extra="<path d='M13 33a19 19 0 0 1 38 0' fill='none' stroke='%237f1d1d' stroke-width='3' stroke-linecap='round'/><rect x='9' y='30' width='6' height='11' rx='3' fill='%237f1d1d'/><rect x='49' y='30' width='6' height='11' rx='3' fill='%237f1d1d'/>", front="<path d='M52 40q0 8-10 9' fill='none' stroke='%237f1d1d' stroke-width='2.2' stroke-linecap='round'/><circle cx='41' cy='49' r='2.4' fill='%237f1d1d'/>"),
         "skills": "A4 printable PDF transcripts, help tickets, profile, password and portal navigation",
     },
 }

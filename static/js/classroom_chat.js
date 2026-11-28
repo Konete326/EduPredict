@@ -29,7 +29,14 @@
   const getCsrf = () => ((document.querySelector('#chat-composer [name=csrfmiddlewaretoken]') || {}).value || (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '');
   const toast = (msg, type) => { if (typeof window.showToast === 'function') window.showToast(msg, type || 'info'); };
   const esc = M.esc;
-  const msgSig = (list) => JSON.stringify((list || []).map((m) => [m.msg_id, m.updated_at_iso || m.created_at_iso, m.text, m.deleted_for_all, m.edited, m.tick_state, m.all_seen, ((m.read_receipts && m.read_receipts.seen_by) || m.seen_by || []).length, m.poll && m.poll.total_votes, m.poll && m.poll.my_vote]));
+  const msgSig = (list) => JSON.stringify((list || []).map((m) => [
+    m.msg_id, m.created_at_iso || '', m.updated_at_iso || '', m.created_at_str || '',
+    m.msg_type || '', m.text || '', m.deleted_for_all ? 1 : 0, m.edited ? 1 : 0,
+    m.tick_state || '', m.all_seen ? 1 : 0,
+    ((m.read_receipts && m.read_receipts.seen_by) || m.seen_by || []).length,
+    (m.images || []).length, (m.files || []).length, m.audio_url || '',
+    m.poll && m.poll.total_votes, m.poll && m.poll.my_vote,
+  ]));
 
   window.closeChatModal = function (id) { const m = document.getElementById(id); if (m) { m.classList.add('hidden'); m.classList.remove('flex'); } };
   function openChatModal(id) { const m = document.getElementById(id); if (m) { m.classList.remove('hidden'); m.classList.add('flex'); } }
@@ -66,7 +73,12 @@
     if (banner) banner.classList.toggle('hidden', !deactivated);
     if (deactivated) { clearReplyTo(); if (plusMenu) plusMenu.classList.add('hidden'); if (emojiPicker) emojiPicker.classList.add('hidden'); }
     const actBtn = document.getElementById('chat-toggle-active-btn');
-    if (actBtn) actBtn.innerHTML = deactivated ? '<i class="fa-solid fa-circle-play text-[var(--status-success)]"></i><span class="hidden sm:inline">Activate</span>' : '<i class="fa-solid fa-ban text-[var(--status-danger)]"></i><span class="hidden sm:inline">Deactivate</span>';
+    if (actBtn) actBtn.innerHTML = deactivated ? '<i class="fa-solid fa-circle-play text-[var(--status-success)]"></i><span>Reactivate</span>' : '<i class="fa-solid fa-ban text-[var(--status-danger)]"></i><span>Deactivate</span>';
+    const giBadge = document.getElementById('gi-status-badge');
+    if (giBadge && g) {
+      giBadge.textContent = deactivated ? 'Paused' : 'Active';
+      giBadge.className = 'rounded px-1.5 py-0.5 text-[10px] font-semibold ' + (deactivated ? 'bg-[var(--status-danger)]/15 text-[var(--status-danger)]' : 'bg-[var(--status-success)]/15 text-[var(--status-success)]');
+    }
   }
 
   function syncGroupCard(g) {
@@ -132,42 +144,7 @@
     lastRenderSig = sig;
     const wasNearBottom = stickBottom || (box.scrollHeight - box.scrollTop - box.clientHeight < 90);
     if (!list || !list.length) { box.innerHTML = '<div class="py-16 text-center text-xs text-[var(--text-muted)]">No messages yet. Start the conversation!</div>'; return; }
-    box.innerHTML = list.map(function (m) {
-      const sp = m.sender_profile || {}, align = m.is_mine ? 'justify-end' : 'justify-start';
-      const bubble = m.is_mine ? 'bg-[var(--accent-soft)] border-[var(--accent-primary)]/25 rounded-tr-[4px]' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] rounded-tl-[4px]';
-      let quoteHtml = '';
-      if (m.reply_to && !m.deleted_for_all) {
-        const rq = m.reply_to;
-        const rqTxt = rq.text || (rq.msg_type === 'FILE' ? '[Document] ' + (rq.file_name || '') : (rq.msg_type === 'IMAGE' ? '[Photo]' : (rq.msg_type === 'AUDIO' ? '[Voice note]' : 'Message')));
-        quoteHtml = '<button type="button" data-jump-msg="' + esc(rq.msg_id) + '" class="block w-full text-left rounded-r-[8px] border-l-4 border-[var(--accent-primary)] bg-[var(--bg-surface)]/80 px-2.5 py-1 text-[11px] hover:bg-[var(--bg-surface)]"><span class="block font-semibold text-[var(--accent-primary)] truncate">' + esc(rq.sender_name || 'Member') + '</span><span class="block text-[var(--text-secondary)] truncate">' + esc(rqTxt) + '</span></button>';
-      }
-      let body = '';
-      if (m.msg_type === 'DELETED' || m.deleted_for_all) {
-        body = '<p class="italic text-xs text-[var(--text-muted)]"><i class="fa-solid fa-ban mr-1"></i>' + esc(m.text || 'This message was deleted') + '</p>';
-      } else if (m.msg_type === 'ASSIGNMENT' && m.assignment) {
-        const a = m.assignment;
-        body = '<div class="rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-2.5 space-y-1"><div class="flex items-center justify-between gap-2"><span class="text-[10px] font-bold uppercase text-[var(--accent-primary)]"><i class="fa-solid fa-file-pen mr-1"></i>New ' + esc(a.test_type || 'Assignment') + '</span><span class="text-[10px] font-mono text-[var(--text-muted)]">' + esc(a.max_marks || 0) + ' marks</span></div><p class="text-sm font-semibold text-[var(--text-primary)]">' + esc(a.title) + '</p>' + (a.due_date ? '<p class="text-[11px] text-[var(--text-secondary)]">Due: ' + esc(a.due_date) + '</p>' : '') + (a.url ? '<a href="' + esc(a.url) + '" class="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent-primary)] hover:underline">View Test &rarr;</a>' : '') + '</div>';
-      } else if (m.msg_type === 'POLL' && m.poll) {
-        const p = m.poll;
-        body = '<div class="space-y-1.5"><p class="text-sm font-semibold text-[var(--text-primary)]"><i class="fa-solid fa-square-poll-vertical mr-1.5 text-[var(--accent-primary)]"></i>' + esc(p.question) + '</p>' + (p.options || []).map(function (o) {
-          return '<button type="button" data-vote-msg="' + esc(m.msg_id) + '" data-vote-idx="' + o.idx + '" class="relative w-full overflow-hidden rounded-[8px] border px-2.5 py-1.5 text-left text-xs ' + (p.my_vote === o.idx ? 'border-[var(--accent-primary)] font-semibold' : 'border-[var(--border-subtle)] bg-[var(--bg-surface)]') + '"><span class="absolute inset-y-0 left-0 bg-[var(--accent-primary)]/15" style="width:' + (o.pct || 0) + '%"></span><span class="relative flex items-center justify-between gap-2"><span>' + esc(o.text) + '</span><span class="font-mono text-[11px] text-[var(--text-muted)]">' + (o.votes || 0) + ' (' + (o.pct || 0) + '%)</span></span></button>';
-        }).join('') + '<p class="text-[10px] text-[var(--text-muted)]">' + (p.total_votes || 0) + ' vote(s)</p></div>';
-      } else {
-        body += M.renderImagesHtml(m);
-        body += M.renderFilesHtml(m);
-        if (m.audio_url) body += '<audio controls src="' + esc(m.audio_url) + '" class="mb-1 h-9 w-56 max-w-full"></audio>';
-        if (m.text) body += '<p class="text-[13px] leading-snug text-[var(--text-primary)] whitespace-pre-wrap break-words">' + esc(m.text) + '</p>';
-      }
-      const canEdit = m.is_mine && m.msg_type === 'TEXT';
-      const canAll = m.is_mine || CURRENT_ROLE === 'ADMIN';
-      const menuItems = '<button type="button" data-reply-msg="' + esc(m.msg_id) + '" class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-reply text-[10px]"></i>Reply</button>' +
-        (canEdit ? '<button type="button" data-edit-msg="' + esc(m.msg_id) + '" class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-pen text-[10px]"></i>Edit</button>' : '') +
-        (IS_STAFF ? '<button type="button" data-msg-info="' + esc(m.msg_id) + '" class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-circle-info text-[10px]"></i>Message Info</button>' : '') +
-        '<button type="button" data-del-msg="' + esc(m.msg_id) + '" data-can-all="' + (canAll ? '1' : '0') + '" class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-trash text-[10px]"></i>Delete</button>';
-      const menuHtml = (m.msg_type !== 'DELETED' && !m.deleted_for_all) ? ('<div class="relative shrink-0"><button type="button" data-msg-menu-btn="' + esc(m.msg_id) + '" title="Message options" class="inline-flex h-5 w-5 items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-ellipsis-vertical text-[10px]"></i></button><div data-msg-menu="' + esc(m.msg_id) + '" class="hidden absolute right-0 top-6 z-30 w-36 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] py-1 shadow-xl text-xs">' + menuItems + '</div></div>') : '';
-      const senderHtml = !m.is_mine ? '<button type="button" data-profile-msg="' + esc(m.msg_id) + '" class="truncate text-[11px] font-semibold text-[var(--accent-primary)] hover:underline">' + esc(sp.full_name || 'Member') + '</button>' : '<span></span>';
-      return '<div class="flex ' + align + '"><div data-msg-bubble="' + esc(m.msg_id) + '" class="group relative max-w-[88%] sm:max-w-[70%] rounded-[12px] border px-3 py-1.5 space-y-1 transition-transform duration-150 ' + bubble + '"><div class="flex items-center justify-between gap-2">' + senderHtml + menuHtml + '</div>' + quoteHtml + body + '<div class="flex items-center justify-end gap-1.5 pt-0.5"><span class="text-[10px] leading-none text-[var(--text-muted)]">' + esc(m.created_at_str || '') + (m.edited ? ' · edited' : '') + '</span>' + renderTicksHtml(m) + '</div></div></div>';
-    }).join('');
+    box.innerHTML = list.map((m) => M.renderBubbleHtml(m, { isStaff: IS_STAFF, currentRole: CURRENT_ROLE, ticksHtml: renderTicksHtml(m) })).join('');
     if (wasNearBottom) box.scrollTop = box.scrollHeight;
   }
 
@@ -186,8 +163,8 @@
     openChatModal('chat-msg-info-modal');
   }
 
-  async function fetchMessages(stickBottom) {
-    if (!activeGroupId || isPolling) return;
+  async function fetchMessages(stickBottom, force) {
+    if (!activeGroupId || (isPolling && !force)) return;
     isPolling = true;
     const targetGid = activeGroupId;
     try {
@@ -215,7 +192,7 @@
     const g = groups.find((x) => x.group_id === activeGroupId);
     if (g) { updateHeaderFromGroup(g); syncComposerState(); }
     if (window.innerWidth < 768) setGroupsDrawer(false);
-    fetchMessages(true);
+    fetchMessages(true, true);
   }));
 
   const toggleGroupsBtn = document.getElementById('chat-toggle-groups-btn');
@@ -283,9 +260,12 @@
     });
   }
   document.getElementById('chat-emoji-btn').addEventListener('click', (e) => { e.stopPropagation(); emojiPicker.classList.toggle('hidden'); if (plusMenu) plusMenu.classList.add('hidden'); });
+  const hdrMenuBtn = document.getElementById('chat-hdr-menu-btn'), hdrMenu = document.getElementById('chat-hdr-menu');
+  if (hdrMenuBtn && hdrMenu) hdrMenuBtn.addEventListener('click', (e) => { e.stopPropagation(); hdrMenu.classList.toggle('hidden'); });
   document.addEventListener('click', (e) => {
     if (emojiPicker && !emojiPicker.classList.contains('hidden') && !e.target.closest('#chat-emoji-picker') && !e.target.closest('#chat-emoji-btn')) emojiPicker.classList.add('hidden');
     if (plusMenu && !plusMenu.classList.contains('hidden') && !e.target.closest('#chat-plus-menu') && !e.target.closest('#chat-plus-btn')) plusMenu.classList.add('hidden');
+    if (hdrMenu && !hdrMenu.classList.contains('hidden') && !e.target.closest('#chat-hdr-menu') && !e.target.closest('#chat-hdr-menu-btn')) hdrMenu.classList.add('hidden');
     if (!e.target.closest('[data-msg-menu-btn]') && !e.target.closest('[data-msg-menu]')) document.querySelectorAll('[data-msg-menu]').forEach((m) => m.classList.add('hidden'));
   });
 
@@ -331,41 +311,51 @@
     } catch (_) { toast('Microphone access denied or unavailable.', 'warning'); }
   });
 
-  const gsBtn = document.getElementById('chat-group-settings-btn'), toggleActiveBtn = document.getElementById('chat-toggle-active-btn');
-  if (gsBtn) {
-    const gsDpInput = document.getElementById('gs-dp-input'), gsDpImg = document.getElementById('gs-dp-preview-img'), gsDpInit = document.getElementById('gs-dp-preview-init');
-    const openGroupSettingsFor = (gid) => {
-      if (!gid) return;
-      if (gid !== activeGroupId) {
-        activeGroupId = gid; lastRenderSig = '';
-        document.querySelectorAll('[data-group-card]').forEach((c) => c.classList.toggle('bg-[var(--accent-soft)]', c.dataset.groupCard === activeGroupId));
-        const sg = groups.find((x) => x.group_id === activeGroupId);
-        if (sg) { updateHeaderFromGroup(sg); syncComposerState(); }
-        fetchMessages(true);
-      }
-      const g = groups.find((x) => x.group_id === activeGroupId);
-      if (!g) return;
-      pendingGroupDp = null; document.getElementById('gs-group-name').value = g.title || g.group_id;
-      if (g.dp_url) { gsDpImg.src = g.dp_url; gsDpImg.classList.remove('hidden'); gsDpInit.classList.add('hidden'); }
-      else { gsDpImg.classList.add('hidden'); gsDpInit.textContent = g.group_id.slice(0, 2); gsDpInit.classList.remove('hidden'); }
-      openChatModal('chat-group-settings-modal');
-    };
-    gsBtn.addEventListener('click', () => openGroupSettingsFor(activeGroupId));
-    document.querySelectorAll('[data-edit-group-btn]').forEach((eb) => eb.addEventListener('click', (e) => { e.stopPropagation(); openGroupSettingsFor(eb.dataset.editGroupBtn); }));
-    document.getElementById('gs-dp-btn').addEventListener('click', () => gsDpInput.click());
-    gsDpInput.addEventListener('change', () => {
+  const giDpImg = document.getElementById('gi-dp-img'), giDpInit = document.getElementById('gi-dp-init');
+  const gsForm = document.getElementById('chat-group-settings-form'), toggleActiveBtn = document.getElementById('chat-toggle-active-btn');
+  function openGroupInfoFor(gid) {
+    if (!gid) return;
+    if (gid !== activeGroupId) {
+      activeGroupId = gid; lastRenderSig = ''; clearReplyTo();
+      document.querySelectorAll('[data-group-card]').forEach((c) => c.classList.toggle('bg-[var(--accent-soft)]', c.dataset.groupCard === activeGroupId));
+      const sg = groups.find((x) => x.group_id === activeGroupId);
+      if (sg) { updateHeaderFromGroup(sg); syncComposerState(); }
+      fetchMessages(true, true);
+    }
+    const g = groups.find((x) => x.group_id === activeGroupId);
+    if (!g) return;
+    pendingGroupDp = null;
+    if (g.dp_url && giDpImg && giDpInit) { giDpImg.src = g.dp_url; giDpImg.classList.remove('hidden'); giDpInit.classList.add('hidden'); }
+    else if (giDpImg && giDpInit) { giDpImg.classList.add('hidden'); giDpInit.textContent = g.group_id.slice(0, 2); giDpInit.classList.remove('hidden'); }
+    const giName = document.getElementById('gi-name'), giSub = document.getElementById('gi-sub'), giMem = document.getElementById('gi-members-count');
+    if (giName) giName.textContent = g.title || g.group_id;
+    if (giSub) giSub.textContent = g.group_id + ' · ' + g.semester_label + ' · ' + g.teacher_name;
+    if (giMem) giMem.textContent = (g.member_count || 0) + ' member' + ((g.member_count || 0) === 1 ? '' : 's');
+    const nameIn = document.getElementById('gs-group-name');
+    if (nameIn) nameIn.value = g.title || g.group_id;
+    syncComposerState();
+    openChatModal('chat-group-info-modal');
+  }
+  const hdrInfoBtn = document.getElementById('chat-hdr-info-btn'), menuInfoBtn = document.getElementById('chat-menu-group-info');
+  if (hdrInfoBtn) hdrInfoBtn.addEventListener('click', () => openGroupInfoFor(activeGroupId));
+  if (menuInfoBtn) menuInfoBtn.addEventListener('click', () => { if (hdrMenu) hdrMenu.classList.add('hidden'); openGroupInfoFor(activeGroupId); });
+  document.querySelectorAll('[data-edit-group-btn]').forEach((eb) => eb.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openGroupInfoFor(eb.dataset.editGroupBtn); }));
+  if (gsForm) {
+    const gsDpInput = document.getElementById('gs-dp-input'), gsDpBtn = document.getElementById('gs-dp-btn');
+    if (gsDpBtn && gsDpInput) gsDpBtn.addEventListener('click', () => gsDpInput.click());
+    if (gsDpInput) gsDpInput.addEventListener('change', () => {
       const f = gsDpInput.files && gsDpInput.files[0]; if (!f) return;
       if (f.size > M.MAX_FILE_BYTES) { gsDpInput.value = ''; toast('Group photo must be 10 MB or smaller.', 'danger'); return; }
-      if (typeof window.openImageCropperModal === 'function') window.openImageCropperModal({ mode: 'avatar', aspect: '1:1', title: 'Crop Group Photo', file: f, fileName: f.name, onApply: (res) => { pendingGroupDp = res.file; gsDpImg.src = res.dataUrl; gsDpImg.classList.remove('hidden'); gsDpInit.classList.add('hidden'); } });
+      if (typeof window.openImageCropperModal === 'function') window.openImageCropperModal({ mode: 'avatar', aspect: '1:1', title: 'Crop Group Photo', file: f, fileName: f.name, onApply: (res) => { pendingGroupDp = res.file; if (giDpImg && giDpInit) { giDpImg.src = res.dataUrl; giDpImg.classList.remove('hidden'); giDpInit.classList.add('hidden'); } } });
       else pendingGroupDp = f;
       gsDpInput.value = '';
     });
-    document.getElementById('chat-group-settings-form').addEventListener('submit', async (e) => {
+    gsForm.addEventListener('submit', async (e) => {
       e.preventDefault(); if (!activeGroupId) return;
       const fd = new FormData(); fd.append('action', 'update_group'); fd.append('group_id', activeGroupId); fd.append('group_name', document.getElementById('gs-group-name').value.trim());
       if (pendingGroupDp) fd.append('group_dp', pendingGroupDp);
       const data = await postApi(fd, true);
-      if (data.ok) { if (Array.isArray(data.groups)) groups = data.groups; if (data.group) { updateHeaderFromGroup(data.group); syncGroupCard(data.group); syncComposerState(); } window.closeChatModal('chat-group-settings-modal'); toast('Group updated.', 'success'); }
+      if (data.ok) { if (Array.isArray(data.groups)) groups = data.groups; if (data.group) { updateHeaderFromGroup(data.group); syncGroupCard(data.group); syncComposerState(); } window.closeChatModal('chat-group-info-modal'); toast('Group updated.', 'success'); }
     });
   }
   if (toggleActiveBtn) toggleActiveBtn.addEventListener('click', async () => {
@@ -391,6 +381,7 @@
   initDrawerState();
   syncComposerState();
   renderMessages(currentMessages, true);
+  if (activeGroupId) fetchMessages(true, true);
   window.__epChatPollTimer = setInterval(() => {
     if (!document.getElementById('chat-messages-box')) { clearInterval(window.__epChatPollTimer); window.__epChatPollTimer = null; return; }
     if (!document.hidden && activeGroupId) fetchMessages(false);

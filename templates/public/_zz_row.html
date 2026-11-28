@@ -1,0 +1,25 @@
+﻿{% load static %}
+<article class="zz-row">
+  <div class="zz-media zz-{{ media }}{% if variant %} zz-v-{{ variant }}{% endif %}" aria-hidden="true">
+    {% if media == 'video-hero' %}
+    <video class="zz-video" data-targo-video="zz-{{ variant }}" poster="{% static 'video/targo_hero.jpg' %}?v=18" autoplay muted loop playsinline preload="auto"><source src="{% static 'video/targo_hero.mp4' %}?v=18" type="video/mp4"></video>
+    <span class="zz-tint"></span>
+    {% elif media == 'video-about' %}
+    <video class="zz-video" data-targo-video="zz-{{ variant }}" poster="{% static 'video/targo_about.jpg' %}?v=18" autoplay muted loop playsinline preload="auto"><source src="{% static 'video/targo_about.mp4' %}?v=18" type="video/mp4"></video>
+    <span class="zz-tint"></span>
+    {% elif media == 'cube' %}
+    <div class="zz-scene"><div class="zz-cube"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+    {% elif media == 'rings' %}
+    <div class="zz-scene"><div class="zz-ring-set"><b></b><b></b><b></b><em></em></div></div>
+    {% elif media == 'orbit' %}
+    <div class="zz-scene"><div class="zz-orbit"><em></em><b></b><b></b></div></div>
+    {% elif media == 'stack' %}
+    <div class="zz-scene"><div class="zz-stack"><i></i><i></i><i></i><i></i></div></div>
+    {% endif %}
+  </div>
+  <div class="zz-body">
+    <span class="targo-card-tag">{{ tag }}</span>
+    <h3>{{ title }}</h3>
+    <p>{{ text }}</p>
+  </div>
+</article>

@@ -9,11 +9,24 @@
       25% { transform: translateY(-1.5px) rotate(-4deg); }
       75% { transform: translateY(-1.5px) rotate(4deg); }
     }
+    @keyframes epHeadBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.6px); } }
+    @keyframes epBlink { 0%, 90%, 100% { transform: scaleY(1); } 94% { transform: scaleY(0.1); } }
+    @keyframes epMouth { 0%, 70%, 100% { transform: scale(1); } 80% { transform: scale(1.18, 0.8); } 90% { transform: scale(0.9, 1.2); } }
+    @keyframes epAntenna { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-1.5px) scale(1.2); } }
     @keyframes epMicPulse {
       0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.35); }
       50% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
     }
-    .ep-avatar-anim { animation: epAvatarBob 3.4s ease-in-out infinite; }
+    .ep-av { width: 100%; height: 100%; display: block; overflow: visible; }
+    .ep-av-head, .ep-av-eye, .ep-av-mouth, .ep-av-antenna, .ep-bot-head, .ep-bot-eye { transform-box: fill-box; transform-origin: center; }
+    .ep-av-head { animation: epHeadBob 3.4s ease-in-out infinite; }
+    .ep-av-eye, .ep-bot-eye { animation: epBlink 4s ease-in-out infinite; }
+    .ep-av-mouth { animation: epMouth 5s ease-in-out infinite; }
+    .ep-av-antenna { animation: epAntenna 1.8s ease-in-out infinite; }
+    .ep-bot-head { animation: epHeadBob 3s ease-in-out infinite; }
+    [data-dock-agent="analyst"] .ep-av-head, [data-dock-agent="analyst"] .ep-av-eye { animation-delay: 0.45s; }
+    [data-dock-agent="ops"] .ep-av-head, [data-dock-agent="ops"] .ep-av-eye { animation-delay: 0.9s; }
+    [data-dock-agent="desk"] .ep-av-head, [data-dock-agent="desk"] .ep-av-eye { animation-delay: 1.35s; }
     [data-dock-agent="analyst"] .ep-avatar-anim { animation-delay: 0.45s; }
     [data-dock-agent="ops"] .ep-avatar-anim { animation-delay: 0.9s; }
     [data-dock-agent="desk"] .ep-avatar-anim { animation-delay: 1.35s; }
@@ -25,14 +38,14 @@
       color: #ffffff;
     }
     @media (prefers-reduced-motion: reduce) {
-      .ep-avatar-anim, .ep-toggle-avatar-anim, .ep-mic-listening { animation: none; }
+      .ep-toggle-avatar-anim, .ep-mic-listening, .ep-av-head, .ep-av-eye, .ep-av-mouth, .ep-av-antenna, .ep-bot-head, .ep-bot-eye { animation: none; }
     }
   </style>
 
   <section id="ep-agent-chat-panel" aria-label="AI Specialist Chat" aria-hidden="true" class="hidden absolute bottom-[calc(100%+3.75rem)] right-0 z-40 w-[22rem] sm:w-[24.5rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-xl">
     <header class="flex items-center justify-between gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 py-2.5">
       <div class="flex min-w-0 items-center gap-2.5">
-        <img id="ep-chat-agent-dp" class="ep-avatar-anim h-9 w-9 shrink-0 rounded-full border border-[var(--border-subtle)] object-cover" src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2040%2040'%3E%3Cdefs%3E%3ClinearGradient%20id%3D'g'%20x1%3D'0'%20y1%3D'0'%20x2%3D'1'%20y2%3D'1'%3E%3Cstop%20offset%3D'0%25'%20stop-color%3D'%2316a34a'%2F%3E%3Cstop%20offset%3D'100%25'%20stop-color%3D'%23059669'%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D'40'%20height%3D'40'%20rx%3D'20'%20fill%3D'url(%23g)'%2F%3E%3Cpath%20d%3D'M20%2011L9%2016l11%205%2011-5-11-5zm-6%207.5v4.5c0%201.8%202.7%203%206%203s6-1.2%206-3v-4.5l-6%202.8-6-2.8z'%20fill%3D'%23ffffff'%2F%3E%3C%2Fsvg%3E" alt="EduCoach AI">
+        <span id="ep-chat-agent-dp" data-avatar-agent="coach" class="ep-av-wrap inline-flex h-9 w-9 shrink-0 rounded-full border border-[var(--border-subtle)]"></span>
         <div class="min-w-0">
           <h3 id="ep-chat-agent-name" class="truncate text-xs font-semibold text-[var(--text-primary)]">EduCoach AI</h3>
           <p id="ep-chat-agent-role" class="truncate text-[11px] text-[var(--text-muted)]">Academic &amp; Study Advisor</p>
@@ -59,28 +72,29 @@
     </div>
   </section>
 
-  <div id="ep-message-dock" aria-hidden="true" class="hidden absolute bottom-[calc(100%+0.5rem)] right-0 z-40 max-w-[calc(100vw-2rem)] items-center gap-1.5 sm:gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 sm:px-3 py-1.5 shadow-lg">
+  <div id="ep-message-dock" aria-hidden="true" class="hidden flex-wrap absolute bottom-[calc(100%+0.5rem)] right-0 z-40 max-w-[calc(100vw-2rem)] items-center gap-1.5 sm:gap-2 rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 sm:px-3 py-1.5 shadow-lg">
     <div class="flex shrink-0 items-center gap-1.5" role="group" aria-label="AI Agents">
       <button type="button" data-dock-agent="coach" aria-pressed="false" title="EduCoach AI — Academic & Study Advisor" aria-label="EduCoach AI — Academic & Study Advisor" class="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform hover:scale-105 focus:outline-none">
-        <img data-dock-avatar class="ep-avatar-anim h-8 w-8 rounded-full object-cover" src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2040%2040'%3E%3Cdefs%3E%3ClinearGradient%20id%3D'g'%20x1%3D'0'%20y1%3D'0'%20x2%3D'1'%20y2%3D'1'%3E%3Cstop%20offset%3D'0%25'%20stop-color%3D'%2316a34a'%2F%3E%3Cstop%20offset%3D'100%25'%20stop-color%3D'%23059669'%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D'40'%20height%3D'40'%20rx%3D'20'%20fill%3D'url(%23g)'%2F%3E%3Cpath%20d%3D'M20%2011L9%2016l11%205%2011-5-11-5zm-6%207.5v4.5c0%201.8%202.7%203%206%203s6-1.2%206-3v-4.5l-6%202.8-6-2.8z'%20fill%3D'%23ffffff'%2F%3E%3C%2Fsvg%3E" alt="EduCoach AI">
+        <span data-dock-avatar data-avatar-agent="coach" class="ep-av-wrap inline-flex h-8 w-8 rounded-full"></span>
         <span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[var(--bg-surface)] bg-[var(--status-success)]" aria-hidden="true"></span>
       </button>
       <button type="button" data-dock-agent="analyst" aria-pressed="false" title="PulseML AI — Predictive Risk & Data Agent" aria-label="PulseML AI — Predictive Risk & Data Agent" class="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform hover:scale-105 focus:outline-none">
-        <img data-dock-avatar class="ep-avatar-anim h-8 w-8 rounded-full object-cover" src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2040%2040'%3E%3Cdefs%3E%3ClinearGradient%20id%3D'g'%20x1%3D'0'%20y1%3D'0'%20x2%3D'1'%20y2%3D'1'%3E%3Cstop%20offset%3D'0%25'%20stop-color%3D'%232563eb'%2F%3E%3Cstop%20offset%3D'100%25'%20stop-color%3D'%231d4ed8'%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D'40'%20height%3D'40'%20rx%3D'20'%20fill%3D'url(%23g)'%2F%3E%3Cpath%20d%3D'M10%2026h20M11%2022l5-6%204.5%203.5L28%2013'%20fill%3D'none'%20stroke%3D'%23ffffff'%20stroke-width%3D'2.5'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%2F%3E%3Ccircle%20cx%3D'28'%20cy%3D'13'%20r%3D'2.4'%20fill%3D'%23ffffff'%2F%3E%3C%2Fsvg%3E" alt="PulseML AI">
+        <span data-dock-avatar data-avatar-agent="analyst" class="ep-av-wrap inline-flex h-8 w-8 rounded-full"></span>
         <span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[var(--bg-surface)] bg-[var(--status-success)]" aria-hidden="true"></span>
       </button>
       <button type="button" data-dock-agent="ops" aria-pressed="false" title="CourseOps AI — Course, Roster & Marks Agent" aria-label="CourseOps AI — Course, Roster & Marks Agent" class="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform hover:scale-105 focus:outline-none">
-        <img data-dock-avatar class="ep-avatar-anim h-8 w-8 rounded-full object-cover" src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2040%2040'%3E%3Cdefs%3E%3ClinearGradient%20id%3D'g'%20x1%3D'0'%20y1%3D'0'%20x2%3D'1'%20y2%3D'1'%3E%3Cstop%20offset%3D'0%25'%20stop-color%3D'%23d97706'%2F%3E%3Cstop%20offset%3D'100%25'%20stop-color%3D'%23b45309'%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D'40'%20height%3D'40'%20rx%3D'20'%20fill%3D'url(%23g)'%2F%3E%3Crect%20x%3D'12'%20y%3D'11'%20width%3D'16'%20height%3D'18'%20rx%3D'3'%20fill%3D'none'%20stroke%3D'%23ffffff'%20stroke-width%3D'2.3'%2F%3E%3Cpath%20d%3D'M16%2011h8v3h-8z'%20fill%3D'%23ffffff'%2F%3E%3Cpath%20d%3D'M16%2020l2.5%202.5L24%2017'%20fill%3D'none'%20stroke%3D'%23ffffff'%20stroke-width%3D'2.3'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%2F%3E%3C%2Fsvg%3E" alt="CourseOps AI">
+        <span data-dock-avatar data-avatar-agent="ops" class="ep-av-wrap inline-flex h-8 w-8 rounded-full"></span>
         <span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[var(--bg-surface)] bg-[var(--status-success)]" aria-hidden="true"></span>
       </button>
       <button type="button" data-dock-agent="desk" aria-pressed="false" title="HelpDesk AI — Portal Guide, PDF & Support Agent" aria-label="HelpDesk AI — Portal Guide, PDF & Support Agent" class="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform hover:scale-105 focus:outline-none">
-        <img data-dock-avatar class="ep-avatar-anim h-8 w-8 rounded-full object-cover" src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2040%2040'%3E%3Cdefs%3E%3ClinearGradient%20id%3D'g'%20x1%3D'0'%20y1%3D'0'%20x2%3D'1'%20y2%3D'1'%3E%3Cstop%20offset%3D'0%25'%20stop-color%3D'%23dc2626'%2F%3E%3Cstop%20offset%3D'100%25'%20stop-color%3D'%23b91c1c'%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D'40'%20height%3D'40'%20rx%3D'20'%20fill%3D'url(%23g)'%2F%3E%3Cpath%20d%3D'M12%2021v-2a8%208%200%200%201%2016%200v2'%20fill%3D'none'%20stroke%3D'%23ffffff'%20stroke-width%3D'2.4'%20stroke-linecap%3D'round'%2F%3E%3Crect%20x%3D'10'%20y%3D'19'%20width%3D'4'%20height%3D'7'%20rx%3D'2'%20fill%3D'%23ffffff'%2F%3E%3Crect%20x%3D'26'%20y%3D'19'%20width%3D'4'%20height%3D'7'%20rx%3D'2'%20fill%3D'%23ffffff'%2F%3E%3Cpath%20d%3D'M28%2026c0%202.2-1.8%203.5-4.5%203.5H20'%20fill%3D'none'%20stroke%3D'%23ffffff'%20stroke-width%3D'2.2'%20stroke-linecap%3D'round'%2F%3E%3C%2Fsvg%3E" alt="HelpDesk AI">
+        <span data-dock-avatar data-avatar-agent="desk" class="ep-av-wrap inline-flex h-8 w-8 rounded-full"></span>
         <span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[var(--bg-surface)] bg-[var(--status-success)]" aria-hidden="true"></span>
       </button>
     </div>
 
     <span class="h-6 w-px shrink-0 bg-[var(--border-subtle)]" aria-hidden="true"></span>
 
+    <p id="ep-dock-mic-status" role="alert" aria-live="assertive" class="hidden w-full basis-full px-1 text-[11px] font-medium text-[var(--status-danger)]"></p>
     <form id="ep-dock-form" data-no-lock class="flex flex-1 min-w-0 items-center gap-1.5">
       <input id="ep-dock-input" type="text" autocomplete="off" placeholder="Select an agent or type a message..." aria-label="Message AI assistant" class="w-20 sm:w-44 min-w-0 flex-1 bg-transparent px-1.5 py-1 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none">
       <button id="ep-dock-mic" type="button" title="Voice input" aria-label="Voice input" aria-pressed="false" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--accent-primary)]">
@@ -93,12 +107,15 @@
   </div>
 
   <button id="ep-agent-dock-toggle" type="button" title="Drag to move or click to open AI Assistants" aria-label="AI Assistants" aria-expanded="false" aria-controls="ep-message-dock" class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--accent-primary)] text-white shadow-md hover:bg-[var(--accent-hover)] cursor-grab active:cursor-grabbing select-none touch-none transition-transform active:scale-95">
-    <svg class="ep-toggle-avatar-anim h-6 w-6 pointer-events-none" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <rect x="6" y="8" width="20" height="16" rx="7" stroke="currentColor" stroke-width="2.2" fill="rgba(255,255,255,0.14)"/>
-      <circle cx="12.5" cy="15.5" r="1.7" fill="currentColor"/>
-      <circle cx="19.5" cy="15.5" r="1.7" fill="currentColor"/>
-      <path d="M12.5 19.5c1.1 1.1 2.2 1.5 3.5 1.5s2.4-.4 3.5-1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-      <path d="M16 4.5v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <svg class="ep-toggle-avatar-anim h-7 w-7 pointer-events-none" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <g class="ep-bot-head">
+        <path d="M16 3.5v3.5" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="16" cy="3.2" r="1.9" fill="#ffffff"/>
+        <rect x="5" y="8" width="22" height="18" rx="8" fill="#ffffff"/>
+        <ellipse class="ep-bot-eye" cx="12" cy="16.5" rx="2" ry="2.4" fill="var(--accent-primary)"/>
+        <ellipse class="ep-bot-eye" cx="20" cy="16.5" rx="2" ry="2.4" fill="var(--accent-primary)"/>
+        <path d="M12.5 21q3.5 3 7 0" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round"/>
+      </g>
     </svg>
   </button>
 </div>

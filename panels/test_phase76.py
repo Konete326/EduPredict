@@ -87,7 +87,9 @@ class Phase76VerificationTests(TestCase):
         self.assertIn('id="ep-chat-agent-dp"', dock_html)
         for aid in ("coach", "analyst", "ops", "desk"):
             self.assertIn(f'data-dock-agent="{aid}"', dock_html)
-        self.assertEqual(len(re.findall(r"<img\s+data-dock-avatar\b[^>]*src=\"data:image/svg\+xml", dock_html)), 4)
+        self.assertEqual(len(re.findall(r"<span\s+data-dock-avatar\b[^>]*data-avatar-agent=", dock_html)), 4)
+        self.assertIn('id="ep-agent-dock-toggle"', dock_html)
+        self.assertIn("<svg", dock_html)
 
         js_no_aliases = "\n".join(line for line in dock_js.splitlines() if "AGENT_ALIASES" not in line)
         self.assertIsNone(human_re.search(js_no_aliases))
