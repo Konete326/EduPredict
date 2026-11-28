@@ -1,5 +1,5 @@
 from django.urls import path
-from panels import views_admin, views_admin_academic, views_analyst, views_notifications, views_student, views_teacher, views_theme
+from panels import views_admin, views_admin_academic, views_analyst, views_chat, views_notifications, views_student, views_teacher, views_theme
 
 app_name = 'panels'
 
@@ -31,6 +31,9 @@ urlpatterns = [
     path('teacher-panel/tests/<str:test_id>/grade/', views_teacher.teacher_test_grade, name='teacher_test_grade'),
     path('teacher-panel/marks/', views_teacher.teacher_marks, name='teacher_marks'),
     path('student-panel/', views_student.student_dashboard, name='student_dashboard'),
+    path('student-panel/tests/', views_student.student_tests, name='student_tests'),
+    path('chat/', views_chat.classroom_chat_view, name='classroom_chat'),
+    path('chat/api/messages/', views_chat.classroom_chat_api, name='classroom_chat_api'),
     path('analyst-panel/', views_analyst.analyst_dashboard, name='analyst_dashboard'),
     path('analyst-panel/accuracy/', views_analyst.analyst_accuracy, name='analyst_accuracy'),
 ]

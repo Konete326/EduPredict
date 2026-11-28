@@ -3,6 +3,8 @@ import re
 ROLE_ROUTES = {
     "STUDENT": (
         ("/student-panel/", "Dashboard", ("dashboard", "home", "student panel", "overview", "my dashboard")),
+        ("/student-panel/tests/", "My Tests", ("tests", "my tests", "assignments", "quizzes", "submit work", "student tests")),
+        ("/chat/", "Class Chat", ("chat", "class chat", "group chat", "classroom chat", "messages")),
         ("/notifications/", "Notification", ("notifications", "alert history", "history", "alerts", "support")),
         ("/profile/", "My Profile", ("profile", "my profile", "avatar", "bio", "account")),
     ),
@@ -13,6 +15,7 @@ ROLE_ROUTES = {
         ("/teacher-panel/attendance/", "Attendance", ("attendance", "mark attendance", "daily attendance", "present", "absent", "leave")),
         ("/teacher-panel/tests/", "Tests", ("tests", "quizzes", "exams", "create test", "grade test", "test marks")),
         ("/teacher-panel/marks/", "Marks", ("marks", "enter marks", "upload marks", "save marks", "bulk marks", "grading")),
+        ("/chat/", "Class Chat", ("chat", "class chat", "group chat", "classroom chat", "messages")),
         ("/notifications/", "Notification", ("notifications", "alert history", "history", "alerts")),
         ("/profile/", "My Profile", ("profile", "my profile", "avatar", "bio", "account")),
     ),
@@ -34,6 +37,7 @@ ROLE_ROUTES = {
         ("/admin-panel/training/", "Training Data", ("training", "training data", "dataset")),
         ("/admin-panel/tickets/", "Help Tickets", ("tickets", "help tickets", "support tickets", "feedback")),
         ("/admin-panel/settings/", "Portal Settings", ("settings", "portal settings", "thresholds", "backup")),
+        ("/chat/", "Class Chat", ("chat", "class chat", "group chat", "classroom chat", "messages")),
         ("/notifications/", "Notification", ("notifications", "alert history", "history", "alerts")),
         ("/profile/", "My Profile", ("profile", "my profile", "avatar", "bio", "account")),
     ),

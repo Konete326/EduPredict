@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="ep-page-header flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
+  <div class="min-w-0 space-y-1">
+    <div class="flex flex-wrap items-center gap-2">
+      <h2 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">My Tests</h2>
+      {% if semester_label %}<span class="inline-flex items-center gap-1 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--accent-primary)]"><i class="fa-solid fa-calendar-days text-[10px]"></i>{{ semester_label }}</span>{% endif %}
+    </div>
+    <p class="text-xs sm:text-sm text-[var(--text-secondary)]">View assigned quizzes and exams, download attachments, and turn in your work.</p>
+  </div>
+</header>
+
+{% if db_error %}
+<div class="rounded-[12px] border border-[var(--status-danger)] bg-[var(--bg-surface)] px-4 py-2.5 text-xs text-[var(--status-danger)]"><i class="fa-solid fa-circle-exclamation mr-1.5"></i>Notice: {{ db_error }}</div>
+{% endif %}
+
+<section class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+  {% include 'components/metric_card.html' with title="Total" value=kpis.total|default:0 badge="Assigned" status="info" icon="fa-solid fa-file-pen" %}
+  {% include 'components/metric_card.html' with title="Pending" value=kpis.pending|default:0 badge="To Do" status="warning" icon="fa-solid fa-hourglass-half" %}
+  {% include 'components/metric_card.html' with title="Submitted" value=kpis.submitted|default:0 badge="On Time" status="info" icon="fa-solid fa-paper-plane" %}
+  {% include 'components/metric_card.html' with title="Late" value=kpis.late|default:0 badge="Past Due" status="danger" icon="fa-solid fa-clock" %}
+  {% include 'components/metric_card.html' with title="Graded" value=kpis.graded|default:0 badge="Scored" status="success" icon="fa-solid fa-check-double" %}
+</section>
+
+<div class="flex flex-wrap items-center gap-3 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
+  <div class="min-w-[200px] flex-1">
+    <input id="st-search" type="search" placeholder="Search tests by title or course..." class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+  </div>
+  <select id="st-course-filter" class="h-9 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+    <option value="ALL">All Courses</option>
+    {% for c in courses %}<option value="{{ c.course_code }}">{{ c.course_code }} - {{ c.title }}</option>{% endfor %}
+  </select>
+  <select id="st-status-filter" class="h-9 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+    <option value="ALL">All Statuses</option>
+    <option value="PENDING">Pending</option>
+    <option value="SUBMITTED">Submitted</option>
+    <option value="LATE">Late</option>
+    <option value="GRADED">Graded</option>
+  </select>
+</div>
+
+<section id="st-cards-grid" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+  {% for t in tests %}
+  <article data-test-card data-course="{{ t.course_code }}" data-status="{{ t.submission_status }}" data-search="{{ t.title|lower }} {{ t.course_code|lower }} {{ t.course_title|lower }} {{ t.test_type|lower }}" class="flex flex-col justify-between rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 space-y-4">
+    <div class="space-y-2.5">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5">
+          <span class="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]">{{ t.test_type }}</span>
+          <span class="font-mono text-xs text-[var(--text-muted)]">{{ t.course_code }}</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          {% if t.is_late_now and t.submission_status == 'PENDING' %}<span class="rounded-[8px] border border-[var(--status-danger)] bg-[var(--bg-canvas)] px-2 py-0.5 text-[10px] font-semibold text-[var(--status-danger)]">PAST DUE</span>{% endif %}
+          <span class="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-0.5 text-[11px] font-semibold {% if t.submission_status == 'GRADED' %}text-[var(--status-success)]{% elif t.submission_status == 'LATE' %}text-[var(--status-danger)]{% elif t.submission_status == 'SUBMITTED' %}text-[var(--accent-primary)]{% else %}text-[var(--status-warning)]{% endif %}">{{ t.submission_status }}</span>
+        </div>
+      </div>
+      <div>
+        <h3 class="text-base font-semibold text-[var(--text-primary)] truncate" title="{{ t.title }}">{{ t.title }}</h3>
+        {% if t.course_title %}<p class="text-[11px] text-[var(--text-muted)] truncate">{{ t.course_title }}</p>{% endif %}
+      </div>
+      {% if t.notes %}<p class="text-xs leading-relaxed text-[var(--text-secondary)] line-clamp-2">{{ t.notes }}</p>{% endif %}
+      <div class="flex flex-wrap items-center gap-3 text-[11px] text-[var(--text-muted)]">
+        <span><i class="fa-regular fa-calendar mr-1"></i>Test: {{ t.test_date|default:"-" }}</span>
+        {% if t.due_date %}<span class="{% if t.is_late_now and t.submission_status == 'PENDING' %}font-semibold text-[var(--status-danger)]{% endif %}"><i class="fa-regular fa-clock mr-1"></i>Due: {{ t.due_date }}</span>{% endif %}
+      </div>
+      {% if t.attachment_url %}<a href="{{ t.attachment_url }}" target="_blank" rel="noopener" download class="inline-flex items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--accent-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-paperclip text-[11px]"></i><span class="truncate max-w-[200px]">{{ t.attachment_name|default:"Download Teacher File" }}</span></a>{% endif %}
+    </div>
+    <div class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3 space-y-2 text-xs">
+      <div class="flex items-center justify-between tabular-nums">
+        <span class="text-[var(--text-muted)]">Max Marks: <strong class="text-[var(--text-primary)]">{{ t.max_marks|floatformat:0 }}</strong></span>
+        {% if t.obtained_marks is not None %}<span class="font-semibold text-[var(--status-success)]">Score: {{ t.obtained_marks|floatformat:0 }} / {{ t.max_marks|floatformat:0 }} ({{ t.percentage }}%)</span>{% else %}<span class="text-[var(--text-muted)]">Not graded yet</span>{% endif %}
+      </div>
+      {% if t.remarks %}<p class="text-[11px] text-[var(--text-secondary)]"><strong class="text-[var(--text-primary)]">Remarks:</strong> {{ t.remarks }}</p>{% endif %}
+      {% if t.submission_note %}<p class="text-[11px] text-[var(--text-secondary)]"><strong class="text-[var(--text-primary)]">Your Note:</strong> {{ t.submission_note }}</p>{% endif %}
+      {% if t.files %}
+      <div class="flex flex-wrap gap-1.5 pt-1">
+        {% for f in t.files %}<a href="{{ f.url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2 py-1 text-[11px] text-[var(--accent-primary)] hover:underline"><i class="fa-solid {% if f.is_image %}fa-image{% else %}fa-file{% endif %} text-[10px]"></i><span class="truncate max-w-[130px]">{{ f.name }}</span></a>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="pt-1">
+      {% if t.submission_status == 'GRADED' %}
+      <span class="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-xs font-semibold text-[var(--status-success)]"><i class="fa-solid fa-check-double"></i>Graded</span>
+      {% else %}
+      <button type="button" onclick="openSubmitWorkModal(this)" data-test-id="{{ t.test_id }}" data-title="{{ t.title }}" data-course-code="{{ t.course_code }}" data-due-date="{{ t.due_date }}" data-is-late="{% if t.is_late_now %}1{% else %}0{% endif %}" data-note="{{ t.submission_note }}" class="inline-flex h-9 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--accent-primary)] px-3 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"><i class="fa-solid fa-cloud-arrow-up"></i><span>{% if t.submission_status == 'PENDING' %}Submit Work{% else %}Resubmit Work{% endif %}</span></button>
+      {% endif %}
+    </div>
+  </article>
+  {% empty %}
+  <div class="col-span-full rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-12 text-center text-sm text-[var(--text-muted)]">No tests assigned to your semester yet.</div>
+  {% endfor %}
+</section>
+
+<div id="submit-work-modal" class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="sw-title">
+  <div id="sw-backdrop" class="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"></div>
+  <div class="relative z-10 w-full max-w-lg rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-3.5">
+      <div class="min-w-0">
+        <h3 id="sw-title" class="text-base font-semibold text-[var(--text-primary)] truncate">Submit Work</h3>
+        <p id="sw-meta" class="text-xs text-[var(--text-muted)] truncate"></p>
+      </div>
+      <button type="button" onclick="closeSubmitWorkModal()" aria-label="Close modal" class="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-xmark text-sm"></i></button>
+    </div>
+    <form method="post" action="{% url 'panels:student_tests' %}" enctype="multipart/form-data" class="flex flex-col max-h-[85vh]">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="submit_test">
+      <input type="hidden" id="sw-test-id" name="test_id" value="">
+      <div class="space-y-3.5 overflow-y-auto px-5 py-4">
+        <div id="sw-late-warn" class="hidden rounded-[10px] border border-[var(--status-danger)] bg-[var(--bg-canvas)] px-3 py-2 text-xs text-[var(--status-danger)]"><i class="fa-solid fa-clock mr-1.5"></i>Due date has passed. This submission will be marked as <strong>LATE</strong>.</div>
+        <div>
+          <label for="sw-note" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Submission Note (Optional)</label>
+          <textarea id="sw-note" name="note" rows="3" placeholder="Add a short note or link for your teacher..." class="w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)]" style="field-sizing: content;"></textarea>
+        </div>
+        <div>
+          <label for="sw-files" class="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Attach Files (Multiple allowed: PDF, Docs, Images, CSV, Excel)</label>
+          <input id="sw-files" name="files" type="file" multiple class="block w-full text-xs text-[var(--text-secondary)] file:mr-2.5 file:rounded-[8px] file:border file:border-[var(--border-subtle)] file:bg-[var(--bg-elevated)] file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-[var(--text-primary)]">
+          <ul id="sw-file-list" class="mt-2 space-y-1 text-xs text-[var(--text-secondary)]"></ul>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2.5 border-t border-[var(--border-subtle)] px-5 py-3.5">
+        <button type="button" onclick="closeSubmitWorkModal()" class="inline-flex h-9 items-center rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]">Cancel</button>
+        <button type="submit" class="inline-flex h-9 items-center gap-1.5 rounded-[12px] bg-[var(--accent-primary)] px-4 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"><i class="fa-solid fa-paper-plane text-xs"></i><span>Turn In Work</span></button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const modal = document.getElementById('submit-work-modal'), backdrop = document.getElementById('sw-backdrop'), filesInput = document.getElementById('sw-files'), fileList = document.getElementById('sw-file-list');
+    let pointerDownOnBackdrop = false;
+    window.openSubmitWorkModal = function (btn) {
+      if (!modal || !btn) return;
+      const d = btn.dataset;
+      document.getElementById('sw-test-id').value = d.testId || '';
+      document.getElementById('sw-title').textContent = 'Turn In: ' + (d.title || 'Test');
+      document.getElementById('sw-meta').textContent = (d.courseCode || '') + (d.dueDate ? ' · Due ' + d.dueDate : '');
+      document.getElementById('sw-note').value = d.note || '';
+      document.getElementById('sw-late-warn').classList.toggle('hidden', d.isLate !== '1');
+      if (filesInput) filesInput.value = '';
+      if (fileList) fileList.innerHTML = '';
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    };
+    window.closeSubmitWorkModal = function () { if (!modal) return; modal.classList.add('hidden'); modal.classList.remove('flex'); };
+    if (backdrop) {
+      backdrop.addEventListener('pointerdown', function (e) { pointerDownOnBackdrop = e.target === backdrop; });
+      backdrop.addEventListener('click', function (e) { if (pointerDownOnBackdrop && e.target === backdrop) window.closeSubmitWorkModal(); pointerDownOnBackdrop = false; });
+    }
+    if (filesInput && fileList) {
+      filesInput.addEventListener('change', function () {
+        fileList.innerHTML = '';
+        Array.from(filesInput.files || []).forEach(function (f) {
+          const li = document.createElement('li');
+          li.className = 'flex items-center gap-1.5 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-2.5 py-1';
+          li.innerHTML = '<i class="fa-solid fa-paperclip text-[var(--accent-primary)]"></i><span class="truncate"></span>';
+          li.querySelector('span').textContent = f.name + ' (' + Math.max(1, Math.round(f.size / 1024)) + ' KB)';
+          fileList.appendChild(li);
+        });
+      });
+    }
+    function applyFilters() {
+      const q = (document.getElementById('st-search').value || '').trim().toLowerCase(), c = document.getElementById('st-course-filter').value, s = document.getElementById('st-status-filter').value;
+      document.querySelectorAll('[data-test-card]').forEach(function (card) {
+        const ok = (!q || (card.dataset.search || '').includes(q)) && (c === 'ALL' || card.dataset.course === c) && (s === 'ALL' || card.dataset.status === s);
+        card.classList.toggle('hidden', !ok);
+      });
+    }
+    ['st-search', 'st-course-filter', 'st-status-filter'].forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener(id === 'st-search' ? 'input' : 'change', applyFilters);
+    });
+  })();
+</script>
+{% endblock %}

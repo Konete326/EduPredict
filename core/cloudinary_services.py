@@ -6,6 +6,7 @@ import cloudinary
 import cloudinary.uploader
 
 ALLOWED_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+ALLOWED_AUDIO_EXTS = {".webm", ".ogg", ".mp3", ".wav", ".m4a"}
 ALLOWED_ACADEMIC_EXTS = {
     ".pdf",
     ".csv",
@@ -19,7 +20,7 @@ ALLOWED_ACADEMIC_EXTS = {
     ".jpeg",
     ".webp",
     ".gif",
-}
+} | ALLOWED_AUDIO_EXTS
 MAX_AVATAR_BYTES = 5 * 1024 * 1024
 
 
@@ -169,6 +170,7 @@ def upload_academic_attachment(file_obj, folder="edupredict/tests", max_bytes=10
     if int(file_size) > int(max_bytes):
         return None, "", False, "Selected file exceeds the maximum allowed size."
     is_image = ext in ALLOWED_IMAGE_EXTS
+    is_audio = ext in ALLOWED_AUDIO_EXTS
     if not is_cloudinary_configured():
         return None, filename, is_image, "not_configured"
     try:
@@ -179,7 +181,7 @@ def upload_academic_attachment(file_obj, folder="edupredict/tests", max_bytes=10
             file_obj,
             folder=folder,
             public_id=f"att_{uuid.uuid4().hex[:10]}",
-            resource_type=("image" if is_image else "raw"),
+            resource_type=("image" if is_image else ("video" if is_audio else "raw")),
             overwrite=False,
         )
         url = str((res or {}).get("secure_url") or (res or {}).get("url") or "").strip()

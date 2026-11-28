@@ -1,6 +1,8 @@
-from django.shortcuts import render
+from django.contrib import messages
+from django.shortcuts import redirect, render
 from core.decorators import role_required
 from panels.student_services import get_student_overview_context
+from panels.student_test_services import get_student_tests_context, submit_student_test
 
 
 def _student_identity(request):
@@ -87,5 +89,37 @@ def student_dashboard(request):
         "enrolled_courses": data.get("enrolled_courses", []),
         "admin_contact": data.get("admin_contact", {}),
         "assigned_teacher": data.get("assigned_teacher", {}),
+        "db_error": db_error,
+    })
+
+
+@role_required(["STUDENT", "ADMIN"])
+def student_tests(request):
+    student_id, user_id, role, user = _student_identity(request)
+    if request.method == "POST":
+        action = str(request.POST.get("action") or "").strip().lower()
+        if action == "submit_test":
+            test_id = str(request.POST.get("test_id") or "").strip()
+            note = str(request.POST.get("submission_note") or request.POST.get("note") or "").strip()
+            files = request.FILES.getlist("files")
+            sub, err = submit_student_test(test_id, student_id, user_id, note=note, files=files)
+            if err or not sub:
+                messages.error(request, err or "Submission failed.")
+            else:
+                messages.success(request, f"Work submitted ({sub.get('submission_status', 'SUBMITTED')}).")
+        else:
+            messages.error(request, "Unknown action.")
+        return redirect("panels:student_tests")
+
+    ctx = {"tests": [], "kpis": {"total": 0, "pending": 0, "submitted": 0, "late": 0, "graded": 0}, "semester_id": "", "semester_label": "-", "courses": [], "today_str": ""}
+    db_error = None
+    try:
+        ctx = get_student_tests_context(student_id, user_id, role)
+    except Exception as exc:
+        db_error = str(exc)
+    return render(request, "panels/student_tests.html", {
+        "page_title": "My Tests",
+        "active_role": "STUDENT",
+        **ctx,
         "db_error": db_error,
     })

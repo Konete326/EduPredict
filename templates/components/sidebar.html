@@ -68,6 +68,10 @@
           <i class="fa-solid fa-life-ring w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Help Tickets</span>
         </a>
+        <a href="{% url 'panels:classroom_chat' %}"{% if request.resolver_match.view_name == 'panels:classroom_chat' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:classroom_chat' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-comments w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Class Chat</span>
+        </a>
       </div>
     </div>
     {% endif %}
@@ -99,6 +103,10 @@
           <i class="fa-solid fa-file-pen w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Tests</span>
         </a>
+        <a href="{% url 'panels:classroom_chat' %}"{% if request.resolver_match.view_name == 'panels:classroom_chat' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:classroom_chat' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-comments w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Class Chat</span>
+        </a>
       </div>
     </div>
     {% endif %}
@@ -113,6 +121,14 @@
         <a href="{% url 'panels:student_dashboard' %}"{% if request.resolver_match.view_name == 'panels:student_dashboard' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:student_dashboard' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
           <i class="fa-solid fa-graduation-cap w-5 text-center shrink-0 text-sm"></i>
           <span class="truncate">Dashboard</span>
+        </a>
+        <a href="{% url 'panels:student_tests' %}"{% if request.resolver_match.view_name == 'panels:student_tests' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:student_tests' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-file-pen w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">My Tests</span>
+        </a>
+        <a href="{% url 'panels:classroom_chat' %}"{% if request.resolver_match.view_name == 'panels:classroom_chat' %} aria-current="page"{% endif %} class="ep-nav-link flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm font-medium transition-colors {% if request.resolver_match.view_name == 'panels:classroom_chat' %}is-active{% else %}text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]{% endif %}">
+          <i class="fa-solid fa-comments w-5 text-center shrink-0 text-sm"></i>
+          <span class="truncate">Class Chat</span>
         </a>
       </div>
     </div>

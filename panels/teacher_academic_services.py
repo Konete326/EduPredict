@@ -4,7 +4,7 @@ from pathlib import Path
 from django.conf import settings
 from analytics.ml_engine import run_prediction_pipeline
 from core.cloudinary_services import is_cloudinary_configured, upload_academic_attachment
-from core.db import attendance_records_col, course_tests_col, courses_col, get_cached, invalidate_cache, semesters_col, student_records_col, users_col
+from core.db import attendance_records_col, classroom_messages_col, course_tests_col, courses_col, get_cached, invalidate_cache, semesters_col, student_records_col, users_col
 from panels.teacher_services import _action, _alert_attrs, _is_admin, _load_joined_students, _safe_float, _scope_key, _semester_label, _student_attrs, _view_action, provision_student_accounts
 
 
@@ -167,10 +167,8 @@ def _norm_att_status(val):
 
 
 def _safe_att_date(raw_date):
-    today_str = datetime.now().strftime("%Y-%m-%d")
-    clean = str(raw_date or "").strip()
-    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", clean):
-        return today_str, today_str, False
+    today_str, clean = datetime.now().strftime("%Y-%m-%d"), str(raw_date or "").strip()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", clean): return today_str, today_str, False
     return clean, today_str, clean > today_str
 
 
@@ -180,8 +178,7 @@ def get_teacher_attendance_context(teacher_user=None, course_filter="", date_str
     raw_cf = str(course_filter or "").strip().upper()
     cf = raw_cf if (raw_cf and raw_cf != "ALL") else (course_options[0]["value"] if course_options else "")
     selected_date, today_str, is_future = _safe_att_date(date_str)
-    if is_future:
-        selected_date = today_str
+    if is_future: selected_date = today_str
     selected_course = next((c for c in courses if c["course_code"] == cf), None) if cf else None
     filtered = [s for s in students if s["course_code"] == cf] if cf else []
     att_query = {"date": selected_date, "course_code": cf} if cf else {"date": selected_date, "course_code": "__NONE__"}
@@ -198,8 +195,7 @@ def get_teacher_attendance_context(teacher_user=None, course_filter="", date_str
 
 def save_course_attendance(post_data, teacher_user=None):
     date_str, today_str, is_future = _safe_att_date(post_data.get("date") or post_data.get("attendance_date"))
-    if is_future:
-        return 0, f"Future dates ({date_str}) cannot be marked. Select today ({today_str}) or an earlier date."
+    if is_future: return 0, f"Future dates ({date_str}) cannot be marked. Select today ({today_str}) or an earlier date."
     course_code = str(post_data.get("course_code") or "").strip().upper()
     items = _parse_json_list(post_data.get("attendance_json"))
     if not items and post_data.get("student_ids"):
@@ -209,8 +205,7 @@ def save_course_attendance(post_data, teacher_user=None):
     elif not items and hasattr(post_data, "getlist"):
         sids, statuses = [str(x).strip() for x in post_data.getlist("student_id") if str(x).strip()], post_data.getlist("status")
         items = [{"student_id": sid, "status": post_data.get(f"status_{sid}") or (statuses[i] if i < len(statuses) else "PRESENT"), "course_code": post_data.get(f"course_code_{sid}") or course_code} for i, sid in enumerate(sids)]
-    if not items:
-        return 0, "Please select at least one student to record attendance."
+    if not items: return 0, "Please select at least one student to record attendance."
     now = datetime.now(timezone.utc)
     t_uid, t_name = str((teacher_user or {}).get("user_id") or "").strip(), str((teacher_user or {}).get("full_name") or "Teacher").strip()
     att_col, rec_col, saved = attendance_records_col(), student_records_col(), 0
@@ -225,8 +220,7 @@ def save_course_attendance(post_data, teacher_user=None):
         pct = round((sum(1 for r in all_recs if r.get("status") == "PRESENT") / len(all_recs)) * 100.0, 2) if all_recs else 100.0
         rec_col.update_one({"student_id": sid}, {"$set": {"attendance_pct": pct, "attendance_rate": pct, "updated_at": now}, "$setOnInsert": {"full_name": str(rec.get("full_name") or sid), "course_code": c_code, "semester_id": str(rec.get("semester_id") or "")}}, upsert=True)
         saved += 1
-    if saved == 0:
-        return 0, "No valid student attendance rows found."
+    if saved == 0: return 0, "No valid student attendance rows found."
     run_prediction_pipeline(persist=True)
     invalidate_cache()
     return saved, None
@@ -289,6 +283,7 @@ def create_course_test(post_data, teacher_user=None, attachment=None):
     if att_err: return None, att_err
     doc = {**data, "test_id": f"TST-{uuid.uuid4().hex[:6].upper()}", "semester_id": str(c_doc.get("semester_id") or "").strip(), "test_date": t_date, "due_date": data["due_date"] or t_date, "attachment_url": att_url, "attachment_name": att_name, "submissions": {}, "teacher_user_id": str((teacher_user or {}).get("user_id") or "").strip(), "teacher_name": str((teacher_user or {}).get("full_name") or "Teacher").strip(), "created_at": now, "updated_at": now}
     course_tests_col().insert_one(doc)
+    classroom_messages_col().insert_one({"msg_id": f"MSG-{uuid.uuid4().hex[:8].upper()}", "group_id": data["course_code"], "course_code": data["course_code"], "msg_type": "ASSIGNMENT", "text": f"New {doc['test_type']}: {doc['title']} (Due: {doc['due_date']}, Max Marks: {doc['max_marks']:g})", "sender_user_id": doc["teacher_user_id"], "sender_name": doc["teacher_name"], "sender_role": str((teacher_user or {}).get("role") or "TEACHER").strip().upper(), "test_id": doc["test_id"], "assignment_title": doc["title"], "assignment_type": doc["test_type"], "due_date": doc["due_date"], "max_marks": doc["max_marks"], "attachment_url": att_url, "attachment_name": att_name, "deleted_for": [], "deleted_for_all": False, "edited": False, "created_at": now, "updated_at": now})
     invalidate_cache()
     return doc, None
 

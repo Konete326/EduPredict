@@ -37,40 +37,40 @@
   <a href="{% url 'panels:teacher_tests' %}" class="inline-flex h-9 items-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">Show All</a>
 </form>
 
-<section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+<section class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
   {% for t in tests %}
-  <article class="flex flex-col justify-between rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
-    <div class="space-y-2">
+  <article class="flex flex-col justify-between rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 space-y-4">
+    <div class="space-y-2.5">
       <div class="flex items-center justify-between gap-2">
-        <span class="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]">{{ t.test_type }}</span>
+        <span class="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--accent-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--accent-primary)]">{{ t.test_type }}</span>
         <span class="text-xs font-mono text-[var(--text-muted)]">{{ t.course_code }} · {{ t.test_date|default:"-" }}</span>
       </div>
       <h3 class="text-base font-semibold text-[var(--text-primary)] truncate">{{ t.title }}</h3>
       {% if t.notes or t.description %}
-      <p class="text-xs text-[var(--text-secondary)] line-clamp-2">{{ t.notes|default:t.description }}</p>
+      <p class="text-xs leading-relaxed text-[var(--text-secondary)] line-clamp-2">{{ t.notes|default:t.description }}</p>
       {% endif %}
-      <div class="flex flex-wrap items-center gap-2 text-[11px] text-[var(--text-muted)]">
+      <div class="flex flex-wrap items-center gap-3 text-[11px] text-[var(--text-muted)]">
         {% if t.due_date %}<span><i class="fa-regular fa-calendar mr-1"></i>Due: {{ t.due_date }}</span>{% endif %}
-        {% if t.attachment_url %}<a href="{{ t.attachment_url }}" target="_blank" rel="noopener" class="text-[var(--accent-primary)] hover:underline truncate max-w-[160px]"><i class="fa-solid fa-paperclip mr-1"></i>{{ t.attachment_name|default:"Attachment" }}</a>{% endif %}
+        {% if t.attachment_url %}<a href="{{ t.attachment_url }}" target="_blank" rel="noopener" class="text-[var(--accent-primary)] hover:underline truncate max-w-[180px]"><i class="fa-solid fa-paperclip mr-1"></i>{{ t.attachment_name|default:"Attachment" }}</a>{% endif %}
       </div>
     </div>
-    <div class="grid grid-cols-3 gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2.5 text-center tabular-nums">
+    <div class="grid grid-cols-3 gap-2.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3 text-center tabular-nums">
       <div><p class="text-[11px] text-[var(--text-muted)]">Max</p><p class="text-sm font-semibold text-[var(--text-primary)]">{{ t.max_marks|floatformat:0 }}</p></div>
       <div><p class="text-[11px] text-[var(--text-muted)]">Graded</p><p class="text-sm font-semibold text-[var(--text-primary)]">{{ t.graded_count }}/{{ t.total_students }}</p></div>
       <div><p class="text-[11px] text-[var(--text-muted)]">Avg</p><p class="text-sm font-semibold text-[var(--accent-primary)]">{{ t.avg_score }}%</p></div>
     </div>
     <div class="flex flex-nowrap items-center justify-between gap-2 pt-1">
-      <a href="{% url 'panels:teacher_test_grade' test_id=t.test_id %}" class="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[var(--accent-primary)] px-3 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+      <a href="{% url 'panels:teacher_test_grade' test_id=t.test_id %}" class="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[var(--accent-primary)] px-3 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
         <i class="fa-solid fa-pen-ruler text-[11px]"></i>
         <span>Grade Marks</span>
       </a>
-      <button type="button" onclick="window.openViewDetailsModal(JSON.parse(this.getAttribute('data-view-payload') || '{}'))" data-view-payload="{{ t.view_payload_json|escape }}" title="View Details" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+      <button type="button" onclick="window.openViewDetailsModal(JSON.parse(this.getAttribute('data-view-payload') || '{}'))" data-view-payload="{{ t.view_payload_json|escape }}" title="View Details" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <i class="fa-solid fa-eye"></i>
       </button>
-      <button type="button" onclick="openEditTestModal(this)" data-test-id="{{ t.test_id }}" data-title="{{ t.title }}" data-course-code="{{ t.course_code }}" data-test-type="{{ t.test_type }}" data-max-marks="{{ t.max_marks|floatformat:0 }}" data-test-date="{{ t.test_date }}" data-due-date="{{ t.due_date }}" data-notes="{{ t.notes|default:t.description }}" data-attachment-name="{{ t.attachment_name }}" title="Edit Test" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+      <button type="button" onclick="openEditTestModal(this)" data-test-id="{{ t.test_id }}" data-title="{{ t.title }}" data-course-code="{{ t.course_code }}" data-test-type="{{ t.test_type }}" data-max-marks="{{ t.max_marks|floatformat:0 }}" data-test-date="{{ t.test_date }}" data-due-date="{{ t.due_date }}" data-notes="{{ t.notes|default:t.description }}" data-attachment-name="{{ t.attachment_name }}" title="Edit Test" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
         <i class="fa-solid fa-pen"></i>
       </button>
-      <button type="button" onclick="openDeleteTestModal(this)" data-test-id="{{ t.test_id }}" data-title="{{ t.title }}" title="Delete Test" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]">
+      <button type="button" onclick="openDeleteTestModal(this)" data-test-id="{{ t.test_id }}" data-title="{{ t.title }}" title="Delete Test" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-xs text-[var(--status-danger)] hover:bg-[var(--bg-elevated)]">
         <i class="fa-solid fa-trash"></i>
       </button>
     </div>

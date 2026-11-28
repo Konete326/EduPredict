@@ -1,7 +1,7 @@
 import json
 from pymongo import DESCENDING
 from analytics.ml_engine import _resolve_runtime_settings
-from core.db import courses_col, get_cached, notifications_col, predictions_col, student_records_col, support_tickets_col, users_col
+from core.db import courses_col, get_cached, notifications_col, predictions_col, semesters_col, student_records_col, support_tickets_col, users_col
 from panels.student_alert_services import _alert_targets, _load_recent_alerts, get_student_alerts_context, mark_alert_read
 
 
@@ -15,6 +15,7 @@ def _safe_float(val, default=0.0):
 def _empty_record(student_id):
     return {
         "student_id": student_id, "full_name": "", "batch": "", "department": "", "program_level": "",
+        "semester_id": "", "semester_label": "",
         "records": [], "courses": [], "avg_attendance": 0.0, "avg_marks": 0.0,
         "avg_assignment": 0.0, "lms_hours_weekly": 0.0, "previous_gpa": 0.0,
         "predicted_gpa": None, "risk_level": "PENDING", "risk_score": None,
@@ -38,7 +39,7 @@ def _resolve_program_level(user_doc, department, batch):
 
 
 def _fetch_student_user_doc(student_id, user_id):
-    proj = {"_id": 0, "full_name": 1, "batch": 1, "department": 1, "program_level": 1, "assigned_teacher_id": 1, "assigned_teacher_name": 1}
+    proj = {"_id": 0, "full_name": 1, "batch": 1, "department": 1, "program_level": 1, "semester_id": 1, "assigned_teacher_id": 1, "assigned_teacher_name": 1}
     try:
         ucol = users_col()
         doc = ucol.find_one({"student_id": student_id}, proj) if student_id else None
@@ -238,6 +239,14 @@ def _load_student_overview(student_id, user_id, role):
         record["batch"] = record["batch"] or str(user_doc.get("batch") or "")
         record["department"] = str(user_doc.get("department") or "")
     record["program_level"] = _resolve_program_level(user_doc, record["department"], record["batch"])
+    sem_id = str((user_doc or {}).get("semester_id") or (records[0].get("semester_id") if records else "") or "").strip()
+    record["semester_id"] = sem_id
+    sem_doc = semesters_col().find_one({"semester_id": sem_id}, {"_id": 0}) if sem_id else None
+    if sem_doc:
+        sname = str(sem_doc.get("semester_name") or f"Semester {sem_doc.get('semester_number') or 1}").strip()
+        record["semester_label"] = f"{str(sem_doc.get('program_name') or 'BSCS').strip()} · {sname}"
+    elif records and records[0].get("semester_label"):
+        record["semester_label"] = str(records[0].get("semester_label") or "").strip()
 
     if prediction:
         raw_gpa = prediction.get("predicted_gpa")

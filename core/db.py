@@ -50,6 +50,7 @@ COLLECTIONS = (
     "users", "student_records", "predictions",
     "datasets_log", "notifications", "support_tickets", "courses",
     "classes", "semesters", "password_requests", "attendance_records", "course_tests",
+    "classroom_messages",
 )
 
 
@@ -243,6 +244,10 @@ def attendance_records_col():
 
 def course_tests_col():
     return get_collection("course_tests")
+
+
+def classroom_messages_col():
+    return get_collection("classroom_messages")
 
 
 def ensure_indexes():
