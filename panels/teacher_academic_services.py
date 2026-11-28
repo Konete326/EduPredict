@@ -166,12 +166,22 @@ def _norm_att_status(val):
     return "PRESENT"
 
 
+def _safe_att_date(raw_date):
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    clean = str(raw_date or "").strip()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", clean):
+        return today_str, today_str, False
+    return clean, today_str, clean > today_str
+
+
 def get_teacher_attendance_context(teacher_user=None, course_filter="", date_str=""):
     courses, students = _teacher_courses_list(teacher_user), _load_joined_students(teacher_user)
     course_options = [{"value": c["course_code"], "label": f"{c['course_code']} · {c['title']}", "semester_id": c["semester_id"], "semester_label": c["semester_label"]} for c in courses]
     raw_cf = str(course_filter or "").strip().upper()
     cf = raw_cf if (raw_cf and raw_cf != "ALL") else (course_options[0]["value"] if course_options else "")
-    selected_date = str(date_str or "").strip() or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    selected_date, today_str, is_future = _safe_att_date(date_str)
+    if is_future:
+        selected_date = today_str
     selected_course = next((c for c in courses if c["course_code"] == cf), None) if cf else None
     filtered = [s for s in students if s["course_code"] == cf] if cf else []
     att_query = {"date": selected_date, "course_code": cf} if cf else {"date": selected_date, "course_code": "__NONE__"}
@@ -183,11 +193,13 @@ def get_teacher_attendance_context(teacher_user=None, course_filter="", date_str
         eff = st or "PRESENT"
         present_cnt, absent_cnt, leave_cnt = present_cnt + int(eff == "PRESENT"), absent_cnt + int(eff == "ABSENT"), leave_cnt + int(eff == "LEAVE")
         att_students.append({**s, "today_status": eff, "has_marked": bool(st)})
-    return {"course_options": course_options, "selected_course": selected_course, "course_filter": cf, "selected_date": selected_date, "students": att_students, "kpis": {"total_students": len(att_students), "present_count": present_cnt, "absent_count": absent_cnt, "leave_count": leave_cnt, "marked_count": marked_cnt}}
+    return {"course_options": course_options, "selected_course": selected_course, "course_filter": cf, "selected_date": selected_date, "today_str": today_str, "students": att_students, "kpis": {"total_students": len(att_students), "present_count": present_cnt, "absent_count": absent_cnt, "leave_count": leave_cnt, "marked_count": marked_cnt}}
 
 
 def save_course_attendance(post_data, teacher_user=None):
-    date_str = str(post_data.get("date") or post_data.get("attendance_date") or datetime.now(timezone.utc).strftime("%Y-%m-%d")).strip()
+    date_str, today_str, is_future = _safe_att_date(post_data.get("date") or post_data.get("attendance_date"))
+    if is_future:
+        return 0, f"Future dates ({date_str}) cannot be marked. Select today ({today_str}) or an earlier date."
     course_code = str(post_data.get("course_code") or "").strip().upper()
     items = _parse_json_list(post_data.get("attendance_json"))
     if not items and post_data.get("student_ids"):
