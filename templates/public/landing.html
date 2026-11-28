@@ -1,6 +1,7 @@
 ﻿{% extends 'public/_base.html' %}
 {% load static %}
 {% block title %}Student Risk &amp; GPA Analytics{% endblock %}
+{% block preloader %}{% include 'public/_preloader.html' %}{% endblock %}
 {% block content %}
 <section class="targo-hero">
   <video
@@ -131,13 +132,13 @@
   </div>
 
   <div class="zz-list">
-    {% include 'public/_zz_row.html' with tag='01 / ADMIN' title='GOVERNANCE &amp; TICKETS' text='Manages courses, approves Teacher and Analyst registrations, configures institution branding, and resolves support tickets.' media='cube' %}
-    {% include 'public/_zz_row.html' with tag='02 / TEACHER' title='SMART MARKS INGESTION' text='Uploads .csv, .xlsx, .json, .jsonl, .tsv, or .txt marks sheets with auto-mapping, student provisioning, and risk alerts.' media='video-hero' variant='a' %}
-    {% include 'public/_zz_row.html' with tag='03 / ANALYST' title='ML RISK ENGINE' text='Runs Ridge, RandomForest, and IsolationForest pipelines to score GPA trajectories, detect anomalies, and stream LMS ticks.' media='rings' %}
-    {% include 'public/_zz_row.html' with tag='04 / STUDENT' title='GPA &amp; A4 TRANSCRIPTS' text='Monitors live GPA forecasts, attendance warnings, study guidance, and prints formal black-on-white A4 academic transcripts.' media='video-about' variant='a' %}
-    {% include 'public/_zz_row.html' with tag='CAPABILITY / AI VOICE' title='AI VOICE ASSISTANTS' text='Role-scoped AI agents (EduCoach, PulseML, CourseOps, HelpDesk) with multi-turn voice and DOM workflow assistance.' media='orbit' %}
-    {% include 'public/_zz_row.html' with tag='CAPABILITY / COLLABORATION' title='WHATSAPP CLASS &amp; STAFF CHAT' text='Real-time course channels and staff threads for instant announcements, intervention notes, and student follow-ups.' media='stack' %}
-    {% with inst=portal_institution_name|default:"EduPredict" %}{% include 'public/_zz_row.html' with tag='CAPABILITY / REPORTING' title='OFFICIAL A4 TRANSCRIPTS' text='Zero-UI print-ready monochrome A4 PDF transcripts and batch rosters branded with '|add:inst|add:'.' media='video-hero' variant='b' %}{% endwith %}
+    {% include 'public/_zz_row.html' with tag='01 / ADMIN' title='GOVERNANCE &amp; TICKETS' text='Manages courses, approves Teacher and Analyst registrations, configures institution branding, and resolves support tickets.' media='video-admin' %}
+    {% include 'public/_zz_row.html' with tag='02 / TEACHER' title='SMART MARKS INGESTION' text='Uploads .csv, .xlsx, .json, .jsonl, .tsv, or .txt marks sheets with auto-mapping, student provisioning, and risk alerts.' media='video-hero' %}
+    {% include 'public/_zz_row.html' with tag='03 / ANALYST' title='ML RISK ENGINE' text='Runs Ridge, RandomForest, and IsolationForest pipelines to score GPA trajectories, detect anomalies, and stream LMS ticks.' media='video-ml' %}
+    {% include 'public/_zz_row.html' with tag='04 / STUDENT' title='GPA &amp; A4 TRANSCRIPTS' text='Monitors live GPA forecasts, attendance warnings, study guidance, and prints formal black-on-white A4 academic transcripts.' media='video-about' %}
+    {% include 'public/_zz_row.html' with tag='CAPABILITY / AI VOICE' title='AI VOICE ASSISTANTS' text='Role-scoped AI agents (EduCoach, PulseML, CourseOps, HelpDesk) with multi-turn voice and DOM workflow assistance.' media='video-voice' %}
+    {% include 'public/_zz_row.html' with tag='CAPABILITY / COLLABORATION' title='WHATSAPP CLASS &amp; STAFF CHAT' text='Real-time course channels and staff threads for instant announcements, intervention notes, and student follow-ups.' media='video-chat' %}
+    {% with inst=portal_institution_name|default:"EduPredict" %}{% include 'public/_zz_row.html' with tag='CAPABILITY / REPORTING' title='OFFICIAL A4 TRANSCRIPTS' text='Zero-UI print-ready monochrome A4 PDF transcripts and batch rosters branded with '|add:inst|add:'.' media='video-chat' %}{% endwith %}
   </div>
 </section>
 
@@ -160,8 +161,8 @@
   </div>
 
   <div class="zz-list">
-    {% include 'public/_zz_row.html' with tag='STEP 01 — INGEST &amp; SCORE' title='AUTOMATED MARKS TO ML RISK' text='Teachers drop multi-format grade sheets into the portal; EduPredict cleans records, provisions student accounts, and triggers Ridge + RandomForest risk scoring in seconds.' media='video-hero' variant='c' %}
-    {% include 'public/_zz_row.html' with tag='STEP 02 — INTERVENE &amp; EXPORT' title='REAL-TIME ALERTS &amp; A4 REPORTS' text='High-risk students receive immediate notifications, faculty coordinate inside class chat, and verified academic records export directly to monochrome A4 PDF transcripts.' media='video-about' variant='b' %}
+    {% include 'public/_zz_row.html' with tag='STEP 01 — INGEST &amp; SCORE' title='AUTOMATED MARKS TO ML RISK' text='Teachers drop multi-format grade sheets into the portal; EduPredict cleans records, provisions student accounts, and triggers Ridge + RandomForest risk scoring in seconds.' media='video-ml' %}
+    {% include 'public/_zz_row.html' with tag='STEP 02 — INTERVENE &amp; EXPORT' title='REAL-TIME ALERTS &amp; A4 REPORTS' text='High-risk students receive immediate notifications, faculty coordinate inside class chat, and verified academic records export directly to monochrome A4 PDF transcripts.' media='video-about' %}
   </div>
 </section>
 {% endblock %}
