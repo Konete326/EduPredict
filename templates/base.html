@@ -62,6 +62,7 @@
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+  <link rel="stylesheet" href="{% static 'css/calendar_modal.css' %}?v=22">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
   <link rel="stylesheet" href="{% static 'css/global.css' %}?v=17">
@@ -166,9 +167,11 @@
 
   {% include 'components/confirm_modal.html' %}
   {% include 'components/form_modal.html' %}
+  {% include 'components/calendar_modal.html' %}
   {% if active_role %}{% include 'components/theme_studio_modal.html' %}{% endif %}
   {% include 'components/page_guide_modal.html' %}
   {% include 'components/image_cropper_modal.html' %}
+  {% include 'components/file_preview_modal.html' %}
   {% include 'components/student_360_drawer.html' %}
   {% if active_role %}{% include 'components/ai_message_dock.html' %}{% endif %}
   {% include 'components/toast.html' %}
@@ -186,6 +189,7 @@
   <script src="{% static 'js/page_guides.js' %}?v=17"></script>
   <script src="{% static 'js/image_cropper.js' %}?v=17"></script>
   <script src="{% static 'js/directory_ui.js' %}?v=17"></script>
+  <script src="{% static 'js/calendar_modal.js' %}?v=22"></script>
   <div id="page-extra-js">{% block extra_js %}{% endblock %}</div>
 </body>
 </html>

@@ -63,7 +63,7 @@
         <span><i class="fa-regular fa-calendar mr-1"></i>Test: {{ t.test_date|default:"-" }}</span>
         {% if t.due_date %}<span class="{% if t.is_late_now and t.submission_status == 'PENDING' %}font-semibold text-[var(--status-danger)]{% endif %}"><i class="fa-regular fa-clock mr-1"></i>Due: {{ t.due_date }}</span>{% endif %}
       </div>
-      {% if t.attachment_url %}<a href="{{ t.attachment_url }}" target="_blank" rel="noopener" download class="inline-flex items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--accent-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-paperclip text-[11px]"></i><span class="truncate max-w-[200px]">{{ t.attachment_name|default:"Download Teacher File" }}</span></a>{% endif %}
+      {% if t.attachment_url %}<button type="button" onclick="openFilePreviewModal(this)" data-preview-url="{{ t.attachment_url }}" data-preview-name="{{ t.attachment_name|default:'Teacher Attachment' }}" class="inline-flex items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--accent-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-paperclip text-[11px]"></i><span class="truncate max-w-[200px]">{{ t.attachment_name|default:"Preview Teacher File" }}</span></button>{% endif %}
     </div>
     <div class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3 space-y-2 text-xs">
       <div class="flex items-center justify-between tabular-nums">
@@ -74,7 +74,7 @@
       {% if t.submission_note %}<p class="text-[11px] text-[var(--text-secondary)]"><strong class="text-[var(--text-primary)]">Your Note:</strong> {{ t.submission_note }}</p>{% endif %}
       {% if t.files %}
       <div class="flex flex-wrap gap-1.5 pt-1">
-        {% for f in t.files %}<a href="{{ f.url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2 py-1 text-[11px] text-[var(--accent-primary)] hover:underline"><i class="fa-solid {% if f.is_image %}fa-image{% else %}fa-file{% endif %} text-[10px]"></i><span class="truncate max-w-[130px]">{{ f.name }}</span></a>{% endfor %}
+        {% for f in t.files %}<button type="button" onclick="openFilePreviewModal(this)" data-preview-url="{{ f.url }}" data-preview-name="{{ f.name }}" data-preview-image="{% if f.is_image %}1{% else %}0{% endif %}" class="inline-flex items-center gap-1 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2 py-1 text-[11px] text-[var(--accent-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid {% if f.is_image %}fa-image{% else %}fa-file{% endif %} text-[10px]"></i><span class="truncate max-w-[130px]">{{ f.name }}</span></button>{% endfor %}
       </div>
       {% endif %}
     </div>

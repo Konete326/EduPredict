@@ -38,16 +38,48 @@ def _resolve_program_level(user_doc, department, batch):
     return f"Batch {batch}" if batch else "Undergraduate"
 
 
-def _fetch_student_user_doc(student_id, user_id):
-    proj = {"_id": 0, "full_name": 1, "batch": 1, "department": 1, "program_level": 1, "semester_id": 1, "assigned_teacher_id": 1, "assigned_teacher_name": 1}
+def _fetch_student_user_doc(student_id, user_id, email=""):
+    proj = {"_id": 0, "user_id": 1, "student_id": 1, "email": 1, "full_name": 1, "batch": 1, "department": 1, "program_level": 1, "semester_id": 1, "assigned_teacher_id": 1, "assigned_teacher_name": 1}
     try:
-        ucol = users_col()
-        doc = ucol.find_one({"student_id": student_id}, proj) if student_id else None
-        if not doc and user_id:
-            doc = ucol.find_one({"user_id": user_id}, proj)
+        ucol, sid, uid, clean_email = users_col(), str(student_id or "").strip(), str(user_id or "").strip(), str(email or "").strip().lower()
+        doc = ucol.find_one({"student_id": sid}, proj) if (sid and sid != uid) else None
+        if not doc and uid: doc = ucol.find_one({"user_id": uid}, proj)
+        if not doc and sid: doc = ucol.find_one({"student_id": sid}, proj)
+        if not doc and clean_email: doc = ucol.find_one({"email": clean_email}, proj)
         return doc
     except Exception:
         return None
+
+
+def resolve_student_identity(student_id="", user_id="", email=""):
+    raw_sid, raw_uid, raw_email = str(student_id or "").strip(), str(user_id or "").strip(), str(email or "").strip().lower()
+    user_doc = _fetch_student_user_doc(raw_sid, raw_uid, email=raw_email)
+    resolved_sid = str((user_doc or {}).get("student_id") or "").strip()
+    if not resolved_sid and raw_sid and raw_sid != raw_uid:
+        resolved_sid = raw_sid
+    if not resolved_sid and (raw_uid or raw_email):
+        try:
+            clauses = ([{"user_id": raw_uid}] if raw_uid else []) + ([{"email": raw_email}] if raw_email else [])
+            rec = student_records_col().find_one({"$or": clauses} if len(clauses) > 1 else clauses[0], {"_id": 0, "student_id": 1})
+            if rec and rec.get("student_id"):
+                resolved_sid = str(rec.get("student_id") or "").strip()
+        except Exception:
+            pass
+    return (resolved_sid or raw_sid or raw_uid), user_doc
+
+
+def _collect_course_teachers(enrolled_courses):
+    teachers, seen = [], set()
+    for ec in (enrolled_courses or []):
+        tname = str(ec.get("teacher_name") or "").strip()
+        if not tname or tname.upper() in ("TBA", "UNASSIGNED"):
+            continue
+        tid, temail = str(ec.get("teacher_id") or "").strip(), str(ec.get("teacher_email") or "").strip()
+        key = tid or tname.lower()
+        if key not in seen:
+            seen.add(key)
+            teachers.append({"teacher_id": tid, "name": tname, "email": temail})
+    return teachers
 
 
 def resolve_assigned_teacher(student_id, user_id, user_doc=None, records=None, enrolled_courses=None):
@@ -65,17 +97,15 @@ def resolve_assigned_teacher(student_id, user_id, user_doc=None, records=None, e
             temail = str(rec.get("teacher_email") or "").strip()
         if tid and tname and temail:
             break
-    if not tname and enrolled_courses:
-        for ec in enrolled_courses:
-            cand = str(ec.get("teacher_name") or "").strip()
-            if cand and cand.upper() != "TBA":
-                tname = cand
-                temail = temail or str(ec.get("teacher_email") or "").strip()
-                break
+    course_teachers = _collect_course_teachers(enrolled_courses)
+    if not tname and course_teachers:
+        tid = tid or course_teachers[0]["teacher_id"]
+        tname = ", ".join(t["name"] for t in course_teachers)
+        temail = temail or ", ".join(t["email"] for t in course_teachers if t.get("email"))
     try:
         ucol = users_col()
         tdoc = ucol.find_one({"user_id": tid}, {"_id": 0, "user_id": 1, "full_name": 1, "email": 1}) if tid else None
-        if not tdoc and tname:
+        if not tdoc and tname and "," not in tname:
             for cand in ucol.find({"role": "TEACHER"}, {"_id": 0, "user_id": 1, "full_name": 1, "email": 1}):
                 if str(cand.get("full_name") or "").strip().lower() == tname.lower():
                     tdoc = cand
@@ -86,40 +116,53 @@ def resolve_assigned_teacher(student_id, user_id, user_doc=None, records=None, e
             temail = temail or str(tdoc.get("email") or "").strip()
     except Exception:
         pass
-    return {"teacher_id": tid, "name": tname, "email": temail}
+    return {"teacher_id": tid, "name": tname, "email": temail, "teachers": course_teachers}
 
 
-def _load_academic_context(course_codes, batch, records=None):
+def _load_academic_context(course_codes, batch, records=None, semester_id=""):
     clean_codes = [str(c).strip().upper() for c in (course_codes or []) if c]
-    if clean_codes:
+    sem_id = str(semester_id or "").strip()
+    if sem_id and clean_codes:
+        course_docs = list(courses_col().find({"$or": [{"semester_id": sem_id, "status": {"$ne": "INACTIVE"}}, {"course_code": {"$in": clean_codes}}]}, {"_id": 0}))
+    elif sem_id:
+        course_docs = list(courses_col().find({"semester_id": sem_id, "status": {"$ne": "INACTIVE"}}, {"_id": 0}))
+    elif clean_codes:
         course_docs = list(courses_col().find({"course_code": {"$in": clean_codes}}, {"_id": 0}))
     elif batch:
         course_docs = list(courses_col().find({"batch": batch, "status": "ACTIVE"}, {"_id": 0}))
     else:
         course_docs = []
-    teachers_by_name = {}
-    for t in users_col().find({"role": "TEACHER"}, {"_id": 0, "full_name": 1, "email": 1}):
+    teachers_by_id, teachers_by_name = {}, {}
+    for t in users_col().find({"role": "TEACHER"}, {"_id": 0, "user_id": 1, "full_name": 1, "email": 1}):
+        uid = str(t.get("user_id") or "").strip()
         tname = str(t.get("full_name") or "").strip()
+        info = {"user_id": uid, "name": tname, "email": str(t.get("email") or "").strip()}
+        if uid:
+            teachers_by_id[uid] = info
         if tname:
-            teachers_by_name[tname.lower()] = {"name": tname, "email": str(t.get("email") or "").strip()}
+            teachers_by_name[tname.lower()] = info
     rec_teacher_by_code = {}
     for rec in (records or []):
         code = str(rec.get("course_code") or "").strip().upper()
-        if code and code not in rec_teacher_by_code and rec.get("teacher_name"):
-            rec_teacher_by_code[code] = {"name": str(rec.get("teacher_name") or "").strip(), "email": str(rec.get("teacher_email") or "").strip()}
-    by_code = {str(c.get("course_code") or "").strip().upper(): c for c in course_docs}
+        if code and code not in rec_teacher_by_code and (rec.get("teacher_name") or rec.get("teacher_user_id")):
+            rec_teacher_by_code[code] = {"user_id": str(rec.get("teacher_user_id") or "").strip(), "name": str(rec.get("teacher_name") or "").strip(), "email": str(rec.get("teacher_email") or "").strip()}
+    by_code = {str(c.get("course_code") or "").strip().upper(): c for c in course_docs if c.get("course_code")}
+    ordered_codes = list(dict.fromkeys(clean_codes + sorted(by_code.keys())))
     enrolled_courses = []
-    for code in (clean_codes or list(by_code.keys())):
+    for code in ordered_codes:
         cdoc = by_code.get(code) or {}
         rec_t = rec_teacher_by_code.get(code) or {}
+        iid = str(cdoc.get("instructor_id") or rec_t.get("user_id") or "").strip()
         instructor = str(cdoc.get("instructor") or rec_t.get("name") or "TBA").strip() or "TBA"
-        tinfo = teachers_by_name.get(instructor.lower()) or {}
+        tinfo = teachers_by_id.get(iid) or teachers_by_name.get(instructor.lower()) or {}
         enrolled_courses.append({
             "course_code": code,
             "title": str(cdoc.get("title") or code),
             "credits": round(_safe_float(cdoc.get("credits"), 3.0), 1),
+            "semester_id": str(cdoc.get("semester_id") or sem_id or ""),
+            "teacher_id": tinfo.get("user_id") or iid,
             "teacher_name": tinfo.get("name") or rec_t.get("name") or instructor,
-            "teacher_email": tinfo.get("email") or rec_t.get("email") or "",
+            "teacher_email": tinfo.get("email") or rec_t.get("email") or str(cdoc.get("instructor_email") or "").strip(),
         })
     admin_doc = users_col().find_one({"role": "ADMIN", "is_active": True}, {"_id": 0, "full_name": 1, "email": 1}) or users_col().find_one({"role": "ADMIN"}, {"_id": 0, "full_name": 1, "email": 1})
     admin_contact = {"name": str((admin_doc or {}).get("full_name") or "Portal Administrator"), "email": str((admin_doc or {}).get("email") or "")}
@@ -213,18 +256,16 @@ def _build_insight(record, rank):
     return {"summary": summary, "status": status, "points": points}
 
 
-def _load_student_overview(student_id, user_id, role):
+def _load_student_overview(student_id, user_id, role, email=""):
     portal_settings = _resolve_runtime_settings(persist=True)
     min_att = float(portal_settings.get("min_attendance_pct", 75.0))
     excellent_att = min(100.0, max(85.0, min_att + 5.0))
-    record = _empty_record(student_id)
-    records, prediction = _fetch_student_docs(student_id)
-    user_doc = _fetch_student_user_doc(student_id, user_id)
-
+    resolved_sid, user_doc = resolve_student_identity(student_id, user_id, email=email)
+    record = _empty_record(resolved_sid)
+    records, prediction = _fetch_student_docs(resolved_sid)
     if records:
         primary = records[0]
-        record["full_name"] = str(primary.get("full_name") or "")
-        record["batch"] = str(primary.get("batch") or "")
+        record["full_name"], record["batch"] = str(primary.get("full_name") or ""), str(primary.get("batch") or "")
         course_rows = [{"course_code": str(rec.get("course_code") or "").upper(), "attendance_pct": round(_safe_float(rec.get("attendance_pct")), 1), "internal_marks": round(_safe_float(rec.get("internal_marks")), 1), "assignment_score": round(_safe_float(rec.get("assignment_score")), 1), "lms_hours_weekly": round(_safe_float(rec.get("lms_hours_weekly")), 1)} for rec in records]
         record["courses"] = course_rows
         n = len(course_rows) or 1
@@ -233,13 +274,25 @@ def _load_student_overview(student_id, user_id, role):
         record["avg_assignment"] = round(sum(c["assignment_score"] for c in course_rows) / n, 1)
         record["lms_hours_weekly"] = course_rows[0]["lms_hours_weekly"]
         record["previous_gpa"] = round(_safe_float(primary.get("previous_gpa")), 2)
-
     if isinstance(user_doc, dict):
         record["full_name"] = record["full_name"] or str(user_doc.get("full_name") or "")
         record["batch"] = record["batch"] or str(user_doc.get("batch") or "")
         record["department"] = str(user_doc.get("department") or "")
     record["program_level"] = _resolve_program_level(user_doc, record["department"], record["batch"])
-    sem_id = str((user_doc or {}).get("semester_id") or (records[0].get("semester_id") if records else "") or "").strip()
+    sem_id = str((user_doc or {}).get("semester_id") or "").strip()
+    if not sem_id:
+        for r in records:
+            if r.get("semester_id"):
+                sem_id = str(r.get("semester_id") or "").strip()
+                break
+    course_codes = [x["course_code"] for x in record["courses"] if x.get("course_code")]
+    if not sem_id and course_codes:
+        try:
+            cdoc = courses_col().find_one({"course_code": {"$in": course_codes}, "semester_id": {"$nin": ["", None]}}, {"_id": 0, "semester_id": 1})
+            if cdoc and cdoc.get("semester_id"):
+                sem_id = str(cdoc.get("semester_id") or "").strip()
+        except Exception:
+            pass
     record["semester_id"] = sem_id
     sem_doc = semesters_col().find_one({"semester_id": sem_id}, {"_id": 0}) if sem_id else None
     if sem_doc:
@@ -247,7 +300,6 @@ def _load_student_overview(student_id, user_id, role):
         record["semester_label"] = f"{str(sem_doc.get('program_name') or 'BSCS').strip()} · {sname}"
     elif records and records[0].get("semester_label"):
         record["semester_label"] = str(records[0].get("semester_label") or "").strip()
-
     if prediction:
         raw_gpa = prediction.get("predicted_gpa")
         record["predicted_gpa"] = round(_safe_float(raw_gpa), 2) if raw_gpa is not None else None
@@ -258,13 +310,10 @@ def _load_student_overview(student_id, user_id, role):
         record["recommendation"] = str(prediction.get("recommendation") or "")
         gen = prediction.get("generated_at")
         record["generated_at"] = gen.strftime("%Y-%m-%d %H:%M") if hasattr(gen, "strftime") else None
-
     if record["courses"] and record["predicted_gpa"] is None:
         record["predicted_gpa"] = round(min(4.0, max(0.0, (record["avg_marks"] / 100.0) * 4.0)), 2)
         if record["risk_level"] == "PENDING":
             record["risk_level"] = "HIGH" if (record["avg_attendance"] < min_att or record["avg_marks"] < 50.0) else ("MEDIUM" if record["avg_marks"] < 65.0 else "LOW")
-
-    course_codes = [x["course_code"] for x in record["courses"] if x.get("course_code")]
     batch_docs = _fetch_batch_docs(record["batch"], course_codes=course_codes) if (record["courses"] and (record["batch"] or course_codes)) else []
     class_stats = _course_class_stats(record["batch"], docs=batch_docs)
     subject_rows, chart_labels, chart_mine, chart_class = [], [], [], []
@@ -284,27 +333,28 @@ def _load_student_overview(student_id, user_id, role):
         chart_labels.append(code)
         chart_mine.append(course["internal_marks"])
         chart_class.append(avg["marks"])
-
-    rank = _batch_rank(student_id, record["batch"], record["avg_marks"], docs=batch_docs) if (record["courses"] and record["batch"]) else None
+    rank = _batch_rank(resolved_sid, record["batch"], record["avg_marks"], docs=batch_docs) if (record["courses"] and record["batch"]) else None
     avg_marks_all = _safe_float(_batch_class_average(record["batch"], docs=batch_docs))
     avg_att_all = _safe_float(_batch_class_attendance(record["batch"], docs=batch_docs))
     tips = _build_tips(record, prediction, avg_marks_all, avg_att_all, min_att=min_att, has_records=bool(record["courses"]))
     insight = _build_insight(record, rank)
-    unread_alerts = notifications_col().count_documents({"is_read": False, "$or": _alert_targets(student_id, user_id, role)})
+    unread_alerts = notifications_col().count_documents({"is_read": False, "$or": _alert_targets(resolved_sid, user_id, role)})
     active_courses = courses_col().count_documents({"status": "ACTIVE"})
-    enrolled_courses, admin_contact, course_docs = _load_academic_context(course_codes, record["batch"], records=records)
-    assigned_teacher = resolve_assigned_teacher(student_id, user_id, user_doc=user_doc, records=records, enrolled_courses=enrolled_courses)
+    enrolled_courses, admin_contact, course_docs = _load_academic_context(course_codes, record["batch"], records=records, semester_id=sem_id)
+    assigned_teacher = resolve_assigned_teacher(resolved_sid, user_id, user_doc=user_doc, records=records, enrolled_courses=enrolled_courses)
     credits = sum(_safe_float(c.get("credits"), 3.0) for c in course_docs if str(c.get("course_code") or "").upper() in course_codes)
-    if credits == 0.0 and record["courses"]:
+    if credits == 0.0 and enrolled_courses:
+        credits = sum(_safe_float(ec.get("credits"), 3.0) for ec in enrolled_courses)
+    elif credits == 0.0 and record["courses"]:
         credits = round(3.0 * len(record["courses"]), 1)
-
     return {
         "record": record, "subject_rows": subject_rows,
         "chart": {"labels": chart_labels, "mine": chart_mine, "class_avg": chart_class},
         "rank": rank, "tips": tips, "insight": insight,
         "unread_alerts": unread_alerts, "active_courses": active_courses, "credits": round(credits, 1),
-        "teacher_alerts": _load_recent_alerts(student_id, user_id, role, limit=5),
-        "enrolled_courses": enrolled_courses, "admin_contact": admin_contact, "assigned_teacher": assigned_teacher,
+        "teacher_alerts": _load_recent_alerts(resolved_sid, user_id, role, limit=5),
+        "enrolled_courses": enrolled_courses, "admin_contact": admin_contact,
+        "assigned_teacher": assigned_teacher, "assigned_teachers": assigned_teacher.get("teachers", []),
     }
 
 
@@ -320,8 +370,8 @@ def _batch_class_attendance(batch, docs=None):
     return round(sum(values) / len(values), 1) if values else 0.0
 
 
-def get_student_overview_context(student_id, user_id, role):
-    return get_cached(f"student:overview:{student_id}:{user_id}:{role}", lambda: _load_student_overview(student_id, user_id, role), ttl=30.0)
+def get_student_overview_context(student_id, user_id, role, email=""):
+    return get_cached(f"student:overview:{student_id}:{user_id}:{role}:{email}", lambda: _load_student_overview(student_id, user_id, role, email=email), ttl=30.0)
 
 
 def list_student_feedback_tickets(student_id, user_id):

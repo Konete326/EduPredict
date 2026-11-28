@@ -59,7 +59,7 @@ def _load_users(normalized):
         if role in role_counts: role_counts[role] += 1
         if approval_status in ("PENDING", "REJECTED"): role_counts[approval_status] += 1
         if normalized == "ALL" or (normalized in ("PENDING", "REJECTED") and approval_status == normalized) or role == normalized:
-            users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "program_level": str(doc.get("program_level") or ("BS / Undergraduate" if role == "STUDENT" else "")), "phone": str(doc.get("phone") or ""), "bio": str(doc.get("bio") or ""), "is_active": is_active, "approval_status": approval_status, "rejection_reason": str(doc.get("rejection_reason") or ""), "student_id": str(doc.get("student_id") or ""), "assigned_teacher_id": str(doc.get("assigned_teacher_id") or ""), "assigned_teacher_name": str(doc.get("assigned_teacher_name") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at")), "last_login_str": _format_dt(doc.get("last_login_at")) if doc.get("last_login_at") else ""})
+            users.append({"user_id": str(doc.get("user_id") or ""), "full_name": str(doc.get("full_name") or ""), "email": str(doc.get("email") or ""), "role": role, "department": str(doc.get("department") or "General"), "batch": str(doc.get("batch") or "ALL"), "program_level": str(doc.get("program_level") or ("BS / Undergraduate" if role == "STUDENT" else "")), "semester_id": str(doc.get("semester_id") or ""), "phone": str(doc.get("phone") or ""), "bio": str(doc.get("bio") or ""), "is_active": is_active, "approval_status": approval_status, "rejection_reason": str(doc.get("rejection_reason") or ""), "student_id": str(doc.get("student_id") or ""), "assigned_teacher_id": str(doc.get("assigned_teacher_id") or ""), "assigned_teacher_name": str(doc.get("assigned_teacher_name") or ""), "avatar_url": str(doc.get("avatar_url") or ""), "created_at_str": _format_dt(doc.get("created_at")), "last_login_str": _format_dt(doc.get("last_login_at")) if doc.get("last_login_at") else ""})
     return users, role_counts
 def list_users(role_filter="ALL"):
     normalized = str(role_filter or "ALL").strip().upper()
@@ -71,7 +71,7 @@ def _validate_user_input(full_name, email, role, department, batch=""):
     except ValidationError: return None, "Please enter a valid email address."
     if clean_role not in VALID_ROLES: return None, "Select a valid role (ADMIN, TEACHER, STUDENT, or ANALYST)."
     return (clean_name, clean_email, clean_role, str(department or "").strip() or "General", str(batch or "").strip()), None
-def create_user_record(full_name, email, password, role, department="", batch="", actor_name="System Admin", program_level=""):
+def create_user_record(full_name, email, password, role, department="", batch="", actor_name="System Admin", program_level="", semester_id="", student_id=""):
     ensure_accounts_indexes_once()
     parsed, err = _validate_user_input(full_name, email, role, department, batch)
     if err: return None, err
@@ -80,15 +80,21 @@ def create_user_record(full_name, email, password, role, department="", batch=""
     col = users_col()
     if col.find_one({"email": clean_email}, {"_id": 1}) is not None: return None, "A user with this email already exists."
     user_id = generate_unique_user_id(col)
-    student_id = generate_unique_student_id(student_records_col(), user_id) if clean_role == "STUDENT" else None
+    clean_sid = str(student_id or "").strip()
+    if clean_role == "STUDENT":
+        if not clean_sid or col.find_one({"student_id": clean_sid}, {"_id": 1}) is not None:
+            clean_sid = generate_unique_student_id(student_records_col(), user_id)
+    else:
+        clean_sid = None
+    clean_sem = str(semester_id or "").strip()
     clean_level = str(program_level or "").strip() or ("BS / Undergraduate" if clean_role == "STUDENT" else "")
-    doc = {"user_id": user_id, "full_name": clean_name, "email": clean_email, "password_hash": make_password(password), "role": clean_role, "department": clean_dept, "batch": clean_batch, "is_active": True, "created_at": datetime.now(timezone.utc), **({"program_level": clean_level} if clean_level else {}), **({"student_id": student_id} if student_id else {})}
+    doc = {"user_id": user_id, "full_name": clean_name, "email": clean_email, "password_hash": make_password(password), "role": clean_role, "department": clean_dept, "batch": clean_batch, "is_active": True, "created_at": datetime.now(timezone.utc), **({"program_level": clean_level} if clean_level else {}), **({"student_id": clean_sid} if clean_sid else {}), **({"semester_id": clean_sem} if (clean_role == "STUDENT" and clean_sem) else {})}
     try: col.insert_one(doc)
     except DuplicateKeyError: return None, "A user with this email already exists."
     _audit("USERS", "CREATE_USER", f"Created user {clean_name} ({user_id}, {clean_role}).", "SUCCESS", actor=actor_name)
     invalidate_cache()
     return doc, None
-def update_user_record(user_id, full_name, email, role, department="", batch="", password="", actor_user_id=None, actor_email="", actor_name="System Admin", program_level=None):
+def update_user_record(user_id, full_name, email, role, department="", batch="", password="", actor_user_id=None, actor_email="", actor_name="System Admin", program_level=None, semester_id=None, student_id=None):
     col, clean_uid = users_col(), str(user_id or "").strip()
     existing = col.find_one({"user_id": clean_uid})
     if existing is None: return False, "User record not found."
@@ -102,7 +108,23 @@ def update_user_record(user_id, full_name, email, role, department="", batch="",
     if program_level is not None: updates["program_level"] = str(program_level or "").strip() or ("BS / Undergraduate" if clean_role == "STUDENT" else "")
     elif clean_role == "STUDENT" and not existing.get("program_level"): updates["program_level"] = "BS / Undergraduate"
     if password: updates["password_hash"] = make_password(password)
-    if clean_role == "STUDENT" and not existing.get("student_id"): updates["student_id"] = generate_unique_student_id(student_records_col(), clean_uid)
+    if clean_role == "STUDENT":
+        old_sid = str(existing.get("student_id") or "").strip()
+        target_sid = str(student_id or "").strip() if (student_id is not None and str(student_id).strip()) else (old_sid or generate_unique_student_id(student_records_col(), clean_uid))
+        updates["student_id"] = target_sid
+        if semester_id is not None:
+            updates["semester_id"] = str(semester_id or "").strip()
+        sr_updates = {}
+        if target_sid and target_sid != old_sid:
+            sr_updates["student_id"] = target_sid
+        if semester_id is not None:
+            sr_updates["semester_id"] = updates["semester_id"]
+        if sr_updates:
+            try:
+                clauses = [{"user_id": clean_uid}] + ([{"student_id": old_sid}] if old_sid else []) + ([{"student_id": target_sid}] if target_sid and target_sid != old_sid else [])
+                student_records_col().update_many({"$or": clauses} if len(clauses) > 1 else clauses[0], {"$set": sr_updates})
+            except Exception:
+                pass
     col.update_one({"_id": existing["_id"]}, {"$set": updates})
     _audit("USERS", "UPDATE_USER", f"Updated user {clean_uid} ({clean_role}).", "INFO", actor=actor_name)
     invalidate_cache()

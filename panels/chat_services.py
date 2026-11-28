@@ -1,10 +1,16 @@
-import json, re, uuid
+import os
+import re
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from django.conf import settings
 from django.urls import reverse
-from core.cloudinary_services import upload_academic_attachment
+from core.cloudinary_services import ALLOWED_IMAGE_EXTS, upload_academic_attachment
 from core.db import classroom_messages_col, courses_col, get_cached, invalidate_cache, semesters_col, student_records_col, users_col
+
+MAX_CHAT_FILE_BYTES = 5 * 1024 * 1024
+ALLOWED_CHAT_DOC_EXTS = {".pdf", ".csv", ".txt", ".docx", ".doc"}
+ALLOWED_CHAT_AUDIO_EXTS = {".webm", ".ogg", ".mp3", ".wav", ".m4a"}
 
 
 def _norm(val):
@@ -65,7 +71,15 @@ def _build_user_chat_groups(session_user):
         code, c_sem = _norm(c.get("course_code")).upper(), _norm(c.get("semester_id"))
         teacher_name = _norm(c.get("instructor") or "TBA") or "TBA"
         s_count = max(sem_counts.get(c_sem, 0), len(rec_counts.get(code, set())))
-        groups.append({"group_id": code, "title": _norm(c.get("title") or code) or code, "semester_id": c_sem, "semester_label": _semester_label(smap.get(c_sem)), "teacher_name": teacher_name, "member_count": s_count + (1 if teacher_name != "TBA" else 0)})
+        groups.append({
+            "group_id": code,
+            "title": _norm(c.get("chat_title") or c.get("title") or code) or code,
+            "dp_url": _norm(c.get("group_dp_url")),
+            "semester_id": c_sem,
+            "semester_label": _semester_label(smap.get(c_sem)),
+            "teacher_name": teacher_name,
+            "member_count": s_count + (1 if teacher_name != "TBA" else 0),
+        })
     return groups
 
 
@@ -81,16 +95,40 @@ def _has_group_access(group_id, session_user):
     return bool(gid and any(g["group_id"] == gid for g in get_user_chat_groups(session_user)))
 
 
-def _save_chat_media(file_obj):
+def _file_size_bytes(file_obj):
+    size = getattr(file_obj, "size", None)
+    if size is not None:
+        return int(size)
+    if hasattr(file_obj, "seek") and hasattr(file_obj, "tell"):
+        pos = file_obj.tell()
+        file_obj.seek(0, os.SEEK_END)
+        end = file_obj.tell()
+        file_obj.seek(pos)
+        return int(end)
+    return 0
+
+
+def _save_chat_media(file_obj, allowed_exts=None, subfolder="chat"):
     if not file_obj or not getattr(file_obj, "name", ""):
-        return "", None
-    url, _name, _img, err = upload_academic_attachment(file_obj, folder="edupredict/chat")
+        return "", "", 0, False, None
+    orig_name = Path(str(file_obj.name)).name
+    ext = os.path.splitext(orig_name)[1].lower()
+    valid_exts = allowed_exts or (ALLOWED_IMAGE_EXTS | ALLOWED_CHAT_DOC_EXTS | ALLOWED_CHAT_AUDIO_EXTS)
+    if ext not in valid_exts:
+        return "", "", 0, False, f"Unsupported file type ({ext or 'unknown'}). Allowed: images, PDF, CSV, TXT, DOCX."
+    fsize = _file_size_bytes(file_obj)
+    if fsize <= 0:
+        return "", "", 0, False, "Selected file is empty."
+    if fsize > MAX_CHAT_FILE_BYTES:
+        return "", "", 0, False, "File size exceeds the 5 MB limit."
+    is_image = ext in ALLOWED_IMAGE_EXTS
+    url, _name, _img, err = upload_academic_attachment(file_obj, folder=f"edupredict/{subfolder}", max_bytes=MAX_CHAT_FILE_BYTES)
     if url:
-        return url, None
+        return url, orig_name, fsize, is_image, None
     if err and err != "not_configured" and any(k in err.lower() for k in ("unsupported", "empty", "exceeds", "choose a file")):
-        return "", err
-    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(file_obj.name).name).strip("_") or "media"
-    upload_dir = Path(settings.BASE_DIR) / "static" / "uploads" / "chat"
+        return "", "", 0, False, err
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", orig_name).strip("_") or "media"
+    upload_dir = Path(settings.BASE_DIR) / "static" / "uploads" / subfolder
     upload_dir.mkdir(parents=True, exist_ok=True)
     stored_name = f"{uuid.uuid4().hex[:8]}_{safe_name}"
     if hasattr(file_obj, "seek"):
@@ -98,7 +136,7 @@ def _save_chat_media(file_obj):
     with (upload_dir / stored_name).open("wb") as fh:
         for chunk in file_obj.chunks():
             fh.write(chunk)
-    return f"/static/uploads/chat/{stored_name}", None
+    return f"/static/uploads/{subfolder}/{stored_name}", orig_name, fsize, is_image, None
 
 
 def _parse_iso_dt(raw):
@@ -184,26 +222,48 @@ def list_group_messages(group_id, session_user, since_iso=""):
         is_mine, deleted_all = bool(uid and sender_uid == uid), bool(d.get("deleted_for_all"))
         profile = profiles.get(sender_uid) or {"user_id": sender_uid, "student_id": _norm(d.get("sender_student_id")), "full_name": _norm(d.get("sender_name") or "User"), "role": _norm(d.get("sender_role") or "STUDENT").upper(), "email": _norm(d.get("sender_email")), "semester_label": "-"}
         created_iso, created_str = _format_created_at(d.get("created_at"))
+        updated_iso, _ = _format_created_at(d.get("updated_at") or d.get("created_at"))
         out.append({
             "msg_id": _norm(d.get("msg_id")),
             "group_id": gid,
             "msg_type": "DELETED" if deleted_all else _norm(d.get("msg_type") or "TEXT").upper(),
             "text": ("You deleted this message" if is_mine else "This message was deleted") if deleted_all else _norm(d.get("text")),
             "image_url": "" if deleted_all else _norm(d.get("image_url")),
+            "file_url": "" if deleted_all else _norm(d.get("file_url")),
+            "file_name": "" if deleted_all else _norm(d.get("file_name")),
+            "file_size": 0 if deleted_all else int(d.get("file_size") or 0),
             "audio_url": "" if deleted_all else _norm(d.get("audio_url")),
             "poll": None if deleted_all else _format_poll(d.get("poll"), uid),
             "assignment": None if deleted_all else _assignment_link(d.get("assignment"), viewer_role),
+            "reply_to": None if deleted_all else d.get("reply_to"),
             "edited": bool(d.get("edited")) and not deleted_all,
             "deleted_for_all": deleted_all,
             "is_mine": is_mine,
             "sender_profile": profile,
             "created_at_iso": created_iso,
+            "updated_at_iso": updated_iso,
             "created_at_str": created_str,
         })
     return out, None
 
 
-def send_group_message(group_id, session_user, text="", image_file=None, audio_file=None, poll_question="", poll_options=None):
+def _build_reply_snapshot(gid, reply_to_id):
+    rid = _norm(reply_to_id)
+    if not rid:
+        return None
+    ref = classroom_messages_col().find_one({"msg_id": rid, "$or": [{"group_id": gid}, {"course_code": gid}]}, {"_id": 0})
+    if not ref or ref.get("deleted_for_all"):
+        return None
+    return {
+        "msg_id": rid,
+        "sender_name": _norm(ref.get("sender_name") or "Member"),
+        "text": _norm(ref.get("text"))[:140],
+        "msg_type": _norm(ref.get("msg_type") or "TEXT").upper(),
+        "file_name": _norm(ref.get("file_name")),
+    }
+
+
+def send_group_message(group_id, session_user, text="", image_file=None, doc_file=None, audio_file=None, poll_question="", poll_options=None, reply_to_id=""):
     gid = _norm(group_id).upper()
     if not _has_group_access(gid, session_user):
         return None, "You do not have access to this classroom chat."
@@ -211,28 +271,64 @@ def send_group_message(group_id, session_user, text="", image_file=None, audio_f
     clean_opts = [_norm(o) for o in (poll_options or []) if _norm(o)]
     if clean_q and len(clean_opts) < 2:
         return None, "Polls require a question and at least 2 options."
-    image_url, img_err = _save_chat_media(image_file)
-    if img_err:
-        return None, img_err
-    audio_url, aud_err = _save_chat_media(audio_file)
+    image_url, file_url, file_name, file_size = "", "", "", 0
+    attached = doc_file or image_file
+    if attached:
+        url, orig_name, fsize, is_img, err = _save_chat_media(attached, ALLOWED_IMAGE_EXTS | ALLOWED_CHAT_DOC_EXTS, "chat")
+        if err:
+            return None, err
+        if is_img:
+            image_url = url
+        else:
+            file_url, file_name, file_size = url, orig_name, fsize
+    audio_url, _an, _as, _ai, aud_err = _save_chat_media(audio_file, ALLOWED_CHAT_AUDIO_EXTS, "chat")
     if aud_err:
         return None, aud_err
-    if not clean_text and not image_url and not audio_url and not clean_q:
+    if not clean_text and not image_url and not file_url and not audio_url and not clean_q:
         return None, "Message cannot be empty."
-    msg_type = "POLL" if clean_q else ("IMAGE" if image_url else ("AUDIO" if audio_url else "TEXT"))
+    msg_type = "POLL" if clean_q else ("IMAGE" if image_url else ("FILE" if file_url else ("AUDIO" if audio_url else "TEXT")))
     now, user = datetime.now(timezone.utc), (session_user if isinstance(session_user, dict) else {})
     doc = {
         "msg_id": f"MSG-{uuid.uuid4().hex[:10].upper()}", "group_id": gid, "course_code": gid,
         "sender_user_id": _norm(user.get("user_id")), "sender_student_id": _norm(user.get("student_id")),
         "sender_name": _norm(user.get("full_name") or "User"), "sender_role": _norm(user.get("role") or "STUDENT").upper(),
         "sender_email": _norm(user.get("email")), "msg_type": msg_type, "text": clean_text,
-        "image_url": image_url, "audio_url": audio_url,
+        "image_url": image_url, "file_url": file_url, "file_name": file_name, "file_size": file_size, "audio_url": audio_url,
+        "reply_to": _build_reply_snapshot(gid, reply_to_id),
         "poll": {"question": clean_q, "options": clean_opts, "votes": {}} if clean_q else None,
         "assignment": None, "deleted_for": [], "deleted_for_all": False, "edited": False, "created_at": now, "updated_at": now,
     }
     classroom_messages_col().insert_one(doc)
     invalidate_cache("chat:")
     return doc["msg_id"], None
+
+
+def update_group_settings(group_id, session_user, group_name="", dp_file=None):
+    gid = _norm(group_id).upper()
+    role = _norm((session_user or {}).get("role")).upper()
+    if role not in ("TEACHER", "ADMIN"):
+        return None, "Only teachers or admins can update group settings."
+    if not _has_group_access(gid, session_user):
+        return None, "You do not have access to this classroom chat."
+    updates = {}
+    clean_name = _norm(group_name)
+    if clean_name:
+        if len(clean_name) > 80:
+            return None, "Group name must be 80 characters or fewer."
+        updates["chat_title"] = clean_name
+    if dp_file:
+        dp_url, _fn, _fs, _img, err = _save_chat_media(dp_file, ALLOWED_IMAGE_EXTS, "chat_groups")
+        if err:
+            return None, err
+        updates["group_dp_url"] = dp_url
+    if not updates:
+        return None, "Provide a new group name or photo to update."
+    updates["updated_at"] = datetime.now(timezone.utc)
+    courses_col().update_one({"course_code": gid}, {"$set": updates})
+    invalidate_cache("chat:")
+    invalidate_cache("courses:")
+    groups = get_user_chat_groups(session_user)
+    return next((g for g in groups if g["group_id"] == gid), None), None
 
 
 def edit_group_message(msg_id, new_text, session_user):
@@ -269,7 +365,7 @@ def delete_group_message(msg_id, scope, session_user):
     if clean_scope == "everyone":
         if _norm(doc.get("sender_user_id")) != uid and role != "ADMIN":
             return False, "Only the sender or an admin can delete for everyone."
-        col.update_one({"msg_id": mid}, {"$set": {"deleted_for_all": True, "text": "", "image_url": "", "audio_url": "", "poll": None, "updated_at": now}})
+        col.update_one({"msg_id": mid}, {"$set": {"deleted_for_all": True, "text": "", "image_url": "", "file_url": "", "file_name": "", "file_size": 0, "audio_url": "", "reply_to": None, "poll": None, "updated_at": now}})
     else:
         if not uid:
             return False, "User session required."

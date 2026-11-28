@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.shortcuts import redirect, render
 from core.decorators import role_required
-from panels.student_services import get_student_overview_context
+from panels.student_services import get_student_overview_context, resolve_student_identity
 from panels.student_test_services import get_student_attendance_context, get_student_tests_context, submit_student_test
 
 
@@ -10,6 +10,26 @@ def _student_identity(request):
     role = str(user.get("role") or "STUDENT").strip().upper()
     student_id = str(user.get("student_id") or "").strip()
     user_id = str(user.get("user_id") or "").strip()
+    email = str(user.get("email") or "").strip().lower()
+    if role == "STUDENT" and (not student_id or student_id == user_id or not user.get("semester_id")):
+        try:
+            resolved_sid, udoc = resolve_student_identity(student_id, user_id, email=email)
+            if resolved_sid:
+                student_id = resolved_sid
+            if isinstance(udoc, dict) and isinstance(request.session.get("user"), dict):
+                updated_user = dict(user)
+                changed = False
+                if resolved_sid and updated_user.get("student_id") != resolved_sid:
+                    updated_user["student_id"] = resolved_sid
+                    changed = True
+                if udoc.get("semester_id") and updated_user.get("semester_id") != udoc.get("semester_id"):
+                    updated_user["semester_id"] = str(udoc.get("semester_id") or "").strip()
+                    changed = True
+                if changed:
+                    request.session["user"] = updated_user
+                    user = updated_user
+        except Exception:
+            pass
     if not student_id:
         student_id = user_id
     return student_id, user_id, role, user

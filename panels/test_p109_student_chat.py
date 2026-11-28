@@ -249,4 +249,45 @@ class StudentTestsAndClassroomChatTests(TestCase):
             self.assertContains(resp, "Absent")
             self.assertContains(resp, "Leave")
             self.assertContains(resp, "2026-11-27")
+            self.assertContains(resp, "ep-tearoff-calendar-modal")
+            self.assertContains(resp, "calendar_modal.js")
+            self.assertContains(resp, "calendar_modal.css")
+
+    def test_classroom_chat_docs_size_limit_reply_and_group_settings(self):
+        stu = self.users.find_one({"user_id": "USR-STU-1"})
+        tea = self.users.find_one({"user_id": "USR-TEA-1"})
+        c_stu, c_tea = self._client_as(stu), self._client_as(tea)
+        api_url = reverse("panels:classroom_chat_api")
+
+        with patch("panels.chat_services.users_col", return_value=self.users), \
+             patch("panels.chat_services.semesters_col", return_value=self.semesters), \
+             patch("panels.chat_services.courses_col", return_value=self.courses), \
+             patch("panels.chat_services.student_records_col", return_value=self.records), \
+             patch("panels.chat_services.classroom_messages_col", return_value=self.chat_msgs), \
+             patch("panels.chat_services.upload_academic_attachment", side_effect=lambda f, **kw: (f"https://cdn.example.com/{f.name}", f.name, f.name.endswith(".png"), None)):
+            pdf = SimpleUploadedFile("syllabus.pdf", b"%PDF-1.4\n" + b"0" * 64, content_type="application/pdf")
+            doc_res = c_tea.post(api_url, {"action": "send", "group_id": "CS101", "text": "Read this", "file": pdf}).json()
+            self.assertTrue(doc_res["ok"])
+            parent_id = doc_res["msg_id"]
+
+            big_pdf = SimpleUploadedFile("huge.pdf", b"%PDF-1.4\n" + b"0" * (5 * 1024 * 1024 + 100), content_type="application/pdf")
+            big_resp = c_stu.post(api_url, {"action": "send", "group_id": "CS101", "file": big_pdf})
+            self.assertEqual(big_resp.status_code, 400)
+            self.assertIn("5 MB", big_resp.json()["error"])
+
+            rep_res = c_stu.post(api_url, {"action": "send", "group_id": "CS101", "text": "Got it!", "reply_to_id": parent_id}).json()
+            self.assertTrue(rep_res["ok"])
+            rep_msg = next(m for m in rep_res["messages"] if m["msg_id"] == rep_res["msg_id"])
+            self.assertEqual(rep_msg["reply_to"]["msg_id"], parent_id)
+            self.assertEqual(rep_msg["reply_to"]["sender_name"], "Prof. Ali")
+
+            stu_upd = c_stu.post(api_url, {"action": "update_group", "group_id": "CS101", "group_name": "Hacked"})
+            self.assertEqual(stu_upd.status_code, 403)
+
+            dp = SimpleUploadedFile("group.png", b"\x89PNG\r\n\x1a\n" + b"1" * 32, content_type="image/png")
+            tea_upd = c_tea.post(api_url, {"action": "update_group", "group_id": "CS101", "group_name": "CS101 Fall Section A", "group_dp": dp}).json()
+            self.assertTrue(tea_upd["ok"])
+            self.assertEqual(tea_upd["group"]["title"], "CS101 Fall Section A")
+            self.assertIn("group.png", tea_upd["group"]["dp_url"])
+
 

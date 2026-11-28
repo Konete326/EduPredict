@@ -1,14 +1,19 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<section class="flex h-[calc(100vh-8.5rem)] min-h-[520px] overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
-  <aside id="chat-groups-pane" class="flex w-full md:w-72 lg:w-80 shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
-    <div class="flex items-center justify-between border-b border-[var(--border-subtle)] px-4 py-3">
+<section class="relative flex h-[calc(100vh-8.5rem)] min-h-[520px] overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+  <div id="chat-groups-backdrop" class="absolute inset-0 z-10 hidden bg-[var(--bg-overlay)] backdrop-blur-[1px] md:hidden"></div>
+  <aside id="chat-groups-pane" class="absolute inset-y-0 left-0 z-20 flex w-72 max-w-[85vw] flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-canvas)] shadow-xl md:static md:z-auto md:w-72 lg:w-80 md:shrink-0 md:shadow-none">
+    <div class="flex items-center justify-between gap-2 border-b border-[var(--border-subtle)] px-4 py-3">
       <div class="min-w-0">
         <h2 class="text-base font-semibold text-[var(--text-primary)] truncate">Class Chat</h2>
         <p class="text-[11px] text-[var(--text-muted)]">{{ groups|length }} course group{{ groups|length|pluralize }}</p>
       </div>
-      <span class="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[10px] font-semibold text-[var(--accent-primary)]">{{ current_user_role }}</span>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <span class="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 text-[10px] font-semibold text-[var(--accent-primary)]">{{ current_user_role }}</span>
+        <button id="chat-close-groups-btn" type="button" title="Hide groups panel" aria-label="Hide groups panel" class="inline-flex h-7 w-7 items-center justify-center rounded-[8px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-xmark text-xs"></i></button>
+      </div>
     </div>
     <div class="p-2.5 border-b border-[var(--border-subtle)]">
       <input id="chat-group-search" type="search" placeholder="Search course groups..." class="h-8 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-xs text-[var(--text-primary)]">
@@ -16,10 +21,14 @@
     <div id="chat-groups-list" class="flex-1 overflow-y-auto divide-y divide-[var(--border-subtle)]">
       {% for g in groups %}
       <button type="button" data-group-btn data-group-id="{{ g.group_id }}" data-search="{{ g.group_id|lower }} {{ g.title|lower }} {{ g.semester_label|lower }}" class="flex w-full items-center gap-3 px-3.5 py-3 text-left transition-none hover:bg-[var(--bg-elevated)] {% if g.group_id == selected_group_id %}bg-[var(--accent-soft)]{% endif %}">
-        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent-primary)] text-xs font-bold text-white">{{ g.group_id|slice:":2" }}</div>
+        {% if g.dp_url %}
+        <img data-group-dp="{{ g.group_id }}" src="{{ g.dp_url }}" alt="{{ g.group_id }}" class="h-10 w-10 shrink-0 rounded-full border border-[var(--border-subtle)] object-cover">
+        {% else %}
+        <div data-group-dp="{{ g.group_id }}" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent-primary)] text-xs font-bold text-white">{{ g.group_id|slice:":2" }}</div>
+        {% endif %}
         <div class="min-w-0 flex-1">
           <div class="flex items-center justify-between gap-2"><span class="truncate text-sm font-semibold text-[var(--text-primary)]">{{ g.group_id }}</span><span class="shrink-0 text-[10px] text-[var(--text-muted)]">{{ g.member_count }} mbrs</span></div>
-          <p class="truncate text-xs text-[var(--text-secondary)]">{{ g.title }}</p>
+          <p data-group-title="{{ g.group_id }}" class="truncate text-xs text-[var(--text-secondary)]">{{ g.title }}</p>
           <p class="truncate text-[10px] text-[var(--text-muted)]">{{ g.semester_label }} · {{ g.teacher_name }}</p>
         </div>
       </button>
@@ -29,32 +38,62 @@
     </div>
   </aside>
 
-  <div id="chat-thread-pane" class="hidden md:flex flex-1 flex-col min-w-0 bg-[var(--bg-surface)]">
-    <header class="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-4 py-2.5 bg-[var(--bg-canvas)]">
+  <div id="chat-thread-pane" class="flex flex-1 flex-col min-w-0 bg-[var(--bg-surface)]">
+    <header class="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-3 sm:px-4 py-2.5 bg-[var(--bg-canvas)]">
       <div class="flex items-center gap-2.5 min-w-0">
-        <button id="chat-back-btn" type="button" class="md:hidden inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] text-[var(--text-primary)]"><i class="fa-solid fa-arrow-left text-xs"></i></button>
-        <div id="chat-hdr-avatar" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent-primary)] text-xs font-bold text-white">{{ selected_group.group_id|default:"EP"|slice:":2" }}</div>
+        <button id="chat-toggle-groups-btn" type="button" title="Toggle groups sidebar" aria-label="Toggle groups sidebar" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-bars text-xs"></i></button>
+        <div id="chat-hdr-avatar-wrap" class="shrink-0">
+          {% if selected_group.dp_url %}
+          <img id="chat-hdr-avatar-img" src="{{ selected_group.dp_url }}" alt="{{ selected_group.group_id }}" class="h-9 w-9 rounded-full border border-[var(--border-subtle)] object-cover">
+          <div id="chat-hdr-avatar" class="hidden h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-primary)] text-xs font-bold text-white">{{ selected_group.group_id|default:"EP"|slice:":2" }}</div>
+          {% else %}
+          <img id="chat-hdr-avatar-img" src="" alt="" class="hidden h-9 w-9 rounded-full border border-[var(--border-subtle)] object-cover">
+          <div id="chat-hdr-avatar" class="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-primary)] text-xs font-bold text-white">{{ selected_group.group_id|default:"EP"|slice:":2" }}</div>
+          {% endif %}
+        </div>
         <div class="min-w-0">
           <h3 id="chat-hdr-title" class="truncate text-sm font-semibold text-[var(--text-primary)]">{% if selected_group %}{{ selected_group.group_id }} - {{ selected_group.title }}{% else %}Select a group{% endif %}</h3>
           <p id="chat-hdr-sub" class="truncate text-[11px] text-[var(--text-muted)]">{% if selected_group %}{{ selected_group.semester_label }} · {{ selected_group.teacher_name }} · {{ selected_group.member_count }} members{% endif %}</p>
         </div>
       </div>
-      <button id="chat-open-poll-btn" type="button" class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-square-poll-vertical text-[var(--accent-primary)]"></i><span class="hidden sm:inline">Poll</span></button>
+      <div class="flex items-center gap-2 shrink-0">
+        {% if current_user_role == 'TEACHER' or current_user_role == 'ADMIN' %}
+        <button id="chat-group-settings-btn" type="button" title="Group photo & name" class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-pen-to-square text-[var(--accent-primary)]"></i><span class="hidden sm:inline">Group</span></button>
+        {% endif %}
+        <button id="chat-open-poll-btn" type="button" class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-square-poll-vertical text-[var(--accent-primary)]"></i><span class="hidden sm:inline">Poll</span></button>
+      </div>
     </header>
     {% if db_error %}<div class="mx-4 mt-3 rounded-[10px] border border-[var(--status-danger)] bg-[var(--bg-canvas)] px-3 py-2 text-xs text-[var(--status-danger)]">{{ db_error }}</div>{% endif %}
-    <div id="chat-messages-box" class="flex-1 overflow-y-auto p-4 space-y-3 bg-[var(--bg-surface)]"></div>
-    <div id="chat-image-preview" class="hidden items-center justify-between gap-2 border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-2 text-xs">
-      <span id="chat-image-name" class="truncate text-[var(--text-secondary)]"></span>
-      <button id="chat-image-clear" type="button" class="text-[var(--status-danger)] hover:underline">Remove</button>
+    <div id="chat-messages-box" class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-[var(--bg-surface)]"></div>
+    <div id="chat-reply-preview" class="hidden items-center justify-between gap-2 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-2 text-xs">
+      <div class="min-w-0 border-l-4 border-[var(--accent-primary)] pl-2.5">
+        <p id="chat-reply-sender" class="truncate font-semibold text-[var(--accent-primary)]"></p>
+        <p id="chat-reply-snippet" class="truncate text-[var(--text-secondary)]"></p>
+      </div>
+      <button id="chat-reply-clear" type="button" aria-label="Cancel reply" class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <form id="chat-composer" class="flex items-center gap-2 border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2.5" data-no-lock="true">
-      <input id="chat-image-input" type="file" accept="image/*" class="hidden">
-      <button id="chat-image-btn" type="button" title="Attach image" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-image"></i></button>
-      <button id="chat-voice-btn" type="button" title="Record voice note" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-microphone"></i></button>
-      <span id="chat-rec-status" class="hidden text-xs font-semibold text-[var(--status-danger)] shrink-0">Rec...</span>
-      <input id="chat-text-input" type="text" placeholder="Type a message..." autocomplete="off" class="h-9 min-w-0 flex-1 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 text-sm text-[var(--text-primary)]">
-      <button id="chat-send-btn" type="submit" title="Send message" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent-primary)] text-sm text-white hover:bg-[var(--accent-hover)]"><i class="fa-solid fa-paper-plane"></i></button>
-    </form>
+    <div id="chat-file-preview" class="hidden items-center justify-between gap-2 border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-2 text-xs">
+      <div class="flex items-center gap-2 min-w-0">
+        <i id="chat-file-icon" class="fa-solid fa-paperclip text-[var(--accent-primary)]"></i>
+        <span id="chat-file-name" class="truncate text-[var(--text-secondary)]"></span>
+      </div>
+      <button id="chat-file-clear" type="button" class="shrink-0 text-[var(--status-danger)] hover:underline">Remove</button>
+    </div>
+    <div class="relative border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
+      <div id="chat-emoji-picker" class="hidden absolute bottom-full left-3 mb-2 z-30 w-64 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-2.5 shadow-xl">
+        <div id="chat-emoji-grid" class="grid grid-cols-6 gap-1"></div>
+      </div>
+      <form id="chat-composer" class="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2.5" data-no-lock="true">
+        {% csrf_token %}
+        <input id="chat-file-input" type="file" accept="image/*,.pdf,.csv,.txt,.doc,.docx,application/pdf,text/csv,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hidden">
+        <button id="chat-file-btn" type="button" title="Attach image or document (max 5 MB)" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-paperclip"></i></button>
+        <button id="chat-emoji-btn" type="button" title="Insert emoji" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]"><i class="fa-regular fa-face-smile"></i></button>
+        <button id="chat-voice-btn" type="button" title="Record voice note" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-microphone"></i></button>
+        <span id="chat-rec-status" class="hidden text-xs font-semibold text-[var(--status-danger)] shrink-0">Rec...</span>
+        <input id="chat-text-input" type="text" placeholder="Type a message..." autocomplete="off" class="h-9 min-w-0 flex-1 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 sm:px-4 text-sm text-[var(--text-primary)]">
+        <button id="chat-send-btn" type="submit" title="Send message" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent-primary)] text-sm text-white hover:bg-[var(--accent-hover)]"><i class="fa-solid fa-paper-plane"></i></button>
+      </form>
+    </div>
   </div>
 </section>
 
@@ -71,6 +110,31 @@
     </div>
   </div>
 </div>
+
+{% if current_user_role == 'TEACHER' or current_user_role == 'ADMIN' %}
+<div id="chat-group-settings-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
+  <div data-chat-backdrop="chat-group-settings-modal" class="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"></div>
+  <div class="relative z-10 w-full max-w-md rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 shadow-2xl space-y-4">
+    <div class="flex items-center justify-between"><h3 class="text-base font-semibold text-[var(--text-primary)]">Group Settings</h3><button type="button" onclick="closeChatModal('chat-group-settings-modal')" class="h-8 w-8 rounded-[8px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-xmark"></i></button></div>
+    <form id="chat-group-settings-form" class="space-y-3.5" data-no-lock="true">
+      <div class="flex items-center gap-3.5">
+        <img id="gs-dp-preview-img" src="" alt="Group DP" class="hidden h-14 w-14 shrink-0 rounded-full border border-[var(--border-subtle)] object-cover">
+        <div id="gs-dp-preview-init" class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[var(--accent-primary)] text-sm font-bold text-white">EP</div>
+        <div class="space-y-1">
+          <input id="gs-dp-input" type="file" accept="image/*" class="hidden">
+          <button id="gs-dp-btn" type="button" class="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-camera text-[var(--accent-primary)]"></i><span>Upload &amp; Crop Photo</span></button>
+          <p class="text-[11px] text-[var(--text-muted)]">JPG, PNG, WEBP up to 5 MB</p>
+        </div>
+      </div>
+      <div class="space-y-1">
+        <label for="gs-group-name" class="block text-xs font-medium text-[var(--text-secondary)]">Class Group Name</label>
+        <input id="gs-group-name" type="text" maxlength="80" required placeholder="Enter group name..." class="h-9 w-full rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]">
+      </div>
+      <div class="flex justify-end gap-2 pt-1"><button type="button" onclick="closeChatModal('chat-group-settings-modal')" class="h-9 rounded-[10px] border border-[var(--border-subtle)] px-3.5 text-xs font-medium text-[var(--text-primary)]">Cancel</button><button type="submit" class="h-9 rounded-[10px] bg-[var(--accent-primary)] px-4 text-xs font-semibold text-white">Save Changes</button></div>
+    </form>
+  </div>
+</div>
+{% endif %}
 
 <div id="chat-poll-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
   <div data-chat-backdrop="chat-poll-modal" class="fixed inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"></div>
@@ -116,175 +180,6 @@
 {% block extra_js %}
 {{ groups_json|json_script:"chat-groups-data" }}
 {{ messages_json|json_script:"chat-messages-data" }}
-<script>
-  (function () {
-    const API_URL = "{% url 'panels:classroom_chat_api' %}", CURRENT_ROLE = "{{ current_user_role|escapejs }}", CSRF = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
-    const groups = JSON.parse((document.getElementById('chat-groups-data') || {}).textContent || '[]');
-    let activeGroupId = "{{ selected_group_id|default:''|escapejs }}", currentMessages = JSON.parse((document.getElementById('chat-messages-data') || {}).textContent || '[]');
-    let pendingImage = null, recorder = null, recChunks = [], delMsgId = '';
-    const box = document.getElementById('chat-messages-box'), groupsPane = document.getElementById('chat-groups-pane'), threadPane = document.getElementById('chat-thread-pane');
-
-    function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
-    function roleBadge(r) {
-      if (r === 'ADMIN') return '<span class="rounded px-1.5 py-0.5 text-[10px] font-bold bg-[var(--status-danger)] text-white">ADMIN</span>';
-      if (r === 'TEACHER') return '<span class="rounded px-1.5 py-0.5 text-[10px] font-bold bg-[var(--accent-primary)] text-white">TEACHER</span>';
-      return '<span class="rounded px-1.5 py-0.5 text-[10px] font-semibold border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-muted)]">STUDENT</span>';
-    }
-    window.closeChatModal = function (id) { const m = document.getElementById(id); if (m) { m.classList.add('hidden'); m.classList.remove('flex'); } };
-    function openChatModal(id) { const m = document.getElementById(id); if (m) { m.classList.remove('hidden'); m.classList.add('flex'); } }
-    document.querySelectorAll('[data-chat-backdrop]').forEach(function (bd) {
-      let down = false;
-      bd.addEventListener('pointerdown', function (e) { down = e.target === bd; });
-      bd.addEventListener('click', function (e) { if (down && e.target === bd) window.closeChatModal(bd.dataset.chatBackdrop); down = false; });
-    });
-
-    function renderMessages(list, stickBottom) {
-      if (!box) return;
-      const wasNearBottom = stickBottom || (box.scrollHeight - box.scrollTop - box.clientHeight < 90);
-      if (!list || !list.length) { box.innerHTML = '<div class="py-16 text-center text-xs text-[var(--text-muted)]">No messages yet. Start the conversation!</div>'; return; }
-      box.innerHTML = list.map(function (m) {
-        const sp = m.sender_profile || {}, align = m.is_mine ? 'justify-end' : 'justify-start';
-        const bubble = m.is_mine ? 'bg-[var(--accent-soft)] border-[var(--accent-primary)]/30' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)]';
-        let body = '';
-        if (m.msg_type === 'DELETED' || m.deleted_for_all) {
-          body = '<p class="italic text-xs text-[var(--text-muted)]"><i class="fa-solid fa-ban mr-1"></i>' + esc(m.text || 'This message was deleted') + '</p>';
-        } else if (m.msg_type === 'ASSIGNMENT' && m.assignment) {
-          const a = m.assignment;
-          body = '<div class="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 space-y-1.5"><div class="flex items-center justify-between gap-2"><span class="text-[10px] font-bold uppercase text-[var(--accent-primary)]"><i class="fa-solid fa-file-pen mr-1"></i>New ' + esc(a.test_type || 'Assignment') + '</span><span class="text-[10px] font-mono text-[var(--text-muted)]">' + esc(a.max_marks || 0) + ' marks</span></div><p class="text-sm font-semibold text-[var(--text-primary)]">' + esc(a.title) + '</p>' + (a.due_date ? '<p class="text-[11px] text-[var(--text-secondary)]">Due: ' + esc(a.due_date) + '</p>' : '') + (a.url ? '<a href="' + esc(a.url) + '" class="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent-primary)] hover:underline">View Test &rarr;</a>' : '') + '</div>';
-        } else if (m.msg_type === 'POLL' && m.poll) {
-          const p = m.poll;
-          body = '<div class="space-y-2"><p class="text-sm font-semibold text-[var(--text-primary)]"><i class="fa-solid fa-square-poll-vertical mr-1.5 text-[var(--accent-primary)]"></i>' + esc(p.question) + '</p>' + (p.options || []).map(function (o) {
-            return '<button type="button" data-vote-msg="' + esc(m.msg_id) + '" data-vote-idx="' + o.idx + '" class="relative w-full overflow-hidden rounded-[10px] border px-3 py-1.5 text-left text-xs ' + (p.my_vote === o.idx ? 'border-[var(--accent-primary)] font-semibold' : 'border-[var(--border-subtle)] bg-[var(--bg-surface)]') + '"><span class="absolute inset-y-0 left-0 bg-[var(--accent-primary)]/15" style="width:' + (o.pct || 0) + '%"></span><span class="relative flex items-center justify-between gap-2"><span>' + esc(o.text) + '</span><span class="font-mono text-[11px] text-[var(--text-muted)]">' + (o.votes || 0) + ' (' + (o.pct || 0) + '%)</span></span></button>';
-          }).join('') + '<p class="text-[10px] text-[var(--text-muted)]">' + (p.total_votes || 0) + ' vote(s)</p></div>';
-        } else {
-          if (m.image_url) body += '<a href="' + esc(m.image_url) + '" target="_blank" rel="noopener"><img src="' + esc(m.image_url) + '" alt="Attachment" class="mb-1.5 max-h-56 rounded-[10px] object-cover"></a>';
-          if (m.audio_url) body += '<audio controls src="' + esc(m.audio_url) + '" class="mb-1.5 h-9 w-56 max-w-full"></audio>';
-          if (m.text) body += '<p class="text-sm text-[var(--text-primary)] whitespace-pre-wrap break-words">' + esc(m.text) + '</p>';
-        }
-        const actions = (m.msg_type !== 'DELETED' && !m.deleted_for_all) ? ('<div class="flex items-center gap-2 text-[10px] text-[var(--text-muted)]">' + (m.is_mine && m.msg_type === 'TEXT' ? '<button type="button" data-edit-msg="' + esc(m.msg_id) + '" class="hover:text-[var(--text-primary)]">Edit</button>' : '') + '<button type="button" data-del-msg="' + esc(m.msg_id) + '" data-can-all="' + (m.is_mine || CURRENT_ROLE === 'ADMIN' ? '1' : '0') + '" class="hover:text-[var(--status-danger)]">Delete</button></div>') : '';
-        return '<div class="flex ' + align + '"><div class="max-w-[85%] sm:max-w-[70%] rounded-[14px] border px-3.5 py-2.5 space-y-1.5 ' + bubble + '"><div class="flex flex-wrap items-center gap-1.5"><button type="button" data-profile-msg="' + esc(m.msg_id) + '" class="text-xs font-semibold text-[var(--accent-primary)] hover:underline">' + esc(sp.full_name || 'Member') + '</button>' + roleBadge(sp.role || 'STUDENT') + '</div>' + body + '<div class="flex items-center justify-between gap-3 pt-0.5"><span class="text-[10px] text-[var(--text-muted)]">' + esc(m.created_at_str || '') + (m.edited ? ' · edited' : '') + '</span>' + actions + '</div></div></div>';
-      }).join('');
-      if (wasNearBottom) box.scrollTop = box.scrollHeight;
-    }
-
-    async function fetchMessages(stickBottom) {
-      if (!activeGroupId) return;
-      try {
-        const res = await fetch(API_URL + '?group_id=' + encodeURIComponent(activeGroupId), { credentials: 'same-origin' });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.ok && Array.isArray(data.messages)) { currentMessages = data.messages; renderMessages(currentMessages, stickBottom); }
-      } catch (_) {}
-    }
-    async function postApi(body, isForm) {
-      const opts = { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF } };
-      if (isForm) opts.body = body; else { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
-      return (await fetch(API_URL, opts)).json();
-    }
-
-    document.querySelectorAll('[data-group-btn]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        activeGroupId = btn.dataset.groupId;
-        document.querySelectorAll('[data-group-btn]').forEach(function (b) { b.classList.toggle('bg-[var(--accent-soft)]', b.dataset.groupId === activeGroupId); });
-        const g = groups.find(function (x) { return x.group_id === activeGroupId; });
-        if (g) {
-          document.getElementById('chat-hdr-avatar').textContent = g.group_id.slice(0, 2);
-          document.getElementById('chat-hdr-title').textContent = g.group_id + ' - ' + g.title;
-          document.getElementById('chat-hdr-sub').textContent = g.semester_label + ' · ' + g.teacher_name + ' · ' + g.member_count + ' members';
-        }
-        if (window.innerWidth < 768) { groupsPane.classList.add('hidden'); threadPane.classList.remove('hidden'); threadPane.classList.add('flex'); }
-        fetchMessages(true);
-      });
-    });
-
-    const backBtn = document.getElementById('chat-back-btn'), gSearch = document.getElementById('chat-group-search');
-    if (backBtn) backBtn.addEventListener('click', function () { threadPane.classList.add('hidden'); threadPane.classList.remove('flex'); groupsPane.classList.remove('hidden'); });
-    if (gSearch) gSearch.addEventListener('input', function () {
-      const q = gSearch.value.trim().toLowerCase();
-      document.querySelectorAll('[data-group-btn]').forEach(function (b) { b.classList.toggle('hidden', q && !(b.dataset.search || '').includes(q)); });
-    });
-
-    box.addEventListener('click', async function (e) {
-      const profBtn = e.target.closest('[data-profile-msg]'), voteBtn = e.target.closest('[data-vote-msg]'), editBtn = e.target.closest('[data-edit-msg]'), delBtn = e.target.closest('[data-del-msg]');
-      if (profBtn) {
-        const msg = currentMessages.find(function (x) { return x.msg_id === profBtn.dataset.profileMsg; });
-        if (msg && msg.sender_profile) {
-          const sp = msg.sender_profile;
-          document.getElementById('cp-name').textContent = sp.full_name || 'Member';
-          document.getElementById('cp-role').textContent = sp.role || 'STUDENT';
-          document.getElementById('cp-sid').textContent = sp.student_id ? 'ID: ' + sp.student_id : '';
-          document.getElementById('cp-email').textContent = sp.email || '';
-          document.getElementById('cp-sem').textContent = sp.semester_label || '';
-          openChatModal('chat-profile-modal');
-        }
-        return;
-      }
-      if (voteBtn) { await postApi({ action: 'vote', group_id: activeGroupId, msg_id: voteBtn.dataset.voteMsg, option_idx: Number(voteBtn.dataset.voteIdx) }, false); fetchMessages(false); return; }
-      if (editBtn) {
-        const msg = currentMessages.find(function (x) { return x.msg_id === editBtn.dataset.editMsg; });
-        if (msg) { document.getElementById('edit-msg-id').value = msg.msg_id; document.getElementById('edit-msg-text').value = msg.text || ''; openChatModal('chat-edit-modal'); }
-        return;
-      }
-      if (delBtn) { delMsgId = delBtn.dataset.delMsg; document.getElementById('del-all-btn').classList.toggle('hidden', delBtn.dataset.canAll !== '1'); openChatModal('chat-delete-modal'); }
-    });
-
-    const textInput = document.getElementById('chat-text-input'), imgInput = document.getElementById('chat-image-input'), imgPrev = document.getElementById('chat-image-preview');
-    document.getElementById('chat-image-btn').addEventListener('click', function () { imgInput.click(); });
-    imgInput.addEventListener('change', function () {
-      pendingImage = imgInput.files && imgInput.files[0] ? imgInput.files[0] : null;
-      document.getElementById('chat-image-name').textContent = pendingImage ? 'Image: ' + pendingImage.name : '';
-      imgPrev.classList.toggle('hidden', !pendingImage); imgPrev.classList.toggle('flex', !!pendingImage);
-    });
-    document.getElementById('chat-image-clear').addEventListener('click', function () { pendingImage = null; imgInput.value = ''; imgPrev.classList.add('hidden'); imgPrev.classList.remove('flex'); });
-    textInput.addEventListener('keydown', function (e) { if (e.isComposing || e.keyCode === 229) return; });
-    document.getElementById('chat-composer').addEventListener('submit', async function (e) {
-      e.preventDefault();
-      if (!activeGroupId) return;
-      const txt = textInput.value.trim();
-      if (!txt && !pendingImage) return;
-      const fd = new FormData();
-      fd.append('action', 'send'); fd.append('group_id', activeGroupId); fd.append('text', txt);
-      if (pendingImage) fd.append('image', pendingImage);
-      textInput.value = ''; pendingImage = null; imgInput.value = ''; imgPrev.classList.add('hidden'); imgPrev.classList.remove('flex');
-      await postApi(fd, true); fetchMessages(true);
-    });
-
-    document.getElementById('chat-voice-btn').addEventListener('click', async function () {
-      if (!activeGroupId || !navigator.mediaDevices) return;
-      const recStat = document.getElementById('chat-rec-status');
-      if (recorder && recorder.state === 'recording') { recorder.stop(); return; }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        recChunks = []; recorder = new MediaRecorder(stream);
-        recorder.ondataavailable = function (ev) { if (ev.data.size > 0) recChunks.push(ev.data); };
-        recorder.onstop = async function () {
-          stream.getTracks().forEach(function (t) { t.stop(); }); recStat.classList.add('hidden');
-          const fd = new FormData();
-          fd.append('action', 'send'); fd.append('group_id', activeGroupId); fd.append('audio', new Blob(recChunks, { type: 'audio/webm' }), 'voice.webm');
-          await postApi(fd, true); fetchMessages(true);
-        };
-        recorder.start(); recStat.classList.remove('hidden');
-      } catch (_) {}
-    });
-
-    document.getElementById('chat-open-poll-btn').addEventListener('click', function () { if (activeGroupId) openChatModal('chat-poll-modal'); });
-    document.getElementById('chat-poll-form').addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const q = document.getElementById('poll-question').value.trim(), opts = Array.from(document.querySelectorAll('[data-poll-opt]')).map(function (i) { return i.value.trim(); }).filter(Boolean);
-      if (!q || opts.length < 2) return;
-      await postApi({ action: 'poll', group_id: activeGroupId, poll_question: q, poll_options: opts }, false);
-      e.target.reset(); window.closeChatModal('chat-poll-modal'); fetchMessages(true);
-    });
-    document.getElementById('chat-edit-form').addEventListener('submit', async function (e) {
-      e.preventDefault();
-      await postApi({ action: 'edit', group_id: activeGroupId, msg_id: document.getElementById('edit-msg-id').value, text: document.getElementById('edit-msg-text').value.trim() }, false);
-      window.closeChatModal('chat-edit-modal'); fetchMessages(false);
-    });
-    document.getElementById('del-me-btn').addEventListener('click', async function () { await postApi({ action: 'delete', group_id: activeGroupId, msg_id: delMsgId, scope: 'me' }, false); window.closeChatModal('chat-delete-modal'); fetchMessages(false); });
-    document.getElementById('del-all-btn').addEventListener('click', async function () { await postApi({ action: 'delete', group_id: activeGroupId, msg_id: delMsgId, scope: 'everyone' }, false); window.closeChatModal('chat-delete-modal'); fetchMessages(false); });
-
-    renderMessages(currentMessages, true);
-    setInterval(function () { if (!document.hidden && activeGroupId) fetchMessages(false); }, 2500);
-  })();
-</script>
+<div id="chat-boot-cfg" data-api-url="{% url 'panels:classroom_chat_api' %}" data-role="{{ current_user_role }}" data-group-id="{{ selected_group_id|default:'' }}" class="hidden"></div>
+<script src="{% static 'js/classroom_chat.js' %}?v=1"></script>
 {% endblock %}

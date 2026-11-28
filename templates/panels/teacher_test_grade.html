@@ -11,7 +11,7 @@
   </div>
   <div class="flex flex-wrap items-center gap-2 shrink-0">
     {% if test and test.attachment_url %}
-    <a href="{{ test.attachment_url }}" target="_blank" rel="noopener" download class="inline-flex h-9 items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-paperclip text-[var(--accent-primary)]" aria-hidden="true"></i><span>{{ test.attachment_name|default:"Download Attachment" }}</span></a>
+    <button type="button" onclick="openFilePreviewModal(this)" data-preview-url="{{ test.attachment_url }}" data-preview-name="{{ test.attachment_name|default:'Test Attachment' }}" class="inline-flex h-9 items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-paperclip text-[var(--accent-primary)]" aria-hidden="true"></i><span>{{ test.attachment_name|default:"Preview Attachment" }}</span></button>
     {% endif %}
     <a href="{% url 'panels:teacher_tests' %}" class="inline-flex h-9 items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-elevated)]"><i class="fa-solid fa-arrow-left text-[11px]" aria-hidden="true"></i><span>Back to Tests</span></a>
   </div>
@@ -184,18 +184,25 @@
       const images = Array.isArray(data.images) ? data.images : [], docs = Array.isArray(data.documents) ? data.documents : [];
       if (images.length > 0) {
         let idx = 0;
-        const slider = mk('div', 'rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3 space-y-2.5'), head = mk('div', 'flex items-center justify-between gap-2'), counter = mk('span', 'text-xs font-semibold text-[var(--text-primary)]', ''), dlBtn = mk('a', 'inline-flex h-8 items-center gap-1.5 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Download');
-        dlBtn.target = '_blank'; dlBtn.rel = 'noopener'; dlBtn.setAttribute('download', '');
-        head.append(counter, dlBtn);
-        const imgEl = mk('img', 'w-full max-h-64 object-contain rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)]'), foot = mk('div', 'flex items-center justify-between gap-2'), prevB = mk('button', 'h-8 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Prev'), imgName = mk('span', 'truncate text-xs text-[var(--text-muted)]', ''), nextB = mk('button', 'h-8 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Next');
+        const slider = mk('div', 'rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3 space-y-2.5'), head = mk('div', 'flex items-center justify-between gap-2'), counter = mk('span', 'text-xs font-semibold text-[var(--text-primary)]', ''), headActs = mk('div', 'inline-flex items-center gap-1.5'), prevFullBtn = mk('button', 'inline-flex h-8 items-center gap-1.5 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Preview'), dlBtn = mk('a', 'inline-flex h-8 items-center gap-1.5 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Download');
+        prevFullBtn.type = 'button'; dlBtn.target = '_blank'; dlBtn.rel = 'noopener'; dlBtn.setAttribute('download', '');
+        headActs.append(prevFullBtn, dlBtn);
+        head.append(counter, headActs);
+        const imgEl = mk('img', 'w-full max-h-64 object-contain rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] cursor-zoom-in'), foot = mk('div', 'flex items-center justify-between gap-2'), prevB = mk('button', 'h-8 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Prev'), imgName = mk('span', 'truncate text-xs text-[var(--text-muted)]', ''), nextB = mk('button', 'h-8 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Next');
         prevB.type = 'button'; nextB.type = 'button';
         foot.append(prevB, imgName, nextB);
+        function openCurrentImgPreview() {
+          const item = images[idx] || {}, url = typeof item === 'string' ? item : (item.url || '');
+          if (typeof window.openFilePreviewModal === 'function' && url) window.openFilePreviewModal({ url: url, name: item.name || ('Image ' + (idx + 1)), isImage: true });
+        }
         function renderSlide() {
           const item = images[idx] || {}, url = typeof item === 'string' ? item : (item.url || '');
           imgEl.src = url; imgEl.alt = item.name || ('Image ' + (idx + 1)); dlBtn.href = url;
           counter.textContent = 'Image ' + (idx + 1) + ' / ' + images.length; imgName.textContent = item.name || ('Image ' + (idx + 1));
           prevB.disabled = images.length <= 1; nextB.disabled = images.length <= 1;
         }
+        imgEl.onclick = openCurrentImgPreview;
+        prevFullBtn.onclick = openCurrentImgPreview;
         prevB.onclick = function () { idx = (idx - 1 + images.length) % images.length; renderSlide(); };
         nextB.onclick = function () { idx = (idx + 1) % images.length; renderSlide(); };
         renderSlide(); slider.append(head, imgEl, foot); bodyEl.appendChild(slider);
@@ -206,9 +213,14 @@
         docs.forEach(function (doc) {
           const url = typeof doc === 'string' ? doc : (doc.url || ''), name = (typeof doc === 'object' && doc.name) ? doc.name : 'Document', row = mk('div', 'flex items-center justify-between gap-3 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-2.5'), left = mk('div', 'flex items-center gap-2.5 min-w-0');
           left.append(mk('i', fileIcon(name) + ' text-base text-[var(--accent-primary)] shrink-0'), mk('span', 'truncate text-xs font-medium text-[var(--text-primary)]', name));
+          const acts = mk('div', 'flex shrink-0 items-center gap-1.5');
+          const pv = mk('button', 'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Preview');
+          pv.type = 'button';
+          pv.onclick = function () { if (typeof window.openFilePreviewModal === 'function') window.openFilePreviewModal({ url: url, name: name }); };
           const dl = mk('a', 'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]', 'Download');
           dl.href = url; dl.target = '_blank'; dl.rel = 'noopener'; dl.setAttribute('download', '');
-          row.append(left, dl); docWrap.appendChild(row);
+          acts.append(pv, dl);
+          row.append(left, acts); docWrap.appendChild(row);
         });
         bodyEl.appendChild(docWrap);
       }
